@@ -1,0 +1,189 @@
+'use strict';
+
+/**
+ * Entry HTTP accept handler (FR-005).
+ * JWT verify (FR-004) + body validation + injectable enqueue stub (FR-006 lands real SQS).
+ * Never trusts a request-body user id.
+ */
+
+const crypto = require('node:crypto');
+const { verifyAuthorization, AuthError } = require('./auth/jwt');
+
+const JSON_HEADERS = { 'content-type': 'application/json' };
+
+function jsonResponse(statusCode, payload) {
+  return {
+    statusCode,
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
+  };
+}
+
+function newSearchId() {
+  return `srch_${crypto.randomBytes(10).toString('hex')}`;
+}
+
+function headerGet(headers, name) {
+  if (!headers || typeof headers !== 'object') return undefined;
+  const want = name.toLowerCase();
+  for (const [k, v] of Object.entries(headers)) {
+    if (String(k).toLowerCase() === want) return v;
+  }
+  return undefined;
+}
+
+function parseBody(raw) {
+  if (raw == null || raw === '') return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {unknown} body
+ * @returns {{ ok: true, value: object } | { ok: false, fields: string[] }}
+ */
+function validateSearchBody(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { ok: false, fields: ['body'] };
+  }
+  const fields = [];
+  const hasQ = typeof body.q === 'string' && body.q.trim() !== '';
+  const hasTerms =
+    Array.isArray(body.searchterms) &&
+    body.searchterms.some((t) => typeof t === 'string' && t.trim() !== '');
+  if (!hasQ && !hasTerms) fields.push('q', 'searchterms');
+
+  if (
+    body.catalogId === undefined ||
+    body.catalogId === null ||
+    body.catalogId === ''
+  ) {
+    fields.push('catalogId');
+  }
+  if (typeof body.category !== 'string' || body.category.trim() === '') {
+    fields.push('category');
+  }
+  if (typeof body.subcategory !== 'string' || body.subcategory.trim() === '') {
+    fields.push('subcategory');
+  }
+  if (body.sources !== undefined) {
+    if (
+      !Array.isArray(body.sources) ||
+      body.sources.some((s) => typeof s !== 'string')
+    ) {
+      fields.push('sources');
+    }
+  }
+  if (body.sandbox !== undefined && typeof body.sandbox !== 'boolean') {
+    fields.push('sandbox');
+  }
+  if (fields.length) return { ok: false, fields: [...new Set(fields)] };
+  return {
+    ok: true,
+    value: {
+      q: hasQ ? body.q.trim() : undefined,
+      searchterms: hasTerms ? body.searchterms : undefined,
+      catalogId: body.catalogId,
+      category: body.category.trim(),
+      subcategory: body.subcategory.trim(),
+      sources: body.sources,
+      sandbox: body.sandbox === true,
+    },
+  };
+}
+
+/**
+ * Default enqueue stub (FR-005). Real fan-out is FR-006.
+ * @returns {Promise<string[]>}
+ */
+async function stubEnqueue() {
+  return [];
+}
+
+/**
+ * @param {object} event - API Gateway-style event
+ * @param {object} [_context]
+ * @param {{
+ *   env?: Record<string, string|undefined>,
+ *   verifyAuthorization?: Function,
+ *   enqueue?: (args: object) => Promise<string[]>,
+ *   newSearchId?: () => string,
+ * }} [deps]
+ */
+async function handler(event, _context, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const enqueue = deps.enqueue || stubEnqueue;
+  const makeId = deps.newSearchId || newSearchId;
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { accepted: false, error: err.code });
+    }
+    return jsonResponse(401, { accepted: false, error: 'unauthorized' });
+  }
+
+  const rawBody = event && event.body;
+  const parsed = parseBody(rawBody);
+  if (parsed === null) {
+    return jsonResponse(400, {
+      accepted: false,
+      error: 'invalid_json',
+      fields: ['body'],
+    });
+  }
+
+  // Body userId is never authority; if present and differs → 401
+  if (
+    parsed.userId !== undefined &&
+    parsed.userId !== null &&
+    String(parsed.userId) !== String(userId)
+  ) {
+    return jsonResponse(401, { accepted: false, error: 'unauthorized' });
+  }
+
+  const validated = validateSearchBody(parsed);
+  if (!validated.ok) {
+    return jsonResponse(400, {
+      accepted: false,
+      error: 'missing_required_field',
+      fields: validated.fields,
+    });
+  }
+
+  const jobEnv = validated.value.sandbox ? 'sandbox' : 'live';
+  const searchId = makeId();
+  const enqueued = await enqueue({
+    searchId,
+    userId,
+    env: jobEnv,
+    body: validated.value,
+  });
+
+  return jsonResponse(200, {
+    searchId,
+    accepted: true,
+    userId,
+    env: jobEnv,
+    enqueued: Array.isArray(enqueued) ? enqueued : [],
+  });
+}
+
+module.exports = {
+  handler,
+  validateSearchBody,
+  newSearchId,
+  stubEnqueue,
+};
