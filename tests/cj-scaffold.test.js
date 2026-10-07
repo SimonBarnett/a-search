@@ -30,20 +30,38 @@ describe('FR-019 cj provider scaffold', () => {
     assert.match(text, /ads\.api\.cj\.com/i);
   });
 
-  it('stub exports run()', async () => {
+  it('exports run() with GraphQL search path (not scaffold stub)', async () => {
     const { run } = require('../providers/live/cj/src/worker');
     assert.equal(typeof run, 'function');
-    const out = await run({
-      searchId: 'srch_cj',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'cj',
-      q: 'laptop',
-      catalogId: 1,
-      category: 'Electronics',
-      subcategory: 'Computers',
-    });
+    const fixture = JSON.parse(
+      fs.readFileSync(path.join(cj, 'fixtures', 'products-ok.json'), 'utf8'),
+    );
+    const out = await run(
+      {
+        searchId: 'srch_cj',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'cj',
+        q: 'laptop',
+        catalogId: 1,
+        category: 'Electronics',
+        subcategory: 'Computers',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          CJ_API_TOKEN: 't',
+          CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        httpRequest: async () => fixture,
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'cj');
+    assert.ok(Array.isArray(out.products));
+    assert.ok(out.products.length >= 1);
+    assert.doesNotMatch(JSON.stringify(out), /not wired yet/i);
   });
 });
