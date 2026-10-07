@@ -118,4 +118,29 @@ describe('FR-048c entry fatal → intake', () => {
     assert.equal(res.statusCode, 401);
     assert.equal(reports.length, 0);
   });
+  it('EnqueueError 400 does not call reporter', async () => {
+    const { EnqueueError } = require('../entry/src/enqueue');
+    const reports = [];
+    const res = await handler(
+      {
+        httpMethod: 'POST',
+        path: '/search',
+        headers: { authorization: `Bearer ${validToken()}` },
+        body: JSON.stringify(validBody),
+      },
+      {},
+      {
+        env: jwtEnv,
+        enqueue: async () => {
+          throw new EnqueueError('sources_not_enabled', 'no sources', ['sources']);
+        },
+        reportException: async (opts) => {
+          reports.push(opts);
+        },
+      },
+    );
+    assert.equal(res.statusCode, 400);
+    assert.equal(reports.length, 0);
+  });
+
 });
