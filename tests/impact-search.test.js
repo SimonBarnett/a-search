@@ -103,9 +103,18 @@ describe('FR-044 impact MSSQL queryParts', () => {
     assert.equal(out.products.length, 1);
     assert.equal(out.products[0].id, 'sku-100');
     assert.equal(out.products[0].title, 'Mock Impact Headphones');
+    assert.equal(out.products[0].description, 'noise cancelling');
     assert.equal(out.products[0].price, 19.99);
     assert.equal(out.products[0].source, 'impact');
+    assert.deepEqual(out.products[0].raw, {
+      feedKey: 'camp1',
+      stock: 'in_stock',
+    });
+    assert.equal(out.products[0].feedKey, undefined);
+    assert.equal(out.products[0].stock, undefined);
     assert.equal(typeof out.message, 'undefined');
+    const { assertProductSchema } = require('../worker/lib/normalizeProduct');
+    assertProductSchema(out.products[0]);
     assert.equal(puts.length, 1);
     assert.equal(puts[0].Bucket, 'test-results');
     assert.equal(
@@ -196,6 +205,10 @@ describe('FR-044 impact MSSQL queryParts', () => {
     assert.doesNotMatch(src, /MSSQL Parts SELECT not wired yet/);
     assert.match(src, /writeResults/);
     assert.match(src, /products/);
+    assert.match(src, /normalizeProduct/);
+    assert.match(src, /assertProductSchema/);
+    assert.doesNotMatch(src, /^\s*stock:/m);
+    assert.doesNotMatch(src, /^\s*feedKey:/m);
   });
 
   it('searchTextFromMsg prefers q then searchterms', () => {

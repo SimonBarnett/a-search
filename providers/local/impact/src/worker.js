@@ -19,23 +19,31 @@ const {
 } = require('../../../../worker/lib/assertEnv');
 const { writeResults } = require('../../../../worker/lib/writeResults');
 const {
+  normalizeProduct,
+  assertProductSchema,
+} = require('../../../../worker/lib/normalizeProduct');
+const {
   defaultQueryParts,
   ImpactMssqlConfigError,
 } = require('./queryParts');
 
 function normalizePart(row) {
-  return {
-    id: row.MerchantProductId,
-    title: row.Title == null ? '' : String(row.Title),
-    description: row.Description == null ? undefined : String(row.Description),
-    url: row.Url == null ? undefined : String(row.Url),
-    imageUrl: row.ImageUrl == null ? undefined : String(row.ImageUrl),
-    price: row.Price == null ? undefined : Number(row.Price),
-    currency: row.Currency == null ? undefined : String(row.Currency),
-    stock: row.Stock == null ? undefined : String(row.Stock),
-    feedKey: row.FeedKey == null ? undefined : String(row.FeedKey),
-    source: row.Source == null ? 'impact' : String(row.Source),
-  };
+  const raw = {};
+  if (row && row.FeedKey != null) raw.feedKey = String(row.FeedKey);
+  if (row && row.Stock != null) raw.stock = String(row.Stock);
+  const product = normalizeProduct({
+    id: row && row.MerchantProductId != null ? row.MerchantProductId : '',
+    title: row && row.Title != null ? row.Title : '',
+    description: row && row.Description != null ? row.Description : undefined,
+    url: row && row.Url != null ? row.Url : undefined,
+    imageUrl: row && row.ImageUrl != null ? row.ImageUrl : undefined,
+    price: row && row.Price != null ? row.Price : undefined,
+    currency: row && row.Currency != null ? row.Currency : undefined,
+    source: row && row.Source != null ? row.Source : 'impact',
+    raw: Object.keys(raw).length ? raw : undefined,
+  });
+  assertProductSchema(product);
+  return product;
 }
 
 async function run(msg, deps) {

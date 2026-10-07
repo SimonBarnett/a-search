@@ -56,4 +56,26 @@ describe('FR-042 hostile: shared result schema', () => {
     assert.equal(p.feedKey, undefined);
     assert.equal(p.stock, undefined);
   });
+
+  it('impact normalizePart satisfies shared schema (feedKey/stock under raw)', () => {
+    const { assertProductSchema } = require('../worker/lib/normalizeProduct');
+    const { normalizePart } = require('../providers/local/impact/src/worker');
+    const p = normalizePart({
+      MerchantProductId: 'sku-imp',
+      Title: 'Impact Part',
+      Description: 'desc',
+      FeedKey: 'camp',
+      Stock: 'in_stock',
+      Source: 'impact',
+      Price: 2.5,
+      Currency: 'GBP',
+    });
+    assertProductSchema(p);
+    assert.equal(p.id, 'sku-imp');
+    assert.equal(p.description, 'desc');
+    assert.equal(p.raw.feedKey, 'camp');
+    assert.equal(p.raw.stock, 'in_stock');
+    assert.equal(p.feedKey, undefined);
+    assert.equal(p.stock, undefined);
+  });
 });
