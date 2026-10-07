@@ -2,7 +2,7 @@
 
 /**
  * FR-047f: providers must not ship forked resultsPath / writeResults copies.
- * Canonical helpers live under shared/ (and worker/lib until migrated).
+ * Canonical helpers live under shared/ (see docs/shared-layer.md).
  */
 
 const { describe, it } = require('node:test');
@@ -36,35 +36,39 @@ function walkJsFiles(dir, out) {
   }
 }
 
+function forbiddenUnderProviders() {
+  const files = [];
+  walkJsFiles(providersRoot, files);
+  return files.filter((f) => FORBIDDEN_BASENAMES.has(path.basename(f)));
+}
+
 describe('FR-047f shared helpers — no provider duplicates', () => {
   it('providers/** must not contain resultsPath.js / writeResults.js copies', () => {
-    const files = [];
-    walkJsFiles(providersRoot, files);
-    const offenders = files.filter((f) =>
-      FORBIDDEN_BASENAMES.has(path.basename(f)),
-    );
+    const offenders = forbiddenUnderProviders();
     assert.deepEqual(
       offenders.map((f) => path.relative(root, f).split(path.sep).join('/')),
       [],
-      'providers must not ship forked shared helpers; use shared/ (or worker/lib until moved)',
+      'providers must not ship forked shared helpers; use shared/',
     );
   });
 
-  it('fail-when fixture: a synthetic provider resultsPath.js would be detected', () => {
-    const files = [];
-    walkJsFiles(providersRoot, files);
-    const fake = path.join(
-      providersRoot,
-      'live',
-      'amazon',
-      'src',
-      'resultsPath.js',
-    );
-    const basenames = new Set(files.map((f) => path.basename(f)));
-    // Current tree must not already have the fake path.
+  it('fail-when: a synthetic provider resultsPath.js is detected then cleaned up', () => {
+    const fakeDir = path.join(providersRoot, 'live', 'amazon', 'src');
+    const fake = path.join(fakeDir, 'resultsPath.js');
     assert.equal(fs.existsSync(fake), false);
-    // Detector logic: basename match is enough.
-    assert.equal(FORBIDDEN_BASENAMES.has('resultsPath.js'), true);
-    assert.equal(basenames.has('resultsPath.js'), false);
+    fs.writeFileSync(fake, "'use strict';\n// MRB #406 hostile temp — must not remain\n", 'utf8');
+    try {
+      const offenders = forbiddenUnderProviders();
+      const rel = offenders.map((f) =>
+        path.relative(root, f).split(path.sep).join('/'),
+      );
+      assert.ok(
+        rel.includes('providers/live/amazon/src/resultsPath.js'),
+        `expected synthetic offender in ${JSON.stringify(rel)}`,
+      );
+    } finally {
+      fs.unlinkSync(fake);
+    }
+    assert.deepEqual(forbiddenUnderProviders(), []);
   });
 });
