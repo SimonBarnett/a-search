@@ -1,0 +1,22 @@
+{
+  "data": {
+    "products": {
+      "resultList": [
+        {
+          "id": "cj-fix-001",
+          "title": "Fixture Ultrabook Laptop",
+          "imageLink": "https://www.example.com/img/cj1.jpg",
+          "price": { "amount": "899.00", "currency": "GBP" },
+          "linkCode": { "clickUrl": "https://www.example.com/cj/cj-fix-001" }
+        },
+        {
+          "id": "cj-fix-002",
+          "title": "Fixture Chromebook",
+          "imageLink": "https://www.example.com/img/cj2.jpg",
+          "price": { "amount": "299.50", "currency": "GBP" },
+          "linkCode": { "clickUrl": "https://www.example.com/cj/cj-fix-002" }
+        }
+      ]
+    }
+  }
+}
