@@ -37,6 +37,18 @@ npm test
 
 `npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
 
+## Infrastructure (CDK)
+
+Skeleton under `cdk/` (FR-023): entry Lambda + `a-search-amazon-live` /
+`a-search-amazon-sandbox` queues. See [`cdk/README.md`](cdk/README.md).
+
+```bash
+npm install
+npm run synth
+```
+
+`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy …`).
+
 ## Feature requests
 
 Initial build is split into small, testable GitHub issues labeled
