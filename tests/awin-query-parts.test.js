@@ -13,7 +13,7 @@ const {
   searchTextFromMsg,
   SELECT_SQL,
 } = require('../providers/local/awin/src/queryParts');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_awin_43',
@@ -57,7 +57,7 @@ function mockPool(recordset) {
 }
 
 describe('FR-043 awin MSSQL queryParts', () => {
-  it('mock connection rows → normalized products + writeResults', async () => {
+  it('mock connection rows â†’ normalized products + writeResults', async () => {
     const rows = [
       {
         Source: 'awin',
@@ -113,7 +113,7 @@ describe('FR-043 awin MSSQL queryParts', () => {
     );
   });
 
-  it('empty recordset → products [] and still writes results', async () => {
+  it('empty recordset â†’ products [] and still writes results', async () => {
     const puts = [];
     const out = await run(baseMsg, {
       env: mssqlEnv,
@@ -130,7 +130,7 @@ describe('FR-043 awin MSSQL queryParts', () => {
     assert.deepEqual(body.products, []);
   });
 
-  it('missing MSSQL config → clear AwinMssqlConfigError (not silent [])', async () => {
+  it('missing MSSQL config â†’ clear AwinMssqlConfigError (not silent [])', async () => {
     await assert.rejects(
       () =>
         run(baseMsg, {

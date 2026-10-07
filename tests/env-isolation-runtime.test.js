@@ -8,7 +8,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { queueName } = require('../providers/queueName');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 const {
   assertWorkerEnv,
   EnvIsolationError,

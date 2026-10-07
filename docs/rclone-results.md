@@ -4,7 +4,7 @@ Ops find offline search results on the **MSSQL host** via an **rclone**
 mapped drive that mirrors the S3 results bucket. AWS workers still write
 with the S3 API; the SQL box reads the same tree through the mount.
 
-Canonical layout (LOCKED — matches `worker/lib/resultsPath.js`):
+Canonical layout (LOCKED — matches `shared/resultsPath.js`):
 
 ```
 {env}/{source}/{userId}/{catalogId}/{searchId}.json
@@ -50,4 +50,4 @@ Maintainer staging CSVs may land under
 
 - `docs/environments.md` — live/sandbox isolation
 - `docs/endpoint-search.md` — accept contract
-- `worker/lib/resultsPath.js` — `resultsKey` / `resultsRclonePath` / `resultsS3Uri`
+- `shared/resultsPath.js` — `resultsKey` / `resultsRclonePath` / `resultsS3Uri`

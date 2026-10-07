@@ -17,7 +17,7 @@ const fixturePath = path.join(
   'item-summary-ok.json',
 );
 const { run, EbayCredsError } = require('../providers/live/ebay/src/worker');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_ebay_39',
@@ -41,7 +41,7 @@ const credEnv = {
 };
 
 describe('FR-039 ebay Browse API search client', () => {
-  it('fixture HTTP → normalize products → S3 put called', async () => {
+  it('fixture HTTP â†’ normalize products â†’ S3 put called', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const puts = [];
     const httpCalls = [];
@@ -88,7 +88,7 @@ describe('FR-039 ebay Browse API search client', () => {
     );
   });
 
-  it('missing eBay creds → clear ebay_missing_credentials error', async () => {
+  it('missing eBay creds â†’ clear ebay_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         run(baseMsg, {
