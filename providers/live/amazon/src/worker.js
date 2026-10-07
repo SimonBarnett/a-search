@@ -69,19 +69,14 @@ async function run(msg, deps) {
 
 
 /**
- * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
- * @param {{ Records?: Array<{ body: string }> }} event
+ * SQS Lambda entry (FR-038 / FR-036 CDK `worker.handler`).
+ * Implementation lives in `handler.js`; this wrapper keeps the FR-036
+ * `async function handler` export pin on worker.js.
  */
-async function handler(event) {
-  const records = (event && event.Records) || [];
-  const results = [];
-  for (const record of records) {
-    const body = record && record.body;
-    const msg = typeof body === 'string' ? JSON.parse(body) : body;
-    results.push(await run(msg));
-  }
-  return { ok: true, results };
+async function handler(event, deps) {
+  return require('./handler').handler(event, deps);
 }
+
 module.exports = {
   handler,
   run,

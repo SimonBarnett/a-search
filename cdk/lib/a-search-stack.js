@@ -12,9 +12,12 @@ const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
 const { loadRegistry } = require('../../providers/loadRegistry');
 const { queueName } = require('../../providers/queueName');
+const {
+  stageEntryLambdaAsset,
+} = require('../../scripts/stage-entry-lambda-asset');
 
 /**
- * Title-case construct id fragment from source id (amazon → Amazon).
+ * Title-case construct id fragment from source id (amazon â†’ Amazon).
  * @param {string} id
  */
 function pascalSource(id) {
@@ -22,7 +25,7 @@ function pascalSource(id) {
 }
 
 /**
- * Registry queueEnv `SQS_AMAZON_URL` → entry env keys SQS_AMAZON_LIVE_URL /
+ * Registry queueEnv `SQS_AMAZON_URL` â†’ entry env keys SQS_AMAZON_LIVE_URL /
  * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
  * @param {string} queueEnv
  * @param {'live'|'sandbox'} env
@@ -36,7 +39,7 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
- * FR-023/024/035/036: entry Lambda + API Gateway POST /search +
+ * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules.
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
@@ -63,16 +66,19 @@ class ASearchStack extends cdk.Stack {
       A_SEARCH_ENV: 'sandbox',
     };
 
+    // FR-037: staged asset includes entry/src + providers/* (not entry/src alone)
+    const repoRoot = path.join(__dirname, '..', '..');
+    const entryAssetDir = stageEntryLambdaAsset(repoRoot);
     const entry = new lambda.Function(this, 'EntryFunction', {
       functionName: 'a-search-entry',
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '..', '..', 'entry', 'src')),
+      handler: 'entry/src/index.handler',
+      code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
       environment: entryEnv,
     });
 
-    // FR-036: queues + workers for every enabled shortlist source × env
+    // FR-036: queues + workers for every enabled shortlist source Ã— env
     for (const src of enabledSources) {
       const folderAbs = path.join(__dirname, '..', '..', src.folder, 'src');
       const pascal = pascalSource(src.id);
@@ -121,10 +127,10 @@ class ASearchStack extends cdk.Stack {
       }
     }
 
-    // FR-035: HTTP API POST /search → entry (JWT still verified in Lambda)
+    // FR-035: HTTP API POST /search â†’ entry (JWT still verified in Lambda)
     const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
       apiName: 'a-search',
-      description: 'a-search POST /search → entry Lambda',
+      description: 'a-search POST /search â†’ entry Lambda',
     });
     httpApi.addRoutes({
       path: '/search',
