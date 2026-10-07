@@ -31,6 +31,14 @@ Entry Lambda environment uses **env-specific** keys that
 Do not document only the logical `SQS_<SOURCE>_URL` name while CDK emits only
 the `*_LIVE_URL` / `*_SANDBOX_URL` pair without the resolver.
 
+## Shared helpers (FR-047)
+
+Shared code lives in repo `shared/` (`@a-search/shared`). Prefer a Lambda
+layer at `/opt/nodejs/a-search` or bundle `shared/` into each function
+asset — never duplicate helpers under `providers/*/src`. Layout:
+[`docs/shared-layer.md`](../docs/shared-layer.md). Layer publish automation
+is out of scope for FR-047e.
+
 ## Entry Lambda packaging (FR-037)
 
 `Code.fromAsset(entry/src)` cannot resolve `../../providers/...` inside Lambda.

@@ -2,15 +2,15 @@
 
 /**
  * Rakuten live provider worker (FR-040).
- * Product Search XML → normalize → writeResults (injectable HTTP + putObject).
+ * Product Search XML -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
-const { writeResults } = require('../../../../worker/lib/writeResults');
+} = require('../../../../shared/assertEnv');
+const { writeResults } = require('../../../../shared/writeResults');
 const {
   searchRakuten,
   assertRakutenCreds,

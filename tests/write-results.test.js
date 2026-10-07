@@ -3,7 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { writeResults } = require('../worker/lib/writeResults');
+const { writeResults } = require('../shared/writeResults');
 const { resultsKey } = require('../shared/resultsPath');
 
 describe('FR-009 writeResults to S3', () => {

@@ -2,15 +2,15 @@
 
 /**
  * eBay live provider worker (FR-039).
- * Browse API search → normalize → writeResults (injectable HTTP + putObject).
+ * Browse API search -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
-const { writeResults } = require('../../../../worker/lib/writeResults');
+} = require('../../../../shared/assertEnv');
+const { writeResults } = require('../../../../shared/writeResults');
 const {
   searchEbay,
   assertEbayCreds,

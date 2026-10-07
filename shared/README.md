@@ -13,7 +13,7 @@ Publish / mount this package so Lambda code can require it from:
 
 That matches the clubscan layer-first layout. CDK may alternatively
 bundle `shared/` into each function; either way, **one** copy of shared
-helpers — never fork under `providers/*/src`.
+helpers â€” never fork under `providers/*/src`.
 
 ## Local require
 
@@ -33,7 +33,8 @@ consumers switch (later FR-047 slices). Moving modules out of
 | Path | Notes |
 |------|--------|
 | `index.js` | Package entry + `layerPath` constant |
-| `intake/reportException.js` | FR-048a fatal → intake POST |
+| `assertEnv.js` | FR-047d / FR-007 `assertWorkerEnv` |
+| `intake/reportException.js` | FR-048a fatal -> intake POST |
 | `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).

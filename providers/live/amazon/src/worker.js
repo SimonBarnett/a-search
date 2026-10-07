@@ -2,15 +2,15 @@
 
 /**
  * Amazon live provider worker (FR-030).
- * PA-API SearchItems â†’ normalize â†’ writeResults (injectable HTTP + putObject).
+ * PA-API SearchItems -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
-const { writeResults } = require('../../../../worker/lib/writeResults');
+} = require('../../../../shared/assertEnv');
+const { writeResults } = require('../../../../shared/writeResults');
 const {
   searchAmazon,
   assertAmazonCreds,
