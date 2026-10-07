@@ -22,20 +22,43 @@ describe('FR-017 ebay provider scaffold', () => {
     }
   });
 
-  it('stub exports run()', async () => {
+  it('exports run() with Browse search path (not scaffold stub)', async () => {
     const { run } = require('../providers/live/ebay/src/worker');
     assert.equal(typeof run, 'function');
-    const out = await run({
-      searchId: 'srch_ebay',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'ebay',
-      q: 'camera',
-      catalogId: 1,
-      category: 'Electronics',
-      subcategory: 'Cameras',
-    });
+    const fixture = JSON.parse(
+      fs.readFileSync(
+        path.join(ebay, 'fixtures', 'item-summary-ok.json'),
+        'utf8',
+      ),
+    );
+    const out = await run(
+      {
+        searchId: 'srch_ebay',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'ebay',
+        q: 'camera',
+        catalogId: 1,
+        category: 'Electronics',
+        subcategory: 'Cameras',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          EBAY_CLIENT_ID: 'c',
+          EBAY_CLIENT_SECRET: 's',
+          EBAY_MARKETPLACE_ID: 'EBAY_GB',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        accessToken: 't',
+        httpRequest: async () => fixture,
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'ebay');
+    assert.ok(Array.isArray(out.products));
+    assert.ok(out.products.length >= 1);
+    assert.doesNotMatch(JSON.stringify(out), /not wired yet/i);
   });
 });

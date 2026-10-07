@@ -22,15 +22,34 @@ Registry id `ebay` (`kind: live`, default-on).
 | Normalize → products[] | Other providers' secrets |
 | S3 results at canonical key | Registry / fan-out |
 
-## Worker stub
+## Worker (FR-039)
 
-`src/worker.js` exports `run(msg)` — callable scaffold until the Browse
-API client FR lands.
+`src/worker.js` exports `run(msg, deps?)`:
+
+1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
+2. Require `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` (optional `EBAY_REFRESH_TOKEN`)
+3. OAuth access token → Browse `item_summary/search` (`src/search.js`); injectable `httpRequest` / `accessToken` for fixtures
+4. Normalize itemSummaries (`src/normalize.js`) → `products[]`
+5. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/ebay/{userId}/{catalogId}/{searchId}.json`
+
+## Sandbox vs live
+
+| | Sandbox | Live |
+|-|---------|------|
+| `A_SEARCH_ENV` | `sandbox` | `live` |
+| `EBAY_ENV` | `sandbox` → `api.sandbox.ebay.com` | `production` / `live` → `api.ebay.com` |
+| Marketplace | `EBAY_MARKETPLACE_ID` (default `EBAY_GB`) | same key, production marketplace |
+| Queues | sandbox SQS URL only | live SQS URL only |
+
+Onboarding (keys obtain): `.grok/skills/a-search-ebay-onboarding/SKILL.md`.
 
 ## Env
 
-See `.env.example`: `A_SEARCH_ENV`, eBay OAuth placeholders,
-`SQS_EBAY_URL`, `S3_RESULTS_BUCKET`.
+See `.env.example`: `A_SEARCH_ENV`, `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`,
+`EBAY_REFRESH_TOKEN`, `EBAY_MARKETPLACE_ID`, `EBAY_ENV`, `SQS_EBAY_URL`,
+`S3_RESULTS_BUCKET`.
+
+Missing client id/secret → `EbayCredsError` / `ebay_missing_credentials`.
 
 ## Failures
 
@@ -40,10 +59,13 @@ See `.env.example`: `A_SEARCH_ENV`, eBay OAuth placeholders,
 | 429 | Backoff |
 | env_mismatch | `message.env` !== `A_SEARCH_ENV` |
 
+Recorded fixture: `fixtures/item-summary-ok.json` (`tests/ebay-search.test.js`).
+
 ## Tests
 
 ```bash
 npm test
 ```
 
-FR-017 pins: `tests/ebay-scaffold.test.js`.
+- FR-017: `tests/ebay-scaffold.test.js`
+- FR-039: `tests/ebay-search.test.js`

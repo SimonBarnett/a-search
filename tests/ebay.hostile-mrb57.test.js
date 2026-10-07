@@ -14,16 +14,32 @@ describe('MRB #57 hostile: FR-017 ebay scaffold', () => {
       fs.existsSync(path.join(ebay, '.grok', 'skills', 'a-search-ebay', 'SKILL.md'))
     );
     const { run } = require('../providers/live/ebay/src/worker');
-    const out = await run({
-      searchId: 'srch_h',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'ebay',
-      q: 'x',
-      catalogId: 1,
-      category: 'c',
-      subcategory: 's',
-    });
+    const fixture = JSON.parse(
+      fs.readFileSync(path.join(ebay, 'fixtures', 'item-summary-ok.json'), 'utf8'),
+    );
+    const out = await run(
+      {
+        searchId: 'srch_h',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'ebay',
+        q: 'x',
+        catalogId: 1,
+        category: 'c',
+        subcategory: 's',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          EBAY_CLIENT_ID: 'c',
+          EBAY_CLIENT_SECRET: 's',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        accessToken: 't',
+        httpRequest: async () => fixture,
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'ebay');
   });
