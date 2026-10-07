@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — no providers enabled</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .warn { color: #a60; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; border-radius: 4px; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search gateway</h1>
+  <p class="warn">200 OK — accepted, nothing to enqueue</p>
+  <p class="meta">Registry has zero enabled sources. Fix <code>providers/registry.json</code>.</p>
+  <pre>{
+  "searchId": "srch_01JEMPTY",
+  "accepted": true,
+  "enqueued": []
+}</pre>
+  <p>No live or local workers will run until at least one source is enabled.</p>
+</body>
+</html>

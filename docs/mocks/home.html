@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — search accepted</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .ok { color: #0a7; font-weight: 600; }
+    code, pre { background: #f4f6f8; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    pre { padding: 1rem; overflow: auto; }
+    ul { line-height: 1.6; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search gateway</h1>
+  <p class="ok">200 OK — search accepted</p>
+  <p class="meta">Authorization: Bearer &lt;jwt&gt; — userId from claim. env=live|sandbox. Offline workers + rclone path on SQL host.</p>
+  <pre>Authorization: Bearer eyJ...
+POST /search
+
+{
+  "searchId": "srch_01JEXAMPLE",
+  "accepted": true,
+  "userId": "ABC12345",
+  "env": "live",
+  "enqueued": ["amazon", "ebay", "awin", "rakuten"]
+}</pre>
+  <h2>Fan-out → S3 / rclone drive</h2>
+  <ul>
+    <li>amazon → …/live/amazon/ABC12345/123/srch_01JEXAMPLE.json</li>
+    <li>ebay → …/live/ebay/ABC12345/123/srch_01JEXAMPLE.json</li>
+    <li>rakuten → …/live/rakuten/ABC12345/123/srch_01JEXAMPLE.json</li>
+    <li>awin → …/live/awin/ABC12345/123/srch_01JEXAMPLE.json</li>
+  </ul>
+  <p class="meta">SQL server mount example: S:\a-search\live\…</p>
+</body>
+</html>

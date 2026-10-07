@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — validation error</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .err { color: #c22; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; border-radius: 4px; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search gateway</h1>
+  <p class="err">401 Unauthorized — search not accepted</p>
+  <p class="meta">Missing/invalid JWT or missing userId claim. No SQS fan-out.</p>
+  <pre>{
+  "accepted": false,
+  "error": "unauthorized"
+}</pre>
+  <p class="err">400 — validation</p>
+  <pre>{
+  "accepted": false,
+  "error": "missing_required_field",
+  "fields": ["q"]
+}</pre>
+  <p>Body userId cannot override the JWT. Results S3 keys always use jwt.userId.</p>
+</body>
+</html>
