@@ -14,9 +14,9 @@ describe('FR-023 CDK skeleton', () => {
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    assert.match(text, /a-search-amazon-live/);
-    assert.match(text, /a-search-amazon-sandbox/);
+    assert.match(text, /loadRegistry|queueName/);
     assert.match(text, /EntryFunction|a-search-entry/);
+    assert.match(text, /SqsEventSource|worker\.handler/);
     assert.match(text, /NODEJS_20/);
   });
 
