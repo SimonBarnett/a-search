@@ -100,8 +100,8 @@ describe('MRB #357 hostile: FR-043 awin queryParts', () => {
     assert.equal(String(p.id), '99');
     assert.equal(p.title, '');
     assert.equal(p.source, 'awin');
-    // ACCEPTABLE until FR-042 #356 merges: local extras may sit top-level
     assert.equal(p.description, 'extra');
+    assert.deepEqual(p.raw, { feedKey: 'fk', stock: 'in' });
   });
 
   it('skill pins never silent empty without SQL module', () => {
