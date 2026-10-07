@@ -15,7 +15,7 @@ const fixturePath = path.join(
   'search-items-ok.json',
 );
 const { run, AmazonCredsError } = require('../providers/live/amazon/src/worker');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_amz_30',
@@ -39,7 +39,7 @@ const credEnv = {
 };
 
 describe('FR-030 amazon live search client', () => {
-  it('fixture HTTP → normalize products → S3 put called', async () => {
+  it('fixture HTTP â†’ normalize products â†’ S3 put called', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const puts = [];
     const httpCalls = [];
@@ -83,7 +83,7 @@ describe('FR-030 amazon live search client', () => {
     assert.equal(body.products.length, 2);
   });
 
-  it('missing Amazon creds → clear amazon_missing_credentials error', async () => {
+  it('missing Amazon creds â†’ clear amazon_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         run(baseMsg, {

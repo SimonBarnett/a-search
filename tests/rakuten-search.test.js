@@ -17,7 +17,7 @@ const fixturePath = path.join(
   'product-search-ok.xml',
 );
 const { run, RakutenCredsError } = require('../providers/live/rakuten/src/worker');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_rak_40',
@@ -39,7 +39,7 @@ const credEnv = {
 };
 
 describe('FR-040 rakuten Product Search client', () => {
-  it('fixture XML HTTP → normalize products → S3 put called', async () => {
+  it('fixture XML HTTP â†’ normalize products â†’ S3 put called', async () => {
     const fixture = fs.readFileSync(fixturePath, 'utf8');
     const puts = [];
     const httpCalls = [];
@@ -83,7 +83,7 @@ describe('FR-040 rakuten Product Search client', () => {
     );
   });
 
-  it('missing Rakuten creds → clear rakuten_missing_credentials error', async () => {
+  it('missing Rakuten creds â†’ clear rakuten_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         run(baseMsg, {
