@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- On Windows Node 22, npm test should use node --test "tests/**/*.test.js"; a bare tests directory arg can fail MODULE_NOT_FOUND
