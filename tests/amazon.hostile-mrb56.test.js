@@ -14,16 +14,29 @@ describe('MRB #56 hostile: FR-016 amazon scaffold', () => {
       fs.existsSync(path.join(amazon, '.grok', 'skills', 'a-search-amazon', 'SKILL.md'))
     );
     const { run } = require('../providers/live/amazon/src/worker');
-    const out = await run({
-      searchId: 'srch_h',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'amazon',
-      q: 'x',
-      catalogId: 1,
-      category: 'c',
-      subcategory: 's',
-    });
+    const out = await run(
+      {
+        searchId: 'srch_h',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'amazon',
+        q: 'x',
+        catalogId: 1,
+        category: 'c',
+        subcategory: 's',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          AMAZON_ACCESS_KEY: 'AKIATEST',
+          AMAZON_SECRET_KEY: 'secret',
+          AMAZON_PARTNER_TAG: 'tag-20',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        searchAmazon: async () => [],
+        putObject: async () => ({}),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'amazon');
   });

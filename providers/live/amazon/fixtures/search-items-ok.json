@@ -1,0 +1,35 @@
+{
+  "SearchResult": {
+    "Items": [
+      {
+        "ASIN": "B0TESTASIN1",
+        "DetailPageURL": "https://www.amazon.co.uk/dp/B0TESTASIN1",
+        "ItemInfo": {
+          "Title": { "DisplayValue": "Fixture Wireless Headphones" }
+        },
+        "Images": {
+          "Primary": {
+            "Large": { "URL": "https://example.test/i/headphones.jpg" }
+          }
+        },
+        "Offers": {
+          "Listings": [
+            { "Price": { "Amount": 29.99, "Currency": "GBP" } }
+          ]
+        }
+      },
+      {
+        "ASIN": "B0TESTASIN2",
+        "DetailPageURL": "https://www.amazon.co.uk/dp/B0TESTASIN2",
+        "ItemInfo": {
+          "Title": { "DisplayValue": "Fixture USB-C Cable" }
+        },
+        "Offers": {
+          "Listings": [
+            { "Price": { "Amount": 7.5, "Currency": "GBP" } }
+          ]
+        }
+      }
+    ]
+  }
+}
