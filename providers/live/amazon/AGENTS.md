@@ -1,8 +1,9 @@
 # AGENTS — a-search Amazon live (`providers/live/amazon`)
 
 You are in the **Amazon live provider** CWD. This folder owns the SQS
-worker that calls Amazon Product Advertising / search APIs and writes
-results JSON to S3. It does **not** own JWT accept or MSSQL maintainer.
+worker that calls Amazon **PA-API SearchItems** (Phase 1 LOCKED — FR-045)
+and writes results JSON to S3. Creators API is a follow-up FR. It does
+**not** own JWT accept or MSSQL maintainer.
 
 ## Read first
 

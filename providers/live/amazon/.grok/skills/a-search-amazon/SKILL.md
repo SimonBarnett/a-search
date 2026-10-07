@@ -14,6 +14,13 @@ description: >
 You are working in **`providers/live/amazon/`** — offline worker for
 registry id `amazon` (`kind: live`, default-on).
 
+## API choice (FR-045)
+
+LOCKED (Phase 1): Amazon live search uses PA-API SearchItems (shipped in
+FR-030). Associates Creators API is a **follow-up FR** when
+credentials/access are available; do not swap clients in this folder
+without that FR. See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md).
+
 ## Responsibilities
 
 | Owns | Does not own |
