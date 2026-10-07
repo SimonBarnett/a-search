@@ -9,7 +9,7 @@ const path = require('node:path');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
+} = require('../../../../shared/assertEnv');
 const { writeResults } = require('../../../../shared/writeResults');
 const {
   searchAmazon,
