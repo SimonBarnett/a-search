@@ -10,6 +10,7 @@
   "files": [
     "index.js",
     "assertEnv.js",
+    "onboarding/",
     "links/",
     "README.md"
   ]

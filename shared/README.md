@@ -33,6 +33,7 @@ consumers switch (later FR-047 slices). Moving modules out of
 | Path | Notes |
 |------|--------|
 | `index.js` | Package entry + `layerPath` constant |
+| `onboarding/drain.js` | FR-049b loop runOnce until remaining=0 |
 | `assertEnv.js` | FR-047d / FR-007 `assertWorkerEnv` |
 | `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
 
