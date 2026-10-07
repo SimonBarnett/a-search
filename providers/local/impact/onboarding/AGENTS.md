@@ -14,18 +14,28 @@
 > Never park a-search product lessons under bobiverse `harvest/SKILL.md`.
 
 You are in the **Impact local onboarding** CWD. This folder owns the scheduled
-drain runner stub (`src/run.js` → `runOnce`) that will process Impact join /
-signup work until `remaining===0`. Live Impact API join logic is **out of
-scope** here (FR-051).
+drain runner (`src/run.js` → `runOnce`) that processes the pending-onboard
+queue until **`remaining===0`**. Live Impact catalogue-join API is **UNKNOWN**;
+use the MSSQL pending queue (`docs/impact-pending-onboard-queue.md`).
 
 ## Read first
 
-1. `.grok/skills/a-search-impact-onboarding/SKILL.md`
-2. `docs/onboarding-agents.md` (drain + signup contract)
-3. Parent provider: `../AGENTS.md` and `../.grok/skills/a-search-impact/SKILL.md`
+1. `.grok/skills/a-search-impact-onboarding/SKILL.md` (CAST IRON + drain playbook)
+2. `docs/impact-pending-onboard-queue.md` (DDL + env keys)
+3. `docs/onboarding-agents.md` (shared drain + signup contract, on main)
+4. Parent provider: `../AGENTS.md` and `../.grok/skills/a-search-impact/SKILL.md`
+
+## Drain playbook (until remaining=0)
+
+1. Load the skillbook above.
+2. Set `.env` from `.env.example` (`A_SEARCH_ENV`, MSSQL_*).
+3. Call `runOnce(deps)` → `{ processed, remaining, signups[] }`.
+4. Loop while `remaining > 0` (prefer `shared/onboarding/drain.js`).
+5. Exit **0** when **`remaining === 0`**; never spin forever (max-iterations cap).
 
 ## Shape
 
-- `src/run.js` — `runOnce(deps)` stub returning `{ processed, remaining, signups }`
-- `.env.example` — onboarding-only placeholders (no secrets committed)
+- `src/run.js` — `runOnce(deps)` drains pending rows + emits signup objects
+- `src/emitSignupRow.js` — Awin-schema-subset signup rows
+- `.env.example` — onboarding placeholders (no secrets committed)
 - Drain helper: `shared/onboarding/drain.js` (on main)
