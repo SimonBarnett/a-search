@@ -2,7 +2,7 @@
 
 Onboarding agents emit **signup rows** that feed the daily merchant report
 currently produced by madeira-awin-clubscan. This doc maps clubscan report
-**sections** to a-search field names. Writer persistence is FR-052b (OOS here).
+**sections** to a-search field names. Writer persistence is LOCKED in FR-052b (S3 JSON below).
 
 ## Legacy clubscan (read-only)
 
@@ -82,12 +82,20 @@ Do not put sale rows into `signups[]`.
 Drain accumulates `runOnce(…).signups` for the daily feed
 (`docs/onboarding-agents.md`).
 
-## Persist path (LOCKED later in FR-052b)
+## Persist path (LOCKED — FR-052b)
 
-Parent omnibus allows MSSQL **or** S3 JSON
-`{env}/_reports/{source}/{yyyy-MM-dd}/signups.json`. **FR-052a does not lock
-the store** — FR-052b chooses one in its PR. This doc only locks the **field
-map** and clubscan section mapping.
+**Store: S3 JSON** (not MSSQL).
+
+- Key: `{env}/_reports/{source}/{yyyy-MM-dd}/signups.json`
+- Bucket: `S3_RESULTS_BUCKET` (same results bucket as search writes)
+- Body: `{ env, source, day, signups: Signup[] }`
+- Module: `shared/onboarding/writeSignups.js`
+  (`writeSignupEvents` / `readSignupEvents`, injectable `putObject`/`getObject`)
+- Each signup gets stable `id` (`sig_…`) plus Awin-schema fields and
+  onboarding-agents aliases (`merchantId`, `merchantName`, `signedUpAt`)
+
+Writer merges by `id` into the day's object. List/filter for the report job
+is FR-052c.
 
 ## Related
 
