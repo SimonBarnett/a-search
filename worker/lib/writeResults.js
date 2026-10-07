@@ -1,11 +1,29 @@
 'use strict';
 
 /**
- * Shared worker results writer (FR-009).
+ * Shared worker results writer (FR-009 / FR-033).
  * PutObject to S3_RESULTS_BUCKET at the canonical results key.
+ * When `putObject` is omitted, uses @aws-sdk/client-s3 PutObject
+ * (override with `createS3Client` for tests).
  */
 
 const { resultsKey, ResultsPathError } = require('./resultsPath');
+
+/**
+ * @param {{ createS3Client?: () => { send: Function } }} [deps]
+ * @returns {(args: object) => Promise<unknown>}
+ */
+function defaultPutObject(deps) {
+  return async (args) => {
+    if (deps && typeof deps.createS3Client === 'function') {
+      const client = deps.createS3Client();
+      return client.send(args);
+    }
+    const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+    const client = new S3Client({});
+    return client.send(new PutObjectCommand(args));
+  };
+}
 
 /**
  * @param {{
@@ -22,6 +40,7 @@ const { resultsKey, ResultsPathError } = require('./resultsPath');
  *     Body: string,
  *     ContentType: string,
  *   }) => Promise<unknown>,
+ *   createS3Client?: () => { send: Function },
  * }} opts
  * @returns {Promise<{ bucket: string, key: string, body: object }>}
  */
@@ -51,12 +70,9 @@ async function writeResults(opts) {
   };
 
   const putObject =
-    opts.putObject ||
-    (async () => {
-      throw new Error(
-        'putObject not configured — inject AWS S3 PutObject for deploy',
-      );
-    });
+    typeof opts.putObject === 'function'
+      ? opts.putObject
+      : defaultPutObject({ createS3Client: opts.createS3Client });
 
   const payload = JSON.stringify(body);
   await putObject({
@@ -69,4 +85,4 @@ async function writeResults(opts) {
   return { bucket, key, body };
 }
 
-module.exports = { writeResults, ResultsPathError };
+module.exports = { writeResults, ResultsPathError, defaultPutObject };

@@ -11,6 +11,7 @@
     "synth": "npx --no-install cdk synth --app \"node cdk/bin/a-search.js\" --quiet"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
     "@aws-sdk/client-sqs": "^3.758.0"
   },
   "devDependencies": {

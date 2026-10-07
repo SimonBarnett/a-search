@@ -20,7 +20,7 @@ download, staging + set-based MERGE/deletes. It does **not** run
 
 ## Shape
 
-- `src/schedule.js` — EventBridge / scheduled invoke stub (roll/fetch/upsert land in later FRs)
+- `src/schedule.js` — EventBridge entry: roll → conditional fetch → upsert → scoped delete (inject SQL/HTTP deps)
 - `.env.example` — MSSQL + `MAINTAINER_TOP` + `A_SEARCH_ENV` placeholders
 
 Harvest maintainer playbooks into
