@@ -19,6 +19,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
 - [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
+- [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Functional spec](docs/functional-spec.md)
 
