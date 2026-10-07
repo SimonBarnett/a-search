@@ -17,8 +17,26 @@ async function run(msg) {
     searchId: msg.searchId,
     env: msg.env,
     message:
-      'impact worker stub — MSSQL Parts SELECT not wired yet; maintainer owns feed MERGE',
+      'impact worker stub â€” MSSQL Parts SELECT not wired yet; maintainer owns feed MERGE',
   };
 }
 
-module.exports = { run };
+
+/**
+ * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
+ * @param {{ Records?: Array<{ body: string }> }} event
+ */
+async function handler(event) {
+  const records = (event && event.Records) || [];
+  const results = [];
+  for (const record of records) {
+    const body = record && record.body;
+    const msg = typeof body === 'string' ? JSON.parse(body) : body;
+    results.push(await run(msg));
+  }
+  return { ok: true, results };
+}
+module.exports = {
+  handler,
+  run,
+};

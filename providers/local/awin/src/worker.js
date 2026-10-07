@@ -48,8 +48,24 @@ async function run(msg, deps) {
     env: msg.env,
     products,
     message:
-      'awin local worker stub — SELECT dbo.Parts via injectable queryParts; ingest is maintainer',
+      'awin local worker stub â€” SELECT dbo.Parts via injectable queryParts; ingest is maintainer',
   };
 }
 
-module.exports = { run, normalizePart, defaultQueryParts };
+
+/**
+ * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
+ * @param {{ Records?: Array<{ body: string }> }} event
+ */
+async function handler(event) {
+  const records = (event && event.Records) || [];
+  const results = [];
+  for (const record of records) {
+    const body = record && record.body;
+    const msg = typeof body === 'string' ? JSON.parse(body) : body;
+    results.push(await run(msg));
+  }
+  return { ok: true, results };
+}
+module.exports = {
+  handler, run, normalizePart, defaultQueryParts };
