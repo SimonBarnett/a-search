@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search entry accept handler: validate q|searchterms + catalogId/category/subcategory; 200 searchId/accepted/userId/env/enqueued; injectable enqueue stub until FR-006; never trust body userId
