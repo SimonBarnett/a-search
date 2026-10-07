@@ -17,16 +17,31 @@ describe('MRB #58 hostile: FR-018 rakuten scaffold', () => {
     assert.match(skill, /XML/i);
     assert.match(skill, /429|Retry-After|rate.?limit/i);
     const { run } = require('../providers/live/rakuten/src/worker');
-    const out = await run({
-      searchId: 'srch_h',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'rakuten',
-      q: 'x',
-      catalogId: 1,
-      category: 'c',
-      subcategory: 's',
-    });
+    const fixture = fs.readFileSync(
+      path.join(rakuten, 'fixtures', 'product-search-ok.xml'),
+      'utf8',
+    );
+    const out = await run(
+      {
+        searchId: 'srch_h',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'rakuten',
+        q: 'x',
+        catalogId: 1,
+        category: 'c',
+        subcategory: 's',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          RAKUTEN_APPLICATION_KEY: 'k',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        httpRequest: async () => ({ statusCode: 200, headers: {}, body: fixture }),
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'rakuten');
   });
