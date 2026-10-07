@@ -16,8 +16,26 @@ async function run(msg) {
     searchId: msg.searchId,
     env: msg.env,
     message:
-      'ebay worker stub — Browse API client not wired yet; no remote call',
+      'ebay worker stub - Browse API client not wired yet; no remote call',
   };
 }
 
-module.exports = { run };
+
+/**
+ * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
+ * @param {{ Records?: Array<{ body: string }> }} event
+ */
+async function handler(event) {
+  const records = (event && event.Records) || [];
+  const results = [];
+  for (const record of records) {
+    const body = record && record.body;
+    const msg = typeof body === 'string' ? JSON.parse(body) : body;
+    results.push(await run(msg));
+  }
+  return { ok: true, results };
+}
+module.exports = {
+  handler,
+  run,
+};

@@ -6,13 +6,39 @@ const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
+const { loadRegistry } = require('../../providers/loadRegistry');
+const { queueName } = require('../../providers/queueName');
 
 /**
- * FR-023/024/035: entry Lambda + API Gateway POST /search + amazon
- * live/sandbox queues + maintainer EventBridge schedules.
+ * Title-case construct id fragment from source id (amazon → Amazon).
+ * @param {string} id
+ */
+function pascalSource(id) {
+  return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+/**
+ * Registry queueEnv `SQS_AMAZON_URL` → entry env keys SQS_AMAZON_LIVE_URL /
+ * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
+ * @param {string} queueEnv
+ * @param {'live'|'sandbox'} env
+ */
+function queueUrlEnvKey(queueEnv, env) {
+  const m = /^SQS_(.+)_URL$/i.exec(String(queueEnv || '').trim());
+  if (!m) {
+    throw new Error(`bad queueEnv ${JSON.stringify(queueEnv)}`);
+  }
+  return `SQS_${m[1]}_${env.toUpperCase()}_URL`;
+}
+
+/**
+ * FR-023/024/035/036: entry Lambda + API Gateway POST /search +
+ * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
+ * maintainer EventBridge schedules.
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -24,14 +50,18 @@ class ASearchStack extends cdk.Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
-    const amazonLive = new sqs.Queue(this, 'AmazonLiveQueue', {
-      queueName: 'a-search-amazon-live',
-      visibilityTimeout: cdk.Duration.seconds(60),
-    });
-    const amazonSandbox = new sqs.Queue(this, 'AmazonSandboxQueue', {
-      queueName: 'a-search-amazon-sandbox',
-      visibilityTimeout: cdk.Duration.seconds(60),
-    });
+    const { sources } = loadRegistry();
+    const enabledSources = sources.filter(
+      (s) =>
+        s &&
+        s.enabled &&
+        (s.enabled.live === true || s.enabled.sandbox === true),
+    );
+
+    /** @type {Record<string, string>} */
+    const entryEnv = {
+      A_SEARCH_ENV: 'sandbox',
+    };
 
     const entry = new lambda.Function(this, 'EntryFunction', {
       functionName: 'a-search-entry',
@@ -39,15 +69,57 @@ class ASearchStack extends cdk.Stack {
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '..', '..', 'entry', 'src')),
       timeout: cdk.Duration.seconds(30),
-      environment: {
-        A_SEARCH_ENV: 'sandbox',
-        SQS_AMAZON_LIVE_URL: amazonLive.queueUrl,
-        SQS_AMAZON_SANDBOX_URL: amazonSandbox.queueUrl,
-      },
+      environment: entryEnv,
     });
 
-    amazonLive.grantSendMessages(entry);
-    amazonSandbox.grantSendMessages(entry);
+    // FR-036: queues + workers for every enabled shortlist source × env
+    for (const src of enabledSources) {
+      const folderAbs = path.join(__dirname, '..', '..', src.folder, 'src');
+      const pascal = pascalSource(src.id);
+      const envs = /** @type {Array<'live'|'sandbox'>} */ (
+        ['live', 'sandbox'].filter((e) => src.enabled[e] === true)
+      );
+
+      for (const env of envs) {
+        const qName = queueName(src.id, env);
+        const envPascal = env === 'live' ? 'Live' : 'Sandbox';
+        const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
+          queueName: qName,
+          visibilityTimeout: cdk.Duration.seconds(60),
+        });
+
+        const urlKey = queueUrlEnvKey(src.queueEnv, env);
+        entry.addEnvironment(urlKey, queue.queueUrl);
+        queue.grantSendMessages(entry);
+
+        const worker = new lambda.Function(
+          this,
+          `${pascal}${envPascal}WorkerFunction`,
+          {
+            functionName: `a-search-${src.id}-worker-${env}`,
+            runtime: lambda.Runtime.NODEJS_20_X,
+            handler: 'worker.handler',
+            code: lambda.Code.fromAsset(folderAbs),
+            timeout: cdk.Duration.seconds(60),
+            environment: {
+              A_SEARCH_ENV: env,
+            },
+          },
+        );
+        worker.addEventSource(
+          new SqsEventSource(queue, {
+            batchSize: 1,
+          }),
+        );
+
+        new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
+          value: queue.queueUrl,
+        });
+        new cdk.CfnOutput(this, `${pascal}${envPascal}WorkerFunctionName`, {
+          value: worker.functionName,
+        });
+      }
+    }
 
     // FR-035: HTTP API POST /search → entry (JWT still verified in Lambda)
     const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
@@ -109,10 +181,6 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
-    new cdk.CfnOutput(this, 'AmazonLiveQueueUrl', { value: amazonLive.queueUrl });
-    new cdk.CfnOutput(this, 'AmazonSandboxQueueUrl', {
-      value: amazonSandbox.queueUrl,
-    });
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
       value: httpApi.apiEndpoint,
@@ -127,4 +195,4 @@ class ASearchStack extends cdk.Stack {
   }
 }
 
-module.exports = { ASearchStack };
+module.exports = { ASearchStack, queueUrlEnvKey, pascalSource };

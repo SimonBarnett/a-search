@@ -14,9 +14,9 @@ describe('MRB #73 hostile: FR-023 CDK skeleton', () => {
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    assert.match(text, /a-search-amazon-live/);
-    assert.match(text, /a-search-amazon-sandbox/);
+    assert.match(text, /loadRegistry|queueName/);
     assert.match(text, /a-search-entry|EntryFunction/);
+    assert.match(text, /SqsEventSource|worker\.handler/);
     const { queueName } = require('../providers/queueName');
     assert.equal(queueName('amazon', 'live'), 'a-search-amazon-live');
     assert.equal(queueName('amazon', 'sandbox'), 'a-search-amazon-sandbox');
