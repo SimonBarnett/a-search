@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search MRB: merge origin/main into fr-N when behind before gh pr merge; product-before-docs docs/mrb hostile pins; entry product lessons stay in a-search skillbooks not bobiverse harvest
