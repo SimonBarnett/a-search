@@ -30,6 +30,7 @@ describe('FR-042 result schema + normalizeProduct', () => {
       'price',
       'currency',
       'imageUrl',
+      'description',
       'source',
       'raw',
     ]) {

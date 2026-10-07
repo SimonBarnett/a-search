@@ -65,6 +65,7 @@ function normalizeProduct(fields) {
   if (price !== undefined) out.price = price;
   if (fields.currency != null) out.currency = String(fields.currency);
   if (fields.imageUrl != null) out.imageUrl = String(fields.imageUrl);
+  if (fields.description != null) out.description = String(fields.description);
   if (fields.raw !== undefined) out.raw = fields.raw;
 
   return out;

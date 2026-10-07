@@ -23,6 +23,7 @@ Canonical helper: `worker/lib/normalizeProduct.js`
 | `price` | number | Numeric amount when known. |
 | `currency` | string | ISO currency when known (e.g. `GBP`). |
 | `imageUrl` | string | Primary image URL when known. |
+| `description` | string | Longer text when known (local Parts / feeds). |
 | `raw` | object | Optional provider-specific payload; never required by callers. |
 
 ## Rules

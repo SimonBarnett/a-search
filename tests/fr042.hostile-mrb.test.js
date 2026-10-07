@@ -32,5 +32,28 @@ describe('FR-042 hostile: shared result schema', () => {
     assert.match(text, /required/i);
     assert.match(text, /optional/i);
     assert.match(text, /do not invent|must not invent|incompatible/i);
+    assert.match(text, /description/);
+  });
+
+  it('awin normalizePart satisfies shared schema (feedKey/stock under raw)', () => {
+    const { assertProductSchema } = require('../worker/lib/normalizeProduct');
+    const { normalizePart } = require('../providers/local/awin/src/worker');
+    const p = normalizePart({
+      MerchantProductId: 'sku-1',
+      Title: 'Part',
+      Description: 'desc',
+      FeedKey: 'adv',
+      Stock: 'in_stock',
+      Source: 'awin',
+      Price: 1.5,
+      Currency: 'GBP',
+    });
+    assertProductSchema(p);
+    assert.equal(p.id, 'sku-1');
+    assert.equal(p.description, 'desc');
+    assert.equal(p.raw.feedKey, 'adv');
+    assert.equal(p.raw.stock, 'in_stock');
+    assert.equal(p.feedKey, undefined);
+    assert.equal(p.stock, undefined);
   });
 });
