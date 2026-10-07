@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search FR-002: registry enabled is {live,sandbox} per source; loadRegistry.enabled(env) returns default-on ids; use D:\Tools\node (22) when PATH node is v8
