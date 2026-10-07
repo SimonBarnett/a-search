@@ -17,6 +17,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
+- [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Functional spec](docs/functional-spec.md)
 
