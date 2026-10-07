@@ -1,0 +1,38 @@
+# `@a-search/shared`
+
+Shared Node package for a-search deterministic helpers (results path,
+writeResults, assertEnv, product normalize, intake reporter, tracked URLs).
+
+## Lambda layer path
+
+Publish / mount this package so Lambda code can require it from:
+
+```text
+/opt/nodejs/a-search
+```
+
+That matches the clubscan layer-first layout. CDK may alternatively
+bundle `shared/` into each function; either way, **one** copy of shared
+helpers — never fork under `providers/*/src`.
+
+## Local require
+
+From the monorepo (before layer publish):
+
+```js
+require('@a-search/shared'); // package name (FR-047a)
+// or relative: require('../shared/links/buildTrackedUrl')
+```
+
+Wire `"@a-search/shared": "file:shared"` in the root `package.json` when
+consumers switch (later FR-047 slices). Moving modules out of
+`worker/lib/` is **out of scope for FR-047a**.
+
+## Contents today
+
+| Path | Notes |
+|------|--------|
+| `index.js` | Package entry + `layerPath` constant |
+| `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
+
+See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).
