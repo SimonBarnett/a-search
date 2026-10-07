@@ -13,12 +13,19 @@ description: >
 > filings, skill edits, logs you commit, or chat paste beyond what the human
 > already shared. Prefer env vars / secret stores.
 
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+
 You are a **caller** of `a-search`, not a provider worker. Search is
 **accept-and-continue**: HTTP returns when the job is queued; products appear
 later under the results path.
 
 Canonical product docs: `docs/endpoint-search.md`, `docs/environments.md`,
-`docs/rclone-results.md` (SQL host mount env vars + path). This skill is the
+`docs/rclone-results.md` (SQL host mount env vars + path),
+`docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is the
 agent playbook.
 
 ## When to use
