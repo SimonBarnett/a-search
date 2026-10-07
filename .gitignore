@@ -9,3 +9,8 @@ cdk.out/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# CDK
+cdk.out/
+cdk.context.json
+
