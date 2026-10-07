@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search results path: {env}/{source}/{userId}/{catalogId}/{searchId}.json via worker/lib/resultsPath.js; resultsS3Uri + resultsRclonePath (A_SEARCH_RCLONE_ROOT); reject empty userId/searchId
