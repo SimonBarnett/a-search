@@ -14,6 +14,18 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 
+### Queue URL env convention (FR-034)
+
+Entry Lambda environment uses **env-specific** keys that
+`providers/resolveQueueUrl.js` prefers:
+
+- `SQS_AMAZON_LIVE_URL` / `SQS_AMAZON_SANDBOX_URL` (already on the stack)
+- Pattern for more sources: `SQS_<SOURCE>_LIVE_URL` + `SQS_<SOURCE>_SANDBOX_URL`
+  from registry `queueEnv` `SQS_<SOURCE>_URL`
+
+Do not document only the logical `SQS_<SOURCE>_URL` name while CDK emits only
+the `*_LIVE_URL` / `*_SANDBOX_URL` pair without the resolver.
+
 ## Synth (required check)
 
 From the **repo root** (Node >=20):
