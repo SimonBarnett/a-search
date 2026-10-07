@@ -71,9 +71,36 @@ Other a-search skills SHOULD link:
 
 `Foundation: harvest-agent-skills (honesty box) -> report back to https://github.com/SimonBarnett/a-search.`
 
+Every agent CWD (`entry/`, `providers/live|local/<id>/`, `maintainer/`) must carry
+CAST IRON harvest pointing at this book + intake `-Repo SimonBarnett/a-search`.
+
+## Plan gap analysis (after Phase-0)
+
+When the Phase-0 backlog (FR-001..030 class) is **closed** and Plan/gap analysis
+starts the next wave:
+
+1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
+   often lag).
+2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) — **never**
+   one umbrella FR for the whole wave.
+4. First Phase-1 wire when modules exist but entry is stub: **maintainer
+   `schedule.handler`** must orchestrate roll → fetch → upsert → delete (not
+   `processed: 0` forever).
+5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
+
+## What does **not** belong in this book
+
+| Tip class | Durable home |
+|-----------|----------------|
+| Behind-main merge, docs/mrb already-merged DONE PASS, CDK npm ci/synth | `SimonBarnett/bobiverse` `bobiverse-bob-job-mrb` (or a-search MRB seat notes) — FAIL-supersede if parked here as harvest tips |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill — already on main via product PRs; tip twins FAIL-supersede |
+| Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
+
 ## Do not
 
 - Push harvest to `main`
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+- File thin session-receipt tips that only restate a merged product FR (close as twin)
