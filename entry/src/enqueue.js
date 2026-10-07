@@ -7,6 +7,7 @@
 
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
 const { queueName } = require('../../providers/queueName');
+const { createSqsSendMessage } = require('./sqsSend');
 
 class EnqueueError extends Error {
   /**
@@ -77,9 +78,12 @@ async function fanOutEnqueue(args) {
     userId,
     env,
     body,
-    sendMessage = async () => {},
     enabled: enabledFn,
   } = args;
+  // FR-032: default is real SQS SendMessage; tests inject sendMessage to bypass AWS.
+  const sendMessage =
+    args.sendMessage ||
+    createSqsSendMessage({ envVars: args.envVars || process.env });
 
   const requested = body && Array.isArray(body.sources) ? body.sources : undefined;
   const targets = resolveEnqueueTargets({
