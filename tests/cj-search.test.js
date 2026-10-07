@@ -17,7 +17,7 @@ const fixturePath = path.join(
   'products-ok.json',
 );
 const { run, CjCredsError } = require('../providers/live/cj/src/worker');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_cj_41',
@@ -38,7 +38,7 @@ const credEnv = {
 };
 
 describe('FR-041 cj GraphQL Product Search client', () => {
-  it('fixture GraphQL HTTP → normalize products → S3 put called', async () => {
+  it('fixture GraphQL HTTP â†’ normalize products â†’ S3 put called', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const puts = [];
     const httpCalls = [];
@@ -81,7 +81,7 @@ describe('FR-041 cj GraphQL Product Search client', () => {
     );
   });
 
-  it('missing CJ token → clear cj_missing_credentials error', async () => {
+  it('missing CJ token â†’ clear cj_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         run(baseMsg, {

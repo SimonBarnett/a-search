@@ -3,8 +3,8 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { writeResults } = require('../worker/lib/writeResults');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { writeResults } = require('../shared/writeResults');
+const { resultsKey } = require('../shared/resultsPath');
 
 describe('FR-009 writeResults to S3', () => {
   it('Mock S3 asserts Bucket/Key/Body; key matches helper', async () => {

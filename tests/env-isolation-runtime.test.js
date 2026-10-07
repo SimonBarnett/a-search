@@ -8,11 +8,11 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { queueName } = require('../providers/queueName');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../worker/lib/assertEnv');
+} = require('../shared/assertEnv');
 
 describe('FR-027 / S6 env-isolation-runtime', () => {
   it('live and sandbox queue names never share a name', () => {

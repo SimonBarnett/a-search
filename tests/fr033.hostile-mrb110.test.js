@@ -19,7 +19,7 @@ describe('MRB #110 hostile: FR-033 default S3 PutObject', () => {
 
   it('writeResults.js defaults to S3 when putObject omitted', () => {
     const text = fs.readFileSync(
-      path.join(root, 'worker', 'lib', 'writeResults.js'),
+      path.join(root, 'shared', 'writeResults.js'),
       'utf8',
     );
     assert.match(text, /@aws-sdk\/client-s3|S3Client|PutObject/);

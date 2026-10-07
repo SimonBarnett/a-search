@@ -9,12 +9,12 @@ const path = require('node:path');
 
 const { handler } = require('../providers/live/amazon/src/handler');
 const worker = require('../providers/live/amazon/src/worker');
-const { EnvIsolationError } = require('../worker/lib/assertEnv');
+const { EnvIsolationError } = require('../shared/assertEnv');
 
 const root = path.join(__dirname, '..');
 
 describe('FR-038 amazon SQS handler', () => {
-  it('one SQS record → run called with parsed body', async () => {
+  it('one SQS record â†’ run called with parsed body', async () => {
     const calls = [];
     const msg = {
       searchId: 'srch_h1',
@@ -38,14 +38,14 @@ describe('FR-038 amazon SQS handler', () => {
     assert.equal(out.results[0].searchId, 'srch_h1');
   });
 
-  it('bad JSON → throw (retry)', async () => {
+  it('bad JSON â†’ throw (retry)', async () => {
     await assert.rejects(
       () => handler({ Records: [{ body: '{not-json' }] }, { run: async () => ({}) }),
       /not valid JSON|JSON/i,
     );
   });
 
-  it('wrong-env msg → EnvIsolationError via real run', async () => {
+  it('wrong-env msg â†’ EnvIsolationError via real run', async () => {
     const msg = {
       searchId: 'srch_env',
       userId: 'U1',
