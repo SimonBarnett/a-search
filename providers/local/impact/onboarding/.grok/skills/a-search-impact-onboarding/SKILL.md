@@ -28,10 +28,11 @@ runner for registry id `impact` (`kind: local`).
 - Pending queue (API UNKNOWN): `docs/impact-pending-onboard-queue.md` +
   injectable `listPending` / `markProcessed` / `countRemaining` (or
   `createMemoryPendingQueue` / `pendingRows`)
-- Signup fields: `source`, `env`, `merchantId`, `merchantName`, `signedUpAt`, `status`
-  (persist is FR-051c — `signups` may be empty from runOnce today)
+- Signup emit: `src/emitSignupRow.js` — required keys match Awin subset
+  (`user_id`, `company_name`, `email`, `advertiserId`, `env`); default
+  `source: impact`. Persist to S3/MSSQL is FR-052.
 
 ## Status
 
-FR-051b: `runOnce` drains pending-onboard rows (empty → `remaining: 0`;
-one row → processed then `remaining: 0`). Live Impact join API still UNKNOWN.
+FR-051b/c: `runOnce` drains pending-onboard rows and emits signup objects.
+Live Impact join API still UNKNOWN. Email HTML OOS.

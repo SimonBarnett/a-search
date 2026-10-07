@@ -39,7 +39,7 @@ describe('FR-051b impact pending-queue drain', () => {
     });
     assert.equal(out.processed, 1);
     assert.equal(out.remaining, 0);
-    assert.equal(out.signups.length, 0); // signup persist OOS
+    assert.equal(out.signups.length, 1); // FR-051c emit; persist still FR-052
     assert.equal(q.rows[0].Status, 'done');
     assert.ok(q.rows[0].ProcessedAt);
   });
