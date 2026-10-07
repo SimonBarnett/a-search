@@ -28,7 +28,7 @@
 5. **Live clients**: only **amazon** has SearchItems + normalize + writeResults; **ebay / rakuten / cj** remain stubs (enabled:true in registry).
 6. **Local search**: **awin** has injectable `queryParts` defaulting to `[]` (no SqlClient); **impact** is still a message-only stub.
 7. **Amazon worker has no SQS Lambda handler wrapper** in-repo (exports `run(msg)` only); CDK has no amazon worker function.
-8. **Vision prefers Creators API**; FR-030 shipped PA-API SearchItems — document/lock or follow-up FR.
+8. **Amazon API:** Phase 1 LOCKED to PA-API SearchItems (FR-045); Creators API is a follow-up FR (was: vision preferred Creators while FR-030 shipped PA-API).
 9. **Result product schema** not locked across providers (amazon normalize exists; others do not).
 10. **Deploy / secrets playbook** (JWT issuer, Secrets Manager, S3 bucket, MSSQL connection) still UNKNOWN in vision.
 
