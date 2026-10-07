@@ -51,3 +51,8 @@ Daily Awin onboarding + report:
 ## Proposed FRs
 
 FR-046 … FR-056 in `docs/fr/` — Goal / Deliverables / Testable; one PR per issue.
+
+## Add-on
+
+- FR-057: Created links use provider .env account details; JWT `userId` is the tenant stamp.
+

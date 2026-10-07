@@ -70,3 +70,7 @@ Gap analysis: [docs/gap-analysis-phase1-2026-10-07.md](../gap-analysis-phase1-20
 
 Wave: [docs/feature-request-phase1b-2026-10-07.md](../feature-request-phase1b-2026-10-07.md)
 Legacy clubscan: https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
+
+## Phase 1b add-on — tracked links
+
+- [FR-057](FR-057.md) — Created links use provider .env account + JWT userId tenant
