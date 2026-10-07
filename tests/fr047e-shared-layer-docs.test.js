@@ -24,4 +24,14 @@ describe('FR-047e docs/shared-layer.md', () => {
     const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
     assert.match(readme, /docs\/shared-layer\.md/);
   });
+
+  it('layout table lists moved helpers under shared/ (not when-merged hedges)', () => {
+    const text = fs.readFileSync(path.join(root, 'docs', 'shared-layer.md'), 'utf8');
+    assert.match(text, /shared\/assertEnv\.js/);
+    assert.match(text, /shared\/resultsPath\.js/);
+    assert.match(text, /shared\/writeResults\.js/);
+    assert.doesNotMatch(text, /when merged/);
+    assert.doesNotMatch(text, /else still `worker\/lib\/assertEnv/);
+    assert.match(text, /worker\/lib\/normalizeProduct\.js/);
+  });
 });

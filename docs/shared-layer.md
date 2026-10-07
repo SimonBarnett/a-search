@@ -31,10 +31,11 @@ Package constant: `require('@a-search/shared').layerPath` →
 | `shared/index.js` | Entry + `layerPath` |
 | `shared/README.md` | Package-local notes |
 | `shared/links/buildTrackedUrl.js` | FR-057a tracked URL helper |
-| `shared/assertEnv.js` | FR-047d (when merged) — else still `worker/lib/assertEnv.js` |
-| `shared/resultsPath.js` | FR-047b (when merged) — else still `worker/lib/resultsPath.js` |
-| `shared/writeResults.js` | FR-047c (when merged) — else still `worker/lib/writeResults.js` |
-| `shared/normalizeProduct.js` | Later FR-047 slice — today `worker/lib/normalizeProduct.js` |
+| `shared/assertEnv.js` | FR-047d — `assertWorkerEnv` (on main) |
+| `shared/resultsPath.js` | FR-047b (on main) |
+| `shared/writeResults.js` | FR-047c (on main) |
+| `worker/lib/normalizeProduct.js` | Still under `worker/lib` until a later FR-047 slice moves it |
+| `shared/package.json` `files` | Must list every module under `shared/` (gap tracked as #420) |
 
 Root `package.json` depends on `"@a-search/shared": "file:shared"`.
 
