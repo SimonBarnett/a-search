@@ -10,6 +10,9 @@
     "test": "node --test \"tests/**/*.test.js\"",
     "synth": "npx --no-install cdk synth --app \"node cdk/bin/a-search.js\" --quiet"
   },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.758.0"
+  },
   "devDependencies": {
     "aws-cdk": "^2.1144.0",
     "aws-cdk-lib": "^2.272.0",

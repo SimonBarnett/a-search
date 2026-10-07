@@ -36,15 +36,17 @@ describe('MRB #34 hostile: FR-003 entry scaffold', () => {
     assert.match(agents, /POST\s+\/search|JWT/i);
   });
 
-  it('.env.example keys are only A_SEARCH_ENV and JWT_*', () => {
+  it('.env.example assignment keys are A_SEARCH_ENV, JWT_*, or SQS_*_URL', () => {
     const text = fs.readFileSync(path.join(entry, '.env.example'), 'utf8');
     const assigns = [...text.matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*=/gm)].map((m) => m[1]);
     assert.ok(assigns.includes('A_SEARCH_ENV'));
     assert.ok(assigns.some((k) => k.startsWith('JWT_')));
     for (const k of assigns) {
       assert.ok(
-        k === 'A_SEARCH_ENV' || k.startsWith('JWT_'),
-        `unexpected env key ${k}`
+        k === 'A_SEARCH_ENV' ||
+          k.startsWith('JWT_') ||
+          /^SQS_[A-Z0-9_]+_URL$/.test(k),
+        `unexpected env key ${k}`,
       );
     }
   });
