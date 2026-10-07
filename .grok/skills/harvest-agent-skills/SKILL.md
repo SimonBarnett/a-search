@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search MRB stacked FR: merge main into fr-N; keep newer handler over FR-003 501 stub; update obsolete hostile pins that assumed stub forever
