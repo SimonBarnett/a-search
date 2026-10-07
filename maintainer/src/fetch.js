@@ -103,6 +103,7 @@ async function fetchFeed(opts) {
     etag,
     lastModified,
     byteLength: body.length,
+    body,
   };
 }
 

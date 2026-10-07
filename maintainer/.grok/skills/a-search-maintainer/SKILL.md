@@ -62,11 +62,18 @@ Identical `ContentHash` after download → skip upsert/delete; bump
 See `.env.example`: `A_SEARCH_ENV`, MSSQL connection placeholders,
 `MAINTAINER_TOP`, interval / batch knobs.
 
-## Schedule stub
+## Schedule handler (wired)
 
-`src/schedule.js` is a scaffold stub until roll/fetch/upsert FRs land.
-Do not invent production EventBridge wiring here.
+`src/schedule.js` `handler(event, context, deps?)`:
 
+1. Read `A_SEARCH_ENV` / `MAINTAINER_TOP`
+2. `roll()` — due `PartFeedKeys` (inject `queryPartFeedKeys`)
+3. Per key: `fetchFeed()` (inject `httpGet` / `bumpLastChecked`)
+4. On change: `parseFeedRows` → `upsertParts` → `deleteMissingParts`
+   (inject `runMerge` / `runScopedDelete` / staging loaders)
+5. Return `{ processed, upserted, skipped, results }` — never a stub message
+
+Offline tests inject deps; deploy wires MSSQL + real HTTP.
 ## Failures (playbook)
 
 | Symptom | Check |
