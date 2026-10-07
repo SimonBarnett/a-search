@@ -1,0 +1,18 @@
+{
+  "programmes": [
+    {
+      "id": 1001,
+      "name": "Acme Retail",
+      "displayUrl": "https://acme.example",
+      "logoUrl": "https://cdn.example/acme.png",
+      "primarySector": "Retail",
+      "description": "Widgets and gadgets"
+    },
+    {
+      "id": 1002,
+      "name": "Beta Travel",
+      "displayUrl": "https://beta.example",
+      "primarySector": "Travel"
+    }
+  ]
+}

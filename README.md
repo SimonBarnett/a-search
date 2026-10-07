@@ -22,6 +22,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
 - [Daily report signups](docs/daily-report-signups.md) (FR-052a — clubscan field map)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
+- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Functional spec](docs/functional-spec.md)
 
 ## Agent caller skill
