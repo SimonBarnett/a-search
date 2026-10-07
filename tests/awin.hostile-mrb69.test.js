@@ -6,18 +6,34 @@ const assert = require('node:assert/strict');
 const {
   run,
   normalizePart,
+  AwinMssqlConfigError,
 } = require('../providers/local/awin/src/worker');
 
 describe('MRB #69 hostile: awin local queryParts products', () => {
-  it('default queryParts yields empty products (no live SQL)', async () => {
-    const out = await run({
-      searchId: 'srch_h',
-      env: 'live',
-      source: 'awin',
-      q: 'x',
-    });
-    assert.equal(out.ok, true);
-    assert.deepEqual(out.products, []);
+  it('default queryParts without MSSQL config fails clearly (FR-043)', async () => {
+    await assert.rejects(
+      () =>
+        run(
+          {
+            searchId: 'srch_h',
+            userId: 'U',
+            env: 'live',
+            source: 'awin',
+            q: 'x',
+            catalogId: 1,
+          },
+          {
+            env: {
+              A_SEARCH_ENV: 'live',
+              S3_RESULTS_BUCKET: 'b',
+            },
+            putObject: async () => {
+              throw new Error('should not put');
+            },
+          },
+        ),
+      (err) => err instanceof AwinMssqlConfigError || err.name === 'AwinMssqlConfigError',
+    );
   });
 
   it('normalizePart maps MerchantProductId to id', () => {
