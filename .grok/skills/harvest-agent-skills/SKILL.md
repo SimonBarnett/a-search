@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer fetch: If-None-Match/If-Modified-Since; 304 skip upsert; sha256 ContentHash match after download skips upsert and bumps LastChecked
