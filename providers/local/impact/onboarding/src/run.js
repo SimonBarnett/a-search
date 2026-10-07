@@ -1,14 +1,17 @@
 'use strict';
 
 /**
- * Impact onboarding runOnce (FR-049d stub + FR-051b pending-queue drain).
+ * Impact onboarding runOnce (FR-049d stub + FR-051b pending-queue drain +
+ * FR-051c emit signup rows).
  *
  * Impact catalogue-join API is UNKNOWN — drain MSSQL (or injectable)
  * pending-onboard rows until remaining=0. See
  * docs/impact-pending-onboard-queue.md.
  *
- * Signup persist is out of scope (FR-051c); signups stays [].
+ * Signup shape via emitSignupRow; persistence to S3/MSSQL is FR-052.
  */
+
+const { emitSignupRow } = require('./emitSignupRow');
 
 /**
  * @param {object} [deps]
@@ -43,6 +46,7 @@ function createMemoryPendingQueue(initial = []) {
     EnqueuedAt: r.EnqueuedAt || new Date().toISOString(),
     ProcessedAt: r.ProcessedAt || null,
     LastError: r.LastError || null,
+    Email: r.Email || r.email || null,
   }));
 
   async function listPending({ env, limit = 10 } = {}) {
@@ -103,6 +107,56 @@ function bindQueue(deps = {}) {
 }
 
 /**
+ * @param {object} row
+ * @param {string} env
+ * @param {object} deps
+ * @returns {object}
+ */
+function signupFromPendingRow(row, env, deps = {}) {
+  const merchantId = String(
+    row.MerchantId != null
+      ? row.MerchantId
+      : row.merchantId != null
+        ? row.merchantId
+        : row.Id != null
+          ? row.Id
+          : '',
+  );
+  const company =
+    row.MerchantName ||
+    row.merchantName ||
+    row.company_name ||
+    `Impact ${merchantId || 'merchant'}`;
+  const email =
+    row.Email ||
+    row.email ||
+    (merchantId
+      ? `impact-${merchantId}@pending.invalid`
+      : 'impact-unknown@pending.invalid');
+  const user_id =
+    typeof deps.newUserId === 'function'
+      ? String(deps.newUserId(row))
+      : deps.newUserId != null
+        ? String(deps.newUserId)
+        : `impact-user-${merchantId || row.Id || 'x'}`;
+
+  return emitSignupRow({
+    user_id,
+    company_name: company,
+    email,
+    advertiserId: merchantId || String(row.Id || 'unknown'),
+    env,
+    website: row.Website || row.website,
+    logoUrl: row.LogoUrl || row.logoUrl,
+    primarySector: row.PrimarySector || row.primarySector,
+    description: row.Notes || row.description,
+    source: 'impact',
+    status: 'joined',
+    onboardedAt: deps.onboardedAt,
+  });
+}
+
+/**
  * @param {object} [deps]
  * @param {object} [deps.envVars]
  * @param {string} [deps.env]
@@ -111,6 +165,7 @@ function bindQueue(deps = {}) {
  * @param {Function} [deps.markProcessed]
  * @param {Function} [deps.countRemaining]
  * @param {object[]} [deps.pendingRows]
+ * @param {boolean} [deps.emitSignups] - default true (FR-051c)
  * @returns {Promise<{ processed: number, remaining: number, signups: object[] }>}
  */
 async function runOnce(deps = {}) {
@@ -120,15 +175,20 @@ async function runOnce(deps = {}) {
       ? Number(deps.batchSize)
       : 10;
   const queue = bindQueue(deps);
+  const emitSignups = deps.emitSignups !== false;
 
   const batch = await queue.listPending({ env, limit: batchSize, deps });
   let processed = 0;
+  const signups = [];
 
   for (const row of batch) {
     const id = row.Id != null ? row.Id : row.id;
     try {
       if (typeof deps.onProcessRow === 'function') {
         await deps.onProcessRow(row, deps);
+      }
+      if (emitSignups) {
+        signups.push(signupFromPendingRow(row, env, deps));
       }
       await queue.markProcessed({
         id,
@@ -152,11 +212,10 @@ async function runOnce(deps = {}) {
   }
 
   const remaining = await queue.countRemaining({ env, deps });
-  // Signup persist is FR-051c — keep empty here.
   return {
     processed,
     remaining: Number(remaining) || 0,
-    signups: [],
+    signups,
   };
 }
 
@@ -165,4 +224,5 @@ module.exports = {
   resolveEnvName,
   createMemoryPendingQueue,
   bindQueue,
+  signupFromPendingRow,
 };
