@@ -6,12 +6,18 @@ const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+<<<<<<< HEAD
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
+=======
+const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
+const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
+>>>>>>> origin/main
 const { Construct } = require('constructs');
 const { loadRegistry } = require('../../providers/loadRegistry');
 const { queueName } = require('../../providers/queueName');
 
 /**
+<<<<<<< HEAD
  * Title-case construct id fragment from source id (amazon → Amazon).
  * @param {string} id
  */
@@ -36,6 +42,10 @@ function queueUrlEnvKey(queueEnv, env) {
 /**
  * FR-023/024/036: entry Lambda + per-enabled-source live/sandbox queues +
  * SQS-triggered worker Lambdas + maintainer EventBridge schedules.
+=======
+ * FR-023/024/035: entry Lambda + API Gateway POST /search + amazon
+ * live/sandbox queues + maintainer EventBridge schedules.
+>>>>>>> origin/main
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -118,6 +128,20 @@ class ASearchStack extends cdk.Stack {
       }
     }
 
+    // FR-035: HTTP API POST /search → entry (JWT still verified in Lambda)
+    const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
+      apiName: 'a-search',
+      description: 'a-search POST /search → entry Lambda',
+    });
+    httpApi.addRoutes({
+      path: '/search',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntrySearchIntegration',
+        entry,
+      ),
+    });
+
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
     const maintainerCode = lambda.Code.fromAsset(
       path.join(__dirname, '..', '..', 'maintainer', 'src'),
@@ -165,6 +189,10 @@ class ASearchStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
+    new cdk.CfnOutput(this, 'SearchApiUrl', {
+      value: httpApi.apiEndpoint,
+      description: 'HTTP API base URL (POST {url}/search)',
+    });
     new cdk.CfnOutput(this, 'MaintainerLiveFunctionName', {
       value: maintainerLive.functionName,
     });

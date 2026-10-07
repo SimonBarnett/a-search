@@ -17,10 +17,12 @@ enqueued; adding a source must not require an `entry/` rewrite.
    - `id` is lowercase, matches folder name and registry `id` (see shortlist)
 
 2. **Scaffold the provider CWD** (see `docs/skillbook-layout.md`)
-   - `AGENTS.md` — CAST IRON + “you are in `<id>` CWD”
+   - `AGENTS.md` — CAST IRON + "you are in `<id>` CWD"
    - `.grok/skills/a-search-<id>/SKILL.md` — auth/API or Parts path, SQS, S3, failures
-   - `.env.example` — **this provider’s secrets only** (never put them in `entry/.env.example`)
-   - `src/worker.js` — export `run(msg)`; refuse when `message.env` ≠ `A_SEARCH_ENV`
+   - `.grok/skills/a-search-<id>-onboarding/SKILL.md` — agent-led setup (FR-060a;
+     contract in `docs/provider-onboarding-skills.md`)
+   - `.env.example` — **this provider's secrets only** (never put them in `entry/.env.example`)
+   - `src/worker.js` — export `run(msg)`; refuse when `message.env` != `A_SEARCH_ENV`
    - Optional `package.json` for provider-only deps
 
 3. **Register the source** in `providers/registry.json`
@@ -28,10 +30,13 @@ enqueued; adding a source must not require an `entry/` rewrite.
    - Default `enabled` false until credentials and worker are ready
    - Loader: `providers/loadRegistry.js` → `enabled(env)` — entry uses this only
 
-4. **Queue names** (live and sandbox never share a queue)
+4. **Queue names + URL env vars** (live and sandbox never share a queue)
    - Pattern from `providers/queueName.js`: `a-search-{id}-live` / `a-search-{id}-sandbox`
-   - Wire queue URLs into deploy/IaC (CDK stack) and the worker’s env; entry needs
-     the send URL only when that source is enabled for the request env
+   - Registry `queueEnv`: `SQS_<SOURCE>_URL` (logical); deploy sets
+     `SQS_<SOURCE>_LIVE_URL` + `SQS_<SOURCE>_SANDBOX_URL` (see
+     `providers/resolveQueueUrl.js` / FR-034)
+   - Wire those URLs into CDK entry env + worker env; entry resolves per request
+     `env` — missing URL must error, not silent-skip
 
 5. **Results path**
    - Key shape: `{env}/{sourceId}/{userId}/{catalogId}/{searchId}.json` (see worker helpers)
@@ -58,7 +63,7 @@ enqueued; adding a source must not require an `entry/` rewrite.
 
 ## Done when
 
-- [ ] Folder + skillbook + `.env.example` + `run(msg)` stub exist
+- [ ] Folder + maintain skillbook + onboarding skillbook + `.env.example` + `run(msg)` stub exist
 - [ ] `providers/registry.json` has the source with per-env `enabled`
 - [ ] Live and sandbox queue names follow `a-search-{id}-{env}`
 - [ ] Tests cover scaffold + registry enabled behaviour
@@ -69,5 +74,7 @@ enqueued; adding a source must not require an `entry/` rewrite.
 - `docs/vision.md` (S3 extensibility)
 - `docs/provider-shortlist.md`
 - `docs/skillbook-layout.md`
+- `docs/provider-onboarding-skills.md` (FR-060a)
 - `docs/environments.md`
-- `providers/registry.json`, `providers/loadRegistry.js`, `providers/queueName.js`
+- `providers/registry.json`, `providers/loadRegistry.js`, `providers/queueName.js`,
+  `providers/resolveQueueUrl.js`
