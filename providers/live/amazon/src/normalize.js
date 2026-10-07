@@ -1,5 +1,10 @@
 'use strict';
 
+const {
+  normalizeProduct,
+  assertProductSchema,
+} = require('../../../../worker/lib/normalizeProduct');
+
 /**
  * Normalize Amazon PA-API SearchItems item → a-search product.
  * @param {object} item
@@ -7,7 +12,9 @@
  */
 function normalizeAmazonItem(item) {
   if (!item || typeof item !== 'object') {
-    return { id: '', title: '', source: 'amazon' };
+    const empty = normalizeProduct({ id: '', title: '', source: 'amazon' });
+    assertProductSchema(empty);
+    return empty;
   }
   const listing =
     item.Offers &&
@@ -29,7 +36,7 @@ function normalizeAmazonItem(item) {
       ? item.Images.Primary.Large.URL
       : undefined;
 
-  return {
+  const product = normalizeProduct({
     id: item.ASIN != null ? String(item.ASIN) : '',
     title: title == null ? '' : String(title),
     url: item.DetailPageURL == null ? undefined : String(item.DetailPageURL),
@@ -41,7 +48,9 @@ function normalizeAmazonItem(item) {
         ? String(priceObj.Currency)
         : undefined,
     source: 'amazon',
-  };
+  });
+  assertProductSchema(product);
+  return product;
 }
 
 /**

@@ -83,3 +83,7 @@ npm test
 - FR-016: `tests/amazon-scaffold.test.js`
 - FR-030: `tests/amazon-search.test.js` (fixture → S3 put; missing creds error)
 - FR-038: `tests/amazon-handler.test.js` (SQS record → run; bad JSON; wrong-env)
+
+## Result schema (FR-042)
+
+Normalize via `worker/lib/normalizeProduct.js`; see [docs/result-schema.md](../../../../../docs/result-schema.md).
