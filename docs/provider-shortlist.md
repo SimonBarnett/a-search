@@ -11,11 +11,20 @@ data / feed ingest — Awin-style).
 Legacy reference: Amazon PA-API, eBay Browse, Awin-as-local (`MerchantProducts`).
 ShareASale is **not** a candidate (merged into Awin; API gone Oct 2025).
 
+## Amazon API choice (FR-045)
+
+LOCKED (Phase 1): Amazon live search uses PA-API SearchItems (shipped in
+FR-030 / `providers/live/amazon`). Associates Creators API remains a
+**follow-up FR** when credentials/access are available (or if a human
+explicitly re-scopes to Creators). Do not thrash PA-API vs Creators in
+Phase 1 without that new FR. PA-API v5 retirement notes stay informational;
+they do not unlock a silent client swap.
+
 ## Registry candidates (all in repo this pass)
 
 | id | Kind | Default enabled | Why include | Implementation note |
 |----|------|-----------------|-------------|---------------------|
-| `amazon` | live | true | Core Madeira demand | Prefer Associates **Creators API** / current approved search; PA-API v5 retiring |
+| `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). Creators API = follow-up FR |
 | `ebay` | live | true | Marketplace coverage | Browse API OAuth; port from `eBay.js` |
 | `awin` | local | true | Canonical aggregator → local FTS | Product **datafeeds** ingest + local search (not Awin reporting API) |
 | `rakuten` | live | true | Real Product Search API | Keyword search; XML; 100 calls/min; optional later local-feed twin |
