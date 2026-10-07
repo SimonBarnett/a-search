@@ -6,6 +6,7 @@
  */
 
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
+const { queueName } = require('../../providers/queueName');
 
 class EnqueueError extends Error {
   /**
@@ -54,6 +55,8 @@ function buildPayload({ searchId, userId, env, body, source }) {
     searchterms: body.searchterms,
     source,
     sandbox: env === 'sandbox',
+    // FR-007: queue name includes env so live/sandbox never share a queue
+    queueName: queueName(source, env),
   };
 }
 

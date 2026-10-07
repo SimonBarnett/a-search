@@ -41,6 +41,7 @@ describe('FR-006 fan-out enqueue', () => {
       assert.equal(p.q, 'headphones');
       assert.ok(DEFAULT_ON.includes(p.source));
       assert.equal(p.sandbox, false);
+      assert.equal(p.queueName, `a-search-${p.source}-live`);
     }
   });
 
