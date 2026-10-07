@@ -1,9 +1,9 @@
 ---
 name: a-search-awin-onboarding
 description: >
-  Awin local onboarding drain CWD: runOnce stub, schedule drain until
-  remaining=0, signup rows for daily report. Use in
-  providers/local/awin/onboarding or /a-search-awin-onboarding.
+  Awin local onboarding drain CWD: runOnce, schedule drain until
+  remaining=0, signup rows for daily report, clubscan parity pointer.
+  Use in providers/local/awin/onboarding or /a-search-awin-onboarding.
 ---
 
 # a-search awin onboarding (drain CWD)
@@ -20,15 +20,50 @@ description: >
 You are in **`providers/local/awin/onboarding/`** — scheduled onboarding
 runner for registry id `awin` (`kind: local`).
 
+## Clubscan parity (legacy)
+
+Canonical legacy join/signup flow lives in madeira-awin-clubscan:
+
+- Tree: https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
+- Onboarding route: https://github.com/SimonBarnett/AWS/blob/main/Lambdas/madeira-awin-clubscan/routes/onboarding.js
+
+Read that `routes/onboarding.js` before changing fetch/create/signup behaviour
+here. a-search mirrors the clubscan intent (joined programmes → merchant user
+→ signup row) under this CWD; do not invent a divergent live contract.
+
 ## Contract
 
 - `src/run.js` exports `runOnce(deps) -> { processed, remaining, signups[] }`
-- Orchestrator: `shared/onboarding/drain.js` loops until **`remaining===0`**
-  then exit 0 (see `docs/onboarding-agents.md`)
 - Signup fields: `source`, `env`, `merchantId`, `merchantName`, `signedUpAt`, `status`
-- Legacy: madeira-awin-clubscan `routes/onboarding.js`
+- Sandbox (`A_SEARCH_ENV=sandbox`): fixture programmes only — never live Awin HTTP
+- Live join sync uses `fetchJoinedProgrammes` / `createMerchantUser` / `emitSignupRow`
 
-## Stub status (FR-049c)
+## Drain playbook (until remaining=0)
 
-`runOnce` returns empty drain (`remaining: 0`, no signups). Live Awin join
-API is FR-050.
+1. Load this skill and `AGENTS.md` in this CWD.
+2. Ensure `.env` from `.env.example` (no secrets committed).
+3. Invoke `runOnce(deps)` (or the schedule entry that calls it).
+4. Inspect `{ processed, remaining, signups[] }`.
+5. **Loop** while `remaining > 0`: call `runOnce` again (same deps/state).
+   Prefer `shared/onboarding/drain.js` when present on the branch; otherwise
+   the scheduler / operator loops until **`remaining === 0`**, then exit 0.
+6. Cap iterations with a safety max so a stuck remaining never spins forever.
+7. Persist/report `signups[]` for the daily onboarding report; do not log tokens.
+
+Empty drain (`remaining: 0`, no new signups) is success when the queue is clear
+or live join is not yet wired for this env.
+
+## Modules (this CWD)
+
+| File | Role |
+|------|------|
+| `src/run.js` | `runOnce` — sandbox fixture drain / live stub |
+| `src/fetchJoinedProgrammes.js` | Awin joined programmes (FR-050a) |
+| `src/createMerchantUser.js` | Idempotent merchant user by email (FR-050b) |
+| `src/emitSignupRow.js` | Daily-report signup row (FR-050c) |
+
+## Status
+
+FR-049c scaffold + FR-050a–d helpers/sandbox landed. This skillbook pin
+(FR-050e) documents clubscan URL + drain-until-remaining=0 playbook only.
+Code changes are out of scope for FR-050e.
