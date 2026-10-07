@@ -11,6 +11,12 @@ description: >
 > **CAST IRON:** Never commit CJ personal access tokens. Keep them in
 > `providers/live/cj/.env` only.
 
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+
 Registry id `cj` (`kind: live`, default-on).
 
 ## Worker (FR-041)
