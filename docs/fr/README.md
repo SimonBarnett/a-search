@@ -32,3 +32,24 @@ Small, testable FRs for Bob. One PR per issue.
 - [FR-028](FR-028.md) — Wire harvest-agent-skills honesty box into a-search
 - [FR-029](FR-029.md) — Document rclone mount env vars for SQL host results root
 - [FR-030](FR-030.md) — Implement amazon live search client with recorded HTTP fixtures
+
+## Phase 1 (post FR-001..030) — proposed 2026-10-07
+
+- [FR-031](FR-031.md) — Wire maintainer schedule.handler to roll/fetch/upsert/delete
+- [FR-032](FR-032.md) — Default AWS SQS sendMessage for entry fan-out
+- [FR-033](FR-033.md) — Default S3 PutObject in writeResults
+- [FR-034](FR-034.md) — Resolve queueEnv to live/sandbox queue URL
+- [FR-035](FR-035.md) — CDK API Gateway POST /search to entry
+- [FR-036](FR-036.md) — CDK queues + worker Lambdas for enabled shortlist
+- [FR-037](FR-037.md) — Package Lambda assets so entry sees providers/
+- [FR-038](FR-038.md) — Amazon SQS Lambda handler wrapping run(msg)
+- [FR-039](FR-039.md) — eBay Browse API search client + fixtures
+- [FR-040](FR-040.md) — Rakuten Product Search client + fixtures
+- [FR-041](FR-041.md) — CJ GraphQL Product Search client + fixtures
+- [FR-042](FR-042.md) — Shared product result schema + normalizer contract
+- [FR-043](FR-043.md) — Awin MSSQL queryParts SqlClient SELECT
+- [FR-044](FR-044.md) — Impact MSSQL queryParts + writeResults path
+- [FR-045](FR-045.md) — Lock Amazon API choice (PA-API vs Creators) in docs
+
+Wave brief: [docs/feature-request-phase1-2026-10-07.md](../feature-request-phase1-2026-10-07.md)
+Gap analysis: [docs/gap-analysis-phase1-2026-10-07.md](../gap-analysis-phase1-2026-10-07.md)
