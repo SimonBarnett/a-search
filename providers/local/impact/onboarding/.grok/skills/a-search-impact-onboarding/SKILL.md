@@ -25,9 +25,13 @@ runner for registry id `impact` (`kind: local`).
 - `src/run.js` exports `runOnce(deps) -> { processed, remaining, signups[] }`
 - Orchestrator: `shared/onboarding/drain.js` loops until **`remaining===0`**
   then exit 0 (see `docs/onboarding-agents.md`)
+- Pending queue (API UNKNOWN): `docs/impact-pending-onboard-queue.md` +
+  injectable `listPending` / `markProcessed` / `countRemaining` (or
+  `createMemoryPendingQueue` / `pendingRows`)
 - Signup fields: `source`, `env`, `merchantId`, `merchantName`, `signedUpAt`, `status`
+  (persist is FR-051c — `signups` may be empty from runOnce today)
 
-## Stub status (FR-049d)
+## Status
 
-`runOnce` returns empty drain (`remaining: 0`, no signups). Live Impact join
-API is FR-051.
+FR-051b: `runOnce` drains pending-onboard rows (empty → `remaining: 0`;
+one row → processed then `remaining: 0`). Live Impact join API still UNKNOWN.
