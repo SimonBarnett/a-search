@@ -9,6 +9,11 @@ const { roll: defaultRoll } = require('./roll');
 const { fetchFeed: defaultFetchFeed } = require('./fetch');
 const { upsertParts: defaultUpsertParts } = require('./upsert');
 const { deleteMissingParts: defaultDeleteMissing } = require('./delete');
+const {
+  reportException: defaultReportException,
+} = require('../../shared/intake/reportException');
+
+const MAINTAINER_ROUTE = 'maintainer/schedule';
 
 /**
  * Default body → staging rows (JSON array or NDJSON). Deploy injects CSV parsers.
@@ -47,6 +52,29 @@ function defaultParseFeedRows(body, meta) {
  * @param {object} [deps] - injectable SQL/HTTP/parse/upsert deps for offline tests
  */
 async function handler(_event, _context, deps = {}) {
+  const report = deps.reportException || defaultReportException;
+  try {
+    return await runSchedule(_event, deps);
+  } catch (err) {
+    try {
+      await report({
+        err,
+        route: MAINTAINER_ROUTE,
+        source: 'maintainer',
+        fetch: deps.fetch,
+      });
+    } catch {
+      // Intake must not swallow the original throw (EventBridge retry).
+    }
+    throw err;
+  }
+}
+
+/**
+ * @param {object} _event
+ * @param {object} deps
+ */
+async function runSchedule(_event, deps = {}) {
   const envVars = deps.envVars || process.env;
   const env = (envVars.A_SEARCH_ENV || 'sandbox').trim();
   if (env !== 'live' && env !== 'sandbox') {
