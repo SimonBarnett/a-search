@@ -1,9 +1,9 @@
 # a-search — provider shortlist (this pass)
 
 Every likely candidate ships as its **own folder + `.env` + SQS queue**, listed in
-`providers/registry.json` with an individual **`enabled`** flag. Entry fan-out
-only enqueues sources where `enabled: true`. Operators flip flags without code
-edits.
+`providers/registry.json` with per-env **`enabled`** flags (`{ "live": bool, "sandbox": bool }`).
+Entry fan-out only enqueues sources where `enabled[env]` is true. Operators flip
+flags without code edits. Loader: `providers/loadRegistry.js` → `enabled(env)`.
 
 Kinds: **live** (remote search API on each SQS job) vs **local** (owned part
 data / feed ingest — Awin-style).
@@ -42,23 +42,23 @@ first deploy; every id remains individually switchable.
 ```json
 {
   "sources": [
-    { "id": "amazon", "kind": "live", "folder": "providers/live/amazon", "enabled": true, "queueEnv": "SQS_AMAZON_URL" },
-    { "id": "ebay", "kind": "live", "folder": "providers/live/ebay", "enabled": true, "queueEnv": "SQS_EBAY_URL" },
-    { "id": "rakuten", "kind": "live", "folder": "providers/live/rakuten", "enabled": true, "queueEnv": "SQS_RAKUTEN_URL" },
-    { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": true, "queueEnv": "SQS_CJ_URL" },
-    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": false, "queueEnv": "SQS_KELKOO_URL" },
-    { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": false, "queueEnv": "SQS_SKIMLINKS_URL" },
-    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": false, "queueEnv": "SQS_ALIEXPRESS_URL" },
-    { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": false, "queueEnv": "SQS_ETSY_URL" },
-    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": false, "queueEnv": "SQS_BOL_URL" },
-    { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": true, "queueEnv": "SQS_AWIN_URL" },
-    { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": true, "queueEnv": "SQS_IMPACT_URL" },
-    { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": false, "queueEnv": "SQS_PARTNERIZE_URL" },
-    { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": false, "queueEnv": "SQS_WEBGAINS_URL" },
-    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": false, "queueEnv": "SQS_TRADEDOUBLER_URL" },
-    { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": false, "queueEnv": "SQS_ADMITAD_URL" },
-    { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": false, "queueEnv": "SQS_FLEXOFFERS_URL" },
-    { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": false, "queueEnv": "SQS_AVANTLINK_URL" }
+    { "id": "amazon", "kind": "live", "folder": "providers/live/amazon", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AMAZON_URL" },
+    { "id": "ebay", "kind": "live", "folder": "providers/live/ebay", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_EBAY_URL" },
+    { "id": "rakuten", "kind": "live", "folder": "providers/live/rakuten", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_RAKUTEN_URL" },
+    { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
+    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_KELKOO_URL" },
+    { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_SKIMLINKS_URL" },
+    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ALIEXPRESS_URL" },
+    { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ETSY_URL" },
+    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
+    { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
+    { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
+    { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_PARTNERIZE_URL" },
+    { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
+    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
+    { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
+    { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
+    { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" }
   ]
 }
 ```
