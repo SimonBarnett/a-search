@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- FR-032 entry fan-out defaults to @aws-sdk/client-sqs via createSqsSendMessage; resolveQueueUrl prefers SQS_<SOURCE>_<ENV>_URL then SQS_<SOURCE>_URL; keep client-s3 and client-sqs in one dependencies object after merge
