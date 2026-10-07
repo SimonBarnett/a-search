@@ -53,3 +53,20 @@ Small, testable FRs for Bob. One PR per issue.
 
 Wave brief: [docs/feature-request-phase1-2026-10-07.md](../feature-request-phase1-2026-10-07.md)
 Gap analysis: [docs/gap-analysis-phase1-2026-10-07.md](../gap-analysis-phase1-2026-10-07.md)
+
+## Phase 1b (ops agents + performance) — 2026-10-07
+
+- [FR-046](FR-046.md) — CAST IRON harvest block in every agent CWD
+- [FR-047](FR-047.md) — Shared layer for shared a-search code
+- [FR-048](FR-048.md) — Deterministic exceptions must file a-search intake
+- [FR-049](FR-049.md) — Local-provider onboarding agent scaffold
+- [FR-050](FR-050.md) — Awin onboarding agent (scheduled drain + signup rows)
+- [FR-051](FR-051.md) — Impact onboarding agent (scheduled drain + signup rows)
+- [FR-052](FR-052.md) — Daily report signup contract (clubscan parity)
+- [FR-053](FR-053.md) — Performance endpoint (clicks, visits, sales for JWT account)
+- [FR-054](FR-054.md) — Persist local S3 mapping service
+- [FR-055](FR-055.md) — Vision + functional-spec LOCKED updates for Phase 1b
+- [FR-056](FR-056.md) — CDK schedules for local onboarding drain runners
+
+Wave: [docs/feature-request-phase1b-2026-10-07.md](../feature-request-phase1b-2026-10-07.md)
+Legacy clubscan: https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
