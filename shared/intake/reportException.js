@@ -7,34 +7,13 @@
  */
 
 const crypto = require('node:crypto');
+const { redactSecrets, redact } = require('./redact');
 
 const DEFAULT_INTAKE_URL = 'https://irc.ntsa.uk/bob/v1/intake';
 const DEFAULT_REPO = 'SimonBarnett/a-search';
 
 /** @type {Set<string>} in-process dedupe of idempotency keys */
 const seenKeys = new Set();
-
-/**
- * @param {unknown} value
- * @returns {string}
- */
-function redact(value) {
-  let text = value == null ? '' : String(value);
-  text = text.replace(
-    /(Authorization\s*[:=]\s*)(.+)$/gim,
-    '$1[REDACTED]',
-  );
-  text = text.replace(/\bBearer\s+\S+/gi, 'Bearer [REDACTED]');
-  text = text.replace(
-    /((?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key)\s*[:=]\s*)(\S+)/gi,
-    '$1[REDACTED]',
-  );
-  text = text.replace(
-    /(Server=.*?;\s*Password=)([^;]+)/gi,
-    '$1[REDACTED]',
-  );
-  return text;
-}
 
 /**
  * @param {{ code?: string, message?: string, route?: string, err?: Error & { code?: string } }} parts
