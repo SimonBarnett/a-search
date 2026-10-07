@@ -19,6 +19,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
+- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Functional spec](docs/functional-spec.md)
 
 ## Agent caller skill
