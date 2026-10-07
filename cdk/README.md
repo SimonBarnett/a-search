@@ -5,6 +5,7 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 ## What is included
 
 - `ASearchStack` — Node 20 entry Lambda (`entry/src` → `index.handler`)
+- HTTP API Gateway (FR-035): `POST /search` → entry Lambda; output `SearchApiUrl`
 - Queue pair for Amazon:
   - `a-search-amazon-live`
   - `a-search-amazon-sandbox`

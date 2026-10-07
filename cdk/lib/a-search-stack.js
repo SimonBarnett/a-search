@@ -6,11 +6,13 @@ const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
+const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
 
 /**
- * FR-023/024: entry Lambda + amazon live/sandbox queues + maintainer
- * EventBridge schedules (A_SEARCH_ENV per target).
+ * FR-023/024/035: entry Lambda + API Gateway POST /search + amazon
+ * live/sandbox queues + maintainer EventBridge schedules.
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -46,6 +48,20 @@ class ASearchStack extends cdk.Stack {
 
     amazonLive.grantSendMessages(entry);
     amazonSandbox.grantSendMessages(entry);
+
+    // FR-035: HTTP API POST /search → entry (JWT still verified in Lambda)
+    const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
+      apiName: 'a-search',
+      description: 'a-search POST /search → entry Lambda',
+    });
+    httpApi.addRoutes({
+      path: '/search',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntrySearchIntegration',
+        entry,
+      ),
+    });
 
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
     const maintainerCode = lambda.Code.fromAsset(
@@ -98,6 +114,10 @@ class ASearchStack extends cdk.Stack {
       value: amazonSandbox.queueUrl,
     });
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
+    new cdk.CfnOutput(this, 'SearchApiUrl', {
+      value: httpApi.apiEndpoint,
+      description: 'HTTP API base URL (POST {url}/search)',
+    });
     new cdk.CfnOutput(this, 'MaintainerLiveFunctionName', {
       value: maintainerLive.functionName,
     });
