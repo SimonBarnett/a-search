@@ -18,12 +18,11 @@ describe('FR-047b resultsPath in shared/', () => {
     );
   });
 
-  it('writeResults requires shared/resultsPath', () => {
+  it('shared/writeResults requires ./resultsPath', () => {
     const src = fs.readFileSync(
-      path.join(root, 'worker', 'lib', 'writeResults.js'),
+      path.join(root, 'shared', 'writeResults.js'),
       'utf8',
     );
-    assert.match(src, /require\(['"]\.\.\/\.\.\/shared\/resultsPath['"]\)/);
-    assert.doesNotMatch(src, /require\(['"]\.\/resultsPath['"]\)/);
+    assert.match(src, /require\(['"]\.\/resultsPath['"]\)/);
   });
 });

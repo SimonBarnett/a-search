@@ -4,7 +4,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { queueName } = require('../providers/queueName');
-const { assertWorkerEnv, EnvIsolationError } = require('../worker/lib/assertEnv');
+const { assertWorkerEnv, EnvIsolationError } = require('../shared/assertEnv');
 
 describe('MRB #40 hostile: FR-007 env isolation', () => {
   it('amazon live queue name !== amazon sandbox', () => {
@@ -13,7 +13,7 @@ describe('MRB #40 hostile: FR-007 env isolation', () => {
     assert.equal(queueName('amazon', 'sandbox'), 'a-search-amazon-sandbox');
   });
 
-  it('sandbox worker + live message → env_mismatch', () => {
+  it('sandbox worker + live message â†’ env_mismatch', () => {
     assert.throws(
       () =>
         assertWorkerEnv(
