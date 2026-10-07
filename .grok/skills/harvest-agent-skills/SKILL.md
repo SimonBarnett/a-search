@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer upsert: bulk load PartsStaging then set-based MERGE into Parts; skip update when ContentHash identical (no churn); never per-row INSERT in the hot path
