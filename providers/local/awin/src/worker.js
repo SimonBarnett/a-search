@@ -2,7 +2,7 @@
 
 /**
  * Awin local provider worker (FR-020 scaffold + FR-043 SqlClient SELECT).
- * Search reads MSSQL Parts (ingest is maintainer) → normalize → writeResults.
+ * Search reads MSSQL Parts (ingest is maintainer) â†’ normalize â†’ writeResults.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]
@@ -16,7 +16,7 @@
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
+} = require('../../../../shared/assertEnv');
 const { writeResults } = require('../../../../worker/lib/writeResults');
 const {
   normalizeProduct,

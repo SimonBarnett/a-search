@@ -7,7 +7,7 @@ const { queueName } = require('../providers/queueName');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../worker/lib/assertEnv');
+} = require('../shared/assertEnv');
 
 describe('FR-007 live vs sandbox isolation', () => {
   it('amazon/live queue name !== amazon/sandbox', () => {
@@ -24,7 +24,7 @@ describe('FR-007 live vs sandbox isolation', () => {
     assert.throws(() => queueName('amazon', 'prod'), /live|sandbox/);
   });
 
-  it('sandbox worker + live message → reject', () => {
+  it('sandbox worker + live message â†’ reject', () => {
     assert.throws(
       () =>
         assertWorkerEnv(

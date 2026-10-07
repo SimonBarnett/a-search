@@ -16,7 +16,7 @@
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../../../../worker/lib/assertEnv');
+} = require('../../../../shared/assertEnv');
 const { writeResults } = require('../../../../worker/lib/writeResults');
 const {
   normalizeProduct,

@@ -12,7 +12,7 @@ const { resultsKey } = require('../worker/lib/resultsPath');
 const {
   assertWorkerEnv,
   EnvIsolationError,
-} = require('../worker/lib/assertEnv');
+} = require('../shared/assertEnv');
 
 describe('FR-027 / S6 env-isolation-runtime', () => {
   it('live and sandbox queue names never share a name', () => {
