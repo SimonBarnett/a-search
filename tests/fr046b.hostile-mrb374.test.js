@@ -14,18 +14,18 @@ describe('hostile MRB #374 FR-046b skillbook-harvest', () => {
   it('test enumerates entry/maintainer/endpoint and enabled registry', () => {
     assert.ok(fs.existsSync(testPath));
     const src = fs.readFileSync(testPath, 'utf8');
-    assert.match(src, /entry.*AGENTS\.md|path\.join\('entry'/);
+    assert.match(src, /path\.join\('entry'/);
     assert.match(src, /maintainer/);
     assert.match(src, /a-search-endpoint/);
     assert.match(src, /registry\.json|registry\.sources/);
-    assert.match(src, /enabled\.live\s*\|\|\s*enabled\.sandbox/);
+    // enabled.live || s.enabled.sandbox (object flags)
+    assert.match(src, /enabled\.live\s*\|\|/);
+    assert.match(src, /enabled\.sandbox/);
     assert.match(src, /FULL_NEEDLES|\/bob\/v1\/intake/);
     assert.doesNotMatch(src, /<<<<<<<|=======|>>>>>>>/);
   });
 
-  it('suite still passes offline', async () => {
-    // Re-require by spawning is heavy; assert foundation files still match
-    // the same needles the FR-046b module uses.
+  it('suite still passes offline', () => {
     const agents = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
     assert.match(agents, /CAST IRON/i);
     assert.match(agents, /\/bob\/v1\/intake|Report-BobiverseIntakeIssue/i);
