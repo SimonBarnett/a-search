@@ -16,16 +16,30 @@ describe('MRB #67 hostile: FR-019 cj scaffold', () => {
     assert.match(text, /ads\.api\.cj\.com/i);
     assert.match(text, /GraphQL/i);
     const { run } = require('../providers/live/cj/src/worker');
-    const out = await run({
-      searchId: 'srch_h67',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'cj',
-      q: 'x',
-      catalogId: 1,
-      category: 'c',
-      subcategory: 's',
-    });
+    const fixture = JSON.parse(
+      fs.readFileSync(path.join(cj, 'fixtures', 'products-ok.json'), 'utf8'),
+    );
+    const out = await run(
+      {
+        searchId: 'srch_h67',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'cj',
+        q: 'x',
+        catalogId: 1,
+        category: 'c',
+        subcategory: 's',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          CJ_API_TOKEN: 't',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        httpRequest: async () => fixture,
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'cj');
   });
