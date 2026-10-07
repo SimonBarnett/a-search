@@ -11,7 +11,7 @@ description: >
 > **CAST IRON:** Never commit PA-API access/secret keys or partner tags.
 > Keep them in `providers/live/amazon/.env` only.
 
-You are working in **`providers/live/amazon/`** â€” offline worker for
+You are working in **`providers/live/amazon/`** — offline worker for
 registry id `amazon` (`kind: live`, default-on).
 
 ## Responsibilities
@@ -20,25 +20,25 @@ registry id `amazon` (`kind: live`, default-on).
 |------|----------------|
 | SQS consume for Amazon queue | `POST /search` / JWT |
 | Amazon PA-API SearchItems client | MSSQL parts maintainer |
-| Normalize â†’ products[] | Other providers' credentials |
+| Normalize → products[] | Other providers' credentials |
 | S3 results write at canonical key | Fan-out / registry edits |
 
 ## Worker (FR-030)
 
 `src/worker.js` exports `run(msg, deps?)`:
 
-1. `assertWorkerEnv` â€” `message.env` must equal `A_SEARCH_ENV`
+1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
 2. Require `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
 3. Signed PA-API `SearchItems` POST (`src/search.js`); injectable `httpRequest` for fixtures
-4. Normalize items (`src/normalize.js`) â†’ `products[]`
-5. `writeResults` â†’ `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
+4. Normalize items (`src/normalize.js`) → `products[]`
+5. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
 
 Message shape: `searchId`, `userId`, `env`, `q` / `searchterms`, `catalogId`,
 `category`, `subcategory`, `source`.
 
 ## SQS Lambda handler (FR-038)
 
-`src/handler.js` is the SQS entry: for each `event.Records[]`, `JSON.parse(body)` â†’
+`src/handler.js` is the SQS entry: for each `event.Records[]`, `JSON.parse(body)` →
 `run(msg)`. Bad JSON or `run` errors **throw** so Lambda/SQS can retry.
 `assertWorkerEnv` inside `run` rejects wrong-env messages (`EnvIsolationError`).
 
@@ -59,7 +59,7 @@ Tests: `tests/amazon-handler.test.js`.
 | `S3_RESULTS_BUCKET` | results PutObject |
 | `A_SEARCH_ENV` | `live` \| `sandbox` |
 
-Missing Amazon creds â†’ `AmazonCredsError` / `amazon_missing_credentials` with
+Missing Amazon creds → `AmazonCredsError` / `amazon_missing_credentials` with
 the missing variable names (no HTTP call). Prefer **sandbox** host/tag for
 soak; never log secret values.
 
@@ -81,8 +81,8 @@ npm test
 ```
 
 - FR-016: `tests/amazon-scaffold.test.js`
-- FR-030: `tests/amazon-search.test.js` (fixture â†’ S3 put; missing creds error)
-- FR-038: `tests/amazon-handler.test.js` (SQS record â†’ run; bad JSON; wrong-env)
+- FR-030: `tests/amazon-search.test.js` (fixture → S3 put; missing creds error)
+- FR-038: `tests/amazon-handler.test.js` (SQS record → run; bad JSON; wrong-env)
 
 ## Result schema (FR-042)
 
