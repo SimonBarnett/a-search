@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search writeResults: PutObject to S3_RESULTS_BUCKET at resultsKey; stub body { searchId, source, userId, products }; inject putObject for tests until AWS SDK wired
