@@ -36,6 +36,17 @@ registry id `amazon` (`kind: live`, default-on).
 Message shape: `searchId`, `userId`, `env`, `q` / `searchterms`, `catalogId`,
 `category`, `subcategory`, `source`.
 
+## SQS Lambda handler (FR-038)
+
+`src/handler.js` is the SQS entry: for each `event.Records[]`, `JSON.parse(body)` →
+`run(msg)`. Bad JSON or `run` errors **throw** so Lambda/SQS can retry.
+`assertWorkerEnv` inside `run` rejects wrong-env messages (`EnvIsolationError`).
+
+CDK wires `handler=worker.handler` (FR-036); `worker.js` re-exports `handler` from
+`handler.js`. Do not ship a worker with only `run` and no Lambda entrypoint.
+
+Tests: `tests/amazon-handler.test.js`.
+
 ## Auth / credentials
 
 | Env | Purpose |
@@ -71,3 +82,4 @@ npm test
 
 - FR-016: `tests/amazon-scaffold.test.js`
 - FR-030: `tests/amazon-search.test.js` (fixture → S3 put; missing creds error)
+- FR-038: `tests/amazon-handler.test.js` (SQS record → run; bad JSON; wrong-env)
