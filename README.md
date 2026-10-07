@@ -11,6 +11,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Vision](docs/vision.md) (LOCKED)
 - [Endpoint](docs/endpoint-search.md)
 - [Environments](docs/environments.md)
+- [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)

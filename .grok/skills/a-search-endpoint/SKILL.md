@@ -17,8 +17,9 @@ You are a **caller** of `a-search`, not a provider worker. Search is
 **accept-and-continue**: HTTP returns when the job is queued; products appear
 later under the results path.
 
-Canonical product docs (once repo exists): `docs/endpoint-search.md`,
-`docs/environments.md`. This skill is the agent playbook.
+Canonical product docs: `docs/endpoint-search.md`, `docs/environments.md`,
+`docs/rclone-results.md` (SQL host mount env vars + path). This skill is the
+agent playbook.
 
 ## When to use
 
@@ -114,14 +115,14 @@ $res = Invoke-RestMethod -Method Post -Uri "$env:A_SEARCH_URL_LIVE/search" `
 
 ## Finding results (offline)
 
-Workers write:
+Workers write (see `docs/rclone-results.md`):
 
 ```
 {env}/{source}/{userId}/{catalogId}/{searchId}.json
 ```
 
-On the **MSSQL server**, the bucket is an **rclone mapped drive** (drive
-letter deploy-specific), e.g.:
+On the **MSSQL server**, the bucket is an **rclone mapped drive** under
+`A_SEARCH_RCLONE_ROOT` (drive letter deploy-specific), e.g.:
 
 ```
 S:\a-search\live\amazon\ABC12345\123\srch_01JEXAMPLE.json

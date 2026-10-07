@@ -34,10 +34,13 @@ Object store remains an **S3 bucket**, but the **MSSQL host** exposes it as a
 ops tools on the SQL box read/write through the mount; AWS workers may still
 use the S3 API with the same bucket/key layout.
 
-Logical key (unchanged):
+**Ops mount guide:** [rclone-results.md](rclone-results.md) (`S3_RESULTS_BUCKET`,
+`A_SEARCH_RCLONE_ROOT`, path examples).
+
+Logical key (LOCKED — includes env prefix):
 
 ```
-{source}/{userId}/{catalogId}/{searchId}.json
+{env}/{source}/{userId}/{catalogId}/{searchId}.json
 ```
 
 On the SQL server (examples — drive letters UNKNOWN until deploy):
