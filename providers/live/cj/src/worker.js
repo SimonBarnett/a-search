@@ -2,7 +2,7 @@
 
 /**
  * CJ live provider worker (FR-041).
- * GraphQL Product Search â†’ normalize â†’ writeResults (injectable HTTP + putObject).
+ * GraphQL Product Search -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');

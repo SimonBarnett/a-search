@@ -2,7 +2,7 @@
 
 /**
  * Awin local provider worker (FR-020 scaffold + FR-043 SqlClient SELECT).
- * Search reads MSSQL Parts (ingest is maintainer) â†’ normalize â†’ writeResults.
+ * Search reads MSSQL Parts (ingest is maintainer) -> normalize -> writeResults.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]

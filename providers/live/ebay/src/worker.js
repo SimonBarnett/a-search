@@ -2,7 +2,7 @@
 
 /**
  * eBay live provider worker (FR-039).
- * Browse API search â†’ normalize â†’ writeResults (injectable HTTP + putObject).
+ * Browse API search -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');

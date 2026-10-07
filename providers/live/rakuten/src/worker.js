@@ -2,7 +2,7 @@
 
 /**
  * Rakuten live provider worker (FR-040).
- * Product Search XML â†’ normalize â†’ writeResults (injectable HTTP + putObject).
+ * Product Search XML -> normalize -> writeResults (injectable HTTP + putObject).
  */
 
 const path = require('node:path');
