@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer SQL: migrate-once IF OBJECT_ID IS NULL scripts under maintainer/sql; natural key (Source, FeedKey, MerchantProductId, Env); apply per live/sandbox DB at deploy not every tick
