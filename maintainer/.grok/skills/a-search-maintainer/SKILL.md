@@ -12,10 +12,17 @@ description: >
 > Maintainer holds **SQL + schedule knobs** only. Feed credentials stay in
 > `providers/local/<id>/.env`.
 
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+
 You are working in **`maintainer/`** — keeps local-source Parts current
 so `providers/local/*` search workers can SELECT at request time.
 
-Canonical docs: `docs/parts-maintainer.md`, `docs/environments.md`.
+Canonical docs: `docs/parts-maintainer.md`, `docs/environments.md`,
+`docs/skillbook-layout.md` (FR-046a harvest checklist).
 
 ## Responsibilities
 
