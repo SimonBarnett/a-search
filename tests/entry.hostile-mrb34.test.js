@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -8,14 +8,15 @@ const path = require('node:path');
 const entry = path.join(__dirname, '..', 'entry');
 
 describe('MRB #34 hostile: FR-003 entry scaffold', () => {
-  it('stub handler exports and returns 501 not_implemented', async () => {
+  it('handler exports; unauthenticated call is not a 501 stub (FR-005)', async () => {
     const { handler } = require(path.join(entry, 'src', 'index.js'));
     assert.equal(typeof handler, 'function');
     const res = await handler({}, {});
-    assert.equal(res.statusCode, 501);
+    // FR-003 stub returned 501; FR-005 accept path returns 401 without Authorization.
+    assert.equal(res.statusCode, 401);
     const body = JSON.parse(res.body);
     assert.equal(body.accepted, false);
-    assert.equal(body.error, 'not_implemented');
+    assert.equal(body.error, 'unauthorized');
   });
 
   it('skill CAST IRON: entry JWT_*/A_SEARCH_ENV only; no provider secret assignment lines', () => {
