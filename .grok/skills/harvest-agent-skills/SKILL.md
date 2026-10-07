@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search rakuten skillbook must note XML Product Search responses and rate-limit backoff (Retry-After/429); scaffold mirrors other live providers with run(msg) stub
