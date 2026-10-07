@@ -20,5 +20,6 @@ and writes results JSON to S3. It does **not** download Impact CSV feeds
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` MSSQL search stub
+- `src/worker.js` — `run(msg, deps?)` MSSQL SELECT → normalize → writeResults (FR-044)
+- `src/queryParts.js` — injectable `defaultQueryParts` / `ImpactMssqlConfigError`
 - `.env.example` — SQL + queue/S3 placeholders
