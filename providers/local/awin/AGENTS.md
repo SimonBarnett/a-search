@@ -24,7 +24,8 @@ this folder owns feed-parser/creds hooks and the search read path.
 
 ## Shape
 
-- `src/worker.js` — `run(msg, deps?)` with injectable `queryParts` mock
+- `src/worker.js` — `run(msg, deps?)` → queryParts → normalize → writeResults
+- `src/queryParts.js` — parameterized `dbo.Parts` SELECT (injectable `connect`)
 - `.env.example` — MSSQL + queue/S3 knobs (Awin feed secrets for parser FRs)
 
 Harvest Awin playbooks into

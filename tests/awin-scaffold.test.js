@@ -56,6 +56,7 @@ describe('FR-020 awin local provider scaffold', () => {
       },
     ];
 
+    const puts = [];
     const out = await run(
       {
         searchId: 'srch_awin_test',
@@ -68,11 +69,19 @@ describe('FR-020 awin local provider scaffold', () => {
         subcategory: 'Headphones',
       },
       {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          S3_RESULTS_BUCKET: 'test-results',
+        },
         queryParts: async (msg) => {
           assert.equal(msg.source, 'awin');
           assert.equal(msg.env, 'sandbox');
           assert.equal(msg.q, 'headphones');
           return mockRows;
+        },
+        putObject: async (args) => {
+          puts.push(args);
+          return {};
         },
       },
     );
@@ -87,5 +96,6 @@ describe('FR-020 awin local provider scaffold', () => {
     assert.equal(out.products[0].price, 19.99);
     assert.equal(out.products[0].currency, 'GBP');
     assert.equal(out.products[1].id, 'sku-200');
+    assert.equal(puts.length, 1);
   });
 });
