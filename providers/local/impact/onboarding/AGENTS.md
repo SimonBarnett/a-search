@@ -28,4 +28,4 @@ scope** here (FR-051).
 
 - `src/run.js` — `runOnce(deps)` stub returning `{ processed, remaining, signups }`
 - `.env.example` — onboarding-only placeholders (no secrets committed)
-- Drain helper: `shared/onboarding/drain.js` (when merged)
+- Drain helper: `shared/onboarding/drain.js` (on main)
