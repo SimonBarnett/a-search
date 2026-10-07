@@ -36,11 +36,20 @@ Ingest is **`maintainer/`** (roll / fetch / upsert / scoped delete). This
 worker only **reads** Parts for `Source = N'awin'` and `Env = message.env`,
 skipping soft-deleted rows (`DeletedAt IS NULL`).
 
-## Worker stub
+## Worker (FR-043)
 
-`src/worker.js` exports `run(msg, deps?)`. Injectable `deps.queryParts(msg)`
-returns Parts-shaped rows; default is empty until SqlClient wiring.
-`normalizePart` maps `MerchantProductId` → `id`, `Title` → `title`, etc.
+`src/worker.js` exports `run(msg, deps?)`:
+
+1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
+2. `defaultQueryParts` (`src/queryParts.js`) — parameterized SELECT on
+   `dbo.Parts` (`Source=N'awin'`, `Env=@env`, `DeletedAt IS NULL`, Title /
+   Description LIKE from `q` / `searchterms`). Injectable `deps.connect` /
+   `deps.queryParts` for fixtures.
+3. `normalizePart` — `MerchantProductId` → `id`, `Title` → `title`, etc.
+4. `writeResults` — S3 at canonical key (injectable `putObject`)
+
+Missing `MSSQL_SERVER` / `MSSQL_DATABASE` (and user unless trusted) →
+`AwinMssqlConfigError` (`awin_mssql_missing_config`) — never silent `[]`.
 
 Message shape matches entry fan-out payload (`searchId`, `userId`, `env`,
 `q` / `searchterms`, `catalogId`, `category`, `subcategory`, `source`).
@@ -54,6 +63,7 @@ See `.env.example`: `A_SEARCH_ENV`, MSSQL connection placeholders,
 
 | Symptom | Check |
 |---------|--------|
+| `awin_mssql_missing_config` | `MSSQL_SERVER` + `MSSQL_DATABASE` (+ user or trusted) |
 | Login failed / timeout | MSSQL_SERVER / firewall / creds |
 | Empty products | Query too narrow; Parts not ingested for FeedKey |
 | env_mismatch | `message.env` !== `A_SEARCH_ENV` |
@@ -65,5 +75,6 @@ See `.env.example`: `A_SEARCH_ENV`, MSSQL connection placeholders,
 npm test
 ```
 
-FR-020 pins: `tests/awin-scaffold.test.js` (paths + `run(msg)` products
-from mock `queryParts`).
+- FR-020: `tests/awin-scaffold.test.js` (paths + mock `queryParts`)
+- FR-043: `tests/awin-query-parts.test.js` (mock connect → products +
+  writeResults; missing config error; SQL pins)
