@@ -4,8 +4,8 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 ## What is included
 
-- `ASearchStack` — Node 20 entry Lambda (`entry/src` → `index.handler`)
-- HTTP API Gateway (FR-035): `POST /search` → entry Lambda; output `SearchApiUrl`
+- `ASearchStack` â€” Node 20 entry Lambda (`entry/src` â†’ `index.handler`)
+- HTTP API Gateway (FR-035): `POST /search` â†’ entry Lambda; output `SearchApiUrl`
 - FR-036: live + sandbox SQS queues and SQS-triggered worker Lambdas for every
   registry source with `enabled.live` or `enabled.sandbox` (amazon, ebay,
   rakuten, cj, awin, impact). Names: `a-search-{id}-{env}`; workers
@@ -13,8 +13,8 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Entry env receives `SQS_<SOURCE>_LIVE_URL` / `SQS_<SOURCE>_SANDBOX_URL` for
   each enabled source (FR-034 resolveQueueUrl) and SendMessage grants.
 - Maintainer EventBridge schedules (FR-024), every 15 minutes:
-  - `a-search-maintainer-live` → Lambda with `A_SEARCH_ENV=live`
-  - `a-search-maintainer-sandbox` → Lambda with `A_SEARCH_ENV=sandbox`
+  - `a-search-maintainer-live` â†’ Lambda with `A_SEARCH_ENV=live`
+  - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
 
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 Disabled shortlist providers are not synthesised until enabled.
@@ -30,6 +30,14 @@ Entry Lambda environment uses **env-specific** keys that
 
 Do not document only the logical `SQS_<SOURCE>_URL` name while CDK emits only
 the `*_LIVE_URL` / `*_SANDBOX_URL` pair without the resolver.
+
+## Entry Lambda packaging (FR-037)
+
+`Code.fromAsset(entry/src)` cannot resolve `../../providers/...` inside Lambda.
+Run `npm run stage-entry` (also hooked from `npm run synth`) to write gitignored
+`cdk/entry-lambda-asset/` containing `entry/src/**` plus `providers/registry.json`,
+`loadRegistry.js`, `queueName.js`, and `resolveQueueUrl.js`. Handler:
+`entry/src/index.handler`. No secrets in the asset.
 
 ## Synth (required check)
 
