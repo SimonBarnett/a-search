@@ -1,13 +1,14 @@
 'use strict';
 
 /**
- * Entry HTTP accept handler (FR-005).
- * JWT verify (FR-004) + body validation + injectable enqueue stub (FR-006 lands real SQS).
+ * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006).
+ * JWT verify (FR-004) + body validation + registry-backed SQS fan-out (injectable sendMessage).
  * Never trusts a request-body user id.
  */
 
 const crypto = require('node:crypto');
 const { verifyAuthorization, AuthError } = require('./auth/jwt');
+const { fanOutEnqueue, EnqueueError } = require('./enqueue');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 
@@ -97,11 +98,15 @@ function validateSearchBody(body) {
 }
 
 /**
- * Default enqueue stub (FR-005). Real fan-out is FR-006.
+ * Default enqueue: FR-006 fan-out (noop sendMessage until AWS wired).
+ * @param {object} args
  * @returns {Promise<string[]>}
  */
-async function stubEnqueue() {
-  return [];
+async function defaultEnqueue(args) {
+  return fanOutEnqueue({
+    ...args,
+    sendMessage: args.sendMessage || (async () => {}),
+  });
 }
 
 /**
@@ -112,13 +117,20 @@ async function stubEnqueue() {
  *   verifyAuthorization?: Function,
  *   enqueue?: (args: object) => Promise<string[]>,
  *   newSearchId?: () => string,
+ *   sendMessage?: (payload: object) => Promise<void>,
  * }} [deps]
  */
 async function handler(event, _context, deps = {}) {
   const env = deps.env || process.env;
   const verify = deps.verifyAuthorization || verifyAuthorization;
-  const enqueue = deps.enqueue || stubEnqueue;
   const makeId = deps.newSearchId || newSearchId;
+  const enqueue =
+    deps.enqueue ||
+    ((args) =>
+      defaultEnqueue({
+        ...args,
+        sendMessage: deps.sendMessage,
+      }));
 
   const authHeader =
     headerGet(event && event.headers, 'authorization') ||
@@ -165,12 +177,24 @@ async function handler(event, _context, deps = {}) {
 
   const jobEnv = validated.value.sandbox ? 'sandbox' : 'live';
   const searchId = makeId();
-  const enqueued = await enqueue({
-    searchId,
-    userId,
-    env: jobEnv,
-    body: validated.value,
-  });
+  let enqueued;
+  try {
+    enqueued = await enqueue({
+      searchId,
+      userId,
+      env: jobEnv,
+      body: validated.value,
+    });
+  } catch (err) {
+    if (err instanceof EnqueueError) {
+      return jsonResponse(400, {
+        accepted: false,
+        error: err.code,
+        fields: err.fields,
+      });
+    }
+    throw err;
+  }
 
   return jsonResponse(200, {
     searchId,
@@ -185,5 +209,5 @@ module.exports = {
   handler,
   validateSearchBody,
   newSearchId,
-  stubEnqueue,
+  defaultEnqueue,
 };
