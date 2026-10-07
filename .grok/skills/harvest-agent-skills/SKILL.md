@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search FR-031: schedule.handler roll→fetch→upsert→delete with injectable deps; fetch download returns body; 304 skips upsert; fail-when stub message with processed 0
