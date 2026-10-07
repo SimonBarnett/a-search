@@ -1,0 +1,124 @@
+'use strict';
+
+/**
+ * Build daily-report signup row for Awin onboarding (FR-050c).
+ * Persistence to S3/MSSQL is FR-052 — this only shapes the object.
+ *
+ * Clubscan-aligned fields (FR-050):
+ * company_name, email, website, logoUrl, primarySector, description,
+ * user_id, advertiserId, env, onboardedAt
+ */
+
+class AwinSignupError extends Error {
+  /**
+   * @param {string} code
+   * @param {string} message
+   */
+  constructor(code, message) {
+    super(message);
+    this.name = 'AwinSignupError';
+    this.code = code;
+  }
+}
+
+/** @type {readonly string[]} */
+const REQUIRED_KEYS = Object.freeze([
+  'user_id',
+  'company_name',
+  'email',
+  'advertiserId',
+  'env',
+]);
+
+/**
+ * @param {object} opts
+ * @param {string} opts.user_id
+ * @param {string} opts.company_name
+ * @param {string} opts.email
+ * @param {string|number} opts.advertiserId
+ * @param {string} opts.env - live|sandbox
+ * @param {string} [opts.website]
+ * @param {string} [opts.logoUrl]
+ * @param {string} [opts.primarySector]
+ * @param {string} [opts.description]
+ * @param {string} [opts.onboardedAt] - ISO-8601; default now
+ * @param {string} [opts.source] - default awin
+ * @param {string} [opts.status] - default joined
+ * @returns {object}
+ */
+function emitSignupRow(opts = {}) {
+  const user_id = opts.user_id != null ? String(opts.user_id).trim() : '';
+  const company_name =
+    opts.company_name != null ? String(opts.company_name).trim() : '';
+  const email = opts.email != null ? String(opts.email).trim().toLowerCase() : '';
+  const advertiserId =
+    opts.advertiserId != null ? String(opts.advertiserId).trim() : '';
+  const env = opts.env != null ? String(opts.env).trim() : '';
+
+  if (!user_id) {
+    throw new AwinSignupError('missing_user_id', 'signup requires user_id');
+  }
+  if (!company_name) {
+    throw new AwinSignupError(
+      'missing_company_name',
+      'signup requires company_name',
+    );
+  }
+  if (!email || !email.includes('@')) {
+    throw new AwinSignupError('invalid_email', 'signup requires a valid email');
+  }
+  if (!advertiserId) {
+    throw new AwinSignupError(
+      'missing_advertiserId',
+      'signup requires advertiserId',
+    );
+  }
+  if (env !== 'live' && env !== 'sandbox') {
+    throw new AwinSignupError(
+      'invalid_env',
+      'signup env must be live|sandbox',
+    );
+  }
+
+  const onboardedAt =
+    opts.onboardedAt != null
+      ? String(opts.onboardedAt)
+      : new Date().toISOString();
+
+  return {
+    source: opts.source != null ? String(opts.source) : 'awin',
+    status: opts.status != null ? String(opts.status) : 'joined',
+    user_id,
+    company_name,
+    email,
+    advertiserId,
+    env,
+    website: opts.website != null ? String(opts.website) : undefined,
+    logoUrl: opts.logoUrl != null ? String(opts.logoUrl) : undefined,
+    primarySector:
+      opts.primarySector != null ? String(opts.primarySector) : undefined,
+    description:
+      opts.description != null ? String(opts.description) : undefined,
+    onboardedAt,
+  };
+}
+
+/**
+ * @param {object} row
+ * @returns {boolean}
+ */
+function assertSignupRequiredKeys(row) {
+  for (const key of REQUIRED_KEYS) {
+    if (row == null || row[key] == null || String(row[key]).trim() === '') {
+      return false;
+    }
+  }
+  return true;
+}
+
+module.exports = {
+  emitSignupRow,
+  assertSignupRequiredKeys,
+  REQUIRED_KEYS,
+  AwinSignupError,
+};
