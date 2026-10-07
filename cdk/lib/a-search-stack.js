@@ -6,18 +6,14 @@ const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
-<<<<<<< HEAD
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
-=======
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
->>>>>>> origin/main
 const { Construct } = require('constructs');
 const { loadRegistry } = require('../../providers/loadRegistry');
 const { queueName } = require('../../providers/queueName');
 
 /**
-<<<<<<< HEAD
  * Title-case construct id fragment from source id (amazon → Amazon).
  * @param {string} id
  */
@@ -40,12 +36,9 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
- * FR-023/024/036: entry Lambda + per-enabled-source live/sandbox queues +
- * SQS-triggered worker Lambdas + maintainer EventBridge schedules.
-=======
- * FR-023/024/035: entry Lambda + API Gateway POST /search + amazon
- * live/sandbox queues + maintainer EventBridge schedules.
->>>>>>> origin/main
+ * FR-023/024/035/036: entry Lambda + API Gateway POST /search +
+ * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
+ * maintainer EventBridge schedules.
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
