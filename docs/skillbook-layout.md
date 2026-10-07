@@ -8,9 +8,11 @@ integration without reading sibling providers.
 
 ```
 providers/live/amazon/
-  AGENTS.md                          # CAST IRON + “you are in amazon CWD”
+  AGENTS.md                          # CAST IRON + "you are in amazon CWD"
   .grok/skills/a-search-amazon/
     SKILL.md                         # architecture, env, API, failures, tests
+  .grok/skills/a-search-amazon-onboarding/
+    SKILL.md                         # agent-led account/.env setup (FR-060a)
   .env.example                       # amazon-only secrets placeholders
   src/                               # worker / client code
   package.json                       # optional per-folder deps
@@ -19,6 +21,8 @@ providers/local/awin/
   AGENTS.md
   .grok/skills/a-search-awin/
     SKILL.md                         # feed format, MSSQL read path, maintainer hooks
+  .grok/skills/a-search-awin-onboarding/
+    SKILL.md                         # agent-led onboarding (FR-060a)
   .env.example
   src/
 
@@ -51,6 +55,13 @@ Live vs local skill focus:
 
 Skill directory: `a-search-<id>` where `<id>` matches `registry.json` `id`
 (`a-search-amazon`, `a-search-awin`, …).
+
+**Onboarding skill (FR-060a):** every provider CWD also ships
+`a-search-<id>-onboarding` at
+`providers/<kind>/<id>/.grok/skills/a-search-<id>-onboarding/SKILL.md`.
+Contract: CAST IRON harvest + intake, steps to obtain `.env` account credentials,
+sandbox vs live, selftest pointer. Full contract:
+`docs/provider-onboarding-skills.md`. Per-provider bodies are separate FRs.
 
 ## Caller skill (agents that invoke the API)
 
