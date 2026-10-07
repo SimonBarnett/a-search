@@ -25,6 +25,17 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 **service** — Node.js 20+ on AWS. Plan pack validated with
 `validate-vision-pack.py`.
 
+## Develop
+
+Requires **Node.js 20+**. From a clean clone:
+
+```bash
+npm install
+npm test
+```
+
+`npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
+
 ## Feature requests
 
 Initial build is split into small, testable GitHub issues labeled

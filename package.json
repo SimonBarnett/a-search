@@ -1,12 +1,12 @@
 {
   "name": "a-search",
+  "version": "0.0.1",
   "private": true,
-  "version": "0.0.0",
   "description": "JWT search entry: fan-out to per-provider SQS + MSSQL local parts maintainer",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/**/*.test.js"
+    "test": "node --test \"tests/**/*.test.js\""
   }
 }
