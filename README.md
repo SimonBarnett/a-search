@@ -17,7 +17,11 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
+<<<<<<< HEAD
 - [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
+=======
+- [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
+>>>>>>> origin/main
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Functional spec](docs/functional-spec.md)
 

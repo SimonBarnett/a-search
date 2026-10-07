@@ -4,7 +4,7 @@ Fatal / unhandled exceptions in **deterministic** a-search code must file an
 issue through the bobiverse intake webhook with
 **`repo=SimonBarnett/a-search`**. Do not rely on `console.log` alone.
 
-Helper (when merged): `shared/intake/reportException.js` →
+Helper (on main): `shared/intake/reportException.js` —
 `POST https://irc.ntsa.uk/bob/v1/intake` with `kind: issue`, redacted body, and
 `idempotency_key` = sha256(`code|message|route`).
 
@@ -13,7 +13,7 @@ Helper (when merged): `shared/intake/reportException.js` →
 | Surface | Route / source cue | Notes |
 |---------|-------------------|--------|
 | **Entry** | `entry/POST /search` | Unexpected throws → intake + HTTP 500. Auth/validation 401/400 do **not** file. |
-| **Workers** | `providers/live/*/handler` (and local SQS handlers) | Unexpected fatals → intake then **rethrow** for SQS retry. `EnvIsolationError` skips intake. |
+| **Workers** | `providers/live/amazon/handler` (FR-048d); other live/local SQS handlers | Amazon landed: unexpected fatals → intake then **rethrow**. Other workers follow-on FR-048 slices. `EnvIsolationError` skips intake. |
 | **Maintainer** | `maintainer/schedule` | EventBridge schedule fatals → intake then rethrow. |
 | **Onboarding** | provider onboarding runners | Scheduled/local onboarding agent fatals → intake (wire in follow-on FR-048 slices). |
 
@@ -47,4 +47,4 @@ blocked and documented.
 
 - FR-048 and slices FR-048a… (helper, redact, entry/amazon/maintainer wires)
 - CAST IRON harvest in each agent CWD (`docs/skillbook-layout.md`)
-- Shared package layout: `docs/shared-layer.md` (when present)
+- Shared package layout: `docs/shared-layer.md`
