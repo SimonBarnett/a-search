@@ -9,8 +9,12 @@
 const crypto = require('node:crypto');
 const { verifyAuthorization, AuthError } = require('./auth/jwt');
 const { fanOutEnqueue, EnqueueError } = require('./enqueue');
+const {
+  reportException: defaultReportException,
+} = require('../../shared/intake/reportException');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
+const ENTRY_ROUTE = 'entry/POST /search';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -115,9 +119,38 @@ async function defaultEnqueue(args) {
  *   enqueue?: (args: object) => Promise<string[]>,
  *   newSearchId?: () => string,
  *   sendMessage?: (payload: object) => Promise<void>,
+ *   reportException?: Function,
  * }} [deps]
  */
 async function handler(event, _context, deps = {}) {
+  const report = deps.reportException || defaultReportException;
+  try {
+    return await handleSearch(event, deps);
+  } catch (err) {
+    // Client AuthError / EnqueueError are returned as 401/400 inside handleSearch.
+    // Unexpected fatals file a-search intake once (FR-048c).
+    try {
+      await report({
+        err,
+        route: ENTRY_ROUTE,
+        source: 'entry',
+        fetch: deps.fetch,
+      });
+    } catch {
+      // Intake failure must not mask the original error response.
+    }
+    return jsonResponse(500, {
+      accepted: false,
+      error: 'internal_error',
+    });
+  }
+}
+
+/**
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handleSearch(event, deps = {}) {
   const env = deps.env || process.env;
   const verify = deps.verifyAuthorization || verifyAuthorization;
   const makeId = deps.newSearchId || newSearchId;
