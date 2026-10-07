@@ -11,6 +11,12 @@ description: >
 > **CAST IRON:** Never commit PA-API access/secret keys or partner tags.
 > Keep them in `providers/live/amazon/.env` only.
 
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+
 You are working in **`providers/live/amazon/`** — offline worker for
 registry id `amazon` (`kind: live`, default-on).
 
