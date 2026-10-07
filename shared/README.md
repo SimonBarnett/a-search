@@ -36,6 +36,7 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `onboarding/drain.js` | FR-049b loop runOnce until remaining=0 |
 | `onboarding/signupsPath.js` | FR-052b S3 key `{env}/_reports/{source}/{day}/signups.json` |
 | `onboarding/writeSignups.js` | FR-052b `writeSignupEvents` / `readSignupEvents` (S3 JSON LOCKED) |
+| `onboarding/readSignups.js` | FR-052c `listSignupEvents` for report job (env/source/day filter) |
 | `assertEnv.js` | FR-047d / FR-007 `assertWorkerEnv` |
 | `intake/reportException.js` | FR-048a fatal → intake POST |
 | `intake/redact.js` | FR-048b `redactSecrets` for intake bodies |

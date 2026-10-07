@@ -2,7 +2,7 @@
 
 Onboarding agents emit **signup rows** that feed the daily merchant report
 currently produced by madeira-awin-clubscan. This doc maps clubscan report
-**sections** to a-search field names. Writer persistence is LOCKED in FR-052b (S3 JSON below).
+**sections** to a-search field names. Writer persistence is FR-052b (OOS here).
 
 ## Legacy clubscan (read-only)
 
@@ -47,7 +47,7 @@ Clubscan `newAdvertisers[]` push shape vs a-search `emitSignupRow` /
 
 `user_id`, `company_name`, `email`, `advertiserId`, `env`
 
-Aliases accepted by report readers (when implemented):
+Aliases accepted by report readers (`listSignupEvents` / FR-052c):
 
 | Canonical emit | Onboarding-agents alias |
 |----------------|-------------------------|
@@ -74,7 +74,7 @@ Do not put sale rows into `signups[]`.
 
 ## Emitters (producers)
 
-| Source | Module (on main) |
+| Source | Module (when merged) |
 |--------|----------------------|
 | `awin` | `providers/local/awin/onboarding/src/emitSignupRow.js` |
 | `impact` | `providers/local/impact/onboarding/src/emitSignupRow.js` |
@@ -94,8 +94,14 @@ Drain accumulates `runOnce(…).signups` for the daily feed
 - Each signup gets stable `id` (`sig_…`) plus Awin-schema fields and
   onboarding-agents aliases (`merchantId`, `merchantName`, `signedUpAt`)
 
-Writer merges by `id` into the day's object. List/filter for the report job
-is FR-052c.
+Writer merges by `id` into the day's object.
+
+### Reader (FR-052c)
+
+- Module: `shared/onboarding/readSignups.js` → `listSignupEvents({ env, source, day })`
+- Returns only rows matching **env** / **source** / **day** (UTC date of
+  `onboardedAt` / `signedUpAt`); foreign rows in a dirty object are dropped.
+- Mailer / HTML email remains out of scope.
 
 ## Related
 
