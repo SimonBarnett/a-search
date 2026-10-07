@@ -1,0 +1,30 @@
+{
+  "href": "https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search?q=headphones&limit=10",
+  "total": 2,
+  "itemSummaries": [
+    {
+      "itemId": "v1|110000000001|0",
+      "title": "Fixture Wireless Headphones",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/110000000001",
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/fixture1/s-l1600.jpg"
+      },
+      "price": {
+        "value": "29.99",
+        "currency": "GBP"
+      }
+    },
+    {
+      "itemId": "v1|110000000002|0",
+      "title": "Fixture Studio Headphones",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/110000000002",
+      "image": {
+        "imageUrl": "https://i.ebayimg.com/images/g/fixture2/s-l1600.jpg"
+      },
+      "price": {
+        "value": "49.50",
+        "currency": "GBP"
+      }
+    }
+  ]
+}
