@@ -34,11 +34,13 @@ describe('FR-003 entry scaffold', () => {
     assert.doesNotMatch(text, /AWS_SECRET_ACCESS_KEY|SQS_[A-Z]+_KEY\s*=/i);
   });
 
-  it('.env.example has JWT_* and A_SEARCH_ENV placeholders only (no provider secrets)', () => {
+  it('.env.example has JWT_*, A_SEARCH_ENV, and SQS URL docs (no provider API secrets)', () => {
     const envPath = path.join(entry, '.env.example');
     const text = fs.readFileSync(envPath, 'utf8');
     assert.match(text, /JWT_/);
     assert.match(text, /A_SEARCH_ENV/);
-    assert.doesNotMatch(text, /AMAZON_|EBAY_|AWIN_|RAKUTEN_|PROVIDER_/i);
+    assert.match(text, /SQS_.*_LIVE_URL|SQS_<SOURCE>_LIVE_URL/i);
+    // Queue URL docs OK; do not name provider API secret keys.
+    assert.doesNotMatch(text, /AWS_SECRET_ACCESS_KEY|PAAPI|EBAY_CLIENT_SECRET|PROVIDER_API/i);
   });
 });

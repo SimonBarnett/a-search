@@ -98,15 +98,12 @@ function validateSearchBody(body) {
 }
 
 /**
- * Default enqueue: FR-006 fan-out (noop sendMessage until AWS wired).
+ * Default enqueue: FR-006 fan-out with FR-032 SQS SendMessage default.
  * @param {object} args
  * @returns {Promise<string[]>}
  */
 async function defaultEnqueue(args) {
-  return fanOutEnqueue({
-    ...args,
-    sendMessage: args.sendMessage || (async () => {}),
-  });
+  return fanOutEnqueue(args);
 }
 
 /**
