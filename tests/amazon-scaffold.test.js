@@ -26,21 +26,35 @@ describe('FR-016 amazon provider scaffold', () => {
     }
   });
 
-  it('stub run(msg) is callable', async () => {
+  it('run(msg) is callable with injected search + S3', async () => {
     const { run } = require('../providers/live/amazon/src/worker');
     assert.equal(typeof run, 'function');
-    const out = await run({
-      searchId: 'srch_test',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'amazon',
-      q: 'headphones',
-      catalogId: 1,
-      category: 'Electronics',
-      subcategory: 'Headphones',
-    });
+    const out = await run(
+      {
+        searchId: 'srch_test',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'amazon',
+        q: 'headphones',
+        catalogId: 1,
+        category: 'Electronics',
+        subcategory: 'Headphones',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          AMAZON_ACCESS_KEY: 'AKIATEST',
+          AMAZON_SECRET_KEY: 'secret',
+          AMAZON_PARTNER_TAG: 'tag-20',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        searchAmazon: async () => [{ id: 'X', title: 't', source: 'amazon' }],
+        putObject: async () => ({}),
+      },
+    );
     assert.ok(out);
     assert.equal(out.ok, true);
     assert.equal(out.source, 'amazon');
   });
 });
+
