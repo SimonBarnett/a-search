@@ -4,7 +4,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { writeResults } = require('../worker/lib/writeResults');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 describe('MRB #44 hostile: FR-009 writeResults', () => {
   it('PutObject Bucket/Key match resultsKey; stub schema fields', async () => {

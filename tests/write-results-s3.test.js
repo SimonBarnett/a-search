@@ -4,7 +4,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { writeResults } = require('../worker/lib/writeResults');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 describe('FR-033 default S3 PutObject in writeResults', () => {
   it('mock S3 client receives Bucket/Key/Body at canonical key', async () => {

@@ -9,7 +9,7 @@ const {
   resultsS3Uri,
   resultsRclonePath,
   ResultsPathError,
-} = require('../worker/lib/resultsPath');
+} = require('../shared/resultsPath');
 
 const FIX = {
   env: 'live',

@@ -17,7 +17,7 @@ const {
   searchTextFromMsg,
   SELECT_SQL,
 } = require('../providers/local/impact/src/queryParts');
-const { resultsKey } = require('../worker/lib/resultsPath');
+const { resultsKey } = require('../shared/resultsPath');
 
 const baseMsg = {
   searchId: 'srch_impact_44',
