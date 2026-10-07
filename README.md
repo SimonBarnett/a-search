@@ -11,21 +11,22 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Vision](docs/vision.md) (LOCKED)
 - [Endpoint](docs/endpoint-search.md)
 - [Environments](docs/environments.md)
-- [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
+- [rclone results mount](docs/rclone-results.md)
+- [Product result schema](docs/result-schema.md) (FR-042) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
-- [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
+- [Add a source](docs/add-source.md) (checklist â€” registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Functional spec](docs/functional-spec.md)
 
 ## Agent caller skill
 
-`.grok/skills/a-search-endpoint/SKILL.md` — how an agent calls the API.
+`.grok/skills/a-search-endpoint/SKILL.md` â€” how an agent calls the API.
 
 ## Shape
 
-**service** — Node.js 20+ on AWS. Plan pack validated with
+**service** â€” Node.js 20+ on AWS. Plan pack validated with
 `validate-vision-pack.py`.
 
 ## Develop
@@ -49,7 +50,7 @@ npm install
 npm run synth
 ```
 
-`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy …`).
+`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy â€¦`).
 
 ## Feature requests
 
