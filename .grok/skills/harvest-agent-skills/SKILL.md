@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search FR-002 MRB: merge product PR first then docs/mrb hostile tests from new main; package.json overlap with open FR-001 scaffold is ACCEPTABLE drift when npm test is required
