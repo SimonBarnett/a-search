@@ -8,6 +8,9 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Queue pair for Amazon:
   - `a-search-amazon-live`
   - `a-search-amazon-sandbox`
+- Maintainer EventBridge schedules (FR-024), every 15 minutes:
+  - `a-search-maintainer-live` → Lambda with `A_SEARCH_ENV=live`
+  - `a-search-maintainer-sandbox` → Lambda with `A_SEARCH_ENV=sandbox`
 
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 
