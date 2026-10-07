@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search MRB CONFLICTING add/add entry/.env.example: merge main then keep JWT_*/A_SEARCH_ENV plus FR-004 JWT_SECRET alias note; product JWT lessons stay in a-search not bobiverse harvest
