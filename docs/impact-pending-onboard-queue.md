@@ -79,6 +79,6 @@ Empty queue is success: schedule still self-closes without a live Impact join AP
 
 - Parent omnibus (closed): `docs/fr/FR-051.md`
 - Children: FR-051b runOnce drain, FR-051c signup rows, FR-051d skillbook
-- Shared onboarding contract: `docs/onboarding-agents.md` (FR-049a when merged)
+- Shared onboarding contract: `docs/onboarding-agents.md` (FR-049a on main)
 - Clubscan parity (Awin has a live join API; Impact uses this queue while UNKNOWN):
   https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
