@@ -75,3 +75,32 @@ Repo path after create: `.grok/skills/a-search-endpoint/` (also drafted in this
 plan pack under `skills/a-search-endpoint/SKILL.md`). Covers JWT,
 `POST /search`, 200 accept, live/sandbox, and rclone/S3 result lookup.
 Does not replace per-provider skillbooks.
+
+## CAST IRON harvest checklist (FR-046a)
+
+Every skillbook folder (`AGENTS.md` + `.grok/skills/*/SKILL.md`) must make
+agents harvest learnings **back to this product repo**, not to bobiverse
+`harvest/SKILL.md`.
+
+Checklist needles (pin these phrases in layout + foundation skill):
+
+| Needle | Why |
+|--------|-----|
+| CAST IRON | Always harvest / file gaps in the same turn |
+| intake | Use the Bobiverse intake webhook when push is blocked |
+| `POST https://irc.ntsa.uk/bob/v1/intake` | Token-free intake endpoint |
+| `-Repo SimonBarnett/a-search` | Product lessons stay on a-search |
+| honesty box | Promote playbooks via PR to **this** repo's skillbook |
+
+Example blurb (paste into new provider `AGENTS.md` / onboarding skills):
+
+```text
+CAST IRON harvest: file every issue/FR/gap via
+  Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...
+or POST https://irc.ntsa.uk/bob/v1/intake with the same -Repo.
+Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+Never park a-search product lessons under bobiverse harvest/SKILL.md.
+```
+
+Out of scope for FR-046a: rewriting every existing provider file — those
+land via per-provider / onboarding FRs. This doc is the layout checklist.
