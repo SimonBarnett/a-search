@@ -61,10 +61,13 @@ const validBody = {
 describe('MRB #37 hostile: FR-005 accept handler', () => {
   it('valid JWT+body → 200 accepted with searchId userId env enqueued', async () => {
     const res = await handler(
-      event({ auth: `Bearer ${validToken()}`, body: validBody }),
+      event({
+        auth: `Bearer ${validToken()}`,
+        body: { ...validBody, sandbox: true },
+      }),
       {},
       {
-        env: { ...jwtEnv, A_SEARCH_ENV: 'sandbox' },
+        env: jwtEnv,
         enqueue: async () => ['amazon'],
       }
     );
