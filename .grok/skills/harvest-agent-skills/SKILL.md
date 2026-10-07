@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer skillbook must cover roll (MAINTAINER_TOP), conditional download, and staging MERGE; .env.example holds MSSQL + schedule knobs only
