@@ -74,7 +74,7 @@ Do not put sale rows into `signups[]`.
 
 ## Emitters (producers)
 
-| Source | Module (when merged) |
+| Source | Module (on main) |
 |--------|----------------------|
 | `awin` | `providers/local/awin/onboarding/src/emitSignupRow.js` |
 | `impact` | `providers/local/impact/onboarding/src/emitSignupRow.js` |
