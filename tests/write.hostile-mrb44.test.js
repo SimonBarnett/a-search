@@ -3,7 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { writeResults } = require('../worker/lib/writeResults');
+const { writeResults } = require('../shared/writeResults');
 const { resultsKey } = require('../shared/resultsPath');
 
 describe('MRB #44 hostile: FR-009 writeResults', () => {
