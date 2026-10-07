@@ -30,10 +30,13 @@ enqueued; adding a source must not require an `entry/` rewrite.
    - Default `enabled` false until credentials and worker are ready
    - Loader: `providers/loadRegistry.js` → `enabled(env)` — entry uses this only
 
-4. **Queue names** (live and sandbox never share a queue)
+4. **Queue names + URL env vars** (live and sandbox never share a queue)
    - Pattern from `providers/queueName.js`: `a-search-{id}-live` / `a-search-{id}-sandbox`
-   - Wire queue URLs into deploy/IaC (CDK stack) and the worker’s env; entry needs
-     the send URL only when that source is enabled for the request env
+   - Registry `queueEnv`: `SQS_<SOURCE>_URL` (logical); deploy sets
+     `SQS_<SOURCE>_LIVE_URL` + `SQS_<SOURCE>_SANDBOX_URL` (see
+     `providers/resolveQueueUrl.js` / FR-034)
+   - Wire those URLs into CDK entry env + worker env; entry resolves per request
+     `env` — missing URL must error, not silent-skip
 
 5. **Results path**
    - Key shape: `{env}/{sourceId}/{userId}/{catalogId}/{searchId}.json` (see worker helpers)
@@ -73,4 +76,5 @@ enqueued; adding a source must not require an `entry/` rewrite.
 - `docs/skillbook-layout.md`
 - `docs/provider-onboarding-skills.md` (FR-060a)
 - `docs/environments.md`
-- `providers/registry.json`, `providers/loadRegistry.js`, `providers/queueName.js`
+- `providers/registry.json`, `providers/loadRegistry.js`, `providers/queueName.js`,
+  `providers/resolveQueueUrl.js`

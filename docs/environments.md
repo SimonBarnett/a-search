@@ -73,3 +73,17 @@ Maintainer staging CSVs may also land under
 
 or flat `enabled: true` meaning both. Disabled for an env → not enqueued in
 that env.
+
+## Queue URL env vars (FR-034)
+
+Registry `queueEnv` is a **logical** name such as `SQS_AMAZON_URL`. Entry and
+workers resolve it with `providers/resolveQueueUrl.js`:
+
+1. Prefer `SQS_<SOURCE>_LIVE_URL` / `SQS_<SOURCE>_SANDBOX_URL` for the request
+   `env` (matches CDK entry environment keys).
+2. Fall back to `SQS_<SOURCE>_URL` only for a single-env deploy.
+3. If neither is set → **error** (`missing_queue_url`) — never silent noop enqueue.
+
+CDK (`cdk/lib/a-search-stack.js`) already injects `SQS_AMAZON_LIVE_URL` and
+`SQS_AMAZON_SANDBOX_URL` into the entry Lambda. Document additional sources the
+same way when their queues are added.
