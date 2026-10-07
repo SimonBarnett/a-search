@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer delete: soft-delete Parts for Source/FeedKey/Env absent from PartsStaging only; never clear whole Parts; other feed keys untouched
