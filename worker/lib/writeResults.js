@@ -7,7 +7,7 @@
  * (override with `createS3Client` for tests).
  */
 
-const { resultsKey, ResultsPathError } = require('./resultsPath');
+const { resultsKey, ResultsPathError } = require('../../shared/resultsPath');
 
 /**
  * @param {{ createS3Client?: () => { send: Function } }} [deps]
