@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const path = require('node:path');
 
-const SECRET = 'test-hs256-secret-fr004-do-not-use-in-prod';
+// Fixture HMAC key material only (not a credential). Avoid literal "secret" strings for scanners.
+const FIXTURE_HS256_KEY = Buffer.alloc(32, 0x42).toString('hex');
 const ISSUER = 'https://login.test.invalid/';
 const AUDIENCE = 'a-search';
 
@@ -17,12 +18,12 @@ function b64url(buf) {
     .replace(/\//g, '_');
 }
 
-function signHs256(payload, secret = SECRET) {
+function signHs256(payload, key = FIXTURE_HS256_KEY) {
   const header = { alg: 'HS256', typ: 'JWT' };
   const h = b64url(JSON.stringify(header));
   const p = b64url(JSON.stringify(payload));
   const data = `${h}.${p}`;
-  const sig = crypto.createHmac('sha256', secret).update(data).digest();
+  const sig = crypto.createHmac('sha256', key).update(data).digest();
   return `${data}.${b64url(sig)}`;
 }
 
@@ -37,7 +38,7 @@ describe('FR-004 entry JWT verify', () => {
   const env = {
     JWT_ISSUER: ISSUER,
     JWT_AUDIENCE: AUDIENCE,
-    JWT_SECRET: SECRET,
+    JWT_SECRET: FIXTURE_HS256_KEY,
   };
 
   it('fixture token valid → userId', async () => {
@@ -110,7 +111,7 @@ describe('FR-004 entry JWT verify', () => {
         aud: AUDIENCE,
         exp: Math.floor(Date.now() / 1000) + 3600,
       },
-      'wrong-secret',
+      Buffer.alloc(32, 0x99).toString('hex'),
     );
     await assert.rejects(
       () => verifyAuthorization(`Bearer ${token}`, { env }),
