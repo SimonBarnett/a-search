@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search fan-out: intersect body.sources with registry.enabled(env); injectable sendMessage; 400 sources_not_enabled when only disabled ids listed; empty enabled without sources filter still 200 enqueued:[]
