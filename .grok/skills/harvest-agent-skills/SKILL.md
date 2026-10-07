@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search entry skillbooks must mention POST /search and JWT userId and keep .env.example to JWT_*/A_SEARCH_ENV only; skill text may say provider secrets as a prohibition without failing the no-secret-key pin
