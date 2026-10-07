@@ -3,7 +3,7 @@
 **Target repo:** `SimonBarnett/a-search` (existing — do **not** `gh repo create`)
 **Shape:** reuse LOCKED **service** from `docs/vision.md`
 **Plan session:** `plan-20261007-142747`
-**Status:** DRAFT — awaiting human approval before GitHub issue create
+**Status:** GitHub issues opened — FR-031..045 as SimonBarnett/a-search#91..#105 (`feature-request`)
 
 ## Objective
 
