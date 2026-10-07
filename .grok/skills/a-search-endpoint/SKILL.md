@@ -2,6 +2,7 @@
 name: a-search-endpoint
 description: >
   Call the a-search HTTP API as an agent: obtain login JWT, POST /search,
+  GET/POST /account/performance (clicks visits sales for JWT userId),
   interpret 200 accept vs 401/400, live vs sandbox, and find offline results
   on the SQL host rclone path (or S3 key). Use when searching affiliate/local
   parts via a-search, Club Madeira catalogue enrich, or /a-search.
@@ -23,14 +24,16 @@ You are a **caller** of `a-search`, not a provider worker. Search is
 **accept-and-continue**: HTTP returns when the job is queued; products appear
 later under the results path.
 
-Canonical product docs: `docs/endpoint-search.md`, `docs/environments.md`,
-`docs/rclone-results.md` (SQL host mount env vars + path),
-`docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is the
-agent playbook.
+Canonical product docs: `docs/endpoint-search.md`,
+`docs/endpoint-performance.md` (FR-053a — clicks / visits / sales),
+`docs/environments.md`, `docs/rclone-results.md` (SQL host mount env vars +
+path), `docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is
+the agent playbook.
 
 ## When to use
 
 - Need multi-source product hits (Amazon, eBay, Awin local parts, …)
+- Need **account performance** (clicks, visits, sales) for the JWT `userId`
 - Must pass a **login JWT** whose `userId` claim owns the result files
 - Live vs sandbox must not be mixed
 
@@ -99,6 +102,28 @@ product list. Save `searchId`, `userId`, and `env` for result lookup.
 | 5xx | Gateway/entry fault | Back off; report with `searchId` if any |
 
 No enqueue on 4xx/401.
+
+## Account performance (FR-053a)
+
+Canonical contract: **`docs/endpoint-performance.md`**.
+
+```
+GET {A_SEARCH_URL}/account/performance?from=YYYY-MM-DD&to=YYYY-MM-DD&sandbox=false
+Authorization: Bearer {JWT}
+```
+
+Or `POST /account/performance` with JSON `{ "from", "to", "sandbox" }`.
+
+| Rule | Detail |
+|------|--------|
+| Auth | Same Bearer JWT; **`userId` from JWT only** |
+| Body/query `userId` | Not authority — omit it |
+| 200 fields | `clicks`, `visits` / `uniqueVisitors`, `sales` (count/amount/commission), `env`, echoed `userId` |
+| Empty account | **200** with zeros / empty arrays (not 404) |
+| Env | `sandbox: true` → sandbox; omit/false → live |
+
+Implementation / aggregates are later FR-053 slices; until then treat the
+route as stubbed per those docs.
 
 ## Example (PowerShell)
 
