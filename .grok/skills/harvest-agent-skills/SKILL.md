@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search MRB CONFLICTING add/add package.json: merge main then keep FR-001 quoted tests/**/*.test.js glob for Windows Node 22; product-before-docs docs/mrb hostile pins
