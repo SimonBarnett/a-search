@@ -34,20 +34,38 @@ describe('FR-018 rakuten provider scaffold', () => {
     assert.match(text, /rate\s*limit/i);
   });
 
-  it('stub exports run()', async () => {
+  it('exports run() with Product Search path (not scaffold stub)', async () => {
     const { run } = require('../providers/live/rakuten/src/worker');
     assert.equal(typeof run, 'function');
-    const out = await run({
-      searchId: 'srch_rak',
-      userId: 'U1',
-      env: 'sandbox',
-      source: 'rakuten',
-      q: 'shoes',
-      catalogId: 1,
-      category: 'Fashion',
-      subcategory: 'Shoes',
-    });
+    const fixture = fs.readFileSync(
+      path.join(rakuten, 'fixtures', 'product-search-ok.xml'),
+      'utf8',
+    );
+    const out = await run(
+      {
+        searchId: 'srch_rak',
+        userId: 'U1',
+        env: 'sandbox',
+        source: 'rakuten',
+        q: 'shoes',
+        catalogId: 1,
+        category: 'Fashion',
+        subcategory: 'Shoes',
+      },
+      {
+        env: {
+          A_SEARCH_ENV: 'sandbox',
+          RAKUTEN_APPLICATION_KEY: 'k',
+          S3_RESULTS_BUCKET: 'b',
+        },
+        httpRequest: async () => ({ statusCode: 200, headers: {}, body: fixture }),
+        putObject: async () => ({ ETag: '"1"' }),
+      },
+    );
     assert.equal(out.ok, true);
     assert.equal(out.source, 'rakuten');
+    assert.ok(Array.isArray(out.products));
+    assert.ok(out.products.length >= 1);
+    assert.doesNotMatch(JSON.stringify(out), /not wired yet/i);
   });
 });
