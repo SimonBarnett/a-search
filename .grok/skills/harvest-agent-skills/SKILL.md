@@ -77,3 +77,7 @@ Other a-search skills SHOULD link:
 - Commit "nothing found"
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
+
+## Harvested lessons (intake)
+
+- a-search maintainer roll: selectDueKeys filters A_SEARCH_ENV, NextCheck null or <= now, oldest-first nulls first, MAINTAINER_TOP limit; inject queryPartFeedKeys for MSSQL
