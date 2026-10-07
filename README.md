@@ -13,6 +13,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Environments](docs/environments.md)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
+- [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Functional spec](docs/functional-spec.md)
 
