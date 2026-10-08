@@ -49,6 +49,17 @@ npm test
 
 `npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
 
+After Phase 1b vision edits (Success S10–S16), confirm the pack still validates:
+
+```bash
+npm run validate:vision
+```
+
+That runs `tests/fr055j-validate-vision-pack.test.js`, which invokes
+`validate-vision-pack.py` against `docs/vision.md` (exit 0). Override the
+script path with env `VALIDATE_VISION_PACK` when the default
+`C:\ai\bob\plan\tools\validate-vision-pack.py` is not on the box.
+
 ## Infrastructure (CDK)
 
 Skeleton under `cdk/` (FR-023): entry Lambda + `a-search-amazon-live` /
