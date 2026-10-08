@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — provider selftest</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1.05rem; margin-top: 1.5rem; }
+    .ok { color: #0a7; font-weight: 600; }
+    .fail { color: #c22; }
+    code, pre { background: #f4f6f8; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    pre { padding: 1rem; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid #ccd; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f4f6f8; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search — provider selftest</h1>
+  <p class="ok">200 OK — JWT userId scoped; mixed provider health</p>
+  <p class="meta">
+    <code>GET /selftest?sandbox=false</code>
+    · Authorization: Bearer &lt;jwt&gt; · userId from claim only · env=live
+  </p>
+  <pre>{
+  "ok": true,
+  "userId": "ABC12345",
+  "env": "live",
+  "providers": [
+    { "id": "amazon", "ok": true, "latencyMs": 120 },
+    { "id": "ebay", "ok": false, "latencyMs": 40, "error": "browse_api_unreachable" },
+    { "id": "awin", "ok": true, "latencyMs": 15 }
+  ],
+  "failed": ["ebay"],
+  "intakeFiled": ["ebay"]
+}</pre>
+
+  <h2>Providers (wireframe)</h2>
+  <table>
+    <tr><th>Provider</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>amazon</td><td class="ok">ok</td><td>120 ms</td></tr>
+    <tr><td>ebay</td><td class="fail">fail</td><td>browse_api_unreachable → intake filed</td></tr>
+    <tr><td>awin</td><td class="ok">ok</td><td>15 ms</td></tr>
+  </table>
+
+  <p class="meta">Contract: <code>docs/endpoint-selftest.md</code>. Empty / error wireframes:
+    <a href="selftest-empty.html">selftest-empty.html</a> ·
+    <a href="selftest-error.html">selftest-error.html</a>
+  </p>
+</body>
+</html>
