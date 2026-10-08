@@ -47,5 +47,6 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `mapping/s3Store.js` | FR-054c durable S3 `{env}/_mapping/{userId}/{source}/{tokenHash}.json` (+ list prefix) |
 | `resultsPath.js` | FR-047b `resultsKey` / results S3 path helper |
 | `writeResults.js` | Results PutObject; FR-054d upserts mapping after success |
+| `mssql/classifyConnectError.js` | FR-119 `mssql_auth_failed` vs `mssql_unreachable` |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).

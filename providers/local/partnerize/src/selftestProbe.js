@@ -1,5 +1,7 @@
 'use strict';
 
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
+
 /**
  * FR-084: Partnerize local selftest probe — MSSQL Parts reachable or feed
  * config present. Stay-dark: registry enabled stays false.
@@ -181,15 +183,11 @@ async function probePartnerizeSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'partnerize_mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'partnerize_mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }

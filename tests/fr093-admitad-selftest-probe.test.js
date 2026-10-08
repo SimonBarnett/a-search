@@ -92,7 +92,7 @@ describe('FR-093 admitad selftestProbe + rateLimit', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'admitad');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but API token present', async () => {

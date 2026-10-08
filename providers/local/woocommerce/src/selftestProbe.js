@@ -1,5 +1,7 @@
 'use strict';
 
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
+
 /**
  * FR-112: WooCommerce local selftest probe -- MSSQL Parts reachable or WOOCOMMERCE_CONSUMER_KEY present. Stay-dark: registry enabled stays false.
  * Other providers are out of scope.
@@ -178,15 +180,11 @@ async function probeWooCommerceSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'woocommerce_mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'woocommerce_mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }

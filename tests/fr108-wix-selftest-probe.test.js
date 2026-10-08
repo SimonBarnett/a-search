@@ -92,7 +92,7 @@ describe('FR-108 wix selftestProbe + rateLimit', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'wix');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but access token present', async () => {

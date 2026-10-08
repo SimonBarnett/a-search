@@ -10,6 +10,7 @@ const {
   mssqlConfigFromEnv,
   defaultConnect,
 } = require('./queryParts');
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
 const PROBE_SQL = `
 SELECT TOP (1) 1 AS ok
@@ -100,15 +101,11 @@ async function probeAwinSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'awin_mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'awin_mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }
