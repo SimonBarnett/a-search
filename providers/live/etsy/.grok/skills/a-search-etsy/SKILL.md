@@ -39,6 +39,13 @@ Partial rows without id+title are skipped (no throw). Stay-dark.
 `httpRequest` / `putObject`. SQS `handler` parses Records. Stay-dark: do not flip
 registry enabled.
 
+## Selftest + pacing (FR-078)
+
+`src/selftestProbe.js` -- credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_ETSY_URL`. Creds: `ETSY_API_KEY` (or
