@@ -4,7 +4,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 
@@ -29,11 +29,7 @@ describe('MRB #73 hostile: FR-023 CDK skeleton', () => {
     assert.match(pkg.scripts.synth, /npx --no-install cdk/);
     const gi = fs.readFileSync(path.join(root, '.gitignore'), 'utf8');
     assert.match(gi, /cdk\.out/);
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
   });
 });
