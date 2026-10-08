@@ -3,6 +3,7 @@
 /**
  * FR-037: stage entry Lambda asset so runtime can require providers/*
  * (Code.fromAsset(entry/src) alone cannot resolve ../../providers).
+ * FR-415: also stage shared/ so entry can require ../../shared/intake/reportException.
  *
  * Layout (asset root):
  *   entry/src/**           handler entry/src/index.handler
@@ -10,6 +11,7 @@
  *   providers/loadRegistry.js
  *   providers/queueName.js
  *   providers/resolveQueueUrl.js
+ *   shared/**              intake/reportException + redact (and rest of shared/)
  *
  * No .env / secrets. Optional: copies @aws-sdk/client-sqs from repo
  * node_modules when present (enqueue dep).
@@ -52,6 +54,13 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     fs.copyFileSync(from, path.join(providersDest, name));
   }
 
+  // FR-415: entry/src requires ../../shared/intake/reportException — copy shared/.
+  const sharedSrc = path.join(root, 'shared');
+  if (!fs.existsSync(sharedSrc)) {
+    throw new Error(`stage-entry-lambda-asset: missing ${sharedSrc}`);
+  }
+  fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
+
   // Enqueue uses @aws-sdk/client-sqs — include from root install when available.
   const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
   if (fs.existsSync(sdkSrc)) {
@@ -81,6 +90,8 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         fr: '037',
         handler: 'entry/src/index.handler',
         providers: PROVIDER_FILES,
+        shared: true,
+        fr415: 'shared/intake/reportException',
       },
       null,
       2,
@@ -103,6 +114,8 @@ function requiredEntryAssetPaths() {
     'providers/loadRegistry.js',
     'providers/queueName.js',
     'providers/resolveQueueUrl.js',
+    'shared/intake/reportException.js',
+    'shared/intake/redact.js',
   ];
 }
 
