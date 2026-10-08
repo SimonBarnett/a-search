@@ -6,15 +6,18 @@ description: >
 
 # a-search aliexpress (live)
 
-Registry folder `providers/live/aliexpress`. Enabled: live=false, sandbox=false.
+Registry folder `providers/live/aliexpress`. Enabled: live=false, sandbox=false
+(CAST IRON stay-dark — see `docs/phase2-providers.md`).
 
-## Search path
+## Search path (FR-071)
 
-Live aliexpress API client lands in a later FR.
+`src/search.js` — injectable `httpRequest`, Affiliate
+`aliexpress.affiliate.product.query` with `ALIEXPRESS_API_KEY`, fixture
+`fixtures/products-ok.json` (`aliexpressProductAPI.products[]`). Stay-dark.
 
-## Worker stub
+## Normalize / worker
 
-`src/worker.js` exports `run(msg)`.
+Normalize (FR-072) and worker wiring (FR-073) are separate.
 
 ## Env
 
