@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-075 etsy: providers/live/etsy/src/search.js Open API v3 listings/active with x-api-key + etsyProductAPI.results fixture; keep registry enabled false (#628 / #714)
