@@ -40,6 +40,9 @@ Partial rows without id+title are skipped (no throw). Stay-dark.
 
 `src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `assertBolCreds` -> `searchBol` -> `normalizeSearchResponse` -> `writeResults`. Injectable `httpRequest` / `putObject` / search / normalize. Optional `handler` for SQS Records. Stay-dark.
 
-## Selftest + rateLimit (FR-082)
+## Selftest + pacing (FR-082)
 
-`src/selftestProbe.js` -- credential check + recorded fixture (or injectable HTTP). Registry `rateLimit.maxConcurrency` / `minIntervalMs`. Stay-dark.
+`src/selftestProbe.js` -- credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
