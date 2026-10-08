@@ -91,16 +91,16 @@ describe('FR-004 entry JWT verify', () => {
     assert.match(src, /void opts\.body/);
     // Even if a body is passed, JWT claim wins / body is ignored
     const token = signHs256({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       iss: ISSUER,
       aud: AUDIENCE,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
     const result = await verifyAuthorization(`Bearer ${token}`, {
       env,
-      body: { userId: 'FROM_BODY_ATTACKER' },
+      body: { userId: 'BODYUSR1' },
     });
-    assert.deepEqual(result, { userId: 'FROM_JWT' });
+    assert.deepEqual(result, { userId: 'JWTUSER1' });
   });
 
   it('bad signature → unauthorized', async () => {
