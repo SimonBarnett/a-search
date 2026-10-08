@@ -42,6 +42,7 @@ LOCKED
 | S14 | Daily report signup feed | Onboarding emits signup rows compatible with clubscan daily report fields (new merchants / counts) documented vs madeira-awin-clubscan | `tests/fr052a-daily-report-signups-docs.test.js` + FR-052 write/read signup pins; `docs/daily-report-signups.md` | Signup payload undocumented or missing new-advertiser rows |
 | S15 | Performance endpoint | JWT `GET`/`POST` `/account/performance` returns clicks/visits/sales for that JWT `userId` (body cannot override) | `tests/fr053a-endpoint-performance-docs.test.js` + FR-053 stub/aggregate pins; `docs/endpoint-performance.md` | Endpoint missing or ignores JWT `userId` |
 | S16 | Persist local S3 mapping | Service upserts mapping records (token/link ÔåÆ S3 key) durable under `{env}/_mapping/` and readable for performance joins | `tests/fr054b-mapping-upsert-get.test.js` + FR-054c S3 store / FR-054d writeResults pins; `docs/s3-mapping.md` | Mapping only in memory / lost across invokes |
+| S17 | Tracked affiliate links | Every created offer URL stamps JWT `userId` tenant + provider folder `.env` account via `buildTrackedUrl`; fail closed if account/tenant missing | `tests/fr057c-amazon-build-tracked-url.test.js` + FR-057 provider pins; `docs/tracked-links.md` | Untracked raw offer URL, body-supplied tenant, or hardcoded publisher id |
 
 LOCKED
 
