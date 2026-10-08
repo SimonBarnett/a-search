@@ -1,4 +1,10 @@
-# Maintainer SQL migrations (FR-011)
+# Maintainer SQL migrations (FR-011 / FR-120)
+
+**FR-120:** these objects are **a-search-owned**. They do not exist on
+live `madeiradb` until ops apply the scripts below. Local search workers
+(`providers/local/awin|impact`) SELECT `dbo.Parts` — they do **not** read
+`dbo.MerchantProducts`. a-search **runtime never runs these scripts**
+(no DDL from Lambda).
 
 Idempotent T-SQL for MSSQL. Apply **once per database** (live DB and
 sandbox DB separately, or one DB with `Env` discriminating rows).

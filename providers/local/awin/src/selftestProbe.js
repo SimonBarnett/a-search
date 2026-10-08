@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-059j: Awin local selftest probe — MSSQL Parts reachable or feed config present.
+ * FR-059j: Awin local selftest probe -- MSSQL Parts reachable or feed config present.
  * Other providers are out of scope.
  */
 
@@ -10,8 +10,10 @@ const {
   mssqlConfigFromEnv,
   defaultConnect,
 } = require('./queryParts');
+const { isMissingTableError } = require('../../../../shared/mssql/isMissingTableError');
 const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
+/** FR-120: probe a-search-owned dbo.Parts. */
 const PROBE_SQL = `
 SELECT TOP (1) 1 AS ok
 FROM dbo.Parts
@@ -101,6 +103,14 @@ async function probeAwinSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
+    if (isMissingTableError(err)) {
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: 'missing_table',
+      };
+    }
     return {
       ok: false,
       source,
@@ -128,6 +138,7 @@ async function awinSelftestProbe(source, deps) {
 }
 
 module.exports = {
+  isMissingTableError,
   probeAwinSelftest,
   awinSelftestProbe,
   hasFeedConfig,

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-059k: Impact local selftest probe — MSSQL Parts reachable or config present.
+ * FR-059k: Impact local selftest probe -- MSSQL Parts reachable or config present.
  * Other providers are out of scope.
  */
 
@@ -10,8 +10,10 @@ const {
   mssqlConfigFromEnv,
   defaultConnect,
 } = require('./queryParts');
+const { isMissingTableError } = require('../../../../shared/mssql/isMissingTableError');
 const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
+/** FR-120: probe a-search-owned dbo.Parts. */
 const PROBE_SQL = `
 SELECT TOP (1) 1 AS ok
 FROM dbo.Parts
@@ -100,6 +102,14 @@ async function probeImpactSelftest(deps = {}) {
     if (configOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
+    if (isMissingTableError(err)) {
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: 'missing_table',
+      };
+    }
     return {
       ok: false,
       source,
@@ -127,6 +137,7 @@ async function impactSelftestProbe(source, deps) {
 }
 
 module.exports = {
+  isMissingTableError,
   probeImpactSelftest,
   impactSelftestProbe,
   hasConfig,
