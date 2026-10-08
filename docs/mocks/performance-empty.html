@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — performance empty account</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .ok { color: #0a7; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; border-radius: 4px; overflow: auto; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search — account performance</h1>
+  <p class="ok">200 OK — empty account (zeros, not 404)</p>
+  <p class="meta">JWT valid; no clicks / visits / sales in range for this userId + env.</p>
+  <pre>{
+  "ok": true,
+  "userId": "ABC12345",
+  "env": "live",
+  "from": "2026-10-01",
+  "to": "2026-10-08",
+  "clicks": 0,
+  "visits": 0,
+  "uniqueVisitors": 0,
+  "sales": { "count": 0, "amount": 0, "commission": 0, "currency": "GBP" },
+  "currencies": [],
+  "topLinks": [],
+  "topMerchants": []
+}</pre>
+  <p class="meta">Key mock: <a href="performance.html">performance.html</a> · Error:
+    <a href="performance-error.html">performance-error.html</a>
+  </p>
+</body>
+</html>

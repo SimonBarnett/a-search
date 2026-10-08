@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — account performance</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1.05rem; margin-top: 1.5rem; }
+    .ok { color: #0a7; font-weight: 600; }
+    code, pre { background: #f4f6f8; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    pre { padding: 1rem; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid #ccd; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f4f6f8; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search — account performance</h1>
+  <p class="ok">200 OK — JWT userId scoped</p>
+  <p class="meta">
+    <code>GET /account/performance?from=2026-10-01&amp;to=2026-10-08</code>
+    · Authorization: Bearer &lt;jwt&gt; · userId from claim only · env=live
+  </p>
+  <pre>{
+  "ok": true,
+  "userId": "ABC12345",
+  "env": "live",
+  "from": "2026-10-01",
+  "to": "2026-10-08",
+  "clicks": 42,
+  "visits": 30,
+  "uniqueVisitors": 18,
+  "sales": { "count": 3, "amount": 230.5, "commission": 23.05, "currency": "GBP" },
+  "currencies": [
+    { "currency": "EUR", "count": 1, "amount": 80, "commission": 8 },
+    { "currency": "GBP", "count": 2, "amount": 150.5, "commission": 15.05 }
+  ],
+  "topLinks": [
+    { "linkId": "lnk_hot", "clicks": 13, "sales": 3 },
+    { "linkId": "lnk_warm", "clicks": 5, "sales": 1 }
+  ],
+  "topMerchants": [
+    { "merchantId": "m_acme", "merchantName": "Acme", "clicks": 13, "sales": 3 }
+  ]
+}</pre>
+
+  <h2>Summary (wireframe)</h2>
+  <table>
+    <tr><th>Clicks</th><td>42</td></tr>
+    <tr><th>Visits</th><td>30</td></tr>
+    <tr><th>Unique visitors</th><td>18</td></tr>
+    <tr><th>Sales</th><td>3 · £230.50 · commission £23.05</td></tr>
+  </table>
+
+  <p class="meta">Contract: <code>docs/endpoint-performance.md</code>. Empty / error wireframes:
+    <a href="performance-empty.html">performance-empty.html</a> ·
+    <a href="performance-error.html">performance-error.html</a>
+  </p>
+</body>
+</html>
