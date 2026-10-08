@@ -31,9 +31,11 @@ Registry folder `providers/live/aliexpress`. Enabled: live=false, sandbox=false
 Accepts `aliexpressProductAPI.products[]` (recorded search fixture), `result.products[]`,
 and common response wrappers. Partial rows without id+title are skipped (no throw). Stay-dark.
 
-## Worker
+## Worker (FR-073)
 
-Worker wiring (FR-073) is separate.
+`src/worker.js` -- `run(msg, deps)` wires `searchAliexpress` -> `normalizeSearchResponse` ->
+`writeResults` with injectable `httpRequest` / `putObject`. `assertWorkerEnv` before HTTP.
+SQS `handler` parses Records. Stay-dark: do not flip registry enabled.
 
 ## Env
 
