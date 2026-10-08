@@ -21,6 +21,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
+- [Tracked links](docs/tracked-links.md) (FR-057 — JWT `userId` tenant + provider `.env` account)
 - [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
 - [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
 - [Daily report signups](docs/daily-report-signups.md) (FR-052a — clubscan field map)
