@@ -172,7 +172,11 @@ async function searchCj(msg, deps) {
     throw new Error(`CJ GraphQL errors: ${msgText}`);
   }
 
-  return normalizeSearchResponse(json);
+  return normalizeSearchResponse(json, {
+    userId: msg && msg.userId,
+    env: msg && msg.env,
+    envVars,
+  });
 }
 
 module.exports = {

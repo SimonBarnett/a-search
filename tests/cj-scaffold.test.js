@@ -52,6 +52,7 @@ describe('FR-019 cj provider scaffold', () => {
           A_SEARCH_ENV: 'sandbox',
           CJ_API_TOKEN: 't',
           CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+          CJ_WEBSITE_ID: 'web-test',
           S3_RESULTS_BUCKET: 'b',
         },
         httpRequest: async () => fixture,
