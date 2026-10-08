@@ -38,6 +38,7 @@ LOCKED
 | S10 | Harvest CAST IRON in every agent CWD | Every `AGENTS.md` + `a-search-*` SKILL.md contains the CAST IRON harvest block and intake `POST /bob/v1/intake` with explicit `-Repo SimonBarnett/a-search` | `tests/skillbook-harvest.test.js` enumerates entry/maintainer/providers/endpoint and asserts CAST IRON + intake + `-Repo` needles | Any required agent CWD missing the harvest block |
 | S11 | Shared layer only for shared code | `resultsPath`, `writeResults`, `assertEnv`, intake reporter, and related helpers live under `shared/` (Lambda layer `/opt/nodejs/a-search`); providers do not copy-paste those helpers | `tests/shared-no-dup.test.js` + FR-047 shared-package / resultsPath / writeResults pin tests; `docs/shared-layer.md` | Duplicate shared helpers reappear under `providers/*/src` |
 | S12 | Deterministic exceptions ÔåÆ a-search intake | Uncaught/handled fatal errors in entry/worker/maintainer/onboarding call the intake helper with `repo=SimonBarnett/a-search` (deduped; secrets redacted) | `tests/report-exception.test.js` + FR-048 entry/amazon/maintainer intake pins; `docs/intake-on-exception.md` | Fatal path logs only and never POSTs intake |
+| S13 | Local onboarding agents | Each enabled local source has an `onboarding/` agent CWD + scheduled runner that drains until `remaining=0` then exits | `tests/onboarding-drain.test.js` + FR-049 awin/impact scaffold pins; `docs/onboarding-agents.md` | No onboarding folder for awin/impact, or runner loops forever with no exit |
 
 LOCKED
 
