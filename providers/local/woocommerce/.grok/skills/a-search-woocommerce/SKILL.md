@@ -13,6 +13,7 @@ description: >
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
 Registry folder `providers/local/woocommerce`. Enabled: live=false, sandbox=false.
+`rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-112).
 
 ## Catalogue client (FR-109)
 
@@ -36,6 +37,13 @@ SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds)
 `src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
 Relative product Urls resolve against `WOOCOMMERCE_STORE_URL`; tracked links stamp `WOOCOMMERCE_AFFILIATE_ID` as `sid`.
 Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/upsert (FR-110) are separate.
+
+## Selftest + pacing (FR-112)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`WOOCOMMERCE_CONSUMER_KEY` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`). Pin: `tests/fr112-woocommerce-selftest-probe.test.js`.
 
 ## Env
 
