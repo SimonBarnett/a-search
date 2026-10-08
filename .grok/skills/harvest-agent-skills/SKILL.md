@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-065 kelkoo: worker run wires searchKijiji→normalize→writeResults with injectable deps; keep enabled false; if FR-064 normalize is still open, land normalize.js in the worker PR and Refs the normalize issue (#618 / #682)
