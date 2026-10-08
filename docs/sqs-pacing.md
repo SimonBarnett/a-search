@@ -27,6 +27,7 @@ provider APIs do not rate-block the account.
 | `reservedConcurrentExecutions` | Worker Lambda (CDK / console) | Hard cap on parallel invokes for that function. |
 | Queue depth | CloudWatch / ops | Growing backlog with low concurrency is healthier than zero backlog + 429 storms. |
 | Source skill | `providers/*/…/SKILL.md` | Record vendor rate limits and any extra sleep/backoff for that API. |
+| `createMinIntervalPacer` | `shared/pacing/minInterval.js` (FR-058c) | Space provider HTTP calls by `minIntervalMs` (wire in workers later). |
 
 ## Related
 
