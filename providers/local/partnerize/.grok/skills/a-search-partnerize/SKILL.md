@@ -19,9 +19,15 @@ Registry folder `providers/local/partnerize`. Enabled: live=false, sandbox=false
 
 SELECT dbo.Parts WHERE Source='partnerize' (maintainer owns feeds).
 
-## Worker stub
+## Worker + queryParts (FR-083)
 
-`src/worker.js` exports `run(msg)` (queryParts + writeResults is FR-083).
+`src/queryParts.js` — injectable MSSQL `dbo.Parts` SELECT (`Source='partnerize'`,
+`DeletedAt IS NULL`). Missing `MSSQL_SERVER`/`MSSQL_DATABASE` throws
+`PartnerizeMssqlConfigError` (`partnerize_mssql_missing_config`).
+
+`src/worker.js` — `run(msg)` / `handler`: queryParts -> normalizePart -> writeResults.
+Tracked URLs require `PARTNERIZE_PUBLISHER_ID` -> query param `pubref`.
+Stay-dark: do not flip registry `enabled`.
 
 ## Maintainer feed-parser (FR-085)
 
