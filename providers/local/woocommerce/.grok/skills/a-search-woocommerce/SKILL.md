@@ -14,6 +14,12 @@ description: >
 
 Registry folder `providers/local/woocommerce`. Enabled: live=false, sandbox=false.
 
+## Catalogue client (FR-109)
+
+`src/catalog.js` -- injectable WooCommerce REST `GET /wp-json/wc/v3/products` with Basic auth (`WOOCOMMERCE_CONSUMER_KEY` / `WOOCOMMERCE_CONSUMER_SECRET`).
+Recorded fixture: `fixtures/products-ok.json`. Pin: `tests/fr109-woocommerce-catalog.test.js`.
+Out of scope for FR-109: MSSQL upsert, registry enable, multi-merchant router.
+
 ## Normalize + upsert (FR-110)
 
 - `src/normalize.js` -- WooCommerce REST product -> Parts staging columns (`Source`, `FeedKey`, `MerchantProductId`, `Env`, `Title`, ... + `ContentHash`).
@@ -31,4 +37,4 @@ SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds)
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_WOOCOMMERCE_URL`.
+See `.env.example` (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`). Queue env: `SQS_WOOCOMMERCE_URL`.
