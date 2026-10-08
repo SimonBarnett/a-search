@@ -1,0 +1,3 @@
+merchant_product_id,title,description,url,image_url,price,currency,stock
+fo-100,Widget Alpha,A fine flexoffers widget,https://example.invalid/p/fo-100,https://example.invalid/i/fo-100.jpg,19.99,GBP,in_stock
+fo-200,Widget Beta,Another fixture row,https://example.invalid/p/fo-200,https://example.invalid/i/fo-200.jpg,5.50,EUR,out_of_stock
