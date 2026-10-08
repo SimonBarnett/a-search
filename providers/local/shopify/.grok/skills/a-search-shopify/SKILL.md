@@ -31,10 +31,13 @@ Out of scope for FR-101: MSSQL upsert, registry enable, multi-merchant router.
 
 SELECT dbo.Parts WHERE Source='shopify' (maintainer owns store sync / feeds).
 
-## Worker stub
+## Worker + queryParts (FR-103)
 
-`src/worker.js` exports `run(msg)` (FR-607). Still a stub until FR-103; catalogue sync / upsert are separate.
+`src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
+Relative product Urls resolve against `SHOPIFY_STORE_URL`; tracked links stamp `SHOPIFY_AFFILIATE_ID` as `sid`.
+Stay-dark; no "not wired" stub on the happy path.
+Pin: `tests/fr103-shopify-worker.test.js`. Catalogue client (FR-101) and normalize/upsert (FR-102) are separate.
 
 ## Env
 
-See `.env.example` (`SHOPIFY_STORE_URL`, `SHOPIFY_ACCESS_TOKEN`, optional `SHOPIFY_API_VERSION`). Queue env: `SQS_SHOPIFY_URL`.
+See `.env.example` (`MSSQL_*`, `SHOPIFY_STORE_URL`, `SHOPIFY_ACCESS_TOKEN`, `SHOPIFY_AFFILIATE_ID`, optional `SHOPIFY_API_VERSION`). Queue env: `SQS_SHOPIFY_URL`.

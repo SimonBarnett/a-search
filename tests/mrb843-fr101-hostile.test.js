@@ -95,13 +95,15 @@ describe('MRB-843 FR-101 hostile', () => {
     assert.equal(DEFAULT_API_VERSION, '2024-10');
   });
 
-  it('worker remains stub; catalog is separate (FR-101 out of scope)', () => {
+  it('worker does not import catalogue client (FR-101 stays separate from FR-103)', () => {
     const worker = fs.readFileSync(
       path.join(root, 'providers', 'local', 'shopify', 'src', 'worker.js'),
       'utf8',
     );
+    // FR-103 replaced the stub with queryParts+writeResults; catalogue fetch stays in catalog.js.
     assert.doesNotMatch(worker, /fetchCatalogPage|catalog\.js/);
-    assert.match(worker, /module\.exports\s*=\s*\{\s*run\s*\}/);
+    assert.match(worker, /defaultQueryParts|queryParts/);
+    assert.match(worker, /writeResults/);
   });
 
   it('skill documents FR-101 catalogue; .env.example secrets empty; ASCII', () => {
