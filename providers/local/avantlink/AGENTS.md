@@ -29,5 +29,8 @@ Provider CWD for registry id `avantlink` (`kind: local`).
 
 ## Shape
 
+- `src/parseFeed.js` -- maintainer feed-parser hook (FR-100)
+- `fixtures/products-ok.csv` -- recorded Avantlink-shaped CSV
+
 - `src/worker.js` — `run(msg)` stub
 - `.env.example` — placeholders
