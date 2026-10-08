@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-063: kelkoo search.js uses injectable httpRequest + recorded fixtures; assert KELKOO_API_KEY; registry stays enabled false until a later enable FR
