@@ -33,7 +33,7 @@ Clubscan `newAdvertisers[]` push shape vs a-search `emitSignupRow` /
 | `company_name` (table “Company”) | `company_name` **or** `merchantName` | Display name; emitters use `company_name` |
 | `description` (table “Description”) | `description` | Optional; truncated in clubscan HTML |
 | `email` (table “Email” / login link) | `email` | Required on emitSignupRow |
-| `user_id` | `user_id` | Clubscan merchant user id |
+| `user_id` | `user_id` | Madeira `Users.user_id` — exactly 8 chars `[0-9A-Z]` (`^[0-9A-Z]{8}$`); see [identity.md](identity.md) |
 | `advertiserId` / programme `id` | `advertiserId` **or** `merchantId` | Provider merchant id |
 | `website` | `website` | Optional; logo link href |
 | `logoUrl` | `logoUrl` | Optional; company column image |

@@ -11,10 +11,11 @@
  */
 
 const crypto = require('node:crypto');
+const { assertUserId, UserIdError } = require('../../../shared/identity/userId');
 
 class AuthError extends Error {
   /**
-   * @param {'unauthorized'|'missing_user_id_claim'} code
+   * @param {'unauthorized'|'missing_user_id_claim'|'invalid_user_id_claim'} code
    * @param {string} [message]
    */
   constructor(code, message) {
@@ -123,7 +124,14 @@ function verifyHs256(token, cfg) {
   if (typeof userId !== 'string' && typeof userId !== 'number') {
     throw new AuthError('missing_user_id_claim');
   }
-  return { userId: String(userId) };
+  try {
+    return { userId: assertUserId(String(userId)) };
+  } catch (err) {
+    if (err instanceof UserIdError) {
+      throw new AuthError('invalid_user_id_claim', err.message);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -169,7 +177,14 @@ async function verifyAuthorization(authorizationHeader, opts = {}) {
     if (payload.userId === undefined || payload.userId === null || payload.userId === '') {
       throw new AuthError('missing_user_id_claim');
     }
-    return { userId: String(payload.userId) };
+    try {
+      return { userId: assertUserId(String(payload.userId)) };
+    } catch (err) {
+      if (err instanceof UserIdError) {
+        throw new AuthError('invalid_user_id_claim', err.message);
+      }
+      throw err;
+    }
   } catch (err) {
     if (err instanceof AuthError) throw err;
     if (err && err.code === 'MODULE_NOT_FOUND') {
