@@ -3,6 +3,7 @@ name: a-search-endpoint
 description: >
   Call the a-search HTTP API as an agent: obtain login JWT, POST /search,
   GET/POST /account/performance (clicks visits sales for JWT userId),
+  GET/POST /selftest (provider status + intake on fail),
   interpret 200 accept vs 401/400, live vs sandbox, and find offline results
   on the SQL host rclone path (or S3 key). Use when searching affiliate/local
   parts via a-search, Club Madeira catalogue enrich, or /a-search.
@@ -26,6 +27,7 @@ later under the results path.
 
 Canonical product docs: `docs/endpoint-search.md`,
 `docs/endpoint-performance.md` (FR-053a — clicks / visits / sales),
+`docs/endpoint-selftest.md` (FR-059a — provider status + intake on fail),
 `docs/environments.md`, `docs/rclone-results.md` (SQL host mount env vars +
 path), `docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is
 the agent playbook.
@@ -34,6 +36,7 @@ the agent playbook.
 
 - Need multi-source product hits (Amazon, eBay, Awin local parts, …)
 - Need **account performance** (clicks, visits, sales) for the JWT `userId`
+- Need a **provider selftest** (which sources are ok; failures file intake)
 - Must pass a **login JWT** whose `userId` claim owns the result files
 - Live vs sandbox must not be mixed
 
@@ -124,6 +127,28 @@ Or `POST /account/performance` with JSON `{ "from", "to", "sandbox" }`.
 
 Implementation / aggregates are later FR-053 slices; until then treat the
 route as stubbed per those docs.
+
+## Provider selftest (FR-059a)
+
+Canonical contract: **`docs/endpoint-selftest.md`**.
+
+```
+GET {A_SEARCH_URL}/selftest?sandbox=false
+Authorization: Bearer {JWT}
+```
+
+Or `POST /selftest` with JSON `{ "sandbox", "sources?" }`.
+
+| Rule | Detail |
+|------|--------|
+| Auth | Same Bearer JWT; **`userId` from JWT only** |
+| Env | `sandbox: true` → sandbox; omit/false → live |
+| 200 body | `providers[]` with `id` + `ok` (+ optional `error`); `failed`; `intakeFiled` |
+| Intake on fail | Each failed provider probe files intake with **`repo=SimonBarnett/a-search`** (redacted, deduped) |
+| 401/400 | No intake |
+
+Implementation is a later FR-059 slice; until then treat the route as
+documented-only.
 
 ## Example (PowerShell)
 
