@@ -49,6 +49,10 @@ they do not unlock a silent client swap.
 queue name placeholder, registry entry). Defaults above set who is on at
 first deploy; every id remains individually switchable.
 
+**Phase 2 (FR-061):** complete remaining stubs with fixture-backed clients while
+keeping registry `enabled` false until credentials exist — see
+`docs/phase2-providers.md` (CAST IRON stay-dark).
+
 ## Example `providers/registry.json`
 
 ```json
