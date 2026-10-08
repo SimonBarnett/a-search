@@ -172,7 +172,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_WEBGAINS_URL"
+      "queueEnv": "SQS_WEBGAINS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "tradedoubler",
