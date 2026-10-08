@@ -1,5 +1,7 @@
 'use strict';
 
+const { assertUserId, UserIdError } = require('../../../../../shared/identity/userId');
+
 /**
  * Build daily-report signup row for Impact onboarding (FR-051c).
  * Persistence to S3/MSSQL is FR-052 — this only shapes the object.
@@ -58,6 +60,14 @@ function emitSignupRow(opts = {}) {
 
   if (!user_id) {
     throw new ImpactSignupError('missing_user_id', 'signup requires user_id');
+  }
+  try {
+    assertUserId(user_id);
+  } catch (err) {
+    if (err instanceof UserIdError) {
+      throw new ImpactSignupError('invalid_user_id', err.message);
+    }
+    throw err;
   }
   if (!company_name) {
     throw new ImpactSignupError(

@@ -1,8 +1,8 @@
 {
-  "description": "FR-053d fixture sale events for JWT userId FROM_JWT in live env",
+  "description": "FR-053d fixture sale events for JWT userId JWTUSER1 in live env",
   "events": [
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-02T12:00:00.000Z",
       "amount": 100,
@@ -10,7 +10,7 @@
       "currency": "GBP"
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-04T15:00:00.000Z",
       "amount": 50.5,
@@ -18,7 +18,7 @@
       "currency": "GBP"
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-05T09:00:00.000Z",
       "amount": 80,
@@ -34,7 +34,7 @@
       "currency": "GBP"
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "sandbox",
       "at": "2026-10-03T10:00:00.000Z",
       "amount": 40,
@@ -42,7 +42,7 @@
       "currency": "GBP"
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-09-30T12:00:00.000Z",
       "amount": 20,
@@ -50,7 +50,7 @@
       "currency": "GBP"
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-09T00:00:00.000Z",
       "amount": 30,
@@ -59,7 +59,7 @@
     }
   ],
   "expected": {
-    "userId": "FROM_JWT",
+    "userId": "JWTUSER1",
     "env": "live",
     "from": "2026-10-01",
     "to": "2026-10-08",

@@ -10,28 +10,29 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 
 - [Vision](docs/vision.md) (LOCKED)
 - [Endpoint](docs/endpoint-search.md) (`POST /search`)
-- [Performance endpoint](docs/endpoint-performance.md) (FR-053a — clicks / visits / sales for JWT `userId`)
-- [Selftest endpoint](docs/endpoint-selftest.md) (FR-059a — provider status + intake on fail)
-- [Selftest mocks](docs/mocks/selftest.html) (FR-059n — key / [empty](docs/mocks/selftest-empty.html) / [error](docs/mocks/selftest-error.html))
-- [Performance mocks](docs/mocks/performance.html) (FR-053g — key / [empty](docs/mocks/performance-empty.html) / [error](docs/mocks/performance-error.html))
-- [S3 mapping schema](docs/s3-mapping.md) (FR-054a — `env` / `userId` / `source` / `token` / `s3Key`)
+- [Performance endpoint](docs/endpoint-performance.md) (FR-053a â€” clicks / visits / sales for JWT `userId`)
+- [Selftest endpoint](docs/endpoint-selftest.md) (FR-059a â€” provider status + intake on fail)
+- [Selftest mocks](docs/mocks/selftest.html) (FR-059n â€” key / [empty](docs/mocks/selftest-empty.html) / [error](docs/mocks/selftest-error.html))
+- [Performance mocks](docs/mocks/performance.html) (FR-053g â€” key / [empty](docs/mocks/performance-empty.html) / [error](docs/mocks/performance-error.html))
+- [S3 mapping schema](docs/s3-mapping.md) (FR-054a â€” `env` / `userId` / `source` / `token` / `s3Key`)
 - [Environments](docs/environments.md)
-- [SQS pacing](docs/sqs-pacing.md) (FR-058a — prevent provider 407/429)
+- [SQS pacing](docs/sqs-pacing.md) (FR-058a â€” prevent provider 407/429)
 - [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [madeiradb data model](docs/data-model.md) (FR-113 - dbo inventory + ERD)
+- [Identity (8-char user / partner / club codes)](docs/identity.md) (FR-114)
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
-- [Phase-2 providers](docs/phase2-providers.md) (FR-061 — stay-dark until credentials)
-- [Add a source](docs/add-source.md) (checklist — registry `enabled`, no `entry/` core edits)
+- [Phase-2 providers](docs/phase2-providers.md) (FR-061 â€” stay-dark until credentials)
+- [Add a source](docs/add-source.md) (checklist â€” registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
-- [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
-- [Tracked links](docs/tracked-links.md) (FR-057 — JWT `userId` tenant + provider `.env` account)
-- [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
-- [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
-- [Daily report signups](docs/daily-report-signups.md) (FR-052a — clubscan field map)
-- [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report — read-only; HTML email stays in AWS until cutover)
-- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
+- [Shared layer](docs/shared-layer.md) (`shared/` â†’ `/opt/nodejs/a-search`)
+- [Tracked links](docs/tracked-links.md) (FR-057 â€” JWT `userId` tenant + provider `.env` account)
+- [Intake on exception](docs/intake-on-exception.md) (FR-048 â€” entry/worker/maintainer/onboarding)
+- [Onboarding agents](docs/onboarding-agents.md) (FR-049a â€” drain until `remaining=0` + signup fields)
+- [Daily report signups](docs/daily-report-signups.md) (FR-052a â€” clubscan field map)
+- [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report â€” read-only; HTML email stays in AWS until cutover)
+- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a â€” API UNKNOWN fallback)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Phase 2 stub providers (stay dark)](docs/feature-request-phase2-all-providers-2026-10-08.md) (FR-061..112 / issues #614-#665)
 - [Phase 2 FR index](docs/fr/ISSUED-PHASE2.md)
@@ -39,11 +40,11 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 
 ## Agent caller skill
 
-`.grok/skills/a-search-endpoint/SKILL.md` — how an agent calls the API.
+`.grok/skills/a-search-endpoint/SKILL.md` â€” how an agent calls the API.
 
 ## Shape
 
-**service** — Node.js 20+ on AWS. Plan pack validated with
+**service** â€” Node.js 20+ on AWS. Plan pack validated with
 `validate-vision-pack.py`.
 
 ## Develop
@@ -57,7 +58,7 @@ npm test
 
 `npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
 
-After Phase 1b vision edits (Success S10–S16), confirm the pack still validates:
+After Phase 1b vision edits (Success S10â€“S16), confirm the pack still validates:
 
 ```bash
 npm run validate:vision
@@ -78,7 +79,7 @@ npm install
 npm run synth
 ```
 
-`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy …`).
+`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy â€¦`).
 
 ## Feature requests
 
