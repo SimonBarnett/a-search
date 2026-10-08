@@ -7,14 +7,14 @@ description: >
 # a-search kelkoo (live)
 
 Registry folder `providers/live/kelkoo`. Enabled: live=false, sandbox=false
-(CAST IRON stay-dark until credentials — see `docs/phase2-providers.md`).
+(CAST IRON stay-dark — see `docs/phase2-providers.md`).
 
 ## Search path (FR-063)
 
 `src/search.js` — injectable `httpRequest`, Bearer `KELKOO_API_KEY`, fixture
 `fixtures/offers-ok.json`.
 
-## Normalize (FR-064)
+## Normalize (FR-064/065)
 
 `src/normalize.js` maps Shopping API offers → `worker/lib/normalizeProduct`:
 
@@ -22,18 +22,23 @@ Registry folder `providers/live/kelkoo`. Enabled: live=false, sandbox=false
 |--------------|---------------|
 | `offerId` | `id` |
 | `title` | `title` |
-| `landingPageUrl` | `url` (publisher landing from JWT session; no extra campaign rewrite in FR-064) |
+| `landingPageUrl` | `url` via `buildTrackedUrl` + `KELKOO_PUBLISHER_ID` |
 | `imageUrl` | `imageUrl` |
 | `price` / `currency` | `price` / `currency` |
 | `merchantName` | `description` (optional merchant label) |
 
 Partial offers without `offerId`+`title` are skipped (no throw).
 
-## Worker stub
+## Worker (FR-065)
 
-`src/worker.js` exports `run(msg)` — wiring search→normalize→writeResults is
-FR-065 (out of scope here).
+`src/worker.js` — `run(msg)` / `handler`: `assertWorkerEnv` → `searchKelkoo` →
+`normalizeSearchResponse` → `writeResults` (injectable HTTP + putObject).
+
+## Selftest + pacing (FR-066 when present)
+
+`src/selftestProbe.js` when landed; registry `rateLimit` while stay-dark.
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_KELKOO_URL`.
+See `.env.example`. Queue env: `SQS_KELKOO_URL`. Requires `KELKOO_PUBLISHER_ID`
+for tracked landing URLs.
