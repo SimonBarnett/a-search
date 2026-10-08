@@ -13,6 +13,7 @@ description: >
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
 Registry folder `providers/local/shopify`. Enabled: live=false, sandbox=false (stay dark until account details exist).
+`rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-104).
 
 ## Catalogue client (FR-101)
 
@@ -37,6 +38,14 @@ SELECT dbo.Parts WHERE Source='shopify' (maintainer owns store sync / feeds).
 Relative product Urls resolve against `SHOPIFY_STORE_URL`; tracked links stamp `SHOPIFY_AFFILIATE_ID` as `sid`.
 Stay-dark; no "not wired" stub on the happy path.
 Pin: `tests/fr103-shopify-worker.test.js`. Catalogue client (FR-101) and normalize/upsert (FR-102) are separate.
+
+## Selftest + pacing (FR-104)
+
+`src/selftestProbe.js` - MSSQL Parts reachability (injectable `connect`) or
+`SHOPIFY_ACCESS_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
+Pin: `tests/fr104-shopify-selftest-probe.test.js`.
 
 ## Env
 
