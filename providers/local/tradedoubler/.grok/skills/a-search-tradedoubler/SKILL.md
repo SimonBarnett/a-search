@@ -28,6 +28,21 @@ Registry folder `providers/local/tradedoubler`. Enabled: live=false, sandbox=fal
 `tduid`) -> `writeResults`. Optional `handler` for SQS Records.
 Stay-dark; no "not wired" stub on the happy path.
 
+## Maintainer feed-parser (FR-091)
+
+`src/parseFeed.js` -- `parseTradedoublerFeedRows(body, meta)` / `tradedoublerParseFeedRowsHook`
+for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
+Maps Tradedoubler product CSV/JSON into Parts staging columns
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
+
+Credential / locator placeholders (never commit real values):
+
+- `TRADEDOUBLER_FEED_URL` -- optional default feed locator (PartFeedKeys.FeedUrl wins)
+- `TRADEDOUBLER_API_KEY` or `TRADEDOUBLER_FEED_TOKEN` -- feed fetch auth
+- `TRADEDOUBLER_PUBLISHER_ID` -- account / programme id when required
+
+`assertTradedoublerFeedCreds(env)` throws `tradedoubler_missing_feed_credentials` when the API key is absent.
+
 ## Selftest + pacing (FR-090)
 
 `src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
@@ -40,3 +55,4 @@ for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 See `.env.example`. Queue env: `SQS_TRADEDOUBLER_URL`.
 MSSQL: `MSSQL_SERVER`, `MSSQL_DATABASE`, `MSSQL_USER` / `MSSQL_PASSWORD`
 (or `MSSQL_TRUSTED_CONNECTION`). Account: `TRADEDOUBLER_AFFILIATE_ID`.
+Selftest placeholder: `TRADEDOUBLER_API_TOKEN=`.
