@@ -1,9 +1,13 @@
 'use strict';
 
 /**
- * Normalize Kelkoo Shopping API /search/offers payload → a-search products (FR-064/065).
- * When landingPageUrl is present, stamps JWT userId tenant + KELKOO_PUBLISHER_ID
- * via buildTrackedUrl (FR-057 family).
+ * Normalize Kelkoo Shopping API offers → a-search product schema (FR-064/065).
+ * Stay-dark: do not enable registry.
+ *
+ * Field map:
+ * - `offerId` → `id`
+ * - `landingPageUrl` → `url` via `buildTrackedUrl` + `KELKOO_PUBLISHER_ID` when present
+ * - `merchantName` → `description` (optional merchant label)
  */
 
 const {
@@ -16,17 +20,19 @@ const {
 } = require('../../../../worker/lib/normalizeProduct');
 
 /**
- * @param {object} offer
+ * @param {object} offer - one element of response.offers
  * @param {{
  *   userId: string,
  *   env?: string,
  *   envVars: Record<string, string|undefined>,
  * }} [track]
- * @returns {object}
+ * @returns {object} product (may have empty id/title for bad rows)
  */
 function normalizeKelkooOffer(offer, track) {
   if (!offer || typeof offer !== 'object') {
-    return { id: '', title: '', source: 'kelkoo' };
+    const empty = normalizeProduct({ id: '', title: '', source: 'kelkoo' });
+    assertProductSchema(empty);
+    return empty;
   }
 
   const rawUrl =
@@ -60,22 +66,31 @@ function normalizeKelkooOffer(offer, track) {
     title: offer.title == null ? '' : String(offer.title),
     url,
     imageUrl:
-      offer.imageUrl != null
+      offer.imageUrl != null && String(offer.imageUrl).trim() !== ''
         ? String(offer.imageUrl)
-        : offer.image != null
+        : offer.image != null && String(offer.image).trim() !== ''
           ? String(offer.image)
           : undefined,
-    price: offer.price != null ? offer.price : undefined,
-    currency: offer.currency != null ? String(offer.currency) : undefined,
+    price: offer.price != null ? Number(offer.price) : undefined,
+    currency:
+      offer.currency != null && String(offer.currency).trim() !== ''
+        ? String(offer.currency)
+        : undefined,
+    description:
+      offer.merchantName != null && String(offer.merchantName).trim() !== ''
+        ? String(offer.merchantName)
+        : undefined,
     source: 'kelkoo',
   });
-
   assertProductSchema(product);
   return product;
 }
 
 /**
- * @param {object} body - /search/offers JSON
+ * Map a Kelkoo /search/offers JSON body to products.
+ * Missing/partial offers (no offerId+title) are skipped (no throw). Empty → [].
+ *
+ * @param {object} shoppingBody
  * @param {{
  *   userId: string,
  *   env?: string,
@@ -83,12 +98,20 @@ function normalizeKelkooOffer(offer, track) {
  * }} [track]
  * @returns {object[]}
  */
-function normalizeSearchResponse(body, track) {
+function normalizeSearchResponse(shoppingBody, track) {
   const offers =
-    body && Array.isArray(body.offers)
-      ? body.offers.filter((o) => o && typeof o === 'object')
+    shoppingBody && Array.isArray(shoppingBody.offers)
+      ? shoppingBody.offers
       : [];
-  return offers.map((offer) => normalizeKelkooOffer(offer, track));
+  const out = [];
+  for (const offer of offers) {
+    if (!offer || typeof offer !== 'object') continue;
+    const id = offer.offerId != null ? String(offer.offerId).trim() : '';
+    const title = offer.title != null ? String(offer.title).trim() : '';
+    if (!id || !title) continue;
+    out.push(normalizeKelkooOffer(offer, track));
+  }
+  return out;
 }
 
 module.exports = {
