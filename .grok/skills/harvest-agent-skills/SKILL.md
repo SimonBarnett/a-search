@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search GitGuardian test fixtures: use tests/fixtures/fakeSecrets.js joinParts/reLiteral (a-search#612 / #611); when bobiverse files the FR and a-search product PR only Refs it, MRB closes the bobiverse issue after merge
