@@ -4,7 +4,10 @@
       "id": "amazon",
       "kind": "live",
       "folder": "providers/live/amazon",
-      "enabled": { "live": true, "sandbox": true },
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
       "queueEnv": "SQS_AMAZON_URL",
       "rateLimit": {
         "maxConcurrency": 1,
@@ -15,112 +18,164 @@
       "id": "ebay",
       "kind": "live",
       "folder": "providers/live/ebay",
-      "enabled": { "live": true, "sandbox": true },
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
       "queueEnv": "SQS_EBAY_URL"
     },
     {
       "id": "rakuten",
       "kind": "live",
       "folder": "providers/live/rakuten",
-      "enabled": { "live": true, "sandbox": true },
-      "queueEnv": "SQS_RAKUTEN_URL"
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_RAKUTEN_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 1000
+      }
     },
     {
       "id": "cj",
       "kind": "live",
       "folder": "providers/live/cj",
-      "enabled": { "live": true, "sandbox": true },
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
       "queueEnv": "SQS_CJ_URL"
     },
     {
       "id": "kelkoo",
       "kind": "live",
       "folder": "providers/live/kelkoo",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_KELKOO_URL"
     },
     {
       "id": "skimlinks",
       "kind": "live",
       "folder": "providers/live/skimlinks",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_SKIMLINKS_URL"
     },
     {
       "id": "aliexpress",
       "kind": "live",
       "folder": "providers/live/aliexpress",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_ALIEXPRESS_URL"
     },
     {
       "id": "etsy",
       "kind": "live",
       "folder": "providers/live/etsy",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_ETSY_URL"
     },
     {
       "id": "bol",
       "kind": "live",
       "folder": "providers/live/bol",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_BOL_URL"
     },
     {
       "id": "awin",
       "kind": "local",
       "folder": "providers/local/awin",
-      "enabled": { "live": true, "sandbox": true },
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
       "queueEnv": "SQS_AWIN_URL"
     },
     {
       "id": "impact",
       "kind": "local",
       "folder": "providers/local/impact",
-      "enabled": { "live": true, "sandbox": true },
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
       "queueEnv": "SQS_IMPACT_URL"
     },
     {
       "id": "partnerize",
       "kind": "local",
       "folder": "providers/local/partnerize",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_PARTNERIZE_URL"
     },
     {
       "id": "webgains",
       "kind": "local",
       "folder": "providers/local/webgains",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_WEBGAINS_URL"
     },
     {
       "id": "tradedoubler",
       "kind": "local",
       "folder": "providers/local/tradedoubler",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_TRADEDOUBLER_URL"
     },
     {
       "id": "admitad",
       "kind": "local",
       "folder": "providers/local/admitad",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_ADMITAD_URL"
     },
     {
       "id": "flexoffers",
       "kind": "local",
       "folder": "providers/local/flexoffers",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_FLEXOFFERS_URL"
     },
     {
       "id": "avantlink",
       "kind": "local",
       "folder": "providers/local/avantlink",
-      "enabled": { "live": false, "sandbox": false },
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
       "queueEnv": "SQS_AVANTLINK_URL"
     }
   ]

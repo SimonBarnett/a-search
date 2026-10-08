@@ -39,6 +39,22 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
+ * FR-058g: rakuten SQS event-source maxConcurrency from registry rateLimit
+ * (safe default). AWS EventSourceMapping ScalingConfig.MaximumConcurrency
+ * valid range is 2-1000, so registry 1 clamps to 2. Other providers OOS.
+ * @param {{ id?: string, rateLimit?: { maxConcurrency?: number } }} src
+ * @returns {number|undefined}
+ */
+function sqsMaxConcurrencyForSource(src) {
+  if (!src || src.id !== 'rakuten') return undefined;
+  const n = src.rateLimit && Number(src.rateLimit.maxConcurrency);
+  const desired =
+    Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+  return Math.max(2, Math.min(desired, 1000));
+}
+
+
+/**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding sandbox Lambdas (FR-056a/b/d).
@@ -112,11 +128,12 @@ class ASearchStack extends cdk.Stack {
             },
           },
         );
-        worker.addEventSource(
-          new SqsEventSource(queue, {
-            batchSize: 1,
-          }),
-        );
+        const sqsOpts = { batchSize: 1 };
+        const maxConcurrency = sqsMaxConcurrencyForSource(src);
+        if (maxConcurrency != null) {
+          sqsOpts.maxConcurrency = maxConcurrency;
+        }
+        worker.addEventSource(new SqsEventSource(queue, sqsOpts));
 
         new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
           value: queue.queueUrl,
