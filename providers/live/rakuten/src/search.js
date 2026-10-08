@@ -229,7 +229,11 @@ async function searchRakuten(msg, deps) {
         ? res.body
         : '';
   const rawItems = parseProductSearchXml(xml);
-  return normalizeSearchItems(rawItems);
+  return normalizeSearchItems(rawItems, {
+    userId: msg && msg.userId,
+    env: msg && msg.env,
+    envVars,
+  });
 }
 
 module.exports = {
