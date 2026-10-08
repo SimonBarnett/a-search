@@ -175,6 +175,15 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-059b: selftest stub (JWT verified in Lambda; real probes later)
+    httpApi.addRoutes({
+      path: '/selftest',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntrySelftestIntegration',
+        entry,
+      ),
+    });
 
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
     const maintainerCode = lambda.Code.fromAsset(
