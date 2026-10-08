@@ -4,6 +4,20 @@ Onboarding agents emit **signup rows** that feed the daily merchant report
 currently produced by madeira-awin-clubscan. This doc maps clubscan report
 **sections** to a-search field names. Writer persistence is FR-052b (OOS here).
 
+
+## Disambiguation (FR-116)
+
+**madeira-awin-clubscan (Lambda) ≠ `dbo.clubscan` (table).**
+
+- This document's "clubscan" / report / signup language means the legacy
+  **madeira-awin-clubscan** Lambda (Awin onboarding + daily HTML email).
+- **`dbo.clubscan`** is a madeiradb table of **club website scans** (Url,
+  JsonResult, ClubID, PartnerId, computed `active`). Do **not** insert signup
+  rows there. See [data-model.md](data-model.md) § Club scans.
+
+Existing DB home for Awin advertiser onboarding fields (inferred until Simon
+confirms): **`dbo.AwinHighApprovalMerchants`**.
+
 ## Legacy clubscan (read-only)
 
 - Tree: https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
@@ -25,23 +39,28 @@ cutover). Pixel-perfect HTML email is **out of scope**.
 
 ### New merchants table (signup emitters)
 
-Clubscan `newAdvertisers[]` push shape vs a-search `emitSignupRow` /
-`docs/onboarding-agents.md` minimum:
+Clubscan 
+ewAdvertisers[] push shape vs a-search emitSignupRow /
+docs/onboarding-agents.md minimum. Matching **dbo.AwinHighApprovalMerchants**
+column is **inferred** until Simon confirms — use "none" where there is no
+DB column.
 
-| Clubscan report / object | a-search signup field | Notes |
-|--------------------------|----------------------|--------|
-| `company_name` (table “Company”) | `company_name` **or** `merchantName` | Display name; emitters use `company_name` |
-| `description` (table “Description”) | `description` | Optional; truncated in clubscan HTML |
-| `email` (table “Email” / login link) | `email` | Required on emitSignupRow |
-| `user_id` | `user_id` | Clubscan merchant user id |
-| `advertiserId` / programme `id` | `advertiserId` **or** `merchantId` | Provider merchant id |
-| `website` | `website` | Optional; logo link href |
-| `logoUrl` | `logoUrl` | Optional; company column image |
-| `primarySector` | `primarySector` | Optional; under logo in clubscan |
-| *(run clock)* | `onboardedAt` **or** `signedUpAt` | ISO-8601 when join recorded |
-| Awin-only in clubscan | `source` | a-search: registry id (`awin`, `impact`, …) |
-| live/sandbox isolation | `env` | `live` \| `sandbox` |
-| join outcome | `status` | e.g. `joined`, `pending`, `rejected` |
+| Clubscan report / object | a-search signup field | AwinHighApprovalMerchants | Notes |
+|--------------------------|----------------------|---------------------------|--------|
+| company_name (table "Company") | company_name **or** merchantName | Name | Display name; emitters use company_name |
+| description (table "Description") | description | description | Optional; truncated in clubscan HTML |
+| email (table "Email" / login link) | email | Email | Required on emitSignupRow |
+| user_id | user_id | none | Madeira Users.user_id 8-char code; do not treat AwinUserId as tenant |
+| dvertiserId / programme id | dvertiserId **or** merchantId | MerchantId | Awin advertiser id |
+| website | website | Website | Optional; logo link href |
+| logoUrl | logoUrl | logoUrl | Optional; company column image |
+| primarySector | primarySector | primarySector | Optional; under logo in clubscan |
+| *(run clock)* | onboardedAt **or** signedUpAt | none | ISO-8601 when join recorded |
+| Awin-only in clubscan | source | none | a-search registry id (win, impact, …) |
+| live/sandbox isolation | env | none | live \| sandbox |
+| join outcome | status | Joined (bit) approx. | e.g. joined, pending, 
+ejected |
+| (club / partner ownership) | none | ClubID / PartnerID | Write only ^[0-9A-Z]{8}$; **never copy** PartnerID = 2889699 (known data-quality anomaly) |
 
 **Required emit keys** (Awin FR-050c / Impact FR-051c subset):
 
@@ -108,3 +127,9 @@ Writer merges by `id` into the day's object.
 - Parent: `docs/fr/FR-052.md`
 - Drain contract: `docs/onboarding-agents.md`
 - Phase-1b Q5: `docs/feature-request-phase1b-2026-10-07.md`
+
+## Known data-quality (FR-116)
+
+`AwinHighApprovalMerchants.PartnerID = 2889699` appears on 6 rows and is **not**
+a valid 8-char identity code. a-search must **not** copy it into `PartnerId`,
+`user_id`, or JWT `userId`.

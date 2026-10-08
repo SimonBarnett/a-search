@@ -9,6 +9,17 @@ Skillbook setup for humans (`.env` obtain steps) stays in
 `docs/provider-onboarding-skills.md` (FR-060a). This doc is the **runner
 contract**: schedule, drain loop, signup feed.
 
+
+## Disambiguation (FR-116)
+
+**madeira-awin-clubscan (Lambda) ≠ `dbo.clubscan` (table).**
+
+Onboarding "clubscan parity" means the legacy **madeira-awin-clubscan** Lambda
+drain / signup behaviour — not writes to **`dbo.clubscan`** (club website scan
+rows). Club scan schema: [data-model.md](data-model.md) § Club scans. Awin
+advertiser field home (inferred): `dbo.AwinHighApprovalMerchants` — see
+[daily-report-signups.md](daily-report-signups.md).
+
 ## Legacy reference (read-only)
 
 Clubscan daily Awin onboarding + report:
