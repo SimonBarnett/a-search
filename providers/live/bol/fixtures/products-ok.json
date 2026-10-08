@@ -1,0 +1,27 @@
+{
+  "bolProductAPI": {
+    "numFound": 2,
+    "products": [
+      {
+        "id": "bol-fix-001",
+        "ean": "8712345678901",
+        "title": "Fixture Wireless Earbuds NL",
+        "offerPrice": 19.99,
+        "currency": "EUR",
+        "url": "https://example.test/bol/product/bol-fix-001",
+        "imageUrl": "https://example.test/img/bol-fix-001.jpg",
+        "seller": "Fixture Bol Shop A"
+      },
+      {
+        "id": "bol-fix-002",
+        "ean": "8712345678902",
+        "title": "Fixture Phone Case NL",
+        "offerPrice": 8.5,
+        "currency": "EUR",
+        "url": "https://example.test/bol/product/bol-fix-002",
+        "imageUrl": "https://example.test/img/bol-fix-002.jpg",
+        "seller": "Fixture Bol Shop B"
+      }
+    ]
+  }
+}
