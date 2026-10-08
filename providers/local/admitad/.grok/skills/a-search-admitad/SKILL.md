@@ -19,11 +19,14 @@ Registry folder `providers/local/admitad`. Enabled: live=false, sandbox=false
 ## Search path (FR-092)
 
 SELECT dbo.Parts WHERE Source='admitad' AND DeletedAt IS NULL (maintainer owns feeds).
-`src/queryParts.js` when present -- injectable `connect` (no live SQL). Stay-dark.
+`src/queryParts.js` -- `defaultQueryParts` / `mssqlConfigFromEnv` with injectable
+`connect` (no live SQL). Stay-dark.
 
-## Worker
+## Worker (FR-092)
 
-`src/worker.js` exports `run(msg[, deps])`. Stay-dark.
+`src/worker.js` exports `run(msg, deps)` / `handler` / `normalizePart`.
+Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `ADMITAD_WEBSITE_ID`
+-> query param `tag`, then `writeResults`. Stay-dark; no "not wired" stub on the happy path.
 
 ## Selftest + pacing (FR-093)
 
