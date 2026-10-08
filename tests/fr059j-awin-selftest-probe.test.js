@@ -88,7 +88,7 @@ describe('FR-059j awin selftest probe', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'awin');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but feed token present', async () => {

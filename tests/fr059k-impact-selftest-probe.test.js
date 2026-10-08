@@ -88,7 +88,7 @@ describe('FR-059k impact selftest probe', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'impact');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but campaign id present', async () => {

@@ -1,5 +1,7 @@
 'use strict';
 
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
+
 /**
  * FR-096: Flexoffers local selftest probe -- MSSQL Parts reachable or API
  * token present. Stay-dark: registry enabled stays false.
@@ -180,15 +182,11 @@ async function probeFlexoffersSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'flexoffers_mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'flexoffers_mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }

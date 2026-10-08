@@ -10,6 +10,7 @@ const {
   mssqlConfigFromEnv,
   defaultConnect,
 } = require('./queryParts');
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
 const PROBE_SQL = `
 SELECT TOP (1) 1 AS ok
@@ -99,15 +100,11 @@ async function probeImpactSelftest(deps = {}) {
     if (configOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'impact_mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'impact_mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }
