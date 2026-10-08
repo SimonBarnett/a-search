@@ -114,18 +114,28 @@ describe('MRB-830 FR-099 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example retargeted off avantlink to shopify', () => {
+  it('fr058b no-rateLimit example retargeted off avantlink/shopify/wix to woocommerce', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('shopify'\)/);
+    assert.match(src, /rateLimit\('woocommerce'\)/);
     assert.ok(!/assert\.equal\(rateLimit\('avantlink'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
     assert.deepEqual(rateLimit('avantlink'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
-    assert.equal(rateLimit('shopify'), undefined);
+    assert.deepEqual(rateLimit('shopify'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.deepEqual(rateLimit('wix'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.equal(rateLimit('woocommerce'), undefined);
   });
 
   it('.env.example AFFILIATE_ID and API_TOKEN empty', () => {
