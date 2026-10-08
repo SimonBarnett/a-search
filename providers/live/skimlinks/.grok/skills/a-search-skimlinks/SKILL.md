@@ -15,10 +15,24 @@ Registry folder `providers/live/skimlinks`. Enabled: live=false, sandbox=false
 `SKIMLINKS_API_KEY`, fixture `fixtures/products-ok.json`
 (`skimlinksProductAPI.products[]`). Stay-dark.
 
-## Normalize / worker
+## Normalize (FR-068/069)
 
-Normalize (FR-068) and worker wiring (FR-069) are separate. Prefer adapting
-normalize to this recorded Product API shape when both land.
+`src/normalize.js` maps Product API products → `normalizeProduct`:
+
+| Skimlinks field | Product field |
+|-----------------|---------------|
+| `id` | `id` |
+| `title` | `title` |
+| `url` | tracked `url` via `buildTrackedUrl` + `SKIMLINKS_PUBLISHER_ID` |
+| `image_url` | `imageUrl` |
+| `price` (minor units, e.g. 89900) | `price` (/100) |
+| `currency` | `currency` |
+| `merchant` | `description` |
+
+## Worker (FR-069)
+
+`src/worker.js` — `assertWorkerEnv` → `searchSkimlinks` → `normalizeSearchResponse`
+→ `writeResults` (injectable HTTP + putObject).
 
 ## Env
 
