@@ -81,6 +81,7 @@ describe('FR-021 impact local provider scaffold', () => {
         env: {
           A_SEARCH_ENV: 'sandbox',
           S3_RESULTS_BUCKET: 'test-results',
+          IMPACT_CAMPAIGN_ID: 'camp-test',
         },
         queryParts: async (msg) => {
           assert.equal(msg.source, 'impact');
