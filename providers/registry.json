@@ -33,7 +33,10 @@
       "kind": "live",
       "folder": "providers/live/cj",
       "enabled": { "live": true, "sandbox": true },
-      "queueEnv": "SQS_CJ_URL"
+      "queueEnv": "SQS_CJ_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      }
     },
     {
       "id": "kelkoo",
