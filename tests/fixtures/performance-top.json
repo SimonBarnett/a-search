@@ -1,0 +1,73 @@
+{
+  "description": "FR-053e fixture link/merchant events — scoped by userId+env; date filter OOS",
+  "events": [
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "linkId": "lnk_hot",
+      "merchantId": "m_acme",
+      "merchantName": "Acme",
+      "clicks": 10,
+      "sales": 2
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "linkId": "lnk_warm",
+      "merchantId": "m_beta",
+      "merchantName": "Beta Co",
+      "clicks": 5,
+      "sales": 1
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "linkId": "lnk_hot",
+      "merchantId": "m_acme",
+      "merchantName": "Acme",
+      "clicks": 3,
+      "sales": 1
+    },
+    {
+      "userId": "OTHER_USER",
+      "env": "live",
+      "linkId": "lnk_other",
+      "merchantId": "m_other",
+      "merchantName": "Other",
+      "clicks": 100,
+      "sales": 50
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "sandbox",
+      "linkId": "lnk_sb",
+      "merchantId": "m_sb",
+      "merchantName": "Sandbox Merch",
+      "clicks": 40,
+      "sales": 4
+    }
+  ],
+  "expected": {
+    "userId": "FROM_JWT",
+    "env": "live",
+    "limit": 5,
+    "topLinks": [
+      { "linkId": "lnk_hot", "clicks": 13, "sales": 3 },
+      { "linkId": "lnk_warm", "clicks": 5, "sales": 1 }
+    ],
+    "topMerchants": [
+      {
+        "merchantId": "m_acme",
+        "merchantName": "Acme",
+        "clicks": 13,
+        "sales": 3
+      },
+      {
+        "merchantId": "m_beta",
+        "merchantName": "Beta Co",
+        "clicks": 5,
+        "sales": 1
+      }
+    ]
+  }
+}
