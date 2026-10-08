@@ -15,6 +15,9 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Maintainer EventBridge schedules (FR-024), every 15 minutes:
   - `a-search-maintainer-live` â†’ Lambda with `A_SEARCH_ENV=live`
   - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
+- FR-056a: Awin onboarding live Lambda `a-search-awin-onboarding-live`
+  (`A_SEARCH_ENV=live`, handler `handler.handler` from
+  `providers/local/awin/onboarding/src`). EventBridge rules are FR-056e.
 
 - FR-056d: Impact onboarding sandbox Lambda `a-search-impact-onboarding-sandbox` (A_SEARCH_ENV=sandbox). EventBridge rules are FR-056e.
 

@@ -196,6 +196,34 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
+    // FR-056a: Awin onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
+    const awinOnboardingCode = lambda.Code.fromAsset(
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        'providers',
+        'local',
+        'awin',
+        'onboarding',
+        'src',
+      ),
+    );
+    const awinOnboardingLive = new lambda.Function(
+      this,
+      'AwinOnboardingLiveFunction',
+      {
+        functionName: 'a-search-awin-onboarding-live',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+      },
+    );
+
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
     const impactOnboardingCode = lambda.Code.fromAsset(
       path.join(
@@ -234,6 +262,9 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'MaintainerSandboxFunctionName', {
       value: maintainerSandbox.functionName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingLiveFunctionName', {
+      value: awinOnboardingLive.functionName,
     });
     new cdk.CfnOutput(this, 'ImpactOnboardingSandboxFunctionName', {
       value: impactOnboardingSandbox.functionName,
