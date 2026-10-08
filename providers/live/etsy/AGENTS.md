@@ -4,8 +4,9 @@ Provider CWD for registry id `etsy` (`kind: live`).
 
 ## Read first
 
-1. `.grok/skills/a-search-etsy/SKILL.md`
-2. `docs/endpoint-search.md`, `docs/environments.md`
+1. `.grok/skills/a-search-etsy/SKILL.md` (maintain)
+2. `.grok/skills/a-search-etsy-onboarding/SKILL.md` (setup; stay-dark)
+3. `docs/endpoint-search.md`, `docs/environments.md`
 
 ## CAST IRON
 
