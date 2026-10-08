@@ -29,5 +29,5 @@ Provider CWD for registry id `tradedoubler` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
+- `src/worker.js` - `run(msg)` queryParts -> normalizePart -> writeResults (FR-089); stay-dark
 - `.env.example` — placeholders
