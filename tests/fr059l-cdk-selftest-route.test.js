@@ -9,7 +9,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -26,11 +26,7 @@ describe('FR-059l CDK API Gateway /selftest route', () => {
   });
 
   it('npm run synth: template has GET and POST /selftest routes', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
 
     const templatePath = path.join(
