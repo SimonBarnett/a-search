@@ -87,3 +87,9 @@ workers resolve it with `providers/resolveQueueUrl.js`:
 CDK (`cdk/lib/a-search-stack.js`) already injects `SQS_AMAZON_LIVE_URL` and
 `SQS_AMAZON_SANDBOX_URL` into the entry Lambda. Document additional sources the
 same way when their queues are added.
+
+## SQS pacing (407 / 429)
+
+Consumers must stay slow enough that provider APIs do not rate-block the
+fleet. See **[sqs-pacing.md](sqs-pacing.md)** (`batchSize: 1`, concurrency
+caps, fail-when 407/429).

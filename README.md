@@ -14,6 +14,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Performance mocks](docs/mocks/performance.html) (FR-053g — key / [empty](docs/mocks/performance-empty.html) / [error](docs/mocks/performance-error.html))
 - [S3 mapping schema](docs/s3-mapping.md) (FR-054a — `env` / `userId` / `source` / `token` / `s3Key`)
 - [Environments](docs/environments.md)
+- [SQS pacing](docs/sqs-pacing.md) (FR-058a — prevent provider 407/429)
 - [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
