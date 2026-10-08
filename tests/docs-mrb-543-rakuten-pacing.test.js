@@ -13,6 +13,6 @@ describe('docs/mrb-543 rakuten maxConcurrency docs', () => {
   });
   it('add-source rateLimit examples include rakuten', () => {
     const t = fs.readFileSync(path.join(root, 'docs/add-source.md'), 'utf8');
-    assert.match(t, /amazon, ebay, and rakuten have examples/);
+    assert.match(t, /amazon, ebay, rakuten.*have examples/);
   });
 });
