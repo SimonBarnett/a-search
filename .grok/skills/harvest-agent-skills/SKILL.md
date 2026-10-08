@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-072 aliexpress: normalize maps result.products[] via normalizeProduct + buildTrackedUrl(ALIEXPRESS_TRACKING_ID); can land recorded fixture before search.js (FR-071); stay-dark (#625 / #705)
