@@ -16,7 +16,7 @@ Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false (stay 
 
 ## Catalogue client (FR-105)
 
-`src/catalog.js` — injectable `POST /stores/v1/products/query` with `Authorization` + `wix-site-id`.
+`src/catalog.js` - injectable `POST /stores/v1/products/query` with `Authorization` + `wix-site-id`.
 Recorded fixture: `fixtures/products-ok.json`. Pin: `tests/fr105-wix-catalog.test.js`.
 Out of scope for FR-105: MSSQL upsert, registry enable, multi-merchant router.
 

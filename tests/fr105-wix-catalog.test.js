@@ -33,7 +33,7 @@ const credEnv = {
 };
 
 describe('FR-105 wix Stores catalogue client (stay dark)', () => {
-  it('fixture HTTP → normalize products (no live network)', async () => {
+  it('fixture HTTP -> normalize products (no live network)', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const httpCalls = [];
 
@@ -71,7 +71,7 @@ describe('FR-105 wix Stores catalogue client (stay dark)', () => {
     assert.equal(httpCalls.length, 1);
   });
 
-  it('missing API token → clear wix_missing_credentials error', async () => {
+  it('missing API token -> clear wix_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         fetchCatalogPage({
@@ -90,7 +90,7 @@ describe('FR-105 wix Stores catalogue client (stay dark)', () => {
     );
   });
 
-  it('missing site id → clear credentials error', async () => {
+  it('missing site id -> clear credentials error', async () => {
     await assert.rejects(
       () =>
         fetchCatalogPage({
