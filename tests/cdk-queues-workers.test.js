@@ -24,7 +24,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     );
     assert.match(text, /loadRegistry|enabledSources/);
     assert.match(text, /SqsEventSource/);
-    assert.match(text, /worker\.handler/);
+    assert.match(text, /workerHandlerPath\(src\)|worker\.handler/);
     // functionName template: a-search-${src.id}-worker-${env}
     assert.match(text, /a-search-\$\{src\.id\}-worker-\$\{env\}/);
   });

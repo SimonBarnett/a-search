@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -12,7 +12,8 @@ describe('hostile MRB #253 FR-038', () => {
     assert.equal(typeof w.handler, 'function');
     assert.equal(typeof w.run, 'function');
     const stack = fs.readFileSync(path.join(root, 'cdk/lib/a-search-stack.js'), 'utf8');
-    assert.match(stack, /worker\.handler/);
+    assert.match(stack, /workerHandlerPath\(src\)/);
+    assert.match(fs.readFileSync(path.join(root, 'scripts/stage-provider-worker-lambda-asset.js'), 'utf8'), /worker\.handler/);
     const skill = fs.readFileSync(
       path.join(root, 'providers/live/amazon/.grok/skills/a-search-amazon/SKILL.md'),
       'utf8',
