@@ -48,6 +48,7 @@ describe('FR-017 ebay provider scaffold', () => {
           EBAY_CLIENT_ID: 'c',
           EBAY_CLIENT_SECRET: 's',
           EBAY_MARKETPLACE_ID: 'EBAY_GB',
+          EBAY_CAMPAIGN_ID: 'camp-test',
           S3_RESULTS_BUCKET: 'b',
         },
         accessToken: 't',
