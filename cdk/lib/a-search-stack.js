@@ -39,8 +39,8 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
- * FR-058e/f/g/h: amazon+ebay+rakuten+cj SQS event-source maxConcurrency from registry
- * rateLimit (safe default). AWS EventSourceMapping ScalingConfig.MaximumConcurrency
+ * FR-058e/f/g/h/i/j: amazon+ebay+rakuten+cj+awin+impact SQS event-source maxConcurrency
+ * from registry rateLimit (safe default). AWS EventSourceMapping ScalingConfig.MaximumConcurrency
  * valid range is 2-1000, so registry 1 clamps to 2. Other providers OOS.
  * @param {{ id?: string, rateLimit?: { maxConcurrency?: number } }} src
  * @returns {number|undefined}
@@ -52,7 +52,9 @@ function sqsMaxConcurrencyForSource(src) {
       src.id !== 'amazon' &&
       src.id !== 'ebay' &&
       src.id !== 'rakuten' &&
-      src.id !== 'cj'
+      src.id !== 'cj' &&
+      src.id !== 'awin' &&
+      src.id !== 'impact'
     )
   ) {
     return undefined;
@@ -172,6 +174,15 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration(
         'EntryPerformanceIntegration',
+        entry,
+      ),
+    });
+    // FR-059b: selftest stub (JWT verified in Lambda; real probes later)
+    httpApi.addRoutes({
+      path: '/selftest',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntrySelftestIntegration',
         entry,
       ),
     });
