@@ -21,6 +21,9 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Shared layer](docs/shared-layer.md) (`shared/` → `/opt/nodejs/a-search`)
 - [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
 - [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
+- [Daily report signups](docs/daily-report-signups.md) (FR-052a — clubscan field map)
+- [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report — read-only; HTML email stays in AWS until cutover)
+- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
 - [Functional spec](docs/functional-spec.md)
 

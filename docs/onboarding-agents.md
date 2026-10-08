@@ -57,7 +57,8 @@ async function runOnce(deps) {
 | `status` | string | e.g. `joined`, `pending`, `rejected` |
 
 Optional later (FR-052): campaign id, feed key, last-24h sales pointer.
-Persist shape is LOCKED in FR-052 (`docs/daily-report-signups.md` when filed).
+Field map + clubscan section mapping: [`docs/daily-report-signups.md`](daily-report-signups.md)
+(FR-052a). Persist store is LOCKED in FR-052b.
 
 ## Drain-until-done (`shared/onboarding/drain.js`)
 
