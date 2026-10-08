@@ -34,6 +34,13 @@ Registry folder `providers/live/skimlinks`. Enabled: live=false, sandbox=false
 `src/worker.js` — `assertWorkerEnv` → `searchSkimlinks` → `normalizeSearchResponse`
 → `writeResults` (injectable HTTP + putObject).
 
+## Selftest + pacing (FR-070)
+
+`src/selftestProbe.js` — credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_SKIMLINKS_URL`.

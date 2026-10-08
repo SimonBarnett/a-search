@@ -6,22 +6,18 @@ description: >
 
 # a-search aliexpress (live)
 
-Registry folder `providers/live/aliexpress`. Enabled: live=false, sandbox=false.
+Registry folder `providers/live/aliexpress`. Enabled: live=false, sandbox=false
+(CAST IRON stay-dark -- see `docs/phase2-providers.md`).
 
-## Search path
+## Search path (FR-071)
 
-Live aliexpress API client lands in a later FR.
+`src/search.js` -- injectable `httpRequest`, Affiliate
+`aliexpress.affiliate.product.query` with `ALIEXPRESS_API_KEY`, fixture
+`fixtures/products-ok.json` (`aliexpressProductAPI.products[]`). Stay-dark.
 
-## Worker stub
-
-`src/worker.js` exports `run(msg)`.
-
-## Env
-
-See `.env.example`. Queue env: `SQS_ALIEXPRESS_URL`.
 ## Normalize (FR-072)
 
-`src/normalize.js` maps affiliate product JSON → `worker/lib/normalizeProduct`:
+`src/normalize.js` maps affiliate product JSON to `worker/lib/normalizeProduct`:
 
 | AliExpress field | Product field |
 |------------------|---------------|
@@ -32,5 +28,13 @@ See `.env.example`. Queue env: `SQS_ALIEXPRESS_URL`.
 | `target_sale_price` / `currency` | `price` / `currency` (major units) |
 | `shop_name` | `description` |
 
-Accepts `result.products[]` (recorded fixture) and common response wrappers.
-Partial rows without id+title are skipped (no throw). Stay-dark.
+Accepts `aliexpressProductAPI.products[]` (recorded search fixture), `result.products[]`,
+and common response wrappers. Partial rows without id+title are skipped (no throw). Stay-dark.
+
+## Worker
+
+Worker wiring (FR-073) is separate.
+
+## Env
+
+See `.env.example`. Queue env: `SQS_ALIEXPRESS_URL`.

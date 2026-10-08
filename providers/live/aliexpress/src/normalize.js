@@ -162,6 +162,12 @@ function normalizeAliexpressProduct(item, track) {
 function productsFromBody(body) {
   if (!body || typeof body !== 'object') return [];
   if (Array.isArray(body.products)) return body.products;
+  if (
+    body.aliexpressProductAPI &&
+    Array.isArray(body.aliexpressProductAPI.products)
+  ) {
+    return body.aliexpressProductAPI.products;
+  }
   if (body.result && Array.isArray(body.result.products)) {
     return body.result.products;
   }

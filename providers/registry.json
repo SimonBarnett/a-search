@@ -76,7 +76,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_SKIMLINKS_URL"
+      "queueEnv": "SQS_SKIMLINKS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "aliexpress",
