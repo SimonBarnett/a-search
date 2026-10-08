@@ -1,14 +1,13 @@
 'use strict';
 
 /**
- * FR-120: detect SQL Server "Invalid object name" / missing-table errors.
- * Used by local Parts selftest probes so absence of dbo.Parts is a clear
- * `missing_table` code rather than a generic connect failure.
+ * FR-119: classify MSSQL connect/query failures for local selftest probes.
+ * Distinguishes auth failures from network/host/unreachable errors.
  *
  * @param {unknown} err
- * @returns {boolean}
+ * @returns {'mssql_auth_failed'|'mssql_unreachable'}
  */
-function isMissingTableError(err) {
+function classifyMssqlConnectError(err) {
   const code =
     err && typeof err === 'object' && err.code != null ? String(err.code) : '';
   const num =
@@ -29,19 +28,20 @@ function isMissingTableError(err) {
         : '';
   const blob = `${code}\n${msg}`.toLowerCase();
 
-  // SQL Server: Invalid object name -> 208
-  if (num === 208 || originalNum === 208) return true;
-  if (/invalid object name/.test(blob)) return true;
-  if (/invalid object name ['`]dbo\.parts['`]/i.test(msg)) return true;
+  if (num === 18456 || originalNum === 18456) return 'mssql_auth_failed';
+  if (/\belogin\b/.test(blob)) return 'mssql_auth_failed';
+  if (/login failed/.test(blob)) return 'mssql_auth_failed';
   if (
-    /cannot find (the )?(object|table)/.test(blob) &&
-    /\bparts\b/.test(blob)
+    /password.*(fail|incorrect|invalid)|authentication.*(fail|error)|access is denied|not authorized|login.*denied/.test(
+      blob,
+    )
   ) {
-    return true;
+    return 'mssql_auth_failed';
   }
-  return false;
+
+  return 'mssql_unreachable';
 }
 
 module.exports = {
-  isMissingTableError,
+  classifyMssqlConnectError,
 };

@@ -1,7 +1,6 @@
 # madeiradb data model (dbo)
 
-Verified read-only inventory of Club Madeira's **`madeiradb`** on the IONOS
-Windows SQL host (`WIN-MPRE8VI4U6U`). a-search workers and the parts
+Verified read-only inventory of Club Madeira's **`madeiradb`** on the IONOS Windows SQL host. a-search workers and the parts
 maintainer must treat this as the real schema until a later FR decides how
 to map vision-era names (`Parts`, `PartFeedKeys`, `PartsStaging`,
 `ImpactPendingOnboard`) onto what exists here.
@@ -72,7 +71,7 @@ same inventory; where the snapshot did not record a PK, the cell says
 | claimant | 14 | not captured (refresh via sys.indexes) | | no FK |
 | UserCategories | 14 | not captured (refresh via sys.indexes) | | no FK |
 | SystemOTPs | 11 | not captured (refresh via sys.indexes) | | no FK |
-| clubscan | 10 | not captured (refresh via sys.indexes) | club scan rows (not the madeira-awin-clubscan report Lambda) | no FK |
+| clubscan | 10 | not captured (refresh via sys.indexes) | club scan rows (not the madeira-athe SQL host report Lambda) | no FK |
 | ApiProvider | 6 | not captured (refresh via sys.indexes) | | no FK |
 | cmsProvider | 5 | not captured (refresh via sys.indexes) | | no FK |
 | LASTS | 4 | not captured (refresh via sys.indexes) | | no FK |
@@ -255,6 +254,179 @@ ORDER BY from_table, fk_name;
 
 After refresh: update the **As of** date, row counts, PK/FK cells, and the
 ERD. Keep `gf_bak` out of scope unless a-search explicitly starts reading it.
+
+## Club scans
+
+### Two different "clubscan" things
+
+| Name | What it is | a-search use |
+|------|------------|--------------|
+| **madeira-awin-clubscan** | Legacy AWS Lambda (Awin onboarding + daily HTML report) | Signup field map in [daily-report-signups.md](daily-report-signups.md); onboarding drain parity in [onboarding-agents.md](onboarding-agents.md) |
+| **`dbo.clubscan`** | SQL table of **club website scans** | Club context / active clubs; **not** the signup report store |
+
+**madeira-awin-clubscan (Lambda) != `dbo.clubscan` (table).** Do not map signup
+rows onto `dbo.clubscan`.
+
+### `dbo.clubscan` columns (10 rows as of 2026-10-08)
+
+All rows `Status='completed'` with `JsonResult`. Last `UpdatedAt`: 2026-10-05 17:03.
+
+| Column | Type / notes |
+|--------|----------------|
+| `Id` | `int IDENTITY` PK |
+| `Url` | `nvarchar(500) NOT NULL`, **UNIQUE** |
+| `Status` | default `'pending'` |
+| `JsonResult` | `nvarchar(max)` -- scan payload |
+| `PartnerId` | `varchar(8)` -- owning partner code (logical, **no FK**) |
+| `ClubID` | `varchar(8)` -- club = community user code (logical, **no FK**) |
+| `LastError` | error text |
+| `PartnerURL` | `nvarchar(1000) NOT NULL`, default `https://partner.clubmadeira.io/` |
+| `Screenshot`, `Comment` | optional |
+| `CreatedAt`, `UpdatedAt` | timestamps |
+| `active` | **computed** `bit` = `dbo.fn_ClubScanIsActive(Id)` |
+
+`active` is 1 when the club's fingerprints (`UserFingerprints.user_id = ClubID`
+-> `FingerprintCatalogAccess`) show activity within the last **72 hours**.
+Snapshot: 4 of 10 active.
+
+No FK from `PartnerId` / `ClubID` to `Users` or `Partner`. Snapshot: every
+`ClubID` exists in `Users`; `PartnerId` is `L7WDZWC8` on 9 rows and NULL on 1.
+
+If a-search writes club context, it must write `ClubID` / `PartnerId` as
+**8-char codes** (`^[0-9A-Z]{8}$`) that exist in `Users` (see FR-114).
+
+### JSON keys read by `dbo.clubs()`
+
+Inline TVF over `clubscan` + `Partner` (not a base table). Keys:
+
+- `$.name`, `$.location`, `$.sector`, `$.review`, `$.audience`
+- `$.marketSegments[].segmentName` / `description`
+
+`clubs()` only returns clubs whose `JsonResult` has `$.name` (6 of 10 in the
+snapshot), and only joins Partner details when `Partner.Approved = 1`.
+
+### Related view
+
+`vw_ActiveClubs_Last72Hours` joins `DatabaseCallLog.UserId = clubscan.ClubID`.
+
+### Awin advertiser onboarding DB home (inferred)
+
+Legacy Lambda signup / onboarding **fields** align with
+**`dbo.AwinHighApprovalMerchants`** (inferred from columns -- **confirm with
+Simon** before treating as authoritative):
+
+| Fact | Value |
+|------|-------|
+| Rows | 1,480; PK `MerchantId int` (Awin advertiser id) |
+| Columns | `Name`, `Email`, `Website`, `logoUrl`, `primarySector`, `description`, `Joined bit`, `AwinUserId`, `PartnerID nvarchar(8)`, `ClubID varchar(8)` |
+| PartnerID set | 74 rows (68 x `L7WDZWC8`, 6 x `2889699`) |
+| ClubID set | 64 rows |
+
+**Known data-quality issue:** `PartnerID = 2889699` is **not** an 8-char
+`Users.user_id` code. **a-search must not copy it** into `PartnerId` /
+`user_id` / JWT tenant fields. Prefer valid `^[0-9A-Z]{8}$` codes only.
+
+`AwinRecommendedMerchants` (639 rows) logs recommendations; separate from
+high-approval merchants.
+
+Field-level map for signup emitters:
+[daily-report-signups.md](daily-report-signups.md).
+
+## Integrity
+
+madeiradb must **not** be assumed referentially intact for user, partner or club
+codes. a-search joins that resolve a JWT `userId` (or partner/club code) to DB
+rows must tolerate orphans and **fail closed** (return empty -- do not error, do
+not invent rows).
+
+### Enforced foreign keys (only five)
+
+| Relationship | Kind |
+|--------------|------|
+| `CatalogAffiliateUpdates.CatalogId` -> `Catalog.ID` (ON DELETE CASCADE) | **enforced FK** |
+| `amazon_cards` -> `claimant` | **enforced FK** |
+| `cmsDocLinks` -> `cmsProvider` | **enforced FK** |
+| `DocLinks` -> `ApiProvider` | **enforced FK** |
+| `UserApiKeys.user_id` -> `Users.user_id` | **enforced FK** |
+
+### Logical-only user / partner / club links
+
+| Relationship | Kind |
+|--------------|------|
+| `Catalog.UserId` -> `Users.user_id` | **logical only** |
+| `Products.UserId` -> `Users.user_id` | **logical only** |
+| `MerchantProducts.UserId` -> `Users.user_id` | **logical only** |
+| `RejectedAsins.UserId` -> `Users.user_id` | **logical only** |
+| `DatabaseCallLog.UserId` -> `Users.user_id` | **logical only** |
+| `UserCategories.uid` -> `Users.user_id` | **logical only** |
+| `UserFingerprints.user_id` -> `Users.user_id` | **logical only** |
+| `SystemOTPs.user_id` -> `Users.user_id` | **logical only** |
+| `Payments.UserId` -> `Users.user_id` | **logical only** |
+| `Commissions.MerchantId` -> `Users.user_id` | **logical only** |
+| `Partner.PartnerID` -> `Users.user_id` (peer identity) | **logical only** |
+| `clubscan.ClubID` / `clubscan.PartnerId` -> `Users` / `Partner` | **logical only** |
+| `AwinHighApprovalMerchants.PartnerID` / `ClubID` -> codes | **logical only** |
+| `AwinTransactions.ClubID` -> codes | **logical only** |
+| `FingerprintCatalogAccess.catalog_id` -> `Catalog.ID` | **logical only** |
+
+Code columns mix `varchar(8)` / `char(8)` / `nvarchar(8|50|100)`. Prefer
+`CONVERT(varchar(8), RTRIM(...))` (or a-search `normalizeUserCode`) so joins do
+not rely on implicit nvarchar/varchar conversion.
+
+### Orphans observed (2026-10-08) -- do not "fix" in a-search
+
+| Column | Orphan rows | Example orphan codes |
+|--------|------------:|----------------------|
+| RejectedAsins.UserId | 132,628 | N05L5X8N, SHQB85I5, 4OETP8TP, M4H5GAFH, 5N54RO8O |
+| Products.UserId | 366 | UTSKD5S9, 4OETP8TP |
+| DatabaseCallLog.UserId | 121 | 606RVS6W, SHQB85I5, ... |
+| Payments.UserId | 22 | 2IHOQ2EV, 975F09W5 |
+| Commissions.MerchantId | 19 | 2IHOQ2EV |
+| UserCategories.uid | 2 | 4OETP8TP, M4H5GAFH |
+| AwinHighApprovalMerchants.PartnerID | 6 | **2889699** (not an 8-char code) |
+| AwinTransactions.ClubID | 84 of 85 | `TEST-...` / SellerID `SANDBOX` |
+| FingerprintCatalogAccess.catalog_id | 210 | catalog ids 2344-7421 missing from Catalog |
+
+No orphans (snapshot): Catalog.UserId, UserApiKeys, UserFingerprints, SystemOTPs,
+clubscan.ClubID, CatalogAffiliateUpdates->Catalog. MerchantProducts clean aside
+from ~14 NULL-UserId rows.
+
+These codes are **not** the 2026-10-05 removal ids (MWRJCP92, MV69J0VA).
+**Deleting or repairing orphans is out of scope for a-search** (DBA decision).
+
+### a-search read contract
+
+1. EXISTS-check / inner-join `dbo.Users` **before** returning user-scoped rows.
+2. Missing user -> **empty result** (HTTP/search still 200 where applicable), never
+   surface orphan-owned Products / RejectedAsins / etc.
+3. Compare codes as trimmed upper-case `varchar(8)`-compatible strings.
+4. Helper: `shared/mssql/orphanSafe.js` (`resolveTenantUser`, `readForTenantUser`).
+5. Ops script: [`scripts/orphan-report.sql`](../scripts/orphan-report.sql) (SELECT only).
+
+Example EXISTS gate:
+
+```sql
+AND EXISTS (
+  SELECT 1 FROM dbo.Users AS u
+  WHERE u.user_id = CONVERT(varchar(8), @userId)
+)
+```
+
+### Orphan-check query template (per relationship)
+
+```sql
+SELECT <col> AS OrphanCode, COUNT_BIG(*) AS OrphanRows
+FROM <table> AS t
+WHERE NOT EXISTS (
+  SELECT 1 FROM dbo.Users AS u
+  WHERE u.user_id = CONVERT(varchar(8), RTRIM(t.<col>))
+)
+GROUP BY <col>
+ORDER BY OrphanRows DESC;
+```
+
+Replace `<table>` / `<col>` with each logical-only row above (or run
+`scripts/orphan-report.sql`).
 
 ## Related docs
 

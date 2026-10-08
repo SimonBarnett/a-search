@@ -8,17 +8,17 @@ which environment it is in and must not cross-write.
 
 | Mechanism | Rule |
 |-----------|------|
-| Request body `sandbox: true\|false` | Optional hint; default `false` → live |
+| Request body `sandbox: true\|false` | Optional hint; default `false` -> live |
 | JWT claim (optional) | If present, `env` / `sandbox` claim may force sandbox; UNKNOWN until issuer confirms |
-| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task — **authoritative for workers/maintainer** |
+| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task -- **authoritative for workers/maintainer** |
 | Entry behaviour | Accepted job stamps `env` on SQS messages; workers refuse messages whose `env` ≠ process env |
 
 ## Isolation (must not leak)
 
 | Resource | live | sandbox |
 |----------|------|---------|
-| SQS queues | `…-live-…` per source | `…-sandbox-…` per source |
-| MSSQL | live Parts / feed-key tables (or live DB) | sandbox Parts / feed-key tables (or sandbox DB / schema) |
+| SQS queues | `...-live-...` per source | `...-sandbox-...` per source |
+| MSSQL | `madeiradb` on `WIN-MPRE8VI4U6U` (see below) | UNKNOWN (no separate sandbox DB/schema yet) |
 | Results path (rclone mount) | live mapped root | sandbox mapped root |
 | Provider `.env` | live credentials / secrets | sandbox or shared-read-only test credentials |
 | S3 bucket prefix or bucket | live | sandbox |
@@ -37,13 +37,13 @@ use the S3 API with the same bucket/key layout.
 **Ops mount guide:** [rclone-results.md](rclone-results.md) (`S3_RESULTS_BUCKET`,
 `A_SEARCH_RCLONE_ROOT`, path examples).
 
-Logical key (LOCKED — includes env prefix):
+Logical key (LOCKED -- includes env prefix):
 
 ```
 {env}/{source}/{userId}/{catalogId}/{searchId}.json
 ```
 
-On the SQL server (examples — drive letters UNKNOWN until deploy):
+On the SQL server (examples -- drive letters UNKNOWN until deploy):
 
 ```
 live:     S:\a-search\live\{source}\{userId}\{catalogId}\{searchId}.json
@@ -57,11 +57,65 @@ s3://{S3_RESULTS_BUCKET}/live/{source}/{userId}/{catalogId}/{searchId}.json
 s3://{S3_RESULTS_BUCKET}/sandbox/{source}/{userId}/{catalogId}/{searchId}.json
 ```
 
-(or separate buckets `…-live` / `…-sandbox` — choose one scheme in IaC;
+(or separate buckets `...-live` / `...-sandbox` -- choose one scheme in IaC;
 prefix-under-one-bucket is the default LOCKED layout above).
 
 Maintainer staging CSVs may also land under
 `{env}/_staging/{source}/{feedKey}/` on the same mount/bucket family.
+
+
+## MSSQL target (FR-119)
+
+**Live** (verified 2026-10-08):
+
+| Knob | Value |
+|------|-------|
+| Host | `WIN-MPRE8VI4U6U` (IONOS Windows; SQL Server 2022 Standard; mixed-mode auth; TCP on all interfaces) |
+| Database | `madeiradb` -- the **only** user database on the instance |
+| Auth on the box | Windows integrated (`sqlcmd -E`) works locally |
+| Auth from AWS | SQL login or domain account over NTLM, read from a secret store. A Lambda outside the domain cannot use integrated auth. |
+| Recovery | SIMPLE. Nightly full backup only (`Madeira_Nightly_Maintenance` at 02:00). Point-in-time restore is not possible. |
+
+There is no RDS endpoint in this repo and nothing to "switch off RDS" -- the
+target was undefined until FR-119. Repo placeholders must not invent a
+non-existent database name.
+
+**Sandbox** (`A_SEARCH_ENV=sandbox`): **UNKNOWN** until Simon decides among:
+
+1. a separate database on the same instance,
+2. a schema inside `madeiradb`, or
+3. sandbox reads live read-only.
+
+Today there is **no** `a_search_sandbox` database and no sandbox schema.
+`Env` (`live` / `sandbox`) exists only in a-search's own DDL (`CK_Parts_Env`,
+etc.). No madeiradb business table has an env column.
+
+**Network path (AWS Lambda/Fargate -> IONOS):** **UNKNOWN** until ops confirm
+fixed egress IP / firewall allowlist / VPN.
+
+**Least-privilege login (spec):** the SQL login used by a-search workers and
+maintainer SHOULD have **SELECT** on the tables a-search reads (for example
+`dbo.Parts` and feed-key / pending-onboard tables named in provider docs).
+No write rights on madeiradb business tables unless a later FR grants them.
+Any a-search writer must treat SIMPLE recovery + nightly-only backup as a
+data-loss limit (no PITR). Credentials stay in the deploy secret store --
+never in git.
+
+**Env keys** (see `.env.example` files -- placeholders only, never credentials):
+
+| Key | Meaning |
+|-----|---------|
+| `MSSQL_SERVER` | Placeholder `<ionos-sql-host>`; deploy maps to `WIN-MPRE8VI4U6U` or a DNS alias |
+| `MSSQL_DATABASE` | `madeiradb` |
+| `MSSQL_USER` / `MSSQL_PASSWORD` | SQL login when not using trusted connection |
+| `MSSQL_TRUSTED_CONNECTION` | `true` for integrated / NTLM (on-box or domain) |
+| `MSSQL_DOMAIN` | optional NTLM domain |
+| `MSSQL_ENCRYPT` | default `true` (read by `mssqlConfigFromEnv`) |
+| `MSSQL_TRUST_SERVER_CERTIFICATE` | default `true` on lab boxes |
+
+Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
+`mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
+fallback is not available (`shared/mssql/classifyConnectError.js`).
 
 ## Registry
 
@@ -71,7 +125,7 @@ Maintainer staging CSVs may also land under
 { "id": "amazon", "enabled": { "live": true, "sandbox": true } }
 ```
 
-or flat `enabled: true` meaning both. Disabled for an env → not enqueued in
+or flat `enabled: true` meaning both. Disabled for an env -> not enqueued in
 that env.
 
 ## Queue URL env vars (FR-034)
@@ -82,7 +136,7 @@ workers resolve it with `providers/resolveQueueUrl.js`:
 1. Prefer `SQS_<SOURCE>_LIVE_URL` / `SQS_<SOURCE>_SANDBOX_URL` for the request
    `env` (matches CDK entry environment keys).
 2. Fall back to `SQS_<SOURCE>_URL` only for a single-env deploy.
-3. If neither is set → **error** (`missing_queue_url`) — never silent noop enqueue.
+3. If neither is set -> **error** (`missing_queue_url`) -- never silent noop enqueue.
 
 CDK (`cdk/lib/a-search-stack.js`) already injects `SQS_AMAZON_LIVE_URL` and
 `SQS_AMAZON_SANDBOX_URL` into the entry Lambda. Document additional sources the

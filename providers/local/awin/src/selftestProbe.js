@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-059j: Awin local selftest probe — MSSQL Parts reachable or feed config present.
+ * FR-059j: Awin local selftest probe -- MSSQL Parts reachable or feed config present.
  * Other providers are out of scope.
  */
 
@@ -11,6 +11,7 @@ const {
   defaultConnect,
 } = require('./queryParts');
 const { isMissingTableError } = require('../../../../shared/mssql/isMissingTableError');
+const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
 /** FR-120: probe a-search-owned dbo.Parts. */
 const PROBE_SQL = `
@@ -110,15 +111,11 @@ async function probeAwinSelftest(deps = {}) {
         error: 'missing_table',
       };
     }
-    const msg =
-      err && typeof err === 'object' && err.message
-        ? String(err.message).slice(0, 200)
-        : 'mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'mssql_unreachable',
+      error: classifyMssqlConnectError(err),
     };
   }
 }

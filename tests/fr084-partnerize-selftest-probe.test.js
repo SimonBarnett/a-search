@@ -91,7 +91,7 @@ describe('FR-084 partnerize selftestProbe + rateLimit', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'partnerize');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but feed token present', async () => {

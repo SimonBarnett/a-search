@@ -92,7 +92,7 @@ describe('FR-104 shopify selftestProbe + rateLimit', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'shopify');
-    assert.match(result.error, /ECONNREFUSED/);
+    assert.equal(result.error, 'mssql_unreachable');
   });
 
   it('ok true when MSSQL fails but access token present', async () => {
