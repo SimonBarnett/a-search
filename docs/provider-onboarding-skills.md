@@ -74,7 +74,7 @@ When adding a source (`docs/add-source.md`):
 
 - Writing each provider’s onboarding body (FR-060c..h)
 - Automated tests that every enabled provider has the folder (FR-060b)
-- Vision Success row (FR-060j)
+- ~~Vision Success row (FR-060j)~~ — landed as Success **S20**
 
 ## References
 
