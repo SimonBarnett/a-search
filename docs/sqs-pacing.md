@@ -16,7 +16,7 @@ provider APIs do not rate-block the account.
 | One message at a time (default) | Worker SQS event sources use `batchSize: 1` in CDK (`cdk/lib/a-search-stack.js`). Do not raise batch size without a source-specific rate plan. |
 | Cap concurrency | Prefer `reservedConcurrentExecutions` (or equivalent) so one source cannot fan out dozens of parallel Lambdas against the same vendor account. Start low (often `1`) until the vendor’s documented limit is known. |
 | Per source / per env | Live and sandbox queues stay separate (`docs/environments.md`). Pacing is **per queue** — sandbox must not share live concurrency budget. |
-| Back off on throttle | On 407 / 429 / provider “blocked” responses: fail the job with a clear error (intake when required), do **not** tight-loop retries that make the block worse. |
+| Back off on throttle | On 407 / 429 / provider “blocked” responses: use `shared/pacing/throttleBackoff.js` (`backoffOnHttpThrottle`) — sleep `Retry-After` (or default), then throw `ProviderThrottleError` so SQS can retry. Do **not** tight-loop HTTP in-process. |
 | Fail-when | Sustained 407/429 from a provider after deploy, or workers configured with high `batchSize` / unbounded concurrency against a rate-limited API. |
 
 ## Operator knobs
