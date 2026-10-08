@@ -28,7 +28,7 @@ SELECT dbo.Parts WHERE Source='partnerize' (maintainer owns feeds).
 `src/parseFeed.js` -- `parsePartnerizeFeedRows(body, meta)` / `partnerizeParseFeedRowsHook`
 for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
 Maps Partnerize product CSV/JSON into Parts staging columns
-(`MerchantProductId`, `Title`, `Url`, `Price`, …). Stay-dark; no live network in unit tests.
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
 
 Credential / locator placeholders (never commit real values):
 
@@ -40,7 +40,7 @@ Credential / locator placeholders (never commit real values):
 
 ## Selftest + pacing (FR-084)
 
-`src/selftestProbe.js` — MSSQL Parts reachability (injectable `connect`) or
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
 `PARTNERIZE_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 (stay-dark; do not flip `enabled`).
