@@ -9,7 +9,8 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 ## Docs
 
 - [Vision](docs/vision.md) (LOCKED)
-- [Endpoint](docs/endpoint-search.md)
+- [Endpoint](docs/endpoint-search.md) (`POST /search`)
+- [Performance endpoint](docs/endpoint-performance.md) (FR-053a — clicks / visits / sales for JWT `userId`)
 - [Environments](docs/environments.md)
 - [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [Product result schema](docs/result-schema.md) (FR-042)
