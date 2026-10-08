@@ -6,8 +6,24 @@ const path = require('node:path');
 const REGISTRY_PATH = path.join(__dirname, 'registry.json');
 
 /**
+ * Optional per-source pacing hints (FR-058b). Not enforced by CDK here.
+ * @typedef {{
+ *   maxConcurrency?: number,
+ *   messagesPerSecond?: number,
+ *   minIntervalMs?: number,
+ * }} RateLimit
+ */
+
+/**
  * Load providers/registry.json (all shortlist sources).
- * @returns {{ sources: Array<{ id: string, kind: string, folder: string, enabled: { live: boolean, sandbox: boolean }, queueEnv?: string }> }}
+ * @returns {{ sources: Array<{
+ *   id: string,
+ *   kind: string,
+ *   folder: string,
+ *   enabled: { live: boolean, sandbox: boolean },
+ *   queueEnv?: string,
+ *   rateLimit?: RateLimit,
+ * }> }}
  */
 function loadRegistry() {
   const raw = fs.readFileSync(REGISTRY_PATH, 'utf8');
@@ -33,4 +49,18 @@ function enabled(env) {
     .map((s) => s.id);
 }
 
-module.exports = { loadRegistry, enabled };
+/**
+ * Optional rateLimit for a source id (FR-058b). Undefined when unset.
+ * @param {string} id
+ * @returns {RateLimit|undefined}
+ */
+function rateLimit(id) {
+  const { sources } = loadRegistry();
+  const src = sources.find((s) => s && s.id === id);
+  if (!src || src.rateLimit == null || typeof src.rateLimit !== 'object') {
+    return undefined;
+  }
+  return src.rateLimit;
+}
+
+module.exports = { loadRegistry, enabled, rateLimit };

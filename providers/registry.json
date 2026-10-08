@@ -5,7 +5,11 @@
       "kind": "live",
       "folder": "providers/live/amazon",
       "enabled": { "live": true, "sandbox": true },
-      "queueEnv": "SQS_AMAZON_URL"
+      "queueEnv": "SQS_AMAZON_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "ebay",
