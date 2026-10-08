@@ -34,6 +34,7 @@ describe('MRB #67 hostile: FR-019 cj scaffold', () => {
         env: {
           A_SEARCH_ENV: 'sandbox',
           CJ_API_TOKEN: 't',
+          CJ_WEBSITE_ID: 'web-test',
           S3_RESULTS_BUCKET: 'b',
         },
         httpRequest: async () => fixture,
