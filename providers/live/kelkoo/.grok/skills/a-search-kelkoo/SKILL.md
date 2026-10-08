@@ -21,6 +21,6 @@ Live kelkoo API client lands in a later FR.
 See `.env.example`. Queue env: `SQS_KELKOO_URL`.
 ## Normalize mapping (FR-064/065)
 
-- API `offers[]` → product: `offerId`→`id`, `title`, `price`, `currency`, `imageUrl`
-- `landingPageUrl` → tracked `url` via `buildTrackedUrl` + `KELKOO_PUBLISHER_ID`
-- Worker: `searchKijiji`/`searchKelkoo` → `normalizeSearchResponse` → `writeResults`
+- API `offers[]` to product: `offerId`->`id`, `title`, `price`, `currency`, `imageUrl`
+- `landingPageUrl` to tracked `url` via `buildTrackedUrl` + `KELKOO_PUBLISHER_ID`
+- Worker: `searchKelkoo` -> `normalizeSearchResponse` -> `writeResults`
