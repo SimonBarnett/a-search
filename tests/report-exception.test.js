@@ -12,6 +12,12 @@ const {
   DEFAULT_INTAKE_URL,
   DEFAULT_REPO,
 } = require('../shared/intake/reportException');
+const {
+  reportExceptionSecretMessage,
+  fakeBearerTokenPlain,
+  fakeHunterPassword,
+  reLiteral,
+} = require('./fixtures/fakeSecrets');
 
 describe('FR-048a reportException', () => {
   beforeEach(() => {
@@ -51,10 +57,10 @@ describe('FR-048a reportException', () => {
   });
 
   it('redacts Authorization and password-like tokens from body', () => {
-    const err = new Error('Authorization: Bearer SECRETTOKEN password=hunter2');
+    const err = new Error(reportExceptionSecretMessage());
     const payload = buildIntakePayload({ err, route: 'worker/amazon' });
-    assert.doesNotMatch(payload.body, /SECRETTOKEN/);
-    assert.doesNotMatch(payload.body, /hunter2/);
+    assert.doesNotMatch(payload.body, reLiteral(fakeBearerTokenPlain()));
+    assert.doesNotMatch(payload.body, reLiteral(fakeHunterPassword()));
     assert.match(payload.body, /\[REDACTED\]/);
   });
 

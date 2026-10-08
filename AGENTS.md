@@ -29,3 +29,11 @@ You are in the **a-search** product root. Per-folder CWDs live under `entry/`,
 Product playbooks (providers, Parts, CDK, entry JWT/fan-out) harvest **here**.
 Bobiverse fleet/chair/worker lessons go to `SimonBarnett/bobiverse` — do not park
 a-search product tips under bobiverse `harvest/SKILL.md`.
+
+## Tests and secrets (bobiverse#3304 / a-search#611)
+
+Never write realistic secret literals in tests (contiguous JWT headers, `Bearer eyJ…`,
+`password=hunter2`, live-shaped API keys). Build fixtures at runtime from parts via
+`tests/fixtures/fakeSecrets.js`, or use obvious placeholders (`FAKE_`, `EXAMPLE`,
+`xxxx`, AWS `AKIA…EXAMPLE`). Assert with `reLiteral` / `reFromParts` from that helper
+so regexes also stay free of contiguous secret-shaped strings.

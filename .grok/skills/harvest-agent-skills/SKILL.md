@@ -97,6 +97,13 @@ starts the next wave:
 | Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill — already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
+## Tests / GitGuardian (a-search#611 / bobiverse#3304)
+
+Never land contiguous secret-shaped literals in test sources. Use
+`tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA…EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives — fix the fixture instead.
+
 ## Do not
 
 - Push harvest to `main`

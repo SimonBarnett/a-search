@@ -85,9 +85,12 @@ describe('FR-059e selftest failure intake', () => {
 
   it('reportSelftestFailures only files ok=false rows and redacts secrets', async () => {
     const posts = [];
-    const secret = ['Bearer ', 'eyJ', 'hbGciOiJIUzI1NiJ9', '.', 'x', '.', 'y'].join(
-      '',
-    );
+    const {
+      selftestBearerSecret,
+      fakeJwtHeaderShort,
+      reLiteral,
+    } = require('./fixtures/fakeSecrets');
+    const secret = selftestBearerSecret();
     const fetchMock = async (_url, init) => {
       posts.push(JSON.parse(String(init && init.body)));
       return { status: 200, text: async () => 'ok' };
@@ -108,8 +111,8 @@ describe('FR-059e selftest failure intake', () => {
     });
     assert.deepEqual(intakeFiled, ['cj']);
     assert.equal(posts.length, 1);
-    assert.doesNotMatch(posts[0].body, /eyJhbGciOiJIUzI1NiJ9/);
-    assert.doesNotMatch(posts[0].title, /eyJhbGciOiJIUzI1NiJ9/);
+    assert.doesNotMatch(posts[0].body, reLiteral(fakeJwtHeaderShort()));
+    assert.doesNotMatch(posts[0].title, reLiteral(fakeJwtHeaderShort()));
     assert.equal(posts[0].repo, 'SimonBarnett/a-search');
   });
 
