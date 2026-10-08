@@ -133,4 +133,5 @@ Search accept path remains `docs/endpoint-search.md`.
 - Parent: `docs/fr/FR-053.md`
 - Phase-1b Q6: `docs/feature-request-phase1b-2026-10-07.md`
 - Mapping store (read model): FR-054
-- Mock UI (optional): `docs/mocks/performance.html` when filed
+- Mock UI: `docs/mocks/performance.html` (key),
+  `docs/mocks/performance-empty.html`, `docs/mocks/performance-error.html`
