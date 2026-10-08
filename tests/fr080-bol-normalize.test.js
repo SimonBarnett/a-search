@@ -1,0 +1,102 @@
+'use strict';
+
+/**
+ * FR-080: bol normalize.js → shared product schema (stay-dark).
+ */
+
+const { describe, it } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.join(__dirname, '..');
+const fixturePath = path.join(
+  root,
+  'providers',
+  'live',
+  'bol',
+  'fixtures',
+  'products-ok.json',
+);
+const normalizePath = path.join(
+  root,
+  'providers',
+  'live',
+  'bol',
+  'src',
+  'normalize.js',
+);
+
+const track = {
+  userId: 'U-BOL',
+  env: 'sandbox',
+  envVars: {
+    A_SEARCH_ENV: 'sandbox',
+    BOL_TRACKING_ID: 'track-test',
+  },
+};
+
+describe('FR-080 bol normalize', () => {
+  it('normalize.js and recorded fixture exist', () => {
+    assert.ok(fs.existsSync(normalizePath));
+    assert.ok(fs.existsSync(fixturePath));
+  });
+
+  it('normalize(fixture) passes assertProductSchema with required fields', () => {
+    const { normalizeSearchResponse } = require(normalizePath);
+    const { assertProductSchema } = require('../worker/lib/normalizeProduct');
+    const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+    const products = normalizeSearchResponse(fixture, track);
+    assert.equal(products.length, 2);
+    for (const p of products) {
+      assertProductSchema(p);
+      assert.equal(p.source, 'bol');
+      assert.ok(p.id);
+      assert.ok(p.title);
+    }
+    assert.equal(products[0].id, 'bol-fix-001');
+    assert.equal(products[0].title, 'Fixture Wireless Earbuds NL');
+    assert.equal(products[0].price, 19.99);
+    assert.equal(products[0].currency, 'EUR');
+    assert.match(String(products[0].url), /example\.test\/bol/);
+    assert.equal(products[0].description, 'Fixture Bol Shop A');
+    assert.match(String(products[0].imageUrl), /bol-fix-001/);
+  });
+
+  it('empty/partial payloads yield empty or filtered products without throw', () => {
+    const { normalizeSearchResponse, normalizeBolProduct } = require(
+      normalizePath,
+    );
+    assert.deepEqual(normalizeSearchResponse(null, track), []);
+    assert.deepEqual(normalizeSearchResponse({}, track), []);
+    assert.deepEqual(
+      normalizeSearchResponse({ bolProductAPI: { products: [] } }, track),
+      [],
+    );
+    assert.deepEqual(
+      normalizeSearchResponse(
+        {
+          bolProductAPI: {
+            products: [{ id: '', title: 'x' }, { title: 'no-id' }, null],
+          },
+        },
+        track,
+      ),
+      [],
+    );
+    const partial = normalizeBolProduct({ id: '9' }, track);
+    assert.equal(partial.id, '9');
+    assert.equal(partial.title, '');
+    assert.equal(partial.source, 'bol');
+  });
+
+  it('registry keeps bol enabled.live and enabled.sandbox false', () => {
+    const registry = JSON.parse(
+      fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
+    );
+    const bol = registry.sources.find((s) => s.id === 'bol');
+    assert.ok(bol);
+    assert.equal(bol.enabled.live, false);
+    assert.equal(bol.enabled.sandbox, false);
+  });
+});
