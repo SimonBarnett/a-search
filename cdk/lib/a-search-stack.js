@@ -140,6 +140,15 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-053b: performance stub (JWT verified in Lambda)
+    httpApi.addRoutes({
+      path: '/account/performance',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPerformanceIntegration',
+        entry,
+      ),
+    });
 
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
     const maintainerCode = lambda.Code.fromAsset(

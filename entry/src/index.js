@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006).
+ * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006) +
+ * performance stub (FR-053b).
  * JWT verify (FR-004) + body validation + registry-backed SQS fan-out (injectable sendMessage).
  * Never trusts a request-body user id.
  */
@@ -10,11 +11,17 @@ const crypto = require('node:crypto');
 const { verifyAuthorization, AuthError } = require('./auth/jwt');
 const { fanOutEnqueue, EnqueueError } = require('./enqueue');
 const {
+  emptyPerformancePayload,
+  resolvePerformanceInput,
+  queryParams,
+} = require('./performance');
+const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
+const PERF_ROUTE = 'entry/account/performance';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -45,6 +52,40 @@ function parseBody(raw) {
   } catch {
     return null;
   }
+}
+
+/**
+ * @param {object} event
+ * @returns {{ method: string, path: string }}
+ */
+function resolveHttp(event) {
+  const method = String(
+    (event &&
+      event.requestContext &&
+      event.requestContext.http &&
+      event.requestContext.http.method) ||
+      (event && event.httpMethod) ||
+      'POST',
+  ).toUpperCase();
+  let path = String(
+    (event && event.rawPath) ||
+      (event &&
+        event.requestContext &&
+        event.requestContext.http &&
+        event.requestContext.http.path) ||
+      (event && event.path) ||
+      '/search',
+  );
+  // strip stage prefix like /prod
+  if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+  const q = path.indexOf('?');
+  if (q >= 0) path = path.slice(0, q);
+  return { method, path };
+}
+
+function isPerformanceRoute(method, path) {
+  if (path !== '/account/performance') return false;
+  return method === 'GET' || method === 'POST';
 }
 
 /**
@@ -124,15 +165,20 @@ async function defaultEnqueue(args) {
  */
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
+  const { method, path } = resolveHttp(event || {});
+  const route = isPerformanceRoute(method, path) ? PERF_ROUTE : ENTRY_ROUTE;
   try {
+    if (isPerformanceRoute(method, path)) {
+      return await handlePerformance(event, deps);
+    }
     return await handleSearch(event, deps);
   } catch (err) {
-    // Client AuthError / EnqueueError are returned as 401/400 inside handleSearch.
+    // Client AuthError / EnqueueError are returned as 401/400 inside handlers.
     // Unexpected fatals file a-search intake once (FR-048c).
     try {
       await report({
         err,
-        route: ENTRY_ROUTE,
+        route,
         source: 'entry',
         fetch: deps.fetch,
       });
@@ -141,9 +187,68 @@ async function handler(event, _context, deps = {}) {
     }
     return jsonResponse(500, {
       accepted: false,
+      ok: false,
       error: 'internal_error',
     });
   }
+}
+
+/**
+ * FR-053b performance stub.
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handlePerformance(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+
+  const query = queryParams(event);
+  const rawBody = event && event.body;
+  const parsed = parseBody(rawBody);
+  if (parsed === null) {
+    return jsonResponse(400, {
+      ok: false,
+      error: 'invalid_json',
+    });
+  }
+
+  // Body / query userId is never authority; if present and differs → 401
+  const bodyUser =
+    parsed.userId !== undefined && parsed.userId !== null
+      ? parsed.userId
+      : query.userId;
+  if (
+    bodyUser !== undefined &&
+    bodyUser !== null &&
+    String(bodyUser) !== String(userId)
+  ) {
+    return jsonResponse(401, { ok: false, error: 'user_id_mismatch' });
+  }
+
+  const resolved = resolvePerformanceInput(query, parsed);
+  if (!resolved.ok) {
+    return jsonResponse(400, { ok: false, error: resolved.error });
+  }
+
+  return jsonResponse(
+    200,
+    emptyPerformancePayload(userId, resolved.value),
+  );
 }
 
 /**
@@ -237,7 +342,11 @@ async function handleSearch(event, deps = {}) {
 
 module.exports = {
   handler,
+  handlePerformance,
+  handleSearch,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
+  resolveHttp,
+  isPerformanceRoute,
 };
