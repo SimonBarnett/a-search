@@ -98,15 +98,16 @@ describe('MRB-802 FR-093 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example is avantlink not admitad/flexoffers', () => {
+  it('fr058b no-rateLimit example is shopify not admitad/flexoffers/avantlink', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('avantlink'\)/);
+    assert.match(src, /rateLimit\('shopify'\)/);
     assert.ok(!/rateLimit\('admitad'\)\s*,\s*undefined/.test(src));
     assert.ok(!/rateLimit\('flexoffers'\)\s*,\s*undefined/.test(src));
-    assert.equal(rateLimit('avantlink'), undefined);
+    assert.ok(!/rateLimit\('avantlink'\)\s*,\s*undefined/.test(src));
+    assert.equal(rateLimit('shopify'), undefined);
   });
 
   it('.env.example keep-both WEBSITE_ID and API_TOKEN empty', () => {

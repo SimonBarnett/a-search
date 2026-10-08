@@ -35,8 +35,25 @@ Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `FLEXOFFERS_AFFIL
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 (stay-dark; do not flip `enabled`).
 
+## Maintainer feed-parser (FR-097)
+
+`src/parseFeed.js` -- `parseFlexoffersFeedRows(body, meta)` / `flexoffersParseFeedRowsHook`
+for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
+Maps Flexoffers product CSV/JSON into Parts staging columns
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
+
+Credential / locator placeholders (never commit real values):
+
+- `FLEXOFFERS_FEED_URL` -- optional default feed locator (PartFeedKeys.FeedUrl wins)
+- `FLEXOFFERS_API_KEY` or `FLEXOFFERS_FEED_TOKEN` -- feed fetch auth
+- `FLEXOFFERS_PUBLISHER_ID` -- account / programme id when required
+
+`assertFlexoffersFeedCreds(env)` throws `flexoffers_missing_feed_credentials` when the API key is absent.
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_FLEXOFFERS_URL`. Placeholders only:
 `MSSQL_*`, `FLEXOFFERS_AFFILIATE_ID=`.
 Selftest placeholder: `FLEXOFFERS_API_TOKEN=`.
+Feed placeholders: `FLEXOFFERS_FEED_URL=`, `FLEXOFFERS_API_KEY=`, `FLEXOFFERS_FEED_TOKEN=`,
+`FLEXOFFERS_PUBLISHER_ID=`.
