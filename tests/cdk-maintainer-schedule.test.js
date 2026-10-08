@@ -4,7 +4,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 
@@ -23,11 +23,7 @@ describe('FR-024 EventBridge maintainer schedules', () => {
   });
 
   it('npm run synth exits 0 with schedule wiring', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     // Synthesized template should mention both maintainer rules/functions
     const outDir = path.join(root, 'cdk.out');

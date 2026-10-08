@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /** Hostile pins FR-036 / MRB #246 */
 const { describe, it } = require('node:test');
@@ -6,13 +6,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { resolveNodeBin, envWithPinnedNode } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 
 describe('hostile MRB #246 FR-036', () => {
   it('synth template has queues+workers for amazon and ebay and SearchApiUrl', () => {
+    const nodeBin = resolveNodeBin() || process.execPath;
     const r = spawnSync(
-      process.execPath,
+      nodeBin,
       [
         require.resolve('aws-cdk/bin/cdk'),
         'synth',
@@ -20,7 +22,7 @@ describe('hostile MRB #246 FR-036', () => {
         'node cdk/bin/a-search.js',
         '--quiet',
       ],
-      { cwd: root, encoding: 'utf8', env: process.env },
+      { cwd: root, encoding: 'utf8', env: envWithPinnedNode(nodeBin) },
     );
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const tpl = fs.readFileSync(path.join(root, 'cdk.out', 'ASearchStack.template.json'), 'utf8');
