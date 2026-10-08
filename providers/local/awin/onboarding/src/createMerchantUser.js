@@ -1,10 +1,14 @@
 'use strict';
 
 /**
- * Idempotent merchant / advertiser user create for Awin onboarding (FR-050b).
+ * Idempotent merchant / advertiser user create for Awin onboarding (FR-050b / FR-114).
  * Keyed by email — second call with the same email does not insert again.
  * Injectable SQL only (no live MSSQL in unit tests).
+ * user_id must be an 8-char madeiradb code from an injected generator
+ * (dbo.GenerateUniqueUserId or a fixture that returns ^[0-9A-Z]{8}$).
  */
+
+const { assertUserId } = require('../../../../../shared/identity/userId');
 
 class AwinUserError extends Error {
   /**
@@ -39,7 +43,7 @@ function normalizeEmail(email) {
  * @param {string} [opts.source] - default awin
  * @param {(email: string) => Promise<object|null|undefined>} opts.findByEmail
  * @param {(row: object) => Promise<object>} opts.insertUser
- * @param {() => string} [opts.newUserId]
+ * @param {() => string} opts.newUserId - required; must return ^[0-9A-Z]{8}$
  * @returns {Promise<{ user: object, created: boolean }>}
  */
 async function createMerchantUser(opts = {}) {
@@ -62,16 +66,29 @@ async function createMerchantUser(opts = {}) {
       'createMerchantUser requires injectable opts.insertUser',
     );
   }
+  if (typeof opts.newUserId !== 'function') {
+    throw new AwinUserError(
+      'missing_newUserId',
+      'createMerchantUser requires injectable opts.newUserId (GenerateUniqueUserId or fixture)',
+    );
+  }
 
   const existing = await opts.findByEmail(email);
   if (existing && typeof existing === 'object') {
     return { user: existing, created: false };
   }
 
-  const newUserId =
-    typeof opts.newUserId === 'function'
-      ? opts.newUserId()
-      : `usr_${Date.now().toString(36)}`;
+  let newUserId;
+  try {
+    newUserId = assertUserId(opts.newUserId());
+  } catch (err) {
+    throw new AwinUserError(
+      'invalid_user_id',
+      err && err.message
+        ? err.message
+        : 'newUserId must return ^[0-9A-Z]{8}$',
+    );
+  }
 
   const row = {
     user_id: newUserId,

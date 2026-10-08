@@ -22,20 +22,20 @@ describe('FR-054e listMappingsByUserId', () => {
     await upsertMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'amazon',
         token: 't1',
-        s3Key: 'live/amazon/FROM_JWT/1/a.json',
+        s3Key: 'live/amazon/JWTUSER1/1/a.json',
       },
       { store },
     );
     await upsertMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'awin',
         token: 't2',
-        s3Key: 'live/awin/FROM_JWT/1/b.json',
+        s3Key: 'live/awin/JWTUSER1/1/b.json',
       },
       { store },
     );
@@ -52,20 +52,20 @@ describe('FR-054e listMappingsByUserId', () => {
     await upsertMapping(
       {
         env: 'sandbox',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'amazon',
         token: 't4',
-        s3Key: 'sandbox/amazon/FROM_JWT/1/d.json',
+        s3Key: 'sandbox/amazon/JWTUSER1/1/d.json',
       },
       { store },
     );
 
     const rows = await listMappingsByUserId(
-      { env: 'live', userId: 'FROM_JWT' },
+      { env: 'live', userId: 'JWTUSER1' },
       { store },
     );
     assert.equal(rows.length, 2);
-    assert.ok(rows.every((r) => r.userId === 'FROM_JWT'));
+    assert.ok(rows.every((r) => r.userId === 'JWTUSER1'));
     assert.ok(rows.every((r) => r.env === 'live'));
     assert.ok(!rows.some((r) => r.userId === 'OTHER'));
     assert.ok(!rows.some((r) => r.env === 'sandbox'));

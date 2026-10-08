@@ -9,6 +9,17 @@ Skillbook setup for humans (`.env` obtain steps) stays in
 `docs/provider-onboarding-skills.md` (FR-060a). This doc is the **runner
 contract**: schedule, drain loop, signup feed.
 
+
+## Disambiguation (FR-116)
+
+**madeira-awin-clubscan (Lambda) != `dbo.clubscan` (table).**
+
+Onboarding "clubscan parity" means the legacy **madeira-awin-clubscan** Lambda
+drain / signup behaviour -- not writes to **`dbo.clubscan`** (club website scan
+rows). Club scan schema: [data-model.md](data-model.md) § Club scans. Awin
+advertiser field home (inferred): `dbo.AwinHighApprovalMerchants` -- see
+[daily-report-signups.md](daily-report-signups.md).
+
 ## Legacy reference (read-only)
 
 Clubscan daily Awin onboarding + report:
@@ -49,7 +60,7 @@ async function runOnce(deps) {
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `source` | string | Registry id (`awin`, `impact`, …) |
+| `source` | string | Registry id (`awin`, `impact`, ...) |
 | `env` | `live` \| `sandbox` | Isolation stamp |
 | `merchantId` | string | Provider merchant / advertiser id |
 | `merchantName` | string | Display name |
@@ -64,15 +75,15 @@ Field map + clubscan section mapping: [`docs/daily-report-signups.md`](daily-rep
 
 Orchestrator loops `runOnce` until empty:
 
-1. Call `runOnce(deps)` → `{ processed, remaining, signups }`
+1. Call `runOnce(deps)` -> `{ processed, remaining, signups }`
 2. Accumulate `signups` for the report feed
 3. If **`remaining === 0`**, **exit 0** (schedule complete)
 4. Else continue until `remaining === 0` or **max-iterations** safety cap
-5. Cap hit with `remaining > 0` → non-zero exit (or intake fatal) — never
+5. Cap hit with `remaining > 0` -> non-zero exit (or intake fatal) -- never
    spin forever
 
 ```text
-remaining=0  →  process exit 0  (success / drained)
+remaining=0  ->  process exit 0  (success / drained)
 ```
 
 EventBridge (FR-056) invokes the drain runner on a cadence; each invocation
@@ -83,13 +94,13 @@ must terminate when drained.
 - Prefer sandbox first while credentials are new
 - Live + sandbox isolation via `A_SEARCH_ENV` (same as workers/maintainer)
 - Cadence: daily (clubscan `Awin-Onboarding` intent) + optional more frequent
-  drain — exact rate in FR-056 / CDK
+  drain -- exact rate in FR-056 / CDK
 
 ## CAST IRON
 
 - Harvest + intake to `SimonBarnett/a-search` from the onboarding CWD
 - Never commit secrets; never put tokens in signup rows or intake bodies
-- Fatals → `shared/intake/reportException` (see `docs/intake-on-exception.md`)
+- Fatals -> `shared/intake/reportException` (see `docs/intake-on-exception.md`)
 
 ## Out of scope (this doc FR)
 

@@ -133,12 +133,15 @@ function signupFromPendingRow(row, env, deps = {}) {
     (merchantId
       ? `impact-${merchantId}@pending.invalid`
       : 'impact-unknown@pending.invalid');
+  if (typeof deps.newUserId !== 'function' && deps.newUserId == null) {
+    throw new Error(
+      'impact onboarding requires deps.newUserId (^[0-9A-Z]{8}$ / GenerateUniqueUserId)',
+    );
+  }
   const user_id =
     typeof deps.newUserId === 'function'
       ? String(deps.newUserId(row))
-      : deps.newUserId != null
-        ? String(deps.newUserId)
-        : `impact-user-${merchantId || row.Id || 'x'}`;
+      : String(deps.newUserId);
 
   return emitSignupRow({
     user_id,

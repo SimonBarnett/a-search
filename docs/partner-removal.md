@@ -17,12 +17,12 @@ orphan-safe reads).
    outright.
 3. **Reassign** surviving clubs and referred users to the parent partner
    (`L7WDZWC8`) in `Users.referrer` and `clubscan.PartnerId`.
-4. Do **not** re-key club `userId` / `ClubID` values that survive — only
+4. Do **not** re-key club `userId` / `ClubID` values that survive -- only
    `PartnerId` / `referrer` move.
 
 ## Table actions (delete / reassign / backup only / out of scope)
 
-Order of work (child data first → Catalog → clubscan → Users → Partner):
+Order of work (child data first -> Catalog -> clubscan -> Users -> Partner):
 
 | Table | Action | Notes (Greenfield 2026-10-05) |
 |-------|--------|-------------------------------|
@@ -42,7 +42,7 @@ Order of work (child data first → Catalog → clubscan → Users → Partner):
 | clubscan | **delete** + **reassign** | Id 8 (ClubID MWRJCP92) + Id 19 (ClubID MV69J0VA) **deleted**; Ids 7 and 13 **reassigned** PartnerId MWRJCP92 -> L7WDZWC8; Id 12 already L7WDZWC8 (backup only) |
 | Users | **delete** + **reassign** | MWRJCP92 + MV69J0VA **deleted**; 81W119S8, C7Y1617W, T4WGUDXD **kept**, referrer MWRJCP92 -> L7WDZWC8 |
 | Partner | **delete** | Partner row for MWRJCP92 |
-| AwinHighApprovalMerchants | **out of scope** / unknown | No `gf_bak` table; PartnerID/ClubID columns exist — DBA must decide |
+| AwinHighApprovalMerchants | **out of scope** / unknown | No `gf_bak` table; PartnerID/ClubID columns exist -- DBA must decide |
 | AwinTransactions | **out of scope** / unknown | No backup tables observed |
 | Commissions | **out of scope** / unknown | No backup tables observed |
 | Payments | **out of scope** / unknown | No backup tables observed |
@@ -60,16 +60,16 @@ Order of work (child data first → Catalog → clubscan → Users → Partner):
 ## a-search side (artifacts + JWT)
 
 Removed codes must disappear from object storage and signup feeds. Surviving
-reassigned clubs keep the same `userId` / `ClubID` — **re-key nothing** for them.
+reassigned clubs keep the same `userId` / `ClubID` -- **re-key nothing** for them.
 
 | Artifact | Prefix / key | Action for **removed** codes |
 |----------|--------------|------------------------------|
-| Search results | `{env}/{source}/{userId}/…` | delete or archive |
-| Mapping | `{env}/_mapping/{userId}/…` | delete or archive |
+| Search results | `{env}/{source}/{userId}/...` | delete or archive |
+| Mapping | `{env}/_mapping/{userId}/...` | delete or archive |
 | Daily signup reports | `{env}/_reports/{source}/{day}/signups.json` | strip signup rows whose `user_id` is removed (or archive day files that only contain that tenant) |
 | JWT accept | entry auth | stop accepting JWTs whose `userId` is absent from `Users` (FR-117 `resolveTenantUser` / empty reads) |
 
-Reassigned clubs: `userId` unchanged; only DB `PartnerId` / `referrer` moved —
+Reassigned clubs: `userId` unchanged; only DB `PartnerId` / `referrer` moved --
 leave S3 prefixes for those codes in place.
 
 ### S3 / rclone runbook (dry-run first)
@@ -89,7 +89,7 @@ Use `scripts/Remove-ASearchUserArtifacts.ps1`:
 
 Prefixes scanned per env (`live` / `sandbox`):
 
-- Results: `{env}/` … `/{userId}/` under each source segment (list by
+- Results: `{env}/` ... `/{userId}/` under each source segment (list by
   `{env}/_mapping/{userId}/` and by matching `/{userId}/` under `{env}/` excluding
   `_mapping` / `_reports` / `_staging` when using the script helpers).
 - Mapping: `{env}/_mapping/{userId}/`
@@ -99,18 +99,18 @@ Prefixes scanned per env (`live` / `sandbox`):
 
 Requires AWS credentials / profile that can `ListObjectsV2` (+ `DeleteObject`
 only with `-ConfirmDelete`). Prefer rclone list on `A_SEARCH_RCLONE_ROOT` when
-working from the SQL host — same key layout ([rclone-results.md](rclone-results.md)).
+working from the SQL host -- same key layout ([rclone-results.md](rclone-results.md)).
 
 ## Pre-removal impact query
 
 Read-only counts for a candidate code: `scripts/partner-removal-impact.sql`.
-Pass `@Code` (varchar(8)). **SELECT only** — no data changes.
+Pass `@Code` (varchar(8)). **SELECT only** -- no data changes.
 
 ## Related
 
-- [s3-mapping.md](s3-mapping.md) — `_mapping` layout
-- [rclone-results.md](rclone-results.md) — results key layout
-- [daily-report-signups.md](daily-report-signups.md) — signup / `_reports`
-- FR-113 `docs/data-model.md` (issue #730) — madeiradb inventory
+- [s3-mapping.md](s3-mapping.md) -- `_mapping` layout
+- [rclone-results.md](rclone-results.md) -- results key layout
+- [daily-report-signups.md](daily-report-signups.md) -- signup / `_reports`
+- FR-113 `docs/data-model.md` (issue #730) -- madeiradb inventory
 - FR-114 identity / 8-char codes (issue #731)
-- FR-117 orphan-safe JWT / Users gate (issue #734) — stop accepting JWTs for absent `Users`
+- FR-117 orphan-safe JWT / Users gate (issue #734) -- stop accepting JWTs for absent `Users`
