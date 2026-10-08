@@ -24,7 +24,11 @@ describe('FR-058f ebay SQS maxConcurrency', () => {
 
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /maxConcurrency/);
-    assert.match(text, /src\.id\s*===\s*['"]ebay['"]|id\s*===\s*['"]ebay['"]/);
+    // Shared helper (FR-058e/f): allow === 'ebay' inline OR !== 'ebay' in amazon|ebay gate.
+    assert.match(
+      text,
+      /src\.id\s*===\s*['"]ebay['"]|src\.id\s*!==\s*['"]ebay['"]|id\s*===\s*['"]ebay['"]/,
+    );
     // Fail-when: amazon-only wire without ebay gate would still match maxConcurrency —
     // require ebay id gate so other providers stay OOS.
     assert.match(
