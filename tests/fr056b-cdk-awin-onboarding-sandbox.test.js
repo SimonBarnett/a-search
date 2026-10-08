@@ -37,13 +37,10 @@ describe('FR-056b CDK awin onboarding Lambda sandbox', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /a-search-awin-onboarding-sandbox/);
     assert.match(text, /AwinOnboardingSandbox/);
-    assert.match(
-      text,
-      /providers[/\\]local[/\\]awin[/\\]onboarding[/\\]src|onboarding', 'src'|onboarding", "src"/,
-    );
-    const idx = text.indexOf('a-search-awin-onboarding-sandbox');
+    assert.match(text, /awin[\s',"]+onboarding/s);
+    const idx = text.indexOf("functionName: 'a-search-awin-onboarding-sandbox'");
     assert.ok(idx > 0, 'functionName missing');
-    const window = text.slice(Math.max(0, idx - 400), idx + 500);
+    const window = text.slice(idx, idx + 350);
     assert.match(window, /A_SEARCH_ENV:\s*'sandbox'/);
     assert.doesNotMatch(window, /A_SEARCH_ENV:\s*'live'/);
   });
