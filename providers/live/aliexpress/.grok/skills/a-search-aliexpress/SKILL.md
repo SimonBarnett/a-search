@@ -37,6 +37,13 @@ and common response wrappers. Partial rows without id+title are skipped (no thro
 `writeResults` with injectable `httpRequest` / `putObject`. `assertWorkerEnv` before HTTP.
 SQS `handler` parses Records. Stay-dark: do not flip registry enabled.
 
+## Selftest + pacing (FR-074)
+
+`src/selftestProbe.js` -- credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_ALIEXPRESS_URL`.
