@@ -29,5 +29,8 @@ Provider CWD for registry id `flexoffers` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
+- src/queryParts.js -- MSSQL Parts SELECT (FR-095; injectable connect)
+- src/worker.js -- 
+un(msg, deps) / writeResults (FR-095; stay-dark)
+- .env.example -- placeholders (MSSQL_*, FLEXOFFERS_AFFILIATE_ID)
 - `.env.example` — placeholders
