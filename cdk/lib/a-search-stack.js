@@ -41,7 +41,7 @@ function queueUrlEnvKey(queueEnv, env) {
 /**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
- * maintainer EventBridge schedules.
+ * maintainer EventBridge schedules + awin onboarding sandbox Lambda (FR-056b).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -196,6 +196,26 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
+
+    // FR-056b: awin onboarding Lambda sandbox (schedules OOS — later FR-056 slices)
+    const awinOnboardingCode = lambda.Code.fromAsset(
+      path.join(__dirname, '..', '..', 'providers', 'local', 'awin', 'onboarding', 'src'),
+    );
+    const awinOnboardingSandbox = new lambda.Function(
+      this,
+      'AwinOnboardingSandboxFunction',
+      {
+        functionName: 'a-search-awin-onboarding-sandbox',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'sandbox',
+        },
+      },
+    );
+
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
       value: httpApi.apiEndpoint,
@@ -206,6 +226,9 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'MaintainerSandboxFunctionName', {
       value: maintainerSandbox.functionName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingSandboxFunctionName', {
+      value: awinOnboardingSandbox.functionName,
     });
   }
 }
