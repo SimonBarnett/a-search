@@ -29,5 +29,5 @@ Provider CWD for registry id `woocommerce` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` - `run(msg)` stub (FR-607)
-- `.env.example` - placeholders
+- `src/worker.js` + `src/queryParts.js` - MSSQL Parts worker (FR-111)
+- `.env.example` - placeholders (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_AFFILIATE_ID`)

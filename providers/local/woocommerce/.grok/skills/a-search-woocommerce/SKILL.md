@@ -18,10 +18,12 @@ Registry folder `providers/local/woocommerce`. Enabled: live=false, sandbox=fals
 
 SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds).
 
-## Worker stub
+## Worker (FR-111)
 
-`src/worker.js` exports `run(msg)` (FR-607).
+`src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
+Relative product Urls resolve against `WOOCOMMERCE_STORE_URL`; tracked links stamp `WOOCOMMERCE_AFFILIATE_ID` as `sid`.
+Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/upsert (FR-110) are separate.
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_WOOCOMMERCE_URL`.
+See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_AFFILIATE_ID`). Queue env: `SQS_WOOCOMMERCE_URL`.
