@@ -36,9 +36,9 @@ with `X-API-KEY` / `BOL_API_KEY`, fixture `fixtures/products-ok.json`
 Accepts `bolProductAPI.products[]` (FR-079 fixture) and top-level `products[]`.
 Partial rows without id+title are skipped (no throw). Stay-dark.
 
-## Worker
+## Worker (FR-081)
 
-Worker wiring (FR-081) is a later FR.
+`src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `assertBolCreds` -> `searchBol` -> `normalizeSearchResponse` -> `writeResults`. Injectable `httpRequest` / `putObject` / search / normalize. Optional `handler` for SQS Records. Stay-dark.
 
 ## Selftest
 
