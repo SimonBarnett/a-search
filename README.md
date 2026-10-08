@@ -28,6 +28,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Tracked links](docs/tracked-links.md) (FR-057 — JWT `userId` tenant + provider `.env` account)
 - [Intake on exception](docs/intake-on-exception.md) (FR-048 — entry/worker/maintainer/onboarding)
 - [Onboarding agents](docs/onboarding-agents.md) (FR-049a — drain until `remaining=0` + signup fields)
+- [madeiradb data model](docs/data-model.md) (FR-117 Integrity / orphan-safe reads)
 - [Daily report signups](docs/daily-report-signups.md) (FR-052a — clubscan field map)
 - [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report — read-only; HTML email stays in AWS until cutover)
 - [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
