@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — selftest error</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .err { color: #c22; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; border-radius: 4px; overflow: auto; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search — provider selftest</h1>
+  <p class="err">401 Unauthorized — no selftest payload</p>
+  <p class="meta">Missing/invalid JWT or missing userId claim. Body userId cannot override JWT. No intake on 401.</p>
+  <pre>{
+  "ok": false,
+  "error": "unauthorized"
+}</pre>
+
+  <p class="err">401 — user_id_mismatch</p>
+  <pre>{
+  "ok": false,
+  "error": "user_id_mismatch"
+}</pre>
+
+  <p class="err">400 — invalid_sources</p>
+  <pre>{
+  "ok": false,
+  "error": "invalid_sources",
+  "fields": ["sources"]
+}</pre>
+
+  <p class="meta">Key mock: <a href="selftest.html">selftest.html</a> · Empty:
+    <a href="selftest-empty.html">selftest-empty.html</a>
+  </p>
+</body>
+</html>
