@@ -1,4 +1,4 @@
-﻿# a-search
+# a-search
 
 JWT-authenticated search entry for Club Madeira affiliate / local parts
 discovery. One `POST /search` accepts the job (**HTTP 200**) and fans out

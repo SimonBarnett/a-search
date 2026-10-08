@@ -1,4 +1,4 @@
-﻿# Phase-2 FRs filed on SimonBarnett/a-search
+# Phase-2 FRs filed on SimonBarnett/a-search
 
 Filed by plan-20261008-095625. Stay-dark: enabled stays false.
 
