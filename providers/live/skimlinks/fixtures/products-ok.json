@@ -1,0 +1,23 @@
+{
+  "query": "headphones",
+  "products": [
+    {
+      "id": "sl-fix-001",
+      "title": "Fixture Wireless Headphones",
+      "price": 49.99,
+      "currency": "GBP",
+      "merchant": "Fixture Shop A",
+      "url": "https://example.test/skimlinks/product/sl-fix-001",
+      "image": "https://example.test/img/sl-fix-001.jpg"
+    },
+    {
+      "id": "sl-fix-002",
+      "title": "Fixture Noise-Cancel Headphones",
+      "price": 129.0,
+      "currency": "GBP",
+      "merchant": "Fixture Shop B",
+      "url": "https://example.test/skimlinks/product/sl-fix-002",
+      "image": "https://example.test/img/sl-fix-002.jpg"
+    }
+  ]
+}
