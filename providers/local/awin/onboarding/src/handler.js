@@ -1,24 +1,24 @@
 'use strict';
 
 /**
- * Lambda entry for awin onboarding drain (FR-056b sandbox / FR-056a live).
- * EventBridge (later) or direct invoke → runOnce until remaining=0 semantics
- * are owned by the shared drain helper; this handler is a single runOnce.
+ * Lambda entry for Awin onboarding drain (FR-056a live / FR-056b sandbox).
+ * Invokes runOnce once per tick; EventBridge cadence is FR-056e.
  */
 
 const { runOnce } = require('./run');
 
 /**
- * @param {object} [event]
- * @param {object} [context]
+ * @param {object} [_event]
+ * @param {object} [_context]
+ * @param {object} [deps]
  */
-async function handler(event, context) {
-  const out = await runOnce({
-    event,
-    context,
-    envVars: process.env,
-  });
-  return out;
+async function handler(_event, _context, deps = {}) {
+  const env = deps.env || deps.envVars || process.env;
+  const result = await runOnce({ ...deps, env });
+  return {
+    statusCode: 200,
+    body: JSON.stringify(result),
+  };
 }
 
 module.exports = { handler };

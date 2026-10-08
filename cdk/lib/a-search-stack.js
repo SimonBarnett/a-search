@@ -41,7 +41,7 @@ function queueUrlEnvKey(queueEnv, env) {
 /**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
- * maintainer EventBridge schedules + awin onboarding sandbox Lambda (FR-056b).
+ * maintainer EventBridge schedules + awin onboarding live/sandbox Lambdas (FR-056a/b).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -196,10 +196,32 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
-
-    // FR-056b: awin onboarding Lambda sandbox (schedules OOS — later FR-056 slices)
+    // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed). Schedules ? FR-056e.
     const awinOnboardingCode = lambda.Code.fromAsset(
-      path.join(__dirname, '..', '..', 'providers', 'local', 'awin', 'onboarding', 'src'),
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        'providers',
+        'local',
+        'awin',
+        'onboarding',
+        'src',
+      ),
+    );
+    const awinOnboardingLive = new lambda.Function(
+      this,
+      'AwinOnboardingLiveFunction',
+      {
+        functionName: 'a-search-awin-onboarding-live',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+      },
     );
     const awinOnboardingSandbox = new lambda.Function(
       this,
@@ -226,6 +248,9 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'MaintainerSandboxFunctionName', {
       value: maintainerSandbox.functionName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingLiveFunctionName', {
+      value: awinOnboardingLive.functionName,
     });
     new cdk.CfnOutput(this, 'AwinOnboardingSandboxFunctionName', {
       value: awinOnboardingSandbox.functionName,
