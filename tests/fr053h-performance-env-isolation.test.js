@@ -53,7 +53,7 @@ function signHs256(payload, key = FIXTURE_HS256_KEY) {
   return `${data}.${b64url(sig)}`;
 }
 
-function validToken(userId = 'FROM_JWT') {
+function validToken(userId = 'JWTUSER1') {
   return signHs256({
     userId,
     iss: ISSUER,
@@ -71,35 +71,35 @@ const jwtEnv = {
 /** Mixed live+sandbox rows for the same JWT user — isolation must not leak. */
 const mixedClickVisit = [
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'live',
     type: 'click',
     at: '2026-10-04T10:00:00.000Z',
     visitorId: 'live-v1',
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'live',
     type: 'visit',
     at: '2026-10-04T10:00:01.000Z',
     visitorId: 'live-v1',
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'live',
     type: 'click',
     at: '2026-10-05T10:00:00.000Z',
     visitorId: 'live-v2',
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'sandbox',
     type: 'click',
     at: '2026-10-04T12:00:00.000Z',
     visitorId: 'sb-v1',
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'sandbox',
     type: 'visit',
     at: '2026-10-04T12:00:01.000Z',
@@ -109,7 +109,7 @@ const mixedClickVisit = [
 
 const mixedSales = [
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'live',
     at: '2026-10-04T15:00:00.000Z',
     amount: 100,
@@ -117,7 +117,7 @@ const mixedSales = [
     currency: 'GBP',
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'sandbox',
     at: '2026-10-04T16:00:00.000Z',
     amount: 5,
@@ -128,7 +128,7 @@ const mixedSales = [
 
 const mixedTop = [
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'live',
     at: '2026-10-04T10:00:00.000Z',
     linkId: 'live-link',
@@ -138,7 +138,7 @@ const mixedTop = [
     sales: 9,
   },
   {
-    userId: 'FROM_JWT',
+    userId: 'JWTUSER1',
     env: 'sandbox',
     at: '2026-10-04T11:00:00.000Z',
     linkId: 'sb-link',
@@ -152,7 +152,7 @@ const mixedTop = [
 describe('FR-053h performance live vs sandbox isolation', () => {
   it('sandbox aggregate ignores live click/visit rows', async () => {
     const got = await aggregateClicksVisits({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'sandbox',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -163,7 +163,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
     assert.equal(got.uniqueVisitors, 1);
 
     const live = aggregateClickVisitEvents(mixedClickVisit, {
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -174,7 +174,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
 
   it('sandbox sales aggregate ignores live sale rows', async () => {
     const sb = await aggregateSales({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'sandbox',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -185,7 +185,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
     assert.equal(sb.sales.commission, 0.5);
 
     const live = await aggregateSales({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -197,7 +197,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
 
   it('sandbox top aggregate ignores live link/merchant rows', async () => {
     const sb = await aggregateTop({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'sandbox',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -209,7 +209,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
     assert.equal(sb.topMerchants[0].merchantId, 'sb-m');
 
     const live = await aggregateTop({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -256,7 +256,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
         path: '/account/performance',
         rawPath: '/account/performance',
         headers: {
-          authorization: `Bearer ${validToken('FROM_JWT')}`,
+          authorization: `Bearer ${validToken('JWTUSER1')}`,
           'content-type': 'application/json',
         },
         body: JSON.stringify({
@@ -276,7 +276,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
     assert.equal(json.ok, true);
-    assert.equal(json.userId, 'FROM_JWT');
+    assert.equal(json.userId, 'JWTUSER1');
     assert.equal(json.env, 'sandbox');
     assert.equal(json.clicks, 1);
     assert.equal(json.visits, 1);
@@ -295,7 +295,7 @@ describe('FR-053h performance live vs sandbox isolation', () => {
         httpMethod: 'GET',
         path: '/account/performance',
         rawPath: '/account/performance',
-        headers: { authorization: `Bearer ${validToken('FROM_JWT')}` },
+        headers: { authorization: `Bearer ${validToken('JWTUSER1')}` },
         queryStringParameters: {
           from: '2026-10-01',
           to: '2026-10-08',

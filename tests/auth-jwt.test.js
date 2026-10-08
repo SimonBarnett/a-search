@@ -66,8 +66,8 @@ describe('FR-027 / S5 auth-jwt (body cannot override JWT userId)', () => {
   it('body userId differing from JWT → 401 unauthorized', async () => {
     const res = await handler(
       event({
-        auth: `Bearer ${validToken('FROM_JWT')}`,
-        body: { ...validBody, userId: 'FROM_BODY_ATTACKER' },
+        auth: `Bearer ${validToken('JWTUSER1')}`,
+        body: { ...validBody, userId: 'BODYUSR1' },
       }),
       {},
       { env: jwtEnv, enqueue: async () => [] },

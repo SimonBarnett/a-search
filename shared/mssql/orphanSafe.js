@@ -71,7 +71,7 @@ async function resolveTenantUser(opts = {}) {
 
 /**
  * Run a user-scoped read only when the tenant exists in Users.
- * Missing user → empty array (fail closed, not error).
+ * Missing user -> empty array (fail closed, not error).
  *
  * @template T
  * @param {object} opts

@@ -1,5 +1,7 @@
 'use strict';
 
+const { assertUserId, UserIdError } = require('../../../../../shared/identity/userId');
+
 /**
  * Build daily-report signup row for Awin onboarding (FR-050c).
  * Persistence to S3/MSSQL is FR-052 — this only shapes the object.
@@ -57,6 +59,14 @@ function emitSignupRow(opts = {}) {
 
   if (!user_id) {
     throw new AwinSignupError('missing_user_id', 'signup requires user_id');
+  }
+  try {
+    assertUserId(user_id);
+  } catch (err) {
+    if (err instanceof UserIdError) {
+      throw new AwinSignupError('invalid_user_id', err.message);
+    }
+    throw err;
   }
   if (!company_name) {
     throw new AwinSignupError(

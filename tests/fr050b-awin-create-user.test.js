@@ -23,7 +23,7 @@ describe('FR-050b awin createMerchantUser', () => {
         store.set(row.email, row);
         return row;
       },
-      newUserId: () => 'usr_test_1',
+      newUserId: () => 'TESTUSR1',
     };
 
     const first = await createMerchantUser({
@@ -35,7 +35,7 @@ describe('FR-050b awin createMerchantUser', () => {
     });
     assert.equal(first.created, true);
     assert.equal(first.user.email, 'merchant@example.com');
-    assert.equal(first.user.user_id, 'usr_test_1');
+    assert.equal(first.user.user_id, 'TESTUSR1');
     assert.equal(inserts, 1);
 
     const second = await createMerchantUser({
@@ -46,7 +46,7 @@ describe('FR-050b awin createMerchantUser', () => {
       env: 'sandbox',
     });
     assert.equal(second.created, false);
-    assert.equal(second.user.user_id, 'usr_test_1');
+    assert.equal(second.user.user_id, 'TESTUSR1');
     assert.equal(inserts, 1);
     assert.equal(store.size, 1);
   });

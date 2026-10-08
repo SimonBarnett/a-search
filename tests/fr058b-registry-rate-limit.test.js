@@ -29,8 +29,8 @@ describe('FR-058b registry rateLimit', () => {
   });
 
   it('rateLimit(id) is undefined for sources without the field', () => {
-    // Stay-dark locals without a selftest FR yet (wix gained rateLimit in FR-108).
-    assert.equal(rateLimit('woocommerce'), undefined);
+    // All Phase-2 locals gained rateLimit through FR-112; unknown ids stay undefined.
+    assert.equal(rateLimit('__no_such_source__'), undefined);
   });
 
   it('add-source.md documents optional rateLimit', () => {

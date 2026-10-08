@@ -25,7 +25,7 @@ describe('FR-052b writeSignupEvents S3 JSON store', () => {
     const store = createMemorySignupsStore();
     const envVars = { S3_RESULTS_BUCKET: 'a-search-results-test' };
     const row = {
-      user_id: 'usr_1',
+      user_id: 'TESTUSR1',
       company_name: 'Acme',
       email: 'Ops@Acme.Example',
       advertiserId: '1001',
@@ -61,7 +61,7 @@ describe('FR-052b writeSignupEvents S3 JSON store', () => {
     assert.equal(read.signups.length, 1);
     const got = read.signups[0];
     assert.equal(got.id, id);
-    assert.equal(got.user_id, 'usr_1');
+    assert.equal(got.user_id, 'TESTUSR1');
     assert.equal(got.company_name, 'Acme');
     assert.equal(got.email, 'ops@acme.example');
     assert.equal(got.advertiserId, '1001');

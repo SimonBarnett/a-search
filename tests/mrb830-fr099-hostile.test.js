@@ -119,7 +119,7 @@ describe('MRB-830 FR-099 hostile', () => {
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('woocommerce'\)/);
+    assert.match(src, /rateLimit\('__no_such_source__'\)/);
     assert.ok(!/assert\.equal\(rateLimit\('avantlink'\),\s*undefined\)/.test(src));
     assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
     assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
@@ -135,7 +135,11 @@ describe('MRB-830 FR-099 hostile', () => {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
-    assert.equal(rateLimit('woocommerce'), undefined);
+    assert.deepEqual(rateLimit('woocommerce'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.equal(rateLimit('__no_such_source__'), undefined);
   });
 
   it('.env.example AFFILIATE_ID and API_TOKEN empty', () => {

@@ -105,7 +105,7 @@ describe('FR-026 fan-out integration (vision S1)', () => {
     const sent = [];
     const res = await handler(
       event({
-        auth: `Bearer ${validToken('U-SBOX')}`,
+        auth: `Bearer ${validToken('USERSBOX')}`,
         body: { ...validBody, sandbox: true },
       }),
       {},
