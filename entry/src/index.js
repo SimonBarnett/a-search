@@ -2,7 +2,7 @@
 
 /**
  * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006) +
- * performance stub (FR-053b).
+ * performance stub (FR-053b) + selftest stub (FR-059b).
  * JWT verify (FR-004) + body validation + registry-backed SQS fan-out (injectable sendMessage).
  * Never trusts a request-body user id.
  */
@@ -15,6 +15,10 @@ const {
   resolvePerformanceInput,
   queryParams,
 } = require('./performance');
+const {
+  emptySelftestPayload,
+  resolveSelftestInput,
+} = require('./selftest');
 const { aggregateClicksVisits } = require('./performanceClicksVisits');
 const { aggregateSales } = require('./performanceSales');
 const { aggregateTop } = require('./performanceTop');
@@ -25,6 +29,7 @@ const {
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
 const PERF_ROUTE = 'entry/account/performance';
+const SELFTEST_ROUTE = 'entry/selftest';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -88,6 +93,11 @@ function resolveHttp(event) {
 
 function isPerformanceRoute(method, path) {
   if (path !== '/account/performance') return false;
+  return method === 'GET' || method === 'POST';
+}
+
+function isSelftestRoute(method, path) {
+  if (path !== '/selftest') return false;
   return method === 'GET' || method === 'POST';
 }
 
@@ -169,8 +179,15 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
-  const route = isPerformanceRoute(method, path) ? PERF_ROUTE : ENTRY_ROUTE;
+  const route = isSelftestRoute(method, path)
+    ? SELFTEST_ROUTE
+    : isPerformanceRoute(method, path)
+      ? PERF_ROUTE
+      : ENTRY_ROUTE;
   try {
+    if (isSelftestRoute(method, path)) {
+      return await handleSelftest(event, deps);
+    }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
     }
@@ -316,6 +333,65 @@ async function handlePerformance(event, deps = {}) {
 }
 
 /**
+ * FR-059b selftest stub — JWT + env; empty providers (real probes OOS).
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handleSelftest(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+
+  const query = queryParams(event);
+  const rawBody = event && event.body;
+  const parsed = parseBody(rawBody);
+  if (parsed === null) {
+    return jsonResponse(400, {
+      ok: false,
+      error: 'invalid_json',
+    });
+  }
+
+  const bodyUser =
+    parsed.userId !== undefined && parsed.userId !== null
+      ? parsed.userId
+      : query.userId;
+  if (
+    bodyUser !== undefined &&
+    bodyUser !== null &&
+    String(bodyUser) !== String(userId)
+  ) {
+    return jsonResponse(401, { ok: false, error: 'user_id_mismatch' });
+  }
+
+  const resolved = resolveSelftestInput(query, parsed);
+  if (!resolved.ok) {
+    return jsonResponse(400, {
+      ok: false,
+      error: resolved.error,
+      fields: resolved.fields,
+    });
+  }
+
+  const payload = emptySelftestPayload(userId, { env: resolved.value.env });
+  return jsonResponse(200, payload);
+}
+
+/**
  * @param {object} event
  * @param {object} deps
  */
@@ -407,10 +483,12 @@ async function handleSearch(event, deps = {}) {
 module.exports = {
   handler,
   handlePerformance,
+  handleSelftest,
   handleSearch,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
   resolveHttp,
   isPerformanceRoute,
+  isSelftestRoute,
 };
