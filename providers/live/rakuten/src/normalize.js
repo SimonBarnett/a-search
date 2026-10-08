@@ -1,11 +1,24 @@
 'use strict';
 
+const {
+  buildTrackedUrl,
+  TrackedUrlError,
+} = require('../../../../shared/links/buildTrackedUrl');
+
 /**
  * Normalize a Rakuten Product Search item object → a-search product.
+ * When linkurl/url is present, stamps JWT userId tenant + RAKUTEN_SITE_ID
+ * via buildTrackedUrl (FR-057f).
+ *
  * @param {object} item
+ * @param {{
+ *   userId: string,
+ *   env?: string,
+ *   envVars: Record<string, string|undefined>,
+ * }} [track]
  * @returns {object}
  */
-function normalizeRakutenItem(item) {
+function normalizeRakutenItem(item, track) {
   if (!item || typeof item !== 'object') {
     return { id: '', title: '', source: 'rakuten' };
   }
@@ -34,15 +47,34 @@ function normalizeRakutenItem(item) {
       ? Number(priceRaw)
       : undefined;
 
+  const rawUrl =
+    item.linkurl != null
+      ? String(item.linkurl)
+      : item.url != null
+        ? String(item.url)
+        : undefined;
+
+  let url;
+  if (rawUrl != null && String(rawUrl).trim() !== '') {
+    if (!track || typeof track !== 'object') {
+      throw new TrackedUrlError(
+        'rakuten normalize requires track context { userId, envVars } for linkurl',
+        'tracked_url_missing_userId',
+      );
+    }
+    url = buildTrackedUrl({
+      url: String(rawUrl),
+      userId: track.userId,
+      env: track.env,
+      envVars: track.envVars || {},
+      requiredAccountKeys: ['RAKUTEN_SITE_ID'],
+    });
+  }
+
   return {
     id,
     title,
-    url:
-      item.linkurl != null
-        ? String(item.linkurl)
-        : item.url != null
-          ? String(item.url)
-          : undefined,
+    url,
     imageUrl:
       item.imageurl != null
         ? String(item.imageurl)
@@ -60,10 +92,21 @@ function normalizeRakutenItem(item) {
 
 /**
  * @param {object[]} items
+ * @param {{
+ *   userId: string,
+ *   env?: string,
+ *   envVars: Record<string, string|undefined>,
+ * }} [track]
  * @returns {object[]}
  */
-function normalizeSearchItems(items) {
-  return (Array.isArray(items) ? items : []).map(normalizeRakutenItem);
+function normalizeSearchItems(items, track) {
+  return (Array.isArray(items) ? items : []).map((item) =>
+    normalizeRakutenItem(item, track),
+  );
 }
 
-module.exports = { normalizeRakutenItem, normalizeSearchItems };
+module.exports = {
+  normalizeRakutenItem,
+  normalizeSearchItems,
+  TrackedUrlError,
+};
