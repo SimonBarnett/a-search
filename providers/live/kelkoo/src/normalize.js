@@ -1,16 +1,19 @@
 'use strict';
 
 /**
- * Normalize Kelkoo Shopping API offers → a-search product schema (FR-064).
- * Stay-dark: do not enable registry. Worker wiring is out of scope.
+ * Normalize Kelkoo Shopping API offers → a-search product schema (FR-064/065).
+ * Stay-dark: do not enable registry.
  *
- * Field map (non-obvious):
+ * Field map:
  * - `offerId` → `id`
- * - `landingPageUrl` → `url` (publisher landing from Shopping API JWT session;
- *   no separate campaign-tag rewrite in this FR)
- * - `merchantName` → `description` (merchant label; optional)
+ * - `landingPageUrl` → `url` via `buildTrackedUrl` + `KELKOO_PUBLISHER_ID` when present
+ * - `merchantName` → `description` (optional merchant label)
  */
 
+const {
+  buildTrackedUrl,
+  TrackedUrlError,
+} = require('../../../../shared/links/buildTrackedUrl');
 const {
   normalizeProduct,
   assertProductSchema,
@@ -18,26 +21,56 @@ const {
 
 /**
  * @param {object} offer - one element of response.offers
+ * @param {{
+ *   userId: string,
+ *   env?: string,
+ *   envVars: Record<string, string|undefined>,
+ * }} [track]
  * @returns {object} product (may have empty id/title for bad rows)
  */
-function normalizeKelkooOffer(offer) {
+function normalizeKelkooOffer(offer, track) {
   if (!offer || typeof offer !== 'object') {
     const empty = normalizeProduct({ id: '', title: '', source: 'kelkoo' });
     assertProductSchema(empty);
     return empty;
   }
 
+  const rawUrl =
+    offer.landingPageUrl != null
+      ? String(offer.landingPageUrl)
+      : offer.url != null
+        ? String(offer.url)
+        : offer.clickUrl != null
+          ? String(offer.clickUrl)
+          : undefined;
+
+  let url;
+  if (rawUrl != null && String(rawUrl).trim() !== '') {
+    if (!track || typeof track !== 'object') {
+      throw new TrackedUrlError(
+        'kelkoo normalize requires track context { userId, envVars } for landingPageUrl',
+        'tracked_url_missing_userId',
+      );
+    }
+    url = buildTrackedUrl({
+      url: String(rawUrl),
+      userId: track.userId,
+      env: track.env,
+      envVars: track.envVars || {},
+      requiredAccountKeys: ['KELKOO_PUBLISHER_ID'],
+    });
+  }
+
   const product = normalizeProduct({
     id: offer.offerId != null ? String(offer.offerId) : '',
     title: offer.title == null ? '' : String(offer.title),
-    url:
-      offer.landingPageUrl != null && String(offer.landingPageUrl).trim() !== ''
-        ? String(offer.landingPageUrl)
-        : undefined,
+    url,
     imageUrl:
       offer.imageUrl != null && String(offer.imageUrl).trim() !== ''
         ? String(offer.imageUrl)
-        : undefined,
+        : offer.image != null && String(offer.image).trim() !== ''
+          ? String(offer.image)
+          : undefined,
     price: offer.price != null ? Number(offer.price) : undefined,
     currency:
       offer.currency != null && String(offer.currency).trim() !== ''
@@ -55,12 +88,17 @@ function normalizeKelkooOffer(offer) {
 
 /**
  * Map a Kelkoo /search/offers JSON body to products.
- * Missing/partial offers are skipped (no throw). Empty body → [].
+ * Missing/partial offers (no offerId+title) are skipped (no throw). Empty → [].
  *
  * @param {object} shoppingBody
+ * @param {{
+ *   userId: string,
+ *   env?: string,
+ *   envVars: Record<string, string|undefined>,
+ * }} [track]
  * @returns {object[]}
  */
-function normalizeSearchResponse(shoppingBody) {
+function normalizeSearchResponse(shoppingBody, track) {
   const offers =
     shoppingBody && Array.isArray(shoppingBody.offers)
       ? shoppingBody.offers
@@ -71,7 +109,7 @@ function normalizeSearchResponse(shoppingBody) {
     const id = offer.offerId != null ? String(offer.offerId).trim() : '';
     const title = offer.title != null ? String(offer.title).trim() : '';
     if (!id || !title) continue;
-    out.push(normalizeKelkooOffer(offer));
+    out.push(normalizeKelkooOffer(offer, track));
   }
   return out;
 }
@@ -79,4 +117,5 @@ function normalizeSearchResponse(shoppingBody) {
 module.exports = {
   normalizeKelkooOffer,
   normalizeSearchResponse,
+  TrackedUrlError,
 };

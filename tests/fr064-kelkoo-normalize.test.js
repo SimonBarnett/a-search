@@ -41,7 +41,15 @@ describe('FR-064 kelkoo normalize', () => {
     const { normalizeSearchResponse } = require(normalizePath);
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-    const products = normalizeSearchResponse(fixture);
+    const track = {
+      userId: 'U-KK',
+      env: 'sandbox',
+      envVars: {
+        A_SEARCH_ENV: 'sandbox',
+        KELKOO_PUBLISHER_ID: 'pub-test',
+      },
+    };
+    const products = normalizeSearchResponse(fixture, track);
     assert.equal(products.length, 2);
     for (const p of products) {
       assertProductSchema(p);
