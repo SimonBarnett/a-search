@@ -22,6 +22,13 @@ SELECT dbo.Parts WHERE Source='partnerize' (maintainer owns feeds).
 
 `src/worker.js` exports `run(msg)`.
 
+## Selftest + pacing (FR-084)
+
+`src/selftestProbe.js` — MSSQL Parts reachability (injectable `connect`) or
+`PARTNERIZE_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_PARTNERIZE_URL`.

@@ -29,7 +29,8 @@ describe('FR-058b registry rateLimit', () => {
   });
 
   it('rateLimit(id) is undefined for sources without the field', () => {
-    assert.equal(rateLimit('partnerize'), undefined);
+    // Stay-dark locals without a selftest FR yet (partnerize gained rateLimit in FR-084).
+    assert.equal(rateLimit('webgains'), undefined);
   });
 
   it('add-source.md documents optional rateLimit', () => {
