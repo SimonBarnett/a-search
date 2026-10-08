@@ -29,5 +29,8 @@ Provider CWD for registry id `flexoffers` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
+- src/worker.js -- run(msg) (FR-095 queryParts when present)
+- src/parseFeed.js -- maintainer feed-parser hook (FR-097; stay-dark)
+- ixtures/products-ok.csv -- fixture for parseFeed unit tests
+- .env.example -- placeholders (MSSQL, affiliate, feed keys)
 - `.env.example` — placeholders
