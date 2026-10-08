@@ -35,8 +35,25 @@ Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `ADMITAD_WEBSITE_
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 (stay-dark; do not flip `enabled`).
 
+## Maintainer feed-parser (FR-094)
+
+`src/parseFeed.js` -- `parseAdmitadFeedRows(body, meta)` / `admitadParseFeedRowsHook`
+for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
+Maps Admitad product CSV/JSON into Parts staging columns
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
+
+Credential / locator placeholders (never commit real values):
+
+- `ADMITAD_FEED_URL` -- optional default feed locator (PartFeedKeys.FeedUrl wins)
+- `ADMITAD_API_KEY` or `ADMITAD_FEED_TOKEN` -- feed fetch auth
+- `ADMITAD_PUBLISHER_ID` -- account / programme id when required
+
+`assertAdmitadFeedCreds(env)` throws `admitad_missing_feed_credentials` when the API key is absent.
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_ADMITAD_URL`. Placeholders only:
 `MSSQL_*`, `ADMITAD_WEBSITE_ID=`.
 Selftest placeholder: `ADMITAD_API_TOKEN=`.
+Feed placeholders: `ADMITAD_FEED_URL=`, `ADMITAD_API_KEY=`, `ADMITAD_FEED_TOKEN=`,
+`ADMITAD_PUBLISHER_ID=`.
