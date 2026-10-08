@@ -34,6 +34,7 @@ const credEnv = {
   A_SEARCH_ENV: 'sandbox',
   RAKUTEN_APPLICATION_KEY: 'app-key-test',
   RAKUTEN_AFFILIATE_ID: 'aff-1',
+  RAKUTEN_SITE_ID: 'site-test',
   RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
   S3_RESULTS_BUCKET: 'test-results',
 };

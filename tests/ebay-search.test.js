@@ -37,6 +37,7 @@ const credEnv = {
   EBAY_REFRESH_TOKEN: '',
   EBAY_MARKETPLACE_ID: 'EBAY_GB',
   EBAY_ENV: 'sandbox',
+  EBAY_CAMPAIGN_ID: 'camp-test',
   S3_RESULTS_BUCKET: 'test-results',
 };
 
