@@ -29,5 +29,6 @@ Provider CWD for registry id `admitad` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
-- `.env.example` — placeholders
+- `src/queryParts.js` — MSSQL Parts SELECT (FR-092; injectable connect)
+- `src/worker.js` — `run(msg, deps)` / writeResults (FR-092; stay-dark)
+- `.env.example` — placeholders (`MSSQL_*`, `ADMITAD_WEBSITE_ID`)
