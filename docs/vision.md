@@ -35,6 +35,7 @@ LOCKED
 | S7 | Rolling parts maintainer | Scheduled task refreshes only due feed keys from MSSQL; conditional download before blind pull; set-based upsert + scoped delete | `tests/maintainer-roll.test.js` (fixture keys, 304/hash skip, MERGE staging) | Full-estate blind download every tick, or row-by-row upserts only |
 | S8 | Per-folder skillbooks | Each entry/provider/maintainer folder has `AGENTS.md` + `.grok/skills/a-search-<id>/SKILL.md` so an agent CWD there can maintain that integration alone | Repo layout test / checklist `docs/skillbook-layout.md` counts required files | Amazon agent must load awin skill to debug amazon |
 | S9 | Caller endpoint skillbook | Product ships `.grok/skills/a-search-endpoint/SKILL.md` so an agent can call `POST /search` with JWT, env, and result-path playbook | File present in repo; fixture agent checklist in `docs/skillbook-layout.md` | Callers only have HTTP docs with no agent skill |
+| S10 | Harvest CAST IRON in every agent CWD | Every `AGENTS.md` + `a-search-*` SKILL.md contains the CAST IRON harvest block and intake `POST /bob/v1/intake` with explicit `-Repo SimonBarnett/a-search` | `tests/skillbook-harvest.test.js` enumerates entry/maintainer/providers/endpoint and asserts CAST IRON + intake + `-Repo` needles | Any required agent CWD missing the harvest block |
 
 LOCKED
 
