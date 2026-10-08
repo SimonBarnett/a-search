@@ -12,16 +12,18 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/shopify`. Enabled: live=false, sandbox=false.
+Registry folder `providers/local/shopify`. Enabled: live=false, sandbox=false (stay dark until account details exist).
 
 ## Search path
 
 SELECT dbo.Parts WHERE Source='shopify' (maintainer owns store sync / feeds).
 
-## Worker stub
+## Worker (FR-103)
 
-`src/worker.js` exports `run(msg)` (FR-607).
+`src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` → normalize Parts → `writeResults`.
+Relative product Urls resolve against `SHOPIFY_STORE_URL`; tracked links stamp `SHOPIFY_AFFILIATE_ID` as `sid`.
+Pin: `tests/fr103-shopify-worker.test.js`. Catalogue client (FR-101) and normalize/upsert (FR-102) are separate.
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_SHOPIFY_URL`.
+See `.env.example` (`MSSQL_*`, `SHOPIFY_STORE_URL`, `SHOPIFY_AFFILIATE_ID`). Queue env: `SQS_SHOPIFY_URL`.
