@@ -40,6 +40,7 @@ LOCKED
 | S12 | Deterministic exceptions ÔåÆ a-search intake | Uncaught/handled fatal errors in entry/worker/maintainer/onboarding call the intake helper with `repo=SimonBarnett/a-search` (deduped; secrets redacted) | `tests/report-exception.test.js` + FR-048 entry/amazon/maintainer intake pins; `docs/intake-on-exception.md` | Fatal path logs only and never POSTs intake |
 | S13 | Local onboarding agents | Each enabled local source has an `onboarding/` agent CWD + scheduled runner that drains until `remaining=0` then exits | `tests/onboarding-drain.test.js` + FR-049 awin/impact scaffold pins; `docs/onboarding-agents.md` | No onboarding folder for awin/impact, or runner loops forever with no exit |
 | S14 | Daily report signup feed | Onboarding emits signup rows compatible with clubscan daily report fields (new merchants / counts) documented vs madeira-awin-clubscan | `tests/fr052a-daily-report-signups-docs.test.js` + FR-052 write/read signup pins; `docs/daily-report-signups.md` | Signup payload undocumented or missing new-advertiser rows |
+| S15 | Performance endpoint | JWT `GET`/`POST` `/account/performance` returns clicks/visits/sales for that JWT `userId` (body cannot override) | `tests/fr053a-endpoint-performance-docs.test.js` + FR-053 stub/aggregate pins; `docs/endpoint-performance.md` | Endpoint missing or ignores JWT `userId` |
 
 LOCKED
 
