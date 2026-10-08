@@ -47,6 +47,27 @@ const tracked = buildTrackedUrl({
 });
 ```
 
+
+
+## SQL read-time rewriting (`dbo.Part2`) vs create-time tracking
+
+madeiradb helper **`dbo.Part2`** reads `Products` and rewrites affiliate URLs
+when serving SQL results:
+
+| Source key | Rewrite |
+|------------|---------|
+| `paapi` | `tag=mymodelflying-21` -> `tag=mymodelflying-<lower(UserId)>-21` |
+| `awin` | append `&clickref=<UserId>` |
+
+**Do not tag twice.** If a-search already applied `buildTrackedUrl` (JWT
+`userId` + provider `.env` account) into S3/results JSON, do not also assume
+`Part2` will run on that JSON — `Part2` is a **SQL** read path over `Products`.
+Conversely, rows that only ever surface through `Part2` may rely on that
+rewrite; workers writing `Products.AffiliateUrl` should leave placeholders
+compatible with `Part2` or document that a-search owns final tagging.
+
+Full catalog/product map: [catalog-model.md](catalog-model.md) (FR-115).
+
 ## Out of scope here
 
 - Wiring workers / normalize paths (FR-057c..h)

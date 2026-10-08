@@ -44,9 +44,9 @@ Issuer / JWKS URL / audience: configure via `entry/.env` (`JWT_ISSUER`,
 |-------|----------|------|---------|
 | `q` | one of `q` or `searchterms` | string | Primary search text |
 | `searchterms` | one of `q` or `searchterms` | string[] | Extra/alternate terms (legacy Madeira shape) |
-| `catalogId` | yes | string \| number | Catalogue / club context |
-| `category` | yes | string | Main category |
-| `subcategory` | yes | string | Subcategory |
+| `catalogId` | yes | string \| number | **`Catalog.ID`** (`int`) of a `dbo.Catalog` row owned by the JWT `userId` (`Catalog.UserId`). Not a free-form club string — see [catalog-model.md](catalog-model.md). |
+| `category` | yes | string | `Catalog.MainCategory` for that catalog row |
+| `subcategory` | yes | string | `Catalog.SubCategory` for that catalog row |
 | `sources` | no | string[] | Optional subset of **already enabled** registry ids; omit = all enabled |
 | `sandbox` | no | boolean | `true` → **sandbox** env; `false`/omit → **live** |
 

@@ -35,6 +35,15 @@ Canonical helper: `worker/lib/normalizeProduct.js`
   peer fields that callers must special-case.
 - Missing required fields (`id`, `title`, `source`) fail `assertProductSchema`.
 
+
+
+## Prices vs madeiradb
+
+`price` in results JSON is an optional **number**. Club Madeira SQL tables
+(`Products`, `MerchantProducts`) store `Price` / `Discount` / `WasPrice` as
+**nvarchar display strings**, not decimals. When reading SQL, parse only when
+safe; otherwise omit numeric `price`. See [catalog-model.md](catalog-model.md).
+
 ## Out of scope
 
 - Grok relevance ranking and score fields (separate FR).

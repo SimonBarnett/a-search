@@ -18,6 +18,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Environments](docs/environments.md)
 - [SQS pacing](docs/sqs-pacing.md) (FR-058a — prevent provider 407/429)
 - [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
+- [Catalog / product / ASIN model](docs/catalog-model.md) (FR-115 - madeiradb map)
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
