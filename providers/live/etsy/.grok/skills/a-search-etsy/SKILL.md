@@ -32,10 +32,21 @@ with `x-api-key` / `ETSY_API_KEY`, fixture `fixtures/listings-ok.json`
 Accepts `etsyProductAPI.results[]` (FR-075 fixture) and top-level `results[]`.
 Partial rows without id+title are skipped (no throw). Stay-dark.
 
-## Worker
+## Worker (FR-077)
 
-Worker wiring (FR-077) is separate.
+`src/worker.js` -- `run(msg, deps)` wires `assertWorkerEnv` -> `assertEtsyCreds` ->
+`searchEtsy` -> `normalizeSearchResponse` -> `writeResults` with injectable
+`httpRequest` / `putObject`. SQS `handler` parses Records. Stay-dark: do not flip
+registry enabled.
+
+## Selftest + pacing (FR-078)
+
+`src/selftestProbe.js` -- credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_ETSY_URL`.
+See `.env.example`. Queue env: `SQS_ETSY_URL`. Creds: `ETSY_API_KEY` (or
+`ETSY_KEYSTRING`). Tracking: `ETSY_TRACKING_ID`.
