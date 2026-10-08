@@ -25,7 +25,7 @@ describe('FR-050d awin onboarding sandbox', () => {
         httpCalls += 1;
         throw new Error('live Awin HTTP must not run in sandbox');
       },
-      newUserId: () => 'usr_sandbox_1',
+      newUserId: () => 'SANDUSR1',
     });
 
     assert.equal(httpCalls, 0);
@@ -48,7 +48,7 @@ describe('FR-050d awin onboarding sandbox', () => {
         httpCalls += 1;
         throw new Error('no live HTTP');
       },
-      newUserId: () => 'usr_x',
+      newUserId: () => 'SANDUSR2',
     };
     const first = await runOnce(deps);
     const second = await runOnce(deps);

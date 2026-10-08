@@ -2,7 +2,7 @@
   "description": "FR-053e/f fixture link/merchant events — scoped by userId+env; date filter via at",
   "events": [
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-02T10:00:00.000Z",
       "linkId": "lnk_hot",
@@ -12,7 +12,7 @@
       "sales": 2
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-04T10:00:00.000Z",
       "linkId": "lnk_warm",
@@ -22,7 +22,7 @@
       "sales": 1
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-05T10:00:00.000Z",
       "linkId": "lnk_hot",
@@ -32,7 +32,7 @@
       "sales": 1
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-09-30T10:00:00.000Z",
       "linkId": "lnk_old",
@@ -42,7 +42,7 @@
       "sales": 9
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "live",
       "at": "2026-10-09T10:00:00.000Z",
       "linkId": "lnk_future",
@@ -62,7 +62,7 @@
       "sales": 50
     },
     {
-      "userId": "FROM_JWT",
+      "userId": "JWTUSER1",
       "env": "sandbox",
       "at": "2026-10-03T10:00:00.000Z",
       "linkId": "lnk_sb",
@@ -73,7 +73,7 @@
     }
   ],
   "expected": {
-    "userId": "FROM_JWT",
+    "userId": "JWTUSER1",
     "env": "live",
     "from": "2026-10-01",
     "to": "2026-10-08",

@@ -122,7 +122,7 @@ describe('MRB-852 FR-104 hostile', () => {
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('woocommerce'\)/);
+    assert.match(src, /rateLimit\('__no_such_source__'\)/);
     assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
     assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
     assert.deepEqual(rateLimit('shopify'), {
@@ -133,6 +133,10 @@ describe('MRB-852 FR-104 hostile', () => {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
-    assert.equal(rateLimit('woocommerce'), undefined);
+    assert.deepEqual(rateLimit('woocommerce'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.equal(rateLimit('__no_such_source__'), undefined);
   });
 });

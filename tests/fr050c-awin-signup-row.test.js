@@ -15,7 +15,7 @@ const {
 describe('FR-050c awin emitSignupRow', () => {
   it('signup includes user_id, company_name, email, advertiserId, env', () => {
     const row = emitSignupRow({
-      user_id: 'usr_1',
+      user_id: 'TESTUSR1',
       company_name: 'Acme Retail',
       email: 'Ops@Acme.Example',
       advertiserId: 1001,
@@ -29,7 +29,7 @@ describe('FR-050c awin emitSignupRow', () => {
     for (const key of REQUIRED_KEYS) {
       assert.ok(row[key] != null && String(row[key]).length > 0, key);
     }
-    assert.equal(row.user_id, 'usr_1');
+    assert.equal(row.user_id, 'TESTUSR1');
     assert.equal(row.company_name, 'Acme Retail');
     assert.equal(row.email, 'ops@acme.example');
     assert.equal(row.advertiserId, '1001');

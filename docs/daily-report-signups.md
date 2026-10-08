@@ -7,7 +7,7 @@ currently produced by madeira-awin-clubscan. This doc maps clubscan report
 
 ## Disambiguation (FR-116)
 
-**madeira-awin-clubscan (Lambda) ≠ `dbo.clubscan` (table).**
+**madeira-awin-clubscan (Lambda) != `dbo.clubscan` (table).**
 
 - This document's "clubscan" / report / signup language means the legacy
   **madeira-awin-clubscan** Lambda (Awin onboarding + daily HTML email).
@@ -26,23 +26,23 @@ confirms): **`dbo.AwinHighApprovalMerchants`**.
 
 Clubscan builds HTML email with (at least):
 
-1. **New merchants table** — merchants onboarded in this run
-2. **Totals** — projected total merchants / products for the source
-3. **Last 24h sales** — transaction pointer table (sales data, not signup rows)
+1. **New merchants table** -- merchants onboarded in this run
+2. **Totals** -- projected total merchants / products for the source
+3. **Last 24h sales** -- transaction pointer table (sales data, not signup rows)
 4. Optional top-merchants-by-parts (catalogue stats; not signup emit)
 
 a-search must document and emit the **signup feed** for (1). Totals and
 last-24h sales stay pointers for the report job (may remain external until
 cutover). Pixel-perfect HTML email is **out of scope**.
 
-## Clubscan → a-search field map
+## Clubscan -> a-search field map
 
 ### New merchants table (signup emitters)
 
 Clubscan 
 ewAdvertisers[] push shape vs a-search emitSignupRow /
 docs/onboarding-agents.md minimum. Matching **dbo.AwinHighApprovalMerchants**
-column is **inferred** until Simon confirms — use "none" where there is no
+column is **inferred** until Simon confirms -- use "none" where there is no
 DB column.
 
 | Clubscan report / object | a-search signup field | AwinHighApprovalMerchants | Notes |
@@ -50,13 +50,65 @@ DB column.
 | company_name (table "Company") | company_name **or** merchantName | Name | Display name; emitters use company_name |
 | description (table "Description") | description | description | Optional; truncated in clubscan HTML |
 | email (table "Email" / login link) | email | Email | Required on emitSignupRow |
-| user_id | user_id | none | Madeira Users.user_id 8-char code; do not treat AwinUserId as tenant |
+| user_id | user_id | none | Madeira Users.user_id 8-char code (`^[0-9A-Z]{8}# Daily report signup contract (FR-052a)
+
+Onboarding agents emit **signup rows** that feed the daily merchant report
+currently produced by madeira-awin-clubscan. This doc maps clubscan report
+**sections** to a-search field names. Writer persistence is FR-052b (OOS here).
+
+
+## Disambiguation (FR-116)
+
+**madeira-awin-clubscan (Lambda) != `dbo.clubscan` (table).**
+
+- This document's "clubscan" / report / signup language means the legacy
+  **madeira-awin-clubscan** Lambda (Awin onboarding + daily HTML email).
+- **`dbo.clubscan`** is a madeiradb table of **club website scans** (Url,
+  JsonResult, ClubID, PartnerId, computed `active`). Do **not** insert signup
+  rows there. See [data-model.md](data-model.md) § Club scans.
+
+Existing DB home for Awin advertiser onboarding fields (inferred until Simon
+confirms): **`dbo.AwinHighApprovalMerchants`**.
+
+## Legacy clubscan (read-only)
+
+- Tree: https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan
+- Onboarding + email report:
+  https://github.com/SimonBarnett/AWS/blob/main/Lambdas/madeira-awin-clubscan/routes/onboarding.js
+
+Clubscan builds HTML email with (at least):
+
+1. **New merchants table** -- merchants onboarded in this run
+2. **Totals** -- projected total merchants / products for the source
+3. **Last 24h sales** -- transaction pointer table (sales data, not signup rows)
+4. Optional top-merchants-by-parts (catalogue stats; not signup emit)
+
+a-search must document and emit the **signup feed** for (1). Totals and
+last-24h sales stay pointers for the report job (may remain external until
+cutover). Pixel-perfect HTML email is **out of scope**.
+
+## Clubscan -> a-search field map
+
+### New merchants table (signup emitters)
+
+Clubscan 
+ewAdvertisers[] push shape vs a-search emitSignupRow /
+docs/onboarding-agents.md minimum. Matching **dbo.AwinHighApprovalMerchants**
+column is **inferred** until Simon confirms -- use "none" where there is no
+DB column.
+
+| Clubscan report / object | a-search signup field | AwinHighApprovalMerchants | Notes |
+|--------------------------|----------------------|---------------------------|--------|
+| company_name (table "Company") | company_name **or** merchantName | Name | Display name; emitters use company_name |
+| description (table "Description") | description | description | Optional; truncated in clubscan HTML |
+| email (table "Email" / login link) | email | Email | Required on emitSignupRow |
+| user_id | user_id | none | ; see [identity.md](identity.md)); do not treat AwinUserId as tenant |
 | dvertiserId / programme id | dvertiserId **or** merchantId | MerchantId | Awin advertiser id |
 | website | website | Website | Optional; logo link href |
 | logoUrl | logoUrl | logoUrl | Optional; company column image |
 | primarySector | primarySector | primarySector | Optional; under logo in clubscan |
 | *(run clock)* | onboardedAt **or** signedUpAt | none | ISO-8601 when join recorded |
-| Awin-only in clubscan | source | none | a-search registry id (win, impact, …) |
+| Awin-only in clubscan | source | none | a-search registry id (win, impact, ...) |
 | live/sandbox isolation | env | none | live \| sandbox |
 | join outcome | status | Joined (bit) approx. | e.g. joined, pending, 
 ejected |
@@ -74,16 +126,16 @@ Aliases accepted by report readers (`listSignupEvents` / FR-052c):
 | `company_name` | `merchantName` |
 | `onboardedAt` | `signedUpAt` |
 
-### Totals (report job pointer — not signup emit)
+### Totals (report job pointer -- not signup emit)
 
 | Clubscan | a-search report job |
 |----------|---------------------|
-| `stats.totalAwinMerchants` + new count → “Total Awin Merchants” | Per-`source` merchant count from Parts / onboard store (UNKNOWN until FR-052c+) |
-| `stats.totalAwinParts` → “Total Awin Products” | Parts count `Source=@source` (maintainer/Parts) |
+| `stats.totalAwinMerchants` + new count -> "Total Awin Merchants" | Per-`source` merchant count from Parts / onboard store (UNKNOWN until FR-052c+) |
+| `stats.totalAwinParts` -> "Total Awin Products" | Parts count `Source=@source` (maintainer/Parts) |
 
 Signup emitters do **not** invent totals; the report job aggregates.
 
-### Last 24h sales (report job pointer — not signup emit)
+### Last 24h sales (report job pointer -- not signup emit)
 
 | Clubscan | a-search |
 |----------|----------|
@@ -98,10 +150,10 @@ Do not put sale rows into `signups[]`.
 | `awin` | `providers/local/awin/onboarding/src/emitSignupRow.js` |
 | `impact` | `providers/local/impact/onboarding/src/emitSignupRow.js` |
 
-Drain accumulates `runOnce(…).signups` for the daily feed
+Drain accumulates `runOnce(...).signups` for the daily feed
 (`docs/onboarding-agents.md`).
 
-## Persist path (LOCKED — FR-052b)
+## Persist path (LOCKED -- FR-052b)
 
 **Store: S3 JSON** (not MSSQL).
 
@@ -110,14 +162,14 @@ Drain accumulates `runOnce(…).signups` for the daily feed
 - Body: `{ env, source, day, signups: Signup[] }`
 - Module: `shared/onboarding/writeSignups.js`
   (`writeSignupEvents` / `readSignupEvents`, injectable `putObject`/`getObject`)
-- Each signup gets stable `id` (`sig_…`) plus Awin-schema fields and
+- Each signup gets stable `id` (`sig_...`) plus Awin-schema fields and
   onboarding-agents aliases (`merchantId`, `merchantName`, `signedUpAt`)
 
 Writer merges by `id` into the day's object.
 
 ### Reader (FR-052c)
 
-- Module: `shared/onboarding/readSignups.js` → `listSignupEvents({ env, source, day })`
+- Module: `shared/onboarding/readSignups.js` -> `listSignupEvents({ env, source, day })`
 - Returns only rows matching **env** / **source** / **day** (UTC date of
   `onboardedAt` / `signedUpAt`); foreign rows in a dirty object are dropped.
 - Mailer / HTML email remains out of scope.

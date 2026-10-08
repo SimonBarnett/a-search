@@ -70,7 +70,7 @@ describe('FR-053b performance route stub', () => {
     const res = await handler(
       perfEvent({
         method: 'GET',
-        auth: `Bearer ${validToken('FROM_JWT')}`,
+        auth: `Bearer ${validToken('JWTUSER1')}`,
         query: { from: '2026-10-01', to: '2026-10-08' },
       }),
       {},
@@ -79,7 +79,7 @@ describe('FR-053b performance route stub', () => {
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
     assert.equal(json.ok, true);
-    assert.equal(json.userId, 'FROM_JWT');
+    assert.equal(json.userId, 'JWTUSER1');
     assert.equal(json.env, 'live');
     assert.equal(json.from, '2026-10-01');
     assert.equal(json.to, '2026-10-08');
@@ -98,7 +98,7 @@ describe('FR-053b performance route stub', () => {
     const res = await handler(
       perfEvent({
         method: 'POST',
-        auth: `Bearer ${validToken('FROM_JWT')}`,
+        auth: `Bearer ${validToken('JWTUSER1')}`,
         body: {
           userId: 'ATTACKER',
           from: '2026-10-01',
@@ -118,7 +118,7 @@ describe('FR-053b performance route stub', () => {
     const res = await handler(
       perfEvent({
         method: 'POST',
-        auth: `Bearer ${validToken('U1')}`,
+        auth: `Bearer ${validToken('USER0001')}`,
         body: { sandbox: true, from: '2026-10-01', to: '2026-10-01' },
       }),
       {},
@@ -126,7 +126,7 @@ describe('FR-053b performance route stub', () => {
     );
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
-    assert.equal(json.userId, 'U1');
+    assert.equal(json.userId, 'USER0001');
     assert.equal(json.env, 'sandbox');
   });
 

@@ -92,20 +92,20 @@ describe('FR-054f mapping live vs sandbox isolation', () => {
     await upsertMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'ebay',
         tokenOrClickRef: 'clk_x',
-        s3Key: 'live/ebay/FROM_JWT/1/a.json',
+        s3Key: 'live/ebay/JWTUSER1/1/a.json',
       },
       { store },
     );
     await upsertMapping(
       {
         env: 'sandbox',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'ebay',
         tokenOrClickRef: 'clk_x',
-        s3Key: 'sandbox/ebay/FROM_JWT/1/b.json',
+        s3Key: 'sandbox/ebay/JWTUSER1/1/b.json',
       },
       { store },
     );
@@ -113,7 +113,7 @@ describe('FR-054f mapping live vs sandbox isolation', () => {
     const live = await getMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'ebay',
         token: 'clk_x',
       },
@@ -122,7 +122,7 @@ describe('FR-054f mapping live vs sandbox isolation', () => {
     const sandbox = await getMapping(
       {
         env: 'sandbox',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'ebay',
         token: 'clk_x',
       },
@@ -130,19 +130,19 @@ describe('FR-054f mapping live vs sandbox isolation', () => {
     );
     assert.ok(live);
     assert.ok(sandbox);
-    assert.equal(live.s3Key, 'live/ebay/FROM_JWT/1/a.json');
-    assert.equal(sandbox.s3Key, 'sandbox/ebay/FROM_JWT/1/b.json');
+    assert.equal(live.s3Key, 'live/ebay/JWTUSER1/1/a.json');
+    assert.equal(sandbox.s3Key, 'sandbox/ebay/JWTUSER1/1/b.json');
     assert.notEqual(live.s3Key, sandbox.s3Key);
 
     const liveKey = mappingObjectKey({
       env: 'live',
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       source: 'ebay',
       tokenOrClickRef: 'clk_x',
     });
     const sbKey = mappingObjectKey({
       env: 'sandbox',
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       source: 'ebay',
       tokenOrClickRef: 'clk_x',
     });
