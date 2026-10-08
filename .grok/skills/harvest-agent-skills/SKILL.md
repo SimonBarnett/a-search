@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-069 skimlinks: worker wires search→normalize→writeResults; price minor-units /100; if FR-067/068 still open, land search+normalize in the worker PR and Refs those issues (#622 / #695)
