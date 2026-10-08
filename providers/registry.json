@@ -22,7 +22,10 @@
         "live": true,
         "sandbox": true
       },
-      "queueEnv": "SQS_EBAY_URL"
+      "queueEnv": "SQS_EBAY_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      }
     },
     {
       "id": "rakuten",
