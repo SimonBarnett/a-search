@@ -77,37 +77,52 @@ LOCKED
 ## Architecture
 
 ```
-Caller (login → JWT)
+Caller (login -> JWT)
         |
-        v
-  API Gateway  POST /search   [live | sandbox]
-  Authorization: Bearer <jwt>
-        |
-        v
-  entry/  (entry/.env + a-search-entry skillbook)
-    - verify JWT → userId
-    - stamp env = live|sandbox
-    - fan-out SQS per enabled source for that env
-    - 200 { searchId, accepted, userId, enqueued, env }
+        +------------------+------------------+
+        v                                     v
+  API Gateway                          API Gateway
+  POST /search  [live|sandbox]         GET|POST /account/performance
+  Authorization: Bearer <jwt>          Authorization: Bearer <jwt>
+        |                                     |
+        v                                     v
+  entry/  (entry/.env + a-search-entry)   entry/ performance handler
+    - verify JWT -> userId                  - JWT userId only (no body override)
+    - stamp env = live|sandbox              - clicks/visits/sales + date range
+    - fan-out SQS per enabled source        - reads mapping + env-isolated stats
+    - 200 { searchId, accepted, ... }
+    - on fatal: intake POST /bob/v1/intake
+      repo=SimonBarnett/a-search (redacted)
         |
         +------------ live|sandbox queues ------------+
         v                                             v
  providers/live/*                              providers/local/*
   SQS search workers                            SQS search workers
   (remote APIs)                                 (SELECT MSSQL Parts)
-        |                                             |
+  on fatal -> intake                            onboarding/ (EventBridge drain)
+        |                                         until remaining=0; signup rows
+        |                                         for daily report (clubscan)
         +------------------+--------------------------+
                            v
-         Results → S3 key:
+         shared/  (Lambda layer /opt/nodejs/a-search)
+           resultsPath, writeResults, assertEnv, intake,
+           mapping upsert/get/list, signup read/write
+                           |
+                           v
+         Results -> S3 key:
            {env}/{source}/{userId}/{catalogId}/{searchId}.json
-         SQL server: rclone mapped drive mirrors same tree
-           e.g. S:\a-search\{env}\{source}\{userId}\...
+         Mapping -> S3:
+           {env}/_mapping/{userId}/{source}/{tokenHash}.json
+         Signups -> S3:
+           {env}/_reports/{source}/{day}/signups.json
+         SQL server: rclone mirrors same tree
 
   maintainer/  (EventBridge schedule, maintainer/.env)
     - roll due PartFeedKeys from MSSQL (per env DB/schema)
     - conditional GET / hash before full CSV download
     - staging bulk + MERGE upsert; scoped delete missing parts
     - feed parsers/creds delegated to providers/local/<id>/
+    - on fatal: intake POST (same as entry/workers)
 ```
 
 Folder layout (repo root):
@@ -117,34 +132,46 @@ entry/
   AGENTS.md
   .grok/skills/a-search-entry/SKILL.md
   .env.example
-  src/
-maintainer/                      # scheduled AWS task — local parts estate
+  src/                         # /search + /account/performance
+shared/                        # Lambda layer helpers (FR-047+)
+  mapping/  intake/  onboarding/  links/
+  resultsPath.js  writeResults.js  assertEnv.js
+maintainer/                    # scheduled AWS task - local parts estate
   AGENTS.md
   .grok/skills/a-search-maintainer/SKILL.md
   .env.example
   src/
 providers/
-  registry.json                  # id, kind, enabled per live/sandbox
+  registry.json                # id, kind, enabled per live/sandbox
   live/
     amazon/   ebay/  rakuten/  cj/  ...   # each: .env, AGENTS.md, skillbook, src
   local/
     awin/  impact/  partnerize/ ...       # each: feed+search skillbook, .env, src
+      awin/onboarding/   impact/onboarding/  # drain agents + skillbooks
 .grok/skills/
   a-search-endpoint/SKILL.md   # agent callers of POST /search
 docs/
   vision.md
   endpoint-search.md
+  endpoint-performance.md
+  s3-mapping.md
+  onboarding-agents.md
+  daily-report-signups.md
+  intake-on-exception.md
+  shared-layer.md
   environments.md
   parts-maintainer.md
   skillbook-layout.md
   provider-shortlist.md
-  mocks/
+  mocks/                       # includes performance.html
 tests/
 ```
 
-Detail docs: `docs/endpoint-search.md`, `docs/environments.md`,
-`docs/parts-maintainer.md`, `docs/skillbook-layout.md`,
-`docs/provider-shortlist.md`.
+Detail docs: `docs/endpoint-search.md`, `docs/endpoint-performance.md`,
+`docs/s3-mapping.md`, `docs/onboarding-agents.md`,
+`docs/intake-on-exception.md`, `docs/shared-layer.md`,
+`docs/environments.md`, `docs/parts-maintainer.md`,
+`docs/skillbook-layout.md`, `docs/provider-shortlist.md`.
 
 LOCKED
 
