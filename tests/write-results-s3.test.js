@@ -22,6 +22,8 @@ describe('FR-033 default S3 PutObject in writeResults', () => {
     const result = await writeResults({
       ...job,
       envVars: { S3_RESULTS_BUCKET: 'results-bucket' },
+      // FR-054d mapping registration uses S3 too; isolate PutObject path here.
+      registerMapping: false,
       createS3Client: () => ({
         send: async (input) => {
           sends.push(input);
@@ -55,6 +57,7 @@ describe('FR-033 default S3 PutObject in writeResults', () => {
       catalogId: 1,
       searchId: 'srch_x',
       envVars: { S3_RESULTS_BUCKET: 'b' },
+      registerMapping: false,
       putObject: async (args) => {
         puts.push(args);
       },

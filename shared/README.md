@@ -43,5 +43,6 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
 | `mapping/mapping.js` | FR-054b upsert/get mapping API (injectable store) |
 | `mapping/s3Store.js` | FR-054c durable S3 `{env}/_mapping/{userId}/{source}/{tokenHash}.json` |
+| `writeResults.js` | Results PutObject; FR-054d upserts mapping after success |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).
