@@ -77,7 +77,7 @@ Must:
 |------|----------|--------|
 | Upsert / get API module | FR-054b | `shared/mapping/` or `services/s3-mapping/` |
 | Durable backing wire | FR-054c | S3 `{env}/_mapping/...` (**LOCKED**) |
-| `writeResults` registers entry | FR-054d | Search result write path |
+| `writeResults` registers entry | FR-054d | After successful PutObject, `shared/writeResults.js` upserts mapping (`tokenOrClickRef` default = `searchId`; override via `token` / `tokenOrClickRef`). Skip with `registerMapping: false`. |
 | List by `userId` for performance | FR-054e | FR-053 read model |
 | Live/sandbox isolation test | FR-054f | Rows/prefixes never mix |
 
