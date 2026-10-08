@@ -24,6 +24,13 @@ SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds)
 Relative product Urls resolve against `WOOCOMMERCE_STORE_URL`; tracked links stamp `WOOCOMMERCE_AFFILIATE_ID` as `sid`.
 Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/upsert (FR-110) are separate.
 
+## Selftest + pacing (FR-112)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`WOOCOMMERCE_CONSUMER_KEY` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`). Pin: `tests/fr112-woocommerce-selftest-probe.test.js`.
+
 ## Env
 
-See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_AFFILIATE_ID`). Queue env: `SQS_WOOCOMMERCE_URL`.
+See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_AFFILIATE_ID`, `WOOCOMMERCE_CONSUMER_KEY`). Queue env: `SQS_WOOCOMMERCE_URL`.
