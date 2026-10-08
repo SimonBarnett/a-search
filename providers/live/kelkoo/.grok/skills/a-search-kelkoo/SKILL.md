@@ -34,9 +34,12 @@ Partial offers without `offerId`+`title` are skipped (no throw).
 `src/worker.js` — `run(msg)` / `handler`: `assertWorkerEnv` → `searchKelkoo` →
 `normalizeSearchResponse` → `writeResults` (injectable HTTP + putObject).
 
-## Selftest + pacing (FR-066 when present)
+## Selftest + pacing (FR-066)
 
-`src/selftestProbe.js` when landed; registry `rateLimit` while stay-dark.
+`src/selftestProbe.js` — credential check + fixture (or injectable HTTP);
+returns `{ ok, source, latencyMs, error? }` for `/selftest`.
+Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
+is a later FR while stay-dark).
 
 ## Env
 
