@@ -41,4 +41,3 @@ describe('MRB #682 hostile FR-065 kelkoo worker', () => {
     assert.equal(kk.enabled.sandbox, false);
   });
 });
-\n
