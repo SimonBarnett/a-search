@@ -29,8 +29,10 @@ Provider CWD for registry id `flexoffers` (`kind: local`).
 
 ## Shape
 
-- src/worker.js -- run(msg) (FR-095 queryParts when present)
+- src/queryParts.js -- MSSQL Parts SELECT (FR-095; injectable connect)
+- src/worker.js -- run(msg, deps) / writeResults (FR-095; stay-dark)
+- src/selftestProbe.js -- FR-096 selftest (injectable connect)
 - src/parseFeed.js -- maintainer feed-parser hook (FR-097; stay-dark)
-- ixtures/products-ok.csv -- fixture for parseFeed unit tests
-- .env.example -- placeholders (MSSQL, affiliate, feed keys)
-- `.env.example` — placeholders
+- fixtures/products-ok.csv -- fixture for parseFeed unit tests
+- .env.example -- placeholders (MSSQL_*, FLEXOFFERS_AFFILIATE_ID, FLEXOFFERS_API_TOKEN, feed keys)
+- Registry rateLimit 1/250 (stay-dark)

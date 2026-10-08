@@ -214,7 +214,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_FLEXOFFERS_URL"
+      "queueEnv": "SQS_FLEXOFFERS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "avantlink",
