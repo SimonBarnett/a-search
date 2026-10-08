@@ -24,7 +24,6 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report — read-only; HTML email stays in AWS until cutover)
 - [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
-- [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Functional spec](docs/functional-spec.md)
 
 ## Agent caller skill
