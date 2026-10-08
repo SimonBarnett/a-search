@@ -16,7 +16,7 @@ Registry folder `providers/local/shopify`. Enabled: live=false, sandbox=false (s
 
 ## Catalogue client (FR-101)
 
-`src/catalog.js` — injectable Admin REST `GET /admin/api/{version}/products.json` with `X-Shopify-Access-Token`.
+`src/catalog.js` - injectable Admin REST `GET /admin/api/{version}/products.json` with `X-Shopify-Access-Token`.
 Recorded fixture: `fixtures/products-ok.json`. Pin tests: `tests/fr101-shopify-catalog.test.js`.
 Out of scope for FR-101: MSSQL upsert, registry enable, multi-merchant router.
 

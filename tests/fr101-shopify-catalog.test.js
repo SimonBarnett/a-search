@@ -34,7 +34,7 @@ const credEnv = {
 };
 
 describe('FR-101 shopify Admin/REST catalogue client (stay dark)', () => {
-  it('fixture HTTP → normalize products (no live network)', async () => {
+  it('fixture HTTP -> normalize products (no live network)', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const httpCalls = [];
 
@@ -76,7 +76,7 @@ describe('FR-101 shopify Admin/REST catalogue client (stay dark)', () => {
     assert.equal(httpCalls.length, 1);
   });
 
-  it('missing access token → clear shopify_missing_credentials error', async () => {
+  it('missing access token -> clear shopify_missing_credentials error', async () => {
     await assert.rejects(
       () =>
         fetchCatalogPage({
@@ -99,7 +99,7 @@ describe('FR-101 shopify Admin/REST catalogue client (stay dark)', () => {
     );
   });
 
-  it('missing store URL → clear credentials error', async () => {
+  it('missing store URL -> clear credentials error', async () => {
     await assert.rejects(
       () =>
         fetchCatalogPage({
