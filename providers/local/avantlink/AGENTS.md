@@ -29,5 +29,8 @@ Provider CWD for registry id `avantlink` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
+- src/queryParts.js -- MSSQL Parts SELECT (FR-098; injectable connect)
+- src/worker.js -- 
+un(msg, deps) / writeResults (FR-098; stay-dark)
+- .env.example -- placeholders (MSSQL_*, AVANTLINK_AFFILIATE_ID)
 - `.env.example` — placeholders
