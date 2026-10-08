@@ -30,7 +30,7 @@ Provider CWD for registry id `flexoffers` (`kind: local`).
 ## Shape
 
 - src/queryParts.js -- MSSQL Parts SELECT (FR-095; injectable connect)
-- src/worker.js -- 
-un(msg, deps) / writeResults (FR-095; stay-dark)
-- .env.example -- placeholders (MSSQL_*, FLEXOFFERS_AFFILIATE_ID)
-- `.env.example` — placeholders
+- src/worker.js -- run(msg, deps) / writeResults (FR-095; stay-dark)
+- src/selftestProbe.js -- FR-096 selftest (injectable connect)
+- .env.example -- placeholders (MSSQL_*, FLEXOFFERS_AFFILIATE_ID, FLEXOFFERS_API_TOKEN)
+- Registry rateLimit 1/250 (stay-dark)
