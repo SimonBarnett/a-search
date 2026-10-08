@@ -194,7 +194,11 @@ async function searchEbay(msg, deps) {
       Accept: 'application/json',
     },
   });
-  return normalizeSearchResponse(browseJson);
+  return normalizeSearchResponse(browseJson, {
+    userId: msg && msg.userId,
+    env: msg && msg.env,
+    envVars,
+  });
 }
 
 module.exports = {
