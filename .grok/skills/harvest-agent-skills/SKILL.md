@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- Phase-2 selftest MRB CONFLICTING after feed-parser merge: merge origin/main keep-both .env.example (feed keys + API token); pin rateLimit 1/250 + stay-dark; retarget fr058b no-rateLimit example to next stub without rateLimit
