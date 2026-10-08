@@ -23,19 +23,49 @@ const {
   assertProductSchema,
 } = require('../../../../worker/lib/normalizeProduct');
 const {
+  buildTrackedUrl,
+  TrackedUrlError,
+} = require('../../../../shared/links/buildTrackedUrl');
+const {
   defaultQueryParts,
   ImpactMssqlConfigError,
 } = require('./queryParts');
 
-function normalizePart(row) {
+/**
+ * @param {object} row - Parts row
+ * @param {{
+ *   userId: string,
+ *   env?: string,
+ *   envVars: Record<string, string|undefined>,
+ * }} [track] - required when row.Url is present (FR-057h)
+ */
+function normalizePart(row, track) {
   const raw = {};
   if (row && row.FeedKey != null) raw.feedKey = String(row.FeedKey);
   if (row && row.Stock != null) raw.stock = String(row.Stock);
+
+  let url;
+  if (row && row.Url != null && String(row.Url).trim() !== '') {
+    if (!track || typeof track !== 'object') {
+      throw new TrackedUrlError(
+        'impact normalizePart requires track context { userId, envVars } for Url',
+        'tracked_url_missing_userId',
+      );
+    }
+    url = buildTrackedUrl({
+      url: String(row.Url),
+      userId: track.userId,
+      env: track.env,
+      envVars: track.envVars || {},
+      requiredAccountKeys: ['IMPACT_CAMPAIGN_ID'],
+    });
+  }
+
   const product = normalizeProduct({
     id: row && row.MerchantProductId != null ? row.MerchantProductId : '',
     title: row && row.Title != null ? row.Title : '',
     description: row && row.Description != null ? row.Description : undefined,
-    url: row && row.Url != null ? row.Url : undefined,
+    url,
     imageUrl: row && row.ImageUrl != null ? row.ImageUrl : undefined,
     price: row && row.Price != null ? row.Price : undefined,
     currency: row && row.Currency != null ? row.Currency : undefined,
@@ -65,7 +95,12 @@ async function run(msg, deps) {
 
   const rows = await queryParts(msg);
   const list = Array.isArray(rows) ? rows : [];
-  const products = list.map(normalizePart);
+  const track = {
+    userId: msg.userId,
+    env: msg.env,
+    envVars,
+  };
+  const products = list.map((row) => normalizePart(row, track));
 
   const written = await writeResults({
     env: msg.env,
@@ -112,4 +147,5 @@ module.exports = {
   defaultQueryParts,
   ImpactMssqlConfigError,
   EnvIsolationError,
+  TrackedUrlError,
 };
