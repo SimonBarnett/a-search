@@ -15,6 +15,7 @@
     "links/",
     "mapping/",
     "pacing/",
+    "selftest/",
     "README.md"
   ]
 }
