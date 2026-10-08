@@ -27,6 +27,9 @@ enqueued; adding a source must not require an `entry/` rewrite.
 
 3. **Register the source** in `providers/registry.json`
    - Fields: `id`, `kind`, `folder`, `enabled: { live, sandbox }`, `queueEnv`
+   - Optional `rateLimit`: `{ maxConcurrency?, messagesPerSecond?, minIntervalMs? }`
+     (FR-058b — pacing hints for SQS/CDK later; amazon, ebay, rakuten, cj, awin, and impact have examples). Loader:
+     `loadRegistry()` / `rateLimit(id)` — **not** enforced by CDK in this FR.
    - Default `enabled` false until credentials and worker are ready
    - Loader: `providers/loadRegistry.js` → `enabled(env)` — entry uses this only
 
@@ -37,6 +40,8 @@ enqueued; adding a source must not require an `entry/` rewrite.
      `providers/resolveQueueUrl.js` / FR-034)
    - Wire those URLs into CDK entry env + worker env; entry resolves per request
      `env` — missing URL must error, not silent-skip
+   - Keep SQS pacing safe (`docs/sqs-pacing.md`): default `batchSize: 1`, cap
+     concurrency so the new source does not 407/429 the vendor account
 
 5. **Results path**
    - Key shape: `{env}/{sourceId}/{userId}/{catalogId}/{searchId}.json` (see worker helpers)
@@ -76,5 +81,6 @@ enqueued; adding a source must not require an `entry/` rewrite.
 - `docs/skillbook-layout.md`
 - `docs/provider-onboarding-skills.md` (FR-060a)
 - `docs/environments.md`
+- `docs/sqs-pacing.md` (FR-058a — prevent provider 407/429)
 - `providers/registry.json`, `providers/loadRegistry.js`, `providers/queueName.js`,
   `providers/resolveQueueUrl.js`

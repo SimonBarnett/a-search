@@ -9,7 +9,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -20,12 +20,16 @@ describe('FR-056c CDK impact onboarding Lambda live', () => {
     assert.match(text, /ImpactOnboardingLiveFunction/);
     assert.match(text, /a-search-impact-onboarding-live/);
     assert.match(text, /A_SEARCH_ENV:\s*'live'/);
-    const liveBlock = text.slice(
-      text.indexOf('ImpactOnboardingLiveFunction'),
-      text.indexOf('ImpactOnboardingLiveFunctionName') + 80,
-    );
-    assert.ok(liveBlock.length > 40, 'expected live function + output region');
+    const start = text.indexOf('ImpactOnboardingLiveFunction');
+    assert.ok(start >= 0);
+    const end = text.indexOf(');', start);
+    assert.ok(end > start, 'expected live Function(...) block');
+    const liveBlock = text.slice(start, end + 2);
+    assert.match(liveBlock, /A_SEARCH_ENV:\s*'live'/);
     assert.doesNotMatch(liveBlock, /events\.Rule|Schedule\.rate|Schedule\.cron/);
+    // FR-056c out of scope: no dedicated live Impact EventBridge rule id/name.
+    assert.doesNotMatch(text, /ImpactOnboardingLiveSchedule|a-search-impact-onboarding-live-rule/);
+    assert.match(text, /ImpactOnboardingLiveFunctionName/);
   });
 
   it('impact onboarding src exports Lambda handler', () => {
@@ -44,11 +48,7 @@ describe('FR-056c CDK impact onboarding Lambda live', () => {
   });
 
   it('npm run synth exits 0; template has impact live function + A_SEARCH_ENV live', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root, { timeout: 180_000 });
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
@@ -56,12 +56,12 @@ describe('FR-056c CDK impact onboarding Lambda live', () => {
     assert.match(tpl, /a-search-impact-onboarding-live/);
     const parsed = JSON.parse(tpl);
     const fns = Object.values(parsed.Resources || {}).filter(
-      (r) => r.Type === 'AWS::Lambda::Function',
+      (res) => res.Type === 'AWS::Lambda::Function',
     );
     const live = fns.find(
-      (r) =>
-        r.Properties &&
-        r.Properties.FunctionName === 'a-search-impact-onboarding-live',
+      (res) =>
+        res.Properties &&
+        res.Properties.FunctionName === 'a-search-impact-onboarding-live',
     );
     assert.ok(live, 'template must include a-search-impact-onboarding-live');
     assert.equal(live.Properties.Environment.Variables.A_SEARCH_ENV, 'live');

@@ -20,9 +20,13 @@ and writes results JSON to S3. It does **not** download Impact CSV feeds
 
 ## Read first
 
-1. `.grok/skills/a-search-impact/SKILL.md`
-2. Repo docs: `docs/parts-maintainer.md`, `docs/endpoint-search.md`
-3. Registry: `../../registry.json` id `impact` (`kind: local`)
+1. `.grok/skills/a-search-impact-onboarding/SKILL.md` — MSSQL/campaign setup + drain pointer (FR-060h)
+2. `.grok/skills/a-search-impact/SKILL.md` — local Parts search worker
+3. Drain agent CWD: `onboarding/AGENTS.md` + `onboarding/.grok/skills/a-search-impact-onboarding/SKILL.md`
+4. Repo docs: `docs/parts-maintainer.md`, `docs/endpoint-search.md`,
+   `docs/provider-onboarding-skills.md`, `docs/onboarding-agents.md`,
+   `docs/impact-pending-onboard-queue.md`
+5. Registry: `../../registry.json` id `impact` (`kind: local`)
 
 ## CAST IRON
 

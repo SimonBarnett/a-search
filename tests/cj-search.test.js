@@ -34,6 +34,7 @@ const credEnv = {
   A_SEARCH_ENV: 'sandbox',
   CJ_API_TOKEN: 'token-test',
   CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  CJ_WEBSITE_ID: 'web-test',
   S3_RESULTS_BUCKET: 'test-results',
 };
 

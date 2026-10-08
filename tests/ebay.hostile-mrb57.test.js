@@ -33,6 +33,7 @@ describe('MRB #57 hostile: FR-017 ebay scaffold', () => {
           A_SEARCH_ENV: 'sandbox',
           EBAY_CLIENT_ID: 'c',
           EBAY_CLIENT_SECRET: 's',
+          EBAY_CAMPAIGN_ID: 'camp-test',
           S3_RESULTS_BUCKET: 'b',
         },
         accessToken: 't',

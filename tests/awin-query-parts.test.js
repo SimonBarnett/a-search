@@ -31,6 +31,7 @@ const mssqlEnv = {
   MSSQL_USER: 'app',
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
+  AWIN_PUBLISHER_ID: 'pub-test',
 };
 
 function mockPool(recordset) {

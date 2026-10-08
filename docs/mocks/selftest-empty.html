@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search — selftest empty providers</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .ok { color: #0a7; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; border-radius: 4px; overflow: auto; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>a-search — provider selftest</h1>
+  <p class="ok">200 OK — empty providers (stub / no enabled sources, not 404)</p>
+  <p class="meta">JWT valid; runner completed with zero provider rows for this env.</p>
+  <pre>{
+  "ok": true,
+  "userId": "ABC12345",
+  "env": "live",
+  "providers": [],
+  "failed": [],
+  "intakeFiled": []
+}</pre>
+  <p class="meta">Key mock: <a href="selftest.html">selftest.html</a> · Error:
+    <a href="selftest-error.html">selftest-error.html</a>
+  </p>
+</body>
+</html>

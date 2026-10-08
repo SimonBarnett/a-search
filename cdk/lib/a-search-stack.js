@@ -15,6 +15,10 @@ const { queueName } = require('../../providers/queueName');
 const {
   stageEntryLambdaAsset,
 } = require('../../scripts/stage-entry-lambda-asset');
+const {
+  stageProviderWorkerLambdaAsset,
+  workerHandlerPath,
+} = require('../../scripts/stage-provider-worker-lambda-asset');
 
 /**
  * Title-case construct id fragment from source id (amazon â†’ Amazon).
@@ -39,9 +43,36 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
+ * FR-058e/f/g/h/i/j: amazon+ebay+rakuten+cj+awin+impact SQS event-source maxConcurrency
+ * from registry rateLimit (safe default). AWS EventSourceMapping ScalingConfig.MaximumConcurrency
+ * valid range is 2-1000, so registry 1 clamps to 2. Other providers OOS.
+ * @param {{ id?: string, rateLimit?: { maxConcurrency?: number } }} src
+ * @returns {number|undefined}
+ */
+function sqsMaxConcurrencyForSource(src) {
+  if (
+    !src ||
+    (
+      src.id !== 'amazon' &&
+      src.id !== 'ebay' &&
+      src.id !== 'rakuten' &&
+      src.id !== 'cj' &&
+      src.id !== 'awin' &&
+      src.id !== 'impact'
+    )
+  ) {
+    return undefined;
+  }
+  const n = src.rateLimit && Number(src.rateLimit.maxConcurrency);
+  const desired =
+    Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+  return Math.max(2, Math.min(desired, 1000));
+}
+
+/**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
- * maintainer EventBridge schedules.
+ * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -80,7 +111,8 @@ class ASearchStack extends cdk.Stack {
 
     // FR-036: queues + workers for every enabled shortlist source Ã— env
     for (const src of enabledSources) {
-      const folderAbs = path.join(__dirname, '..', '..', src.folder, 'src');
+      // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
+      const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src);
       const pascal = pascalSource(src.id);
       const envs = /** @type {Array<'live'|'sandbox'>} */ (
         ['live', 'sandbox'].filter((e) => src.enabled[e] === true)
@@ -104,19 +136,20 @@ class ASearchStack extends cdk.Stack {
           {
             functionName: `a-search-${src.id}-worker-${env}`,
             runtime: lambda.Runtime.NODEJS_20_X,
-            handler: 'worker.handler',
-            code: lambda.Code.fromAsset(folderAbs),
+            handler: workerHandlerPath(src),
+            code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(60),
             environment: {
               A_SEARCH_ENV: env,
             },
           },
         );
-        worker.addEventSource(
-          new SqsEventSource(queue, {
-            batchSize: 1,
-          }),
-        );
+        const sqsOpts = { batchSize: 1 };
+        const maxConcurrency = sqsMaxConcurrencyForSource(src);
+        if (maxConcurrency != null) {
+          sqsOpts.maxConcurrency = maxConcurrency;
+        }
+        worker.addEventSource(new SqsEventSource(queue, sqsOpts));
 
         new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
           value: queue.queueUrl,
@@ -130,7 +163,8 @@ class ASearchStack extends cdk.Stack {
     // FR-035: HTTP API POST /search â†’ entry (JWT still verified in Lambda)
     const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
       apiName: 'a-search',
-      description: 'a-search POST /search â†’ entry Lambda',
+      description:
+        'a-search POST /search + GET|POST /selftest + /account/performance → entry Lambda',
     });
     httpApi.addRoutes({
       path: '/search',
@@ -146,6 +180,15 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration(
         'EntryPerformanceIntegration',
+        entry,
+      ),
+    });
+    // FR-059b/l: API Gateway /selftest next to /search (JWT in Lambda; probes OOS here)
+    httpApi.addRoutes({
+      path: '/selftest',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntrySelftestIntegration',
         entry,
       ),
     });
@@ -196,7 +239,49 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
-    // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
+    // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
+    const awinOnboardingCode = lambda.Code.fromAsset(
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        'providers',
+        'local',
+        'awin',
+        'onboarding',
+        'src',
+      ),
+    );
+    const awinOnboardingLive = new lambda.Function(
+      this,
+      'AwinOnboardingLiveFunction',
+      {
+        functionName: 'a-search-awin-onboarding-live',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+      },
+    );
+    const awinOnboardingSandbox = new lambda.Function(
+      this,
+      'AwinOnboardingSandboxFunction',
+      {
+        functionName: 'a-search-awin-onboarding-sandbox',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'sandbox',
+        },
+      },
+    );
+
+    // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
     const impactOnboardingCode = lambda.Code.fromAsset(
       path.join(
         __dirname,
@@ -209,6 +294,23 @@ class ASearchStack extends cdk.Stack {
         'src',
       ),
     );
+    const impactOnboardingSandbox = new lambda.Function(
+      this,
+      'ImpactOnboardingSandboxFunction',
+      {
+        functionName: 'a-search-impact-onboarding-sandbox',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: impactOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'sandbox',
+        },
+      },
+    );
+
+
+    // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
     const impactOnboardingLive = new lambda.Function(
       this,
       'ImpactOnboardingLiveFunction',
@@ -224,10 +326,40 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
+    // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
+    // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
+    const onboardingSchedule = events.Schedule.rate(cdk.Duration.days(1));
+    const awinOnboardingLiveRule = new events.Rule(this, 'AwinOnboardingLiveSchedule', {
+      ruleName: 'a-search-awin-onboarding-live',
+      description: 'Daily drain for Awin onboarding A_SEARCH_ENV=live',
+      schedule: onboardingSchedule,
+      targets: [new targets.LambdaFunction(awinOnboardingLive)],
+    });
+    const awinOnboardingSandboxRule = new events.Rule(
+      this,
+      'AwinOnboardingSandboxSchedule',
+      {
+        ruleName: 'a-search-awin-onboarding-sandbox',
+        description: 'Daily drain for Awin onboarding A_SEARCH_ENV=sandbox',
+        schedule: onboardingSchedule,
+        targets: [new targets.LambdaFunction(awinOnboardingSandbox)],
+      },
+    );
+    const impactOnboardingSandboxRule = new events.Rule(
+      this,
+      'ImpactOnboardingSandboxSchedule',
+      {
+        ruleName: 'a-search-impact-onboarding-sandbox',
+        description: 'Daily drain for Impact onboarding A_SEARCH_ENV=sandbox',
+        schedule: onboardingSchedule,
+        targets: [new targets.LambdaFunction(impactOnboardingSandbox)],
+      },
+    );
+
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
       value: httpApi.apiEndpoint,
-      description: 'HTTP API base URL (POST {url}/search)',
+      description: 'HTTP API base URL (POST {url}/search; GET|POST {url}/selftest)',
     });
     new cdk.CfnOutput(this, 'MaintainerLiveFunctionName', {
       value: maintainerLive.functionName,
@@ -235,8 +367,26 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'MaintainerSandboxFunctionName', {
       value: maintainerSandbox.functionName,
     });
+    new cdk.CfnOutput(this, 'AwinOnboardingLiveFunctionName', {
+      value: awinOnboardingLive.functionName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingSandboxFunctionName', {
+      value: awinOnboardingSandbox.functionName,
+    });
+    new cdk.CfnOutput(this, 'ImpactOnboardingSandboxFunctionName', {
+      value: impactOnboardingSandbox.functionName,
+    });
     new cdk.CfnOutput(this, 'ImpactOnboardingLiveFunctionName', {
       value: impactOnboardingLive.functionName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingLiveRuleName', {
+      value: awinOnboardingLiveRule.ruleName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingSandboxRuleName', {
+      value: awinOnboardingSandboxRule.ruleName,
+    });
+    new cdk.CfnOutput(this, 'ImpactOnboardingSandboxRuleName', {
+      value: impactOnboardingSandboxRule.ruleName,
     });
   }
 }

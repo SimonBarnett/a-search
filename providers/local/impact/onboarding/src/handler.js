@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Lambda entry for Impact onboarding drain (FR-056c).
+ * Lambda entry for Impact onboarding drain (FR-056c/FR-056d).
  * Invokes runOnce once per tick; EventBridge rules are FR-056e.
  */
 

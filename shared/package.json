@@ -10,10 +10,14 @@
   "files": [
     "index.js",
     "assertEnv.js",
+    "resultsPath.js",
+    "writeResults.js",
     "intake/",
     "onboarding/",
     "links/",
     "mapping/",
+    "pacing/",
+    "selftest/",
     "README.md"
   ]
 }

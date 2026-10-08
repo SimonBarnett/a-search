@@ -31,6 +31,11 @@ Package constant: `require('@a-search/shared').layerPath` →
 | `shared/index.js` | Entry + `layerPath` |
 | `shared/README.md` | Package-local notes |
 | `shared/links/buildTrackedUrl.js` | FR-057a tracked URL helper |
+| `shared/pacing/minInterval.js` | FR-058c `createMinIntervalPacer` (minIntervalMs) |
+| `shared/pacing/throttleBackoff.js` | FR-058d 407/429 classify + Retry-After backoff |
+| `shared/selftest/reportSelftestFailure.js` | FR-059e probe `ok=false` → intake `repo=SimonBarnett/a-search` (deduped `provider|env|error`) |
+| `shared/selftest/orchestrator.js` | FR-059d `runSelftestOrchestrator` — probe enabled sources for env (injectable `probe` + `listEnabled`) |
+| `shared/selftest/probeContract.js` | FR-059c injectable `probe(source)` → `{ ok, source, latencyMs, error? }` |
 | `shared/assertEnv.js` | FR-047d — `assertWorkerEnv` (on main) |
 | `shared/resultsPath.js` | FR-047b (on main) |
 | `shared/writeResults.js` | FR-047c (on main) |

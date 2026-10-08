@@ -15,6 +15,20 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Maintainer EventBridge schedules (FR-024), every 15 minutes:
   - `a-search-maintainer-live` â†’ Lambda with `A_SEARCH_ENV=live`
   - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
+- FR-056a: Awin onboarding live Lambda `a-search-awin-onboarding-live`
+  (`A_SEARCH_ENV=live`, handler `handler.handler` from
+  `providers/local/awin/onboarding/src`).
+- FR-056b: Awin onboarding sandbox Lambda `a-search-awin-onboarding-sandbox`
+  (`A_SEARCH_ENV=sandbox`).
+- FR-056d: Impact onboarding sandbox Lambda `a-search-impact-onboarding-sandbox`
+  (`A_SEARCH_ENV=sandbox`).
+- FR-056e: EventBridge onboarding schedules (daily / `Schedule.rate(Duration.days(1))`,
+  clubscan `Awin-Onboarding` intent):
+  - rule `a-search-awin-onboarding-live` -> Lambda `a-search-awin-onboarding-live`
+  - rule `a-search-awin-onboarding-sandbox` -> Lambda `a-search-awin-onboarding-sandbox`
+  - rule `a-search-impact-onboarding-sandbox` -> Lambda `a-search-impact-onboarding-sandbox`
+  Outputs: `AwinOnboardingLiveRuleName`, `AwinOnboardingSandboxRuleName`,
+  `ImpactOnboardingSandboxRuleName`. Impact live rule follows when that Lambda lands.
 
 - FR-056c: Impact onboarding live Lambda `a-search-impact-onboarding-live`
   (`A_SEARCH_ENV=live`, handler `handler.handler` from
@@ -77,3 +91,11 @@ Requires AWS credentials. Not required for FR-023.
 
 A future FR may add `template.yaml` for `sam validate`. Prefer CDK synth here
 until SAM CLI is standard on fleet seats.
+
+## Node version for synth / tests (FR-365)
+
+CDK synth and npm-test synth children need **Node 20+** (`node:` builtins).
+On marchhare the default PATH may resolve Node 8 first (`Cannot find module 'node:fs'`).
+
+- Prefer `D:\Tools\node\node.exe` (or `D:\tools\node`) on PATH, or set `A_SEARCH_NODE_BIN`.
+- Test helper `tests/helpers/runCdkSynth.js` prepends that Node directory to PATH for every `npm run synth` spawn.

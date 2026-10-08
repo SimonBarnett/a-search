@@ -8,7 +8,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 
@@ -26,11 +26,7 @@ describe('FR-035 CDK API Gateway POST /search', () => {
   });
 
   it('npm run synth exits 0 and template has route + integration', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
 
     const templatePath = path.join(

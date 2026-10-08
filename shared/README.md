@@ -38,11 +38,14 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `onboarding/writeSignups.js` | FR-052b `writeSignupEvents` / `readSignupEvents` (S3 JSON LOCKED) |
 | `onboarding/readSignups.js` | FR-052c `listSignupEvents` for report job (env/source/day filter) |
 | `assertEnv.js` | FR-047d / FR-007 `assertWorkerEnv` |
+| `pacing/minInterval.js` | FR-058c `createMinIntervalPacer` / minIntervalMs |
 | `intake/reportException.js` | FR-048a fatal → intake POST |
 | `intake/redact.js` | FR-048b `redactSecrets` for intake bodies |
 | `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
+| `pacing/throttleBackoff.js` | FR-058d 407/429 classify + Retry-After backoff |
 | `mapping/mapping.js` | FR-054b upsert/get + FR-054e `listMappingsByUserId` (injectable store) |
 | `mapping/s3Store.js` | FR-054c durable S3 `{env}/_mapping/{userId}/{source}/{tokenHash}.json` (+ list prefix) |
+| `resultsPath.js` | FR-047b `resultsKey` / results S3 path helper |
 | `writeResults.js` | Results PutObject; FR-054d upserts mapping after success |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).
