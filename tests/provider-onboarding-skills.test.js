@@ -68,4 +68,25 @@ describe('FR-060b provider onboarding skillbooks', () => {
       'providers/live/amazon/.grok/skills/a-search-amazon-onboarding/SKILL.md',
     );
   });
+
+  // FR-062: disabled live stubs still require onboarding books (stay-dark).
+  const LIVE_STUB_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+
+  it('FR-062: each disabled live stub has onboarding SKILL.md', () => {
+    const { sources } = loadRegistry();
+    for (const id of LIVE_STUB_IDS) {
+      const s = sources.find((x) => x.id === id);
+      assert.ok(s, `registry missing ${id}`);
+      assert.equal(s.enabled.live, false, `${id} must stay dark live`);
+      assert.equal(s.enabled.sandbox, false, `${id} must stay dark sandbox`);
+      const skill = onboardingSkillPath(s);
+      assert.ok(
+        fs.existsSync(skill),
+        `missing onboarding for disabled live stub ${id}: ${path.relative(root, skill)}`,
+      );
+      const text = fs.readFileSync(skill, 'utf8');
+      assert.match(text, /CAST IRON/i);
+      assert.match(text, /SimonBarnett\/a-search/);
+    }
+  });
 });
