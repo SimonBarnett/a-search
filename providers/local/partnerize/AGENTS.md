@@ -29,7 +29,9 @@ Provider CWD for registry id `partnerize` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub (queryParts wiring is FR-083)
+- `src/queryParts.js` — MSSQL Parts SELECT (FR-083); injectable `connect`
+- `src/worker.js` — `run(msg)` queryParts -> normalize -> writeResults (FR-083)
 - `src/parseFeed.js` — maintainer feed-parser hook (FR-085)
+- `src/selftestProbe.js` — Parts/token probe (FR-084)
 - `fixtures/products-ok.csv` — recorded Partnerize-shaped CSV
-- `.env.example` — MSSQL + `PARTNERIZE_FEED_*` / API key placeholders
+- `.env.example` — MSSQL + `PARTNERIZE_PUBLISHER_ID` (pubref) + feed/API placeholders
