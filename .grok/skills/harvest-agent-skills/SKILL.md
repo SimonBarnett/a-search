@@ -149,3 +149,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Thin harvest-agent-skills tip that only restates a merged Phase-2 product FR (FR-074/#712) is FAIL-supersede; durable home is providers/live/aliexpress + fr074 tests (bobiverse#3367; context: MRB a-search#713 FAIL-supersede thin harvest tip restating FR-074 aliexpress selftest already on main via #712/#627; closed unmerged)
 - Thin harvest-agent-skills tip that only restates a merged Phase-2 product FR (FR-075/#714) is FAIL-supersede; durable home is providers/live/etsy + fr075 tests (bobiverse#3369; context: MRB a-search#715 FAIL-supersede thin harvest tip restating FR-075 etsy search already on main via #714/#628; closed unmerged)
 - Thin harvest-agent-skills tip that only restates a merged Phase-2 product FR (FR-076/#716) is FAIL-supersede; durable home is providers/live/etsy + fr076 tests (bobiverse#3372; context: MRB a-search#717 FAIL-supersede thin harvest tip restating FR-076 etsy normalize already on main via #716/#629; closed unmerged)
+
+## Harvested lessons (intake)
+
+- a-search webgains harvest tip for FR-088 feed-parser: durable book is providers/local/webgains/.grok/skills/a-search-webgains/SKILL.md — FAIL-supersede root .grok/skills orphans and duplicate intake tips
