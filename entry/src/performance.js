@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Account performance stub (FR-053b).
- * Returns empty clicks/visits/sales shape for JWT userId.
- * Real aggregates are out of scope.
+ * Account performance payload helpers (FR-053b stub + FR-053c clicks/visits).
+ * emptyPerformancePayload starts at zeros; handler fills clicks/visits via
+ * performanceClicksVisits. Sales remain stub until FR-053d.
  */
 
 const { AuthError } = require('./auth/jwt');

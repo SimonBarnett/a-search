@@ -15,6 +15,7 @@ const {
   resolvePerformanceInput,
   queryParams,
 } = require('./performance');
+const { aggregateClicksVisits } = require('./performanceClicksVisits');
 const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
@@ -245,10 +246,27 @@ async function handlePerformance(event, deps = {}) {
     return jsonResponse(400, { ok: false, error: resolved.error });
   }
 
-  return jsonResponse(
-    200,
-    emptyPerformancePayload(userId, resolved.value),
-  );
+  const range = resolved.value;
+  const payload = emptyPerformancePayload(userId, range);
+
+  // FR-053c: fill clicks/visits from injectable read model (sales stay stub).
+  const aggregate =
+    typeof deps.aggregateClicksVisits === 'function'
+      ? deps.aggregateClicksVisits
+      : aggregateClicksVisits;
+  const stats = await aggregate({
+    userId,
+    env: range.env,
+    from: range.from,
+    to: range.to,
+    events: deps.clickVisitEvents,
+    listEvents: deps.listClickVisitEvents,
+  });
+  payload.clicks = Number(stats && stats.clicks) || 0;
+  payload.visits = Number(stats && stats.visits) || 0;
+  payload.uniqueVisitors = Number(stats && stats.uniqueVisitors) || 0;
+
+  return jsonResponse(200, payload);
 }
 
 /**

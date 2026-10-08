@@ -1,0 +1,90 @@
+{
+  "description": "FR-053c fixture click/visit events for JWT userId FROM_JWT in live env",
+  "events": [
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "click",
+      "at": "2026-10-02T10:00:00.000Z",
+      "visitorId": "v1",
+      "linkId": "lnk_a"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "click",
+      "at": "2026-10-03T11:00:00.000Z",
+      "visitorId": "v1",
+      "linkId": "lnk_a"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "click",
+      "at": "2026-10-05T09:00:00.000Z",
+      "visitorId": "v2",
+      "linkId": "lnk_b"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "visit",
+      "at": "2026-10-02T10:00:01.000Z",
+      "visitorId": "v1"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "visit",
+      "at": "2026-10-05T09:00:01.000Z",
+      "visitorId": "v2"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "visit",
+      "at": "2026-10-06T12:00:00.000Z",
+      "visitorId": "v2"
+    },
+    {
+      "userId": "OTHER_USER",
+      "env": "live",
+      "type": "click",
+      "at": "2026-10-04T08:00:00.000Z",
+      "visitorId": "vx",
+      "linkId": "lnk_x"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "sandbox",
+      "type": "click",
+      "at": "2026-10-04T08:00:00.000Z",
+      "visitorId": "vs",
+      "linkId": "lnk_s"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "click",
+      "at": "2026-09-30T23:00:00.000Z",
+      "visitorId": "v0",
+      "linkId": "lnk_old"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "type": "visit",
+      "at": "2026-10-09T00:00:00.000Z",
+      "visitorId": "v3"
+    }
+  ],
+  "expected": {
+    "userId": "FROM_JWT",
+    "env": "live",
+    "from": "2026-10-01",
+    "to": "2026-10-08",
+    "clicks": 3,
+    "visits": 3,
+    "uniqueVisitors": 2
+  }
+}
