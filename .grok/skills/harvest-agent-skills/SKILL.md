@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-066: when selftest tip CONFLICTING on kijiji skill after normalize/worker merges, keep-both FR-063..066 sections then re-merge moving main (#684)
