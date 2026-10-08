@@ -9,8 +9,8 @@
  *
  * Natural key: (env, userId, source, tokenOrClickRef).
  * Durable store (FR-054c LOCKED): S3 via `createS3MappingStore` in
- * `./s3Store.js` — callers inject `deps.store` (`get`/`put`).
- * List-by-userId is FR-054e (out of scope).
+ * `./s3Store.js` — callers inject `deps.store` (`get`/`put`/`listByUserId`).
+ * List-by-userId for performance joins: `listMappingsByUserId` (FR-054e).
  */
 
 class MappingError extends Error {
@@ -123,6 +123,7 @@ function normalizeMapping(row) {
  *   records: Map<string, object>,
  *   get: (key: string) => Promise<object|null>,
  *   put: (key: string, record: object) => Promise<object>,
+ *   listByUserId: (q: object) => Promise<object[]>,
  * }}
  */
 function createMemoryMappingStore() {
@@ -140,7 +141,27 @@ function createMemoryMappingStore() {
     return { ...copy, meta: { ...copy.meta } };
   }
 
-  return { records, get, put };
+  /**
+   * @param {{ env: string, userId: string, source?: string }} q
+   */
+  async function listByUserId(q) {
+    const env = q && q.env != null ? String(q.env).trim() : '';
+    const userId = q && q.userId != null ? String(q.userId).trim() : '';
+    const sourceFilter =
+      q && q.source != null && String(q.source).trim() !== ''
+        ? String(q.source).trim()
+        : '';
+    /** @type {object[]} */
+    const out = [];
+    for (const row of records.values()) {
+      if (!row || row.env !== env || row.userId !== userId) continue;
+      if (sourceFilter && row.source !== sourceFilter) continue;
+      out.push({ ...row, meta: { ...(row.meta || {}) } });
+    }
+    return out;
+  }
+
+  return { records, get, put, listByUserId };
 }
 
 /**
@@ -208,6 +229,51 @@ async function getMapping(query, deps = {}) {
   return store.get(key);
 }
 
+/**
+ * List mapping rows for performance joins (FR-054e).
+ * Returns only rows matching userId + env (optional source filter).
+ *
+ * @param {{ env: string, userId: string, source?: string }} query
+ * @param {{ store: { listByUserId?: Function, get: Function, put: Function } }} [deps]
+ * @returns {Promise<object[]>}
+ */
+async function listMappingsByUserId(query, deps = {}) {
+  const store = requireStore(deps);
+  if (!query || typeof query !== 'object') {
+    throw new MappingError('mapping list query required', 'mapping_invalid');
+  }
+  const env = query.env != null ? String(query.env).trim() : '';
+  const userId = query.userId != null ? String(query.userId).trim() : '';
+  if (env !== 'live' && env !== 'sandbox') {
+    throw new MappingError('mapping env must be live|sandbox', 'mapping_bad_env');
+  }
+  if (!userId) {
+    throw new MappingError('mapping userId required', 'mapping_missing_userId');
+  }
+  const source =
+    query.source != null && String(query.source).trim() !== ''
+      ? String(query.source).trim()
+      : undefined;
+
+  if (typeof store.listByUserId !== 'function') {
+    throw new MappingError(
+      'mapping store.listByUserId required for listMappingsByUserId',
+      'mapping_missing_list',
+    );
+  }
+
+  const rows = await store.listByUserId({ env, userId, source });
+  const list = Array.isArray(rows) ? rows : [];
+  // Defence in depth: only that userId (+ env) returned.
+  return list.filter((row) => {
+    if (!row || typeof row !== 'object') return false;
+    if (String(row.userId) !== userId) return false;
+    if (String(row.env) !== env) return false;
+    if (source && String(row.source) !== source) return false;
+    return true;
+  });
+}
+
 module.exports = {
   MappingError,
   mappingNaturalKey,
@@ -216,4 +282,5 @@ module.exports = {
   createMemoryMappingStore,
   upsertMapping,
   getMapping,
+  listMappingsByUserId,
 };
