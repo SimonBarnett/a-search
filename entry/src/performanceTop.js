@@ -1,11 +1,12 @@
 'use strict';
 
 /**
- * Top links / merchants for JWT userId (FR-053e).
- * Scoped to userId + env. Date filter is out of scope (FR-053f).
+ * Top links / merchants for JWT userId (FR-053e + FR-053f date filter).
+ * Scoped to userId + env; when from/to are set, events outside the range
+ * (by `at`) are excluded.
  *
  * Event shape (partial ok):
- *   { userId, env, linkId?, merchantId?, merchantName?, clicks?, sales? }
+ *   { userId, env, at?, linkId?, merchantId?, merchantName?, clicks?, sales? }
  */
 
 /**
@@ -18,8 +19,47 @@ function num(n) {
 }
 
 /**
+ * @param {string|Date} day
+ * @returns {string} yyyy-MM-dd UTC
+ */
+function eventDay(day) {
+  if (day instanceof Date) return day.toISOString().slice(0, 10);
+  const s = String(day).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error('invalid_day');
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * @param {object} row
+ * @param {string|undefined} from
+ * @param {string|undefined} to
+ * @returns {boolean}
+ */
+function inDateRange(row, from, to) {
+  if ((from == null || from === '') && (to == null || to === '')) {
+    return true;
+  }
+  if (row.at == null || String(row.at).trim() === '') {
+    return false;
+  }
+  let day;
+  try {
+    day = eventDay(row.at);
+  } catch {
+    return false;
+  }
+  if (from != null && from !== '' && day < from) return false;
+  if (to != null && to !== '' && day > to) return false;
+  return true;
+}
+
+/**
  * @param {object[]} events
- * @param {{ userId: string, env: string, limit?: number }} want
+ * @param {{ userId: string, env: string, limit?: number, from?: string, to?: string }} want
  * @returns {{
  *   topLinks: Array<{ linkId: string, clicks: number, sales: number }>,
  *   topMerchants: Array<{ merchantId: string, merchantName: string, clicks: number, sales: number }>,
@@ -39,6 +79,7 @@ function aggregateTopEvents(events, want) {
     if (!row || typeof row !== 'object') continue;
     if (String(row.userId) !== String(want.userId)) continue;
     if (String(row.env) !== String(want.env)) continue;
+    if (!inDateRange(row, want.from, want.to)) continue;
 
     const clicks = num(row.clicks);
     const sales = num(row.sales);
@@ -95,6 +136,8 @@ function aggregateTopEvents(events, want) {
  * @param {object} opts
  * @param {string} opts.userId
  * @param {string} opts.env
+ * @param {string} [opts.from]
+ * @param {string} [opts.to]
  * @param {number} [opts.limit]
  * @param {object[]} [opts.events]
  * @param {Function} [opts.listEvents]
@@ -108,7 +151,13 @@ async function aggregateTop(opts = {}) {
 
   let events = opts.events;
   if (!Array.isArray(events) && typeof opts.listEvents === 'function') {
-    events = await opts.listEvents({ userId, env, limit: opts.limit });
+    events = await opts.listEvents({
+      userId,
+      env,
+      from: opts.from,
+      to: opts.to,
+      limit: opts.limit,
+    });
   }
   if (!Array.isArray(events)) {
     events = [];
@@ -118,10 +167,14 @@ async function aggregateTop(opts = {}) {
     userId,
     env,
     limit: opts.limit,
+    from: opts.from,
+    to: opts.to,
   });
 }
 
 module.exports = {
   aggregateTop,
   aggregateTopEvents,
+  inDateRange,
+  eventDay,
 };

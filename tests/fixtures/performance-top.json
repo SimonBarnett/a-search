@@ -1,9 +1,10 @@
 {
-  "description": "FR-053e fixture link/merchant events — scoped by userId+env; date filter OOS",
+  "description": "FR-053e/f fixture link/merchant events — scoped by userId+env; date filter via at",
   "events": [
     {
       "userId": "FROM_JWT",
       "env": "live",
+      "at": "2026-10-02T10:00:00.000Z",
       "linkId": "lnk_hot",
       "merchantId": "m_acme",
       "merchantName": "Acme",
@@ -13,6 +14,7 @@
     {
       "userId": "FROM_JWT",
       "env": "live",
+      "at": "2026-10-04T10:00:00.000Z",
       "linkId": "lnk_warm",
       "merchantId": "m_beta",
       "merchantName": "Beta Co",
@@ -22,6 +24,7 @@
     {
       "userId": "FROM_JWT",
       "env": "live",
+      "at": "2026-10-05T10:00:00.000Z",
       "linkId": "lnk_hot",
       "merchantId": "m_acme",
       "merchantName": "Acme",
@@ -29,8 +32,29 @@
       "sales": 1
     },
     {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-09-30T10:00:00.000Z",
+      "linkId": "lnk_old",
+      "merchantId": "m_old",
+      "merchantName": "Old Co",
+      "clicks": 50,
+      "sales": 9
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-10-09T10:00:00.000Z",
+      "linkId": "lnk_future",
+      "merchantId": "m_future",
+      "merchantName": "Future Co",
+      "clicks": 40,
+      "sales": 8
+    },
+    {
       "userId": "OTHER_USER",
       "env": "live",
+      "at": "2026-10-03T10:00:00.000Z",
       "linkId": "lnk_other",
       "merchantId": "m_other",
       "merchantName": "Other",
@@ -40,6 +64,7 @@
     {
       "userId": "FROM_JWT",
       "env": "sandbox",
+      "at": "2026-10-03T10:00:00.000Z",
       "linkId": "lnk_sb",
       "merchantId": "m_sb",
       "merchantName": "Sandbox Merch",
@@ -50,6 +75,8 @@
   "expected": {
     "userId": "FROM_JWT",
     "env": "live",
+    "from": "2026-10-01",
+    "to": "2026-10-08",
     "limit": 5,
     "topLinks": [
       { "linkId": "lnk_hot", "clicks": 13, "sales": 3 },

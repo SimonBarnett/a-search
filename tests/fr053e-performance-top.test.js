@@ -59,6 +59,8 @@ describe('FR-053e performance top links/merchants', () => {
     const got = await aggregateTop({
       userId: exp.userId,
       env: exp.env,
+      from: exp.from,
+      to: exp.to,
       limit: exp.limit,
       events: fixture.events,
     });
@@ -72,6 +74,8 @@ describe('FR-053e performance top links/merchants', () => {
     const got = aggregateTopEvents(fixture.events, {
       userId: 'FROM_JWT',
       env: 'live',
+      from: '2026-10-01',
+      to: '2026-10-08',
       limit: 10,
     });
     assert.equal(got.topLinks.length, 2);
