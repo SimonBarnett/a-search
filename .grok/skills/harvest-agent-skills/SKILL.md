@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search Phase-2 providers: docs/phase2-providers.md CAST IRON stay-dark (enabled false until credentials); pin registry stub ids in fr061 test (a-search#614 / #668)
