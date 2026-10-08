@@ -220,3 +220,15 @@ Do not use a live JWT URL with sandbox paths or the reverse.
 - Put `userId` in the JSON body as authority
 - Mix live and sandbox queues or rclone roots
 - Commit Bearer tokens into the repo or harvest receipts
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+MRB: keep, reword or trim; twins are listed once with every source.
+
+- FR-053a docs/endpoint-performance.md clicks visits sales JWT userId; durable a-search PR (see DONE) (bobiverse#3243; context: FR-053a endpoint-performance docs; PR opened)
+- FR-053b /account/performance stub JWT userId only empty payload; durable a-search PR (see DONE) (bobiverse#3244; context: FR-053b performance stub; PR opened)
+- FR-053c performanceClicksVisits aggregate for JWT userId; durable a-search PR (see DONE) (bobiverse#3245; context: FR-053c clicks/visits aggregate; PR opened)
+- FR-053d performanceSales aggregate by currency for JWT userId; durable a-search PR (see DONE) (bobiverse#3246; context: FR-053d sales aggregate; PR opened)
+- FR-053e performanceTop links/merchants for JWT userId; durable a-search PR (see DONE) (bobiverse#3247; context: FR-053e top links/merchants; PR opened)
+- FR-053f performance from/to excludes out-of-range; durable a-search PR (see DONE) (bobiverse#3248; context: FR-053f date-range filter; PR opened)

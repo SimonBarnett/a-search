@@ -25,3 +25,10 @@ SELECT dbo.Parts WHERE Source='partnerize' (maintainer owns feeds).
 ## Env
 
 See `.env.example`. Queue env: `SQS_PARTNERIZE_URL`.
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+MRB: keep, reword or trim; twins are listed once with every source.
+
+- a-search Phase-2 stay-dark local selftest: add selftestProbe with injectable MSSQL connect (or feed token) + registry rateLimit; keep enabled false; when FR-058b hardcodes the no-rateLimit id, retarget it to the next stub without rateLimit (e.g. webgains after partnerize). (bobiverse#3404, bobiverse#3406; context: FR-084 partnerize selftestProbe + rateLimit stay-dark; PR #728 Closes #637)

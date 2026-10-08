@@ -82,3 +82,12 @@ npm test
 
 - FR-021: `tests/impact-scaffold.test.js`
 - FR-044: `tests/impact-search.test.js` (mock connect → products + writeResults; missing config error; SQL pins)
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+MRB: keep, reword or trim; twins are listed once with every source.
+
+- FR-051a: Impact pending onboard when API UNKNOWN = docs/impact-pending-onboard-queue.md + docs/sql/001_ImpactPendingOnboard.sql env keys; durable a-search PR #447 (bobiverse#3235; context: FR-051a Impact pending-onboard queue docs+DDL; PR #447)
+- FR-051b Impact runOnce pending drain: injectable listPending/markProcessed/countRemaining; durable a-search PR (see DONE url) (bobiverse#3236; context: FR-051b impact pending drain; PR opened)
+- FR-051c Impact emitSignupRow Awin subset keys; durable a-search PR (see DONE) (bobiverse#3237; context: FR-051c impact emitSignupRow; PR opened)
