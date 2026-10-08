@@ -15,16 +15,17 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 describe('FR-056d CDK impact onboarding Lambda sandbox', () => {
-  it('stack declares ImpactOnboardingSandbox with A_SEARCH_ENV sandbox (no schedule rule)', () => {
+  it('stack declares ImpactOnboardingSandbox with A_SEARCH_ENV sandbox', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /ImpactOnboardingSandboxFunction/);
     assert.match(text, /a-search-impact-onboarding-sandbox/);
     assert.match(text, /A_SEARCH_ENV:\s*'sandbox'/);
+    // Lambda construct only (EventBridge rules are FR-056e after this fn)
     const block = text.slice(
       text.indexOf('ImpactOnboardingSandboxFunction'),
-      text.indexOf('ImpactOnboardingSandboxFunctionName') + 80,
+      text.indexOf('// FR-056e:'),
     );
-    assert.ok(block.length > 40, 'expected sandbox function + output region');
+    assert.ok(block.length > 40, 'expected sandbox function region');
     assert.doesNotMatch(block, /events\.Rule|Schedule\.rate|Schedule\.cron/);
   });
 
