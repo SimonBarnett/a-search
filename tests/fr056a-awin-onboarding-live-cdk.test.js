@@ -15,17 +15,17 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 describe('FR-056a CDK awin onboarding Lambda live', () => {
-  it('stack declares AwinOnboardingLive with A_SEARCH_ENV live (no schedule rule)', () => {
+  it('stack declares AwinOnboardingLive with A_SEARCH_ENV live', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /AwinOnboardingLiveFunction/);
     assert.match(text, /a-search-awin-onboarding-live/);
     assert.match(text, /A_SEARCH_ENV:\s*'live'/);
-    // Live onboarding function block must not wire EventBridge in this FR
+    // Lambda construct only (EventBridge rules are FR-056e, after impact fn)
     const liveBlock = text.slice(
       text.indexOf('AwinOnboardingLiveFunction'),
-      text.indexOf('AwinOnboardingLiveFunctionName') + 80,
+      text.indexOf('// FR-056d:'),
     );
-    assert.ok(liveBlock.length > 40, 'expected live function + output region');
+    assert.ok(liveBlock.length > 40, 'expected live function region');
     assert.doesNotMatch(liveBlock, /events\.Rule|Schedule\.rate|Schedule\.cron/);
   });
 
