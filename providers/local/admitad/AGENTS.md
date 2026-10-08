@@ -31,4 +31,6 @@ Provider CWD for registry id `admitad` (`kind: local`).
 
 - `src/queryParts.js` — MSSQL Parts SELECT (FR-092; injectable connect)
 - `src/worker.js` — `run(msg, deps)` / writeResults (FR-092; stay-dark)
-- `.env.example` — placeholders (`MSSQL_*`, `ADMITAD_WEBSITE_ID`)
+- `src/selftestProbe.js` — FR-093 selftest (injectable connect)
+- `.env.example` — placeholders (`MSSQL_*`, `ADMITAD_WEBSITE_ID`, `ADMITAD_API_TOKEN`)
+- Registry `rateLimit` 1/250 (stay-dark)
