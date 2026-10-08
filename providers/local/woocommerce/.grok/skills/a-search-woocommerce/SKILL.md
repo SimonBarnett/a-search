@@ -31,10 +31,12 @@ Out of scope for FR-109: MSSQL upsert, registry enable, multi-merchant router.
 
 SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds).
 
-## Worker stub
+## Worker + queryParts (FR-111)
 
-`src/worker.js` exports `run(msg)` (FR-607).
+`src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
+Relative product Urls resolve against `WOOCOMMERCE_STORE_URL`; tracked links stamp `WOOCOMMERCE_AFFILIATE_ID` as `sid`.
+Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/upsert (FR-110) are separate.
 
 ## Env
 
-See `.env.example` (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`). Queue env: `SQS_WOOCOMMERCE_URL`.
+See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, `WOOCOMMERCE_AFFILIATE_ID`, optional `WOOCOMMERCE_API_PREFIX`). Queue env: `SQS_WOOCOMMERCE_URL`.

@@ -31,6 +31,6 @@ Provider CWD for registry id `woocommerce` (`kind: local`).
 
 - `src/catalog.js` - injectable WooCommerce REST catalogue (FR-109)
 - `src/normalize.js` + `src/upsert.js` - Parts staging + MERGE contract (FR-110)
-- `src/worker.js` - `run(msg)` stub (FR-607; worker FR lands separately)
+- `src/worker.js` + `src/queryParts.js` - MSSQL Parts worker (FR-111)
 - `fixtures/products-ok.json` - recorded catalogue fixture
-- `.env.example` - placeholders
+- `.env.example` - placeholders (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_*`, `WOOCOMMERCE_AFFILIATE_ID`)
