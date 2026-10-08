@@ -1,0 +1,77 @@
+{
+  "description": "FR-053d fixture sale events for JWT userId FROM_JWT in live env",
+  "events": [
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-10-02T12:00:00.000Z",
+      "amount": 100,
+      "commission": 10,
+      "currency": "GBP"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-10-04T15:00:00.000Z",
+      "amount": 50.5,
+      "commission": 5.05,
+      "currency": "GBP"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-10-05T09:00:00.000Z",
+      "amount": 80,
+      "commission": 8,
+      "currency": "EUR"
+    },
+    {
+      "userId": "OTHER_USER",
+      "env": "live",
+      "at": "2026-10-03T10:00:00.000Z",
+      "amount": 999,
+      "commission": 99,
+      "currency": "GBP"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "sandbox",
+      "at": "2026-10-03T10:00:00.000Z",
+      "amount": 40,
+      "commission": 4,
+      "currency": "GBP"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-09-30T12:00:00.000Z",
+      "amount": 20,
+      "commission": 2,
+      "currency": "GBP"
+    },
+    {
+      "userId": "FROM_JWT",
+      "env": "live",
+      "at": "2026-10-09T00:00:00.000Z",
+      "amount": 30,
+      "commission": 3,
+      "currency": "GBP"
+    }
+  ],
+  "expected": {
+    "userId": "FROM_JWT",
+    "env": "live",
+    "from": "2026-10-01",
+    "to": "2026-10-08",
+    "sales": {
+      "count": 3,
+      "amount": 230.5,
+      "commission": 23.05,
+      "currency": "GBP"
+    },
+    "currencies": [
+      { "currency": "EUR", "count": 1, "amount": 80, "commission": 8 },
+      { "currency": "GBP", "count": 2, "amount": 150.5, "commission": 15.05 }
+    ]
+  }
+}

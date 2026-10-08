@@ -16,6 +16,7 @@ const {
   queryParams,
 } = require('./performance');
 const { aggregateClicksVisits } = require('./performanceClicksVisits');
+const { aggregateSales } = require('./performanceSales');
 const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
@@ -249,12 +250,12 @@ async function handlePerformance(event, deps = {}) {
   const range = resolved.value;
   const payload = emptyPerformancePayload(userId, range);
 
-  // FR-053c: fill clicks/visits from injectable read model (sales stay stub).
-  const aggregate =
+  // FR-053c: fill clicks/visits from injectable read model.
+  const aggregateCv =
     typeof deps.aggregateClicksVisits === 'function'
       ? deps.aggregateClicksVisits
       : aggregateClicksVisits;
-  const stats = await aggregate({
+  const stats = await aggregateCv({
     userId,
     env: range.env,
     from: range.from,
@@ -265,6 +266,31 @@ async function handlePerformance(event, deps = {}) {
   payload.clicks = Number(stats && stats.clicks) || 0;
   payload.visits = Number(stats && stats.visits) || 0;
   payload.uniqueVisitors = Number(stats && stats.uniqueVisitors) || 0;
+
+  // FR-053d: fill sales / commission / currencies (top merchants OOS).
+  const aggregateSaleFn =
+    typeof deps.aggregateSales === 'function'
+      ? deps.aggregateSales
+      : aggregateSales;
+  const saleStats = await aggregateSaleFn({
+    userId,
+    env: range.env,
+    from: range.from,
+    to: range.to,
+    events: deps.saleEvents,
+    listEvents: deps.listSaleEvents,
+  });
+  if (saleStats && saleStats.sales) {
+    payload.sales = {
+      count: Number(saleStats.sales.count) || 0,
+      amount: Number(saleStats.sales.amount) || 0,
+      commission: Number(saleStats.sales.commission) || 0,
+      currency: saleStats.sales.currency || 'GBP',
+    };
+  }
+  payload.currencies = Array.isArray(saleStats && saleStats.currencies)
+    ? saleStats.currencies
+    : [];
 
   return jsonResponse(200, payload);
 }
