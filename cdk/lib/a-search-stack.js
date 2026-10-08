@@ -15,6 +15,10 @@ const { queueName } = require('../../providers/queueName');
 const {
   stageEntryLambdaAsset,
 } = require('../../scripts/stage-entry-lambda-asset');
+const {
+  stageProviderWorkerLambdaAsset,
+  workerHandlerPath,
+} = require('../../scripts/stage-provider-worker-lambda-asset');
 
 /**
  * Title-case construct id fragment from source id (amazon â†’ Amazon).
@@ -107,7 +111,8 @@ class ASearchStack extends cdk.Stack {
 
     // FR-036: queues + workers for every enabled shortlist source Ã— env
     for (const src of enabledSources) {
-      const folderAbs = path.join(__dirname, '..', '..', src.folder, 'src');
+      // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
+      const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src);
       const pascal = pascalSource(src.id);
       const envs = /** @type {Array<'live'|'sandbox'>} */ (
         ['live', 'sandbox'].filter((e) => src.enabled[e] === true)
@@ -131,8 +136,8 @@ class ASearchStack extends cdk.Stack {
           {
             functionName: `a-search-${src.id}-worker-${env}`,
             runtime: lambda.Runtime.NODEJS_20_X,
-            handler: 'worker.handler',
-            code: lambda.Code.fromAsset(folderAbs),
+            handler: workerHandlerPath(src),
+            code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(60),
             environment: {
               A_SEARCH_ENV: env,
