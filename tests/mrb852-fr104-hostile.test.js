@@ -117,17 +117,22 @@ describe('MRB-852 FR-104 hostile', () => {
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
   });
 
-  it('fr058b no-rateLimit example retargeted off shopify to wix', () => {
+  it('fr058b no-rateLimit example retargeted off shopify/wix to woocommerce', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('wix'\)/);
+    assert.match(src, /rateLimit\('woocommerce'\)/);
     assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
     assert.deepEqual(rateLimit('shopify'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
-    assert.equal(rateLimit('wix'), undefined);
+    assert.deepEqual(rateLimit('wix'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.equal(rateLimit('woocommerce'), undefined);
   });
 });

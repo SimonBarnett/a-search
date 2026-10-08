@@ -13,6 +13,7 @@ description: >
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
 Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false (stay dark until account details exist).
+`rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-108).
 
 ## Catalogue client (FR-105)
 
@@ -37,6 +38,13 @@ SELECT dbo.Parts WHERE Source='wix' (maintainer owns store sync / feeds).
 Relative product Urls resolve against `WIX_STORE_URL`; tracked links stamp `WIX_AFFILIATE_ID` as `sid`.
 Stay-dark; no "not wired" stub on the happy path.
 Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (FR-106) are separate.
+
+## Selftest + pacing (FR-108)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`WIX_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`). Pin: `tests/fr108-wix-selftest-probe.test.js`.
 
 ## Env
 
