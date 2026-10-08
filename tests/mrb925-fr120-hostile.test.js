@@ -26,7 +26,7 @@ describe('MRB-925 FR-120 hostile', () => {
     assert.match(text, /Rejected:\s*\(b\)/i);
     assert.match(text, /MerchantProducts/);
     assert.match(text, /missing_table/);
-    assert.match(text, /no runtime DDL|never DDL|ops apply/i);
+    assert.match(text, /runtime never runs DDL|ops apply|maintainer\/sql/i);
   });
 
   it('awin/impact queryParts + probes target dbo.Parts; keep FR-119+120 error codes', () => {
@@ -66,6 +66,9 @@ describe('MRB-925 FR-120 hostile', () => {
     const dm = fs.readFileSync(path.join(root, 'docs', 'data-model.md'), 'utf8');
     assert.match(dm, /FR-120/);
     const vision = fs.readFileSync(path.join(root, 'docs', 'vision.md'), 'utf8');
-    assert.match(vision, /FR-120|dbo\.Parts/);
+    assert.match(vision, /FR-120|Parts vs MerchantProducts|dbo\.Parts|option \(a\)/i);
+    const sqlReadme = fs.readFileSync(path.join(root, 'maintainer', 'sql', 'README.md'), 'utf8');
+    assert.match(sqlReadme, /runtime never|no DDL from Lambda|ops apply/i);
   });
 });
+
