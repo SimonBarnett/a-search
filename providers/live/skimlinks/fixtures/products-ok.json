@@ -1,0 +1,31 @@
+{
+  "skimlinksProductAPI": {
+    "numFound": 2,
+    "start": 0,
+    "rows": 20,
+    "products": [
+      {
+        "id": "sk-fix-001",
+        "title": "Fixture Ultrabook Laptop",
+        "price": 89900,
+        "currency": "GBP",
+        "merchant": "Fixture Merchant A",
+        "merchant_id": 1001,
+        "url": "https://example.test/skimlinks/product/sk-fix-001",
+        "image_url": "https://example.test/img/sk-fix-001.jpg",
+        "country": "UK"
+      },
+      {
+        "id": "sk-fix-002",
+        "title": "Fixture Gaming Laptop",
+        "price": 129900,
+        "currency": "GBP",
+        "merchant": "Fixture Merchant B",
+        "merchant_id": 1002,
+        "url": "https://example.test/skimlinks/product/sk-fix-002",
+        "image_url": "https://example.test/img/sk-fix-002.jpg",
+        "country": "UK"
+      }
+    ]
+  }
+}
