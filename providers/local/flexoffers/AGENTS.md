@@ -18,7 +18,8 @@ Provider CWD for registry id `flexoffers` (`kind: local`).
 ## Read first
 
 1. `.grok/skills/a-search-flexoffers/SKILL.md`
-2. `docs/endpoint-search.md`, `docs/environments.md`
+2. `.grok/skills/a-search-flexoffers-onboarding/SKILL.md` (disabled stub - UNKNOWN / not enabled)
+3. `docs/endpoint-search.md`, `docs/environments.md`
 
 ## CAST IRON
 
