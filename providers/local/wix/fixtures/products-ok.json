@@ -1,0 +1,54 @@
+{
+  "products": [
+    {
+      "id": "wix-prod-801001",
+      "name": "Madeira Sun Hat",
+      "slug": "madeira-sun-hat",
+      "description": "Woven sun hat for island walks.",
+      "visible": true,
+      "priceData": {
+        "currency": "GBP",
+        "price": 24.5
+      },
+      "stock": {
+        "quantity": 12
+      },
+      "media": {
+        "mainMedia": {
+          "image": {
+            "url": "https://cdn.example.invalid/wix/sun-hat.jpg"
+          }
+        }
+      },
+      "productPageUrl": {
+        "base": "https://madeira-demo.wixsite.com/shop",
+        "path": "/product-page/madeira-sun-hat"
+      }
+    },
+    {
+      "id": "wix-prod-801002",
+      "name": "Levada Trail Bottle",
+      "slug": "levada-trail-bottle",
+      "description": "Stainless bottle",
+      "visible": true,
+      "priceData": {
+        "currency": "EUR",
+        "price": 15.0
+      },
+      "stock": {
+        "quantity": 40
+      },
+      "media": {
+        "mainMedia": {
+          "image": {
+            "url": "https://cdn.example.invalid/wix/bottle.jpg"
+          }
+        }
+      },
+      "productPageUrl": {
+        "base": "https://madeira-demo.wixsite.com/shop",
+        "path": "/product-page/levada-trail-bottle"
+      }
+    }
+  ]
+}
