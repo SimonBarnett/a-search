@@ -121,6 +121,20 @@ function defaultGetObject(deps) {
 }
 
 /**
+ * @param {{ createS3Client?: () => { send: Function } }} [deps]
+ */
+function defaultListObjectsV2(deps) {
+  return async (args) => {
+    if (deps && typeof deps.createS3Client === 'function') {
+      return deps.createS3Client().send(args);
+    }
+    const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+    const client = new S3Client({});
+    return client.send(new ListObjectsV2Command(args));
+  };
+}
+
+/**
  * In-memory S3 stand-in shared across adapter instances (FR-054c testable).
  * @returns {{
  *   objects: Map<string, string>,
@@ -152,7 +166,25 @@ function createMemoryS3Objects() {
     };
   }
 
-  return { objects, putObject, getObject };
+  /**
+   * Minimal ListObjectsV2 stand-in (Prefix filter).
+   * @param {{ Bucket: string, Prefix?: string }} args
+   */
+  async function listObjectsV2({ Bucket, Prefix }) {
+    const prefix = Prefix == null ? '' : String(Prefix);
+    const root = `${Bucket}/`;
+    /** @type {{ Key: string }[]} */
+    const Contents = [];
+    for (const full of objects.keys()) {
+      if (!full.startsWith(root)) continue;
+      const Key = full.slice(root.length);
+      if (prefix && !Key.startsWith(prefix)) continue;
+      Contents.push({ Key });
+    }
+    return { Contents, KeyCount: Contents.length };
+  }
+
+  return { objects, putObject, getObject, listObjectsV2 };
 }
 
 /**
@@ -161,8 +193,9 @@ function createMemoryS3Objects() {
  * @param {Record<string, string|undefined>} [opts.envVars]
  * @param {Function} [opts.putObject]
  * @param {Function} [opts.getObject]
+ * @param {Function} [opts.listObjectsV2]
  * @param {Function} [opts.createS3Client]
- * @returns {{ get: Function, put: Function, bucket: string, objectKeyFor: Function }}
+ * @returns {{ get: Function, put: Function, listByUserId: Function, bucket: string, objectKeyFor: Function }}
  */
 function createS3MappingStore(opts = {}) {
   const envVars = opts.envVars || {};
@@ -183,6 +216,10 @@ function createS3MappingStore(opts = {}) {
     typeof opts.putObject === 'function' ? opts.putObject : defaultPutObject(opts);
   const getObject =
     typeof opts.getObject === 'function' ? opts.getObject : defaultGetObject(opts);
+  const listObjectsV2 =
+    typeof opts.listObjectsV2 === 'function'
+      ? opts.listObjectsV2
+      : defaultListObjectsV2(opts);
 
   function objectKeyForNatural(naturalKey) {
     const parts = parseNaturalKey(naturalKey);
@@ -235,9 +272,63 @@ function createS3MappingStore(opts = {}) {
     return { ...copy, meta: { ...copy.meta } };
   }
 
+  /**
+   * List mapping objects under `{env}/_mapping/{userId}/[source/]`.
+   * @param {{ env: string, userId: string, source?: string }} q
+   * @returns {Promise<object[]>}
+   */
+  async function listByUserId(q) {
+    const env = q && q.env != null ? String(q.env).trim() : '';
+    const userId = q && q.userId != null ? String(q.userId).trim() : '';
+    if (env !== 'live' && env !== 'sandbox') {
+      throw new MappingError('mapping env must be live|sandbox', 'mapping_bad_env');
+    }
+    if (!userId || /[\\/]/.test(userId)) {
+      throw new MappingError('mapping userId required', 'mapping_missing_userId');
+    }
+    const source =
+      q && q.source != null && String(q.source).trim() !== ''
+        ? String(q.source).trim()
+        : '';
+    if (source && /[\\/]/.test(source)) {
+      throw new MappingError('bad source', 'mapping_bad_key');
+    }
+    const Prefix = source
+      ? `${env}/_mapping/${userId}/${source}/`
+      : `${env}/_mapping/${userId}/`;
+
+    const listed = await listObjectsV2({ Bucket: bucket, Prefix });
+    const contents = (listed && listed.Contents) || [];
+    /** @type {object[]} */
+    const out = [];
+    for (const item of contents) {
+      const Key = item && item.Key != null ? String(item.Key) : '';
+      if (!Key || !Key.endsWith('.json')) continue;
+      try {
+        const res = await getObject({ Bucket: bucket, Key });
+        const body =
+          res && res.Body && typeof res.Body.transformToString === 'function'
+            ? await res.Body.transformToString()
+            : String(res.Body || '');
+        if (!body) continue;
+        const parsed = JSON.parse(body);
+        if (!parsed || typeof parsed !== 'object') continue;
+        if (String(parsed.userId) !== userId) continue;
+        if (String(parsed.env) !== env) continue;
+        if (source && String(parsed.source) !== source) continue;
+        out.push({ ...parsed, meta: { ...(parsed.meta || {}) } });
+      } catch (err) {
+        if (isNoSuchKey(err)) continue;
+        throw err;
+      }
+    }
+    return out;
+  }
+
   return {
     get,
     put,
+    listByUserId,
     bucket,
     objectKeyFor: objectKeyForNatural,
     mappingObjectKey,
