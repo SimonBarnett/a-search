@@ -29,8 +29,8 @@ describe('FR-058b registry rateLimit', () => {
   });
 
   it('rateLimit(id) is undefined for sources without the field', () => {
-    // Stay-dark locals without a selftest FR yet (tradedoubler gained rateLimit in FR-090).
-    assert.equal(rateLimit('admitad'), undefined);
+    // Stay-dark locals without a selftest FR yet (admitad gained rateLimit in FR-093).
+    assert.equal(rateLimit('flexoffers'), undefined);
   });
 
   it('add-source.md documents optional rateLimit', () => {
