@@ -158,7 +158,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_PARTNERIZE_URL"
+      "queueEnv": "SQS_PARTNERIZE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "webgains",
