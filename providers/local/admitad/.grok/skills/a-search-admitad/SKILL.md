@@ -14,6 +14,7 @@ description: >
 
 Registry folder `providers/local/admitad`. Enabled: live=false, sandbox=false
 (CAST IRON stay-dark -- see `docs/phase2-providers.md`).
+`rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-093).
 
 ## Search path (FR-092)
 
@@ -26,6 +27,13 @@ SELECT dbo.Parts WHERE Source='admitad' AND DeletedAt IS NULL (maintainer owns f
 `src/worker.js` exports `run(msg, deps)` / `handler` / `normalizePart`.
 Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `ADMITAD_WEBSITE_ID`
 -> query param `tag`, then `writeResults`. Stay-dark; no "not wired" stub on the happy path.
+
+## Selftest + pacing (FR-093)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`ADMITAD_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
 
 ## Maintainer feed-parser (FR-094)
 
@@ -46,5 +54,6 @@ Credential / locator placeholders (never commit real values):
 
 See `.env.example`. Queue env: `SQS_ADMITAD_URL`. Placeholders only:
 `MSSQL_*`, `ADMITAD_WEBSITE_ID=`.
+Selftest placeholder: `ADMITAD_API_TOKEN=`.
 Feed placeholders: `ADMITAD_FEED_URL=`, `ADMITAD_API_KEY=`, `ADMITAD_FEED_TOKEN=`,
 `ADMITAD_PUBLISHER_ID=`.
