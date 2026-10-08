@@ -12,16 +12,18 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false.
+Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false (stay dark until account details exist).
 
 ## Search path
 
 SELECT dbo.Parts WHERE Source='wix' (maintainer owns store sync / feeds).
 
-## Worker stub
+## Worker (FR-107)
 
-`src/worker.js` exports `run(msg)` (FR-607).
+`src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` → normalize Parts → `writeResults`.
+Relative product Urls resolve against `WIX_STORE_URL`; tracked links stamp `WIX_AFFILIATE_ID` as `sid`.
+Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (FR-106) are separate.
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_WIX_URL`.
+See `.env.example` (`MSSQL_*`, `WIX_STORE_URL`, `WIX_AFFILIATE_ID`). Queue env: `SQS_WIX_URL`.
