@@ -29,5 +29,7 @@ Provider CWD for registry id `admitad` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
-- `.env.example` — placeholders
+- `src/worker.js` — `run(msg)` (FR-092 queryParts when present)
+- `src/selftestProbe.js` — FR-093 selftest (injectable connect)
+- `.env.example` — placeholders (`MSSQL_*`, `ADMITAD_API_TOKEN`)
+- Registry `rateLimit` 1/250 (stay-dark)
