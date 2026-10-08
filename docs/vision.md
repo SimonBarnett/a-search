@@ -210,7 +210,7 @@ LOCKED
 - JWT issuer, audience, JWKS / secret; optional JWT `env` claim
 - Exact rclone drive letter and mount unit name on the SQL host
 - One S3 bucket with `live/`/`sandbox/` prefixes vs two buckets
-- Exact MSSQL table names (`Parts`, `PartFeedKeys`, …)
+- Exact MSSQL table names (`Parts`, `PartFeedKeys`, …) - **partially resolved**: live `madeiradb` dbo inventory + ERD in [data-model.md](data-model.md) (FR-113). a-search-owned `Parts` / `PartFeedKeys` still absent on that host (see FR-120).
 - Maintainer cadence defaults (`MAINTAINER_TOP`, interval) beyond proposals
 - Grok relevance phase in/out of Phase 0
 - AWS account IDs; cutover off `madeira-sqs-affiliate`
