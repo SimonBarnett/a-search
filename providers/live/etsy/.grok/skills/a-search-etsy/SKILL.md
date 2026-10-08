@@ -50,3 +50,9 @@ is a later FR while stay-dark).
 
 See `.env.example`. Queue env: `SQS_ETSY_URL`. Creds: `ETSY_API_KEY` (or
 `ETSY_KEYSTRING`). Tracking: `ETSY_TRACKING_ID`.
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+
+- Phase-2 etsy stay-dark stack (search -> normalize -> worker -> selftest): already CAST IRON in this skill + `docs/phase2-providers.md`. Stack tips with Closes+Refs and keep-both comments. Relocated sources: bobiverse#3366, #3368, #3370, #3371, #3373, #3374, #3376, #3377.

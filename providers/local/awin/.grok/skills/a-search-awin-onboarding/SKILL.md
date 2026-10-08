@@ -98,3 +98,10 @@ for unit fixtures).
 1. Runtime search: `.grok/skills/a-search-awin/SKILL.md`
 2. Drain/join: `onboarding/.grok/skills/a-search-awin-onboarding/SKILL.md`
 3. Contract: `docs/provider-onboarding-skills.md` (FR-060a)
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+MRB: keep, reword or trim; twins are listed once with every source.
+
+- FR-050e awin onboarding skill: link https://github.com/SimonBarnett/AWS/blob/main/Lambdas/madeira-awin-clubscan/routes/onboarding.js and document drain loop until remaining=0; pin with tests/fr050e-awin-onboarding-skill.test.js; harvest to SimonBarnett/a-search (bobiverse#3234; context: FR-050e: enriched a-search-awin-onboarding SKILL with clubscan onboarding.js URL + drain-until-remaining=0 playbook; pin test fr050e; PR #446)
