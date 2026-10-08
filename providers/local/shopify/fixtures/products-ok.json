@@ -1,0 +1,46 @@
+{
+  "products": [
+    {
+      "id": 801001,
+      "title": "Madeira Sun Hat",
+      "handle": "madeira-sun-hat",
+      "body_html": "<p>Woven sun hat for island walks.</p>",
+      "vendor": "Club Madeira",
+      "status": "active",
+      "variants": [
+        {
+          "id": 901001,
+          "price": "24.50",
+          "inventory_quantity": 12,
+          "presentment_prices": [
+            { "price": { "amount": "24.50", "currency_code": "GBP" } }
+          ]
+        }
+      ],
+      "images": [
+        { "src": "https://cdn.example.invalid/shopify/sun-hat.jpg" }
+      ]
+    },
+    {
+      "id": 801002,
+      "title": "Levada Trail Bottle",
+      "handle": "levada-trail-bottle",
+      "body_html": "Stainless bottle",
+      "vendor": "Club Madeira",
+      "status": "active",
+      "variants": [
+        {
+          "id": 901002,
+          "price": "15.00",
+          "inventory_quantity": 40,
+          "presentment_prices": [
+            { "price": { "amount": "15.00", "currency_code": "EUR" } }
+          ]
+        }
+      ],
+      "images": [
+        { "src": "https://cdn.example.invalid/shopify/bottle.jpg" }
+      ]
+    }
+  ]
+}
