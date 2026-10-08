@@ -20,11 +20,14 @@ this folder owns feed-parser/creds hooks and the search read path.
 
 ## Read first
 
-1. `.grok/skills/a-search-awin/SKILL.md`
-2. Repo docs: `docs/parts-maintainer.md`, `docs/endpoint-search.md`,
-   `docs/environments.md`, `docs/vision.md`
-3. Shared helpers: `../../../worker/lib/` (results path / write when present)
-4. Parts DDL: `../../../maintainer/sql/002_Parts.sql`
+1. `.grok/skills/a-search-awin-onboarding/SKILL.md` — MSSQL/network/feed setup + clubscan/drain pointers (FR-060g)
+2. `.grok/skills/a-search-awin/SKILL.md` — local Parts search worker
+3. Drain agent CWD: `onboarding/AGENTS.md` + `onboarding/.grok/skills/a-search-awin-onboarding/SKILL.md`
+4. Repo docs: `docs/parts-maintainer.md`, `docs/endpoint-search.md`,
+   `docs/environments.md`, `docs/vision.md`, `docs/provider-onboarding-skills.md`,
+   `docs/onboarding-agents.md`
+5. Shared helpers: `../../../worker/lib/` (results path / write when present)
+6. Parts DDL: `../../../maintainer/sql/002_Parts.sql`
 
 ## CAST IRON
 
