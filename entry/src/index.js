@@ -299,6 +299,8 @@ async function handlePerformance(event, deps = {}) {
   const topStats = await aggregateTopFn({
     userId,
     env: range.env,
+    from: range.from,
+    to: range.to,
     limit: deps.topLimit,
     events: deps.topEvents,
     listEvents: deps.listTopEvents,
