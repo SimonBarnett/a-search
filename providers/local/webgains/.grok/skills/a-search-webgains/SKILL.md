@@ -43,8 +43,16 @@ Credential / locator placeholders (never commit real values):
 
 `assertWebgainsFeedCreds(env)` throws `webgains_missing_feed_credentials` when the API key is absent.
 
+## Selftest + pacing (FR-087)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`WEBGAINS_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_WEBGAINS_URL`.
 MSSQL: `MSSQL_SERVER`, `MSSQL_DATABASE`, `MSSQL_USER` / `MSSQL_PASSWORD`
 (or `MSSQL_TRUSTED_CONNECTION`). Account: `WEBGAINS_CAMPAIGN_ID`.
+Selftest placeholder: `WEBGAINS_API_TOKEN=`.
