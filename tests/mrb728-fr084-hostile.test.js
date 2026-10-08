@@ -85,15 +85,16 @@ describe('MRB-728 FR-084 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example is tradedoubler not partnerize/webgains', () => {
+  it('fr058b no-rateLimit example is admitad not partnerize/webgains/tradedoubler', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('tradedoubler'\)/);
+    assert.match(src, /rateLimit\('admitad'\)/);
     assert.ok(!/rateLimit\('partnerize'\)\s*,\s*undefined/.test(src));
     assert.ok(!/rateLimit\('webgains'\)\s*,\s*undefined/.test(src));
-    assert.equal(rateLimit('tradedoubler'), undefined);
+    assert.equal(rateLimit('admitad'), undefined);
+    assert.ok(rateLimit('tradedoubler'));
   });
 
   it('.env.example keeps FR-085 feed keys and FR-084 API token empty', () => {
