@@ -47,5 +47,6 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `mapping/s3Store.js` | FR-054c durable S3 `{env}/_mapping/{userId}/{source}/{tokenHash}.json` (+ list prefix) |
 | `resultsPath.js` | FR-047b `resultsKey` / results S3 path helper |
 | `writeResults.js` | Results PutObject; FR-054d upserts mapping after success |
+| `mssql/isMissingTableError.js` | FR-120 detect missing `dbo.Parts` |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).

@@ -18,6 +18,7 @@
     "mapping/",
     "pacing/",
     "selftest/",
+    "mssql/",
     "README.md"
   ]
 }

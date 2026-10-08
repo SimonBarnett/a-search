@@ -97,6 +97,7 @@ function searchTextFromMsg(msg) {
   return '';
 }
 
+/** FR-120: a-search-owned dbo.Parts (not dbo.MerchantProducts). */
 const SELECT_SQL = `
 SELECT
   Source,

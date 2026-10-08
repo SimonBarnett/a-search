@@ -9,6 +9,47 @@ Runs separately for **live** and **sandbox** (`A_SEARCH_ENV`), each against
 that env’s SQL target and staging paths (see `docs/environments.md`). Staging
 files may use the rclone-mapped tree under `{env}/_staging/...`.
 
+
+## Decision (FR-120): a-search owns `dbo.Parts` (not MerchantProducts)
+
+**Chosen: (a)** a-search creates and owns `dbo.Parts`, `dbo.PartFeedKeys`,
+`dbo.PartsStaging`, and (for Impact onboarding) `dbo.ImpactPendingOnboard` in
+`madeiradb` (or a future sandbox DB when FR-119 decides). The maintainer loads
+Awin/Impact feeds into those tables separately from the legacy
+`dbo.MerchantProducts` loader.
+
+**Rejected: (b)** local workers reading `dbo.MerchantProducts` read-only.
+
+Why not (b) (verified 2026-10-08 on madeiradb):
+
+| Issue | Detail |
+|-------|--------|
+| Shape mismatch | No `FeedKey` / `Env` / `Currency` / `DeletedAt`; `ASIN` vs `MerchantProductId`; `AffiliateUrl`/`ThumbnailUrl` vs `Url`/`ImageUrl`; prices are `nvarchar` |
+| Index/FTS | Heap with `PK_MerchantProducts` **disabled**; full-text catalog disabled; bulk-merge indexes named by `DisableMerchantIndexes` are missing; `RebuildMerchantIndexes` Agent job missing |
+| Search cost | A `Title LIKE '%…%'` as in `queryParts.js` would table-scan ~2.6M rows |
+| Impact | No Impact rows in madeiradb today (`Source` / affiliate keys are awin, wixStore, bigcommerce, ebay, paapi) |
+
+**Awin / Impact local search workers therefore SELECT `dbo.Parts`** (see
+`providers/local/{awin,impact}/src/queryParts.js`). `Env` is a column on
+`Parts` (`live`|`sandbox`), not on MerchantProducts.
+
+**Ops:** apply `maintainer/sql/001–003` (and Impact pending DDL when used)
+once per database with `sqlcmd` — see `maintainer/sql/README.md`. a-search
+**runtime never runs DDL** against madeiradb.
+
+**Selftest:** when `dbo.Parts` is absent, awin/impact probes return
+`error: missing_table` (not a generic connect string). After migrations +
+feed load, probes return `ok: true` when Parts is reachable (or when feed
+config fallback applies).
+
+**DBA precondition (not created by a-search):** supporting unique index on
+`Parts` natural key `(Source, FeedKey, MerchantProductId, Env)` and optional
+FTS are applied with the SQL scripts / DBA process — workers must not assume
+MerchantProducts indexes or FTS.
+
+**Legacy note:** `dbo.MerchantProducts` remains the Club Madeira bulk Awin
+catalogue used by other products. a-search does not query it for search.
+
 ## Folder
 
 ```

@@ -10,7 +10,9 @@ const {
   mssqlConfigFromEnv,
   defaultConnect,
 } = require('./queryParts');
+const { isMissingTableError } = require('../../../../shared/mssql/isMissingTableError');
 
+/** FR-120: probe a-search-owned dbo.Parts. */
 const PROBE_SQL = `
 SELECT TOP (1) 1 AS ok
 FROM dbo.Parts
@@ -100,15 +102,23 @@ async function probeAwinSelftest(deps = {}) {
     if (feedOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
+    if (isMissingTableError(err)) {
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: 'missing_table',
+      };
+    }
     const msg =
       err && typeof err === 'object' && err.message
         ? String(err.message).slice(0, 200)
-        : 'awin_mssql_unreachable';
+        : 'mssql_unreachable';
     return {
       ok: false,
       source,
       latencyMs: elapsed(),
-      error: msg || 'awin_mssql_unreachable',
+      error: msg || 'mssql_unreachable',
     };
   }
 }
@@ -131,6 +141,7 @@ async function awinSelftestProbe(source, deps) {
 }
 
 module.exports = {
+  isMissingTableError,
   probeAwinSelftest,
   awinSelftestProbe,
   hasFeedConfig,

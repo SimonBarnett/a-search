@@ -17,10 +17,12 @@ to map vision-era names (`Parts`, `PartFeedKeys`, `PartsStaging`,
 | Schemas in scope | **`dbo` only** |
 | Out of scope | `gf_bak` (2026-10-05 removal backups) |
 
-**a-search gap:** none of `dbo.Parts`, `dbo.PartsStaging`, `dbo.PartFeedKeys`,
-or `dbo.ImpactPendingOnboard` exist in madeiradb today. Local search and
-maintainer SQL that assume those names need a follow-on decision (see open
-FR-120 / related schema FRs).
+**a-search owned tables (FR-120 decision a):** none of `dbo.Parts`,
+`dbo.PartsStaging`, `dbo.PartFeedKeys`, or `dbo.ImpactPendingOnboard` exist
+in madeiradb **yet**. a-search will create them via ops-applied
+`maintainer/sql` migrations (runtime never DDL). Local Awin/Impact search
+reads `dbo.Parts` — not `dbo.MerchantProducts` (heap / shape mismatch).
+See [parts-maintainer.md](parts-maintainer.md) Decision (FR-120).
 
 ## Foreign keys (only five)
 
