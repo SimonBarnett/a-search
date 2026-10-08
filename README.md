@@ -20,6 +20,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [rclone results mount](docs/rclone-results.md) (SQL host `A_SEARCH_RCLONE_ROOT`)
 - [madeiradb data model](docs/data-model.md) (FR-113 - dbo inventory + ERD)
 - [Identity (8-char user / partner / club codes)](docs/identity.md) (FR-114)
+- [Catalog / product / ASIN model](docs/catalog-model.md) (FR-115 - madeiradb map)
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
