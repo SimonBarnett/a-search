@@ -104,3 +104,7 @@ starts the next wave:
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search Madeira store providers (shopify/wix/woocommerce): scaffold as disabled local stubs (registry+folder+skills+worker) per FR-022/FR-060i; enablement is a follow-up FR
