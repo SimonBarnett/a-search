@@ -94,3 +94,10 @@ injectable `connect` (no live SQL required for unit fixtures).
 1. Runtime search: `.grok/skills/a-search-impact/SKILL.md`
 2. Drain/pending: `onboarding/.grok/skills/a-search-impact-onboarding/SKILL.md`
 3. Contract: `docs/provider-onboarding-skills.md` (FR-060a)
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+MRB: keep, reword or trim; twins are listed once with every source.
+
+- FR-051d Impact onboarding skill CAST IRON + drain remaining=0; durable a-search PR (see DONE) (bobiverse#3238; context: FR-051d impact onboarding skill CAST IRON; PR opened)

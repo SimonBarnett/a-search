@@ -48,3 +48,9 @@ for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 ## Env
 
 See `.env.example`. Queue env: `SQS_PARTNERIZE_URL`.
+
+## Harvested lessons (relocated from bobiverse, 2026-10-08)
+
+Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
+
+- Phase-2 partnerize selftestProbe + registry rateLimit stay-dark already in ## Selftest + pacing (FR-084) / feed-parser in ## Maintainer feed-parser (FR-085). When FR-058b hardcodes the no-rateLimit example id, retarget to the next stub without rateLimit (e.g. webgains after partnerize). Relocated sources: bobiverse#3404, #3406.
