@@ -16,7 +16,10 @@
       "kind": "live",
       "folder": "providers/live/ebay",
       "enabled": { "live": true, "sandbox": true },
-      "queueEnv": "SQS_EBAY_URL"
+      "queueEnv": "SQS_EBAY_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      }
     },
     {
       "id": "rakuten",
