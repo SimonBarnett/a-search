@@ -18,6 +18,9 @@ const DISABLED_LOCAL = [
   'admitad',
   'flexoffers',
   'avantlink',
+  'shopify',
+  'wix',
+  'woocommerce',
 ];
 
 function onboardingPath(id) {
@@ -68,7 +71,7 @@ describe('FR-060i disabled stub onboarding skills', () => {
     });
   }
 
-  it('registry keeps these six disabled (live+sandbox false)', () => {
+  it('registry keeps these disabled locals (live+sandbox false)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     for (const id of DISABLED_LOCAL) {

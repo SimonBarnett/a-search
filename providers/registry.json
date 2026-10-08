@@ -189,6 +189,36 @@
         "sandbox": false
       },
       "queueEnv": "SQS_AVANTLINK_URL"
+    },
+    {
+      "id": "shopify",
+      "kind": "local",
+      "folder": "providers/local/shopify",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_SHOPIFY_URL"
+    },
+    {
+      "id": "wix",
+      "kind": "local",
+      "folder": "providers/local/wix",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_WIX_URL"
+    },
+    {
+      "id": "woocommerce",
+      "kind": "local",
+      "folder": "providers/local/woocommerce",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_WOOCOMMERCE_URL"
     }
   ]
 }

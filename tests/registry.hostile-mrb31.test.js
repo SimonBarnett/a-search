@@ -12,9 +12,9 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     assert.throws(() => enabled(undefined), /live|sandbox/);
   });
 
-  it('registry has exactly 17 shortlist sources with folder matching kind', () => {
+  it('registry has exactly 20 shortlist sources with folder matching kind', () => {
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 17);
+    assert.equal(sources.length, 20);
     for (const s of sources) {
       assert.ok(s.kind === 'live' || s.kind === 'local', s.id);
       assert.ok(

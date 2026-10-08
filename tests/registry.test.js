@@ -18,6 +18,9 @@ const DEFAULT_OFF = [
   'bol',
   'flexoffers',
   'avantlink',
+  'shopify',
+  'wix',
+  'woocommerce',
 ];
 
 describe('providers/loadRegistry', () => {
