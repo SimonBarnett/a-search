@@ -32,5 +32,7 @@ Provider CWD for registry id `avantlink` (`kind: local`).
 - `src/queryParts.js` — MSSQL Parts SELECT (FR-098; injectable connect)
 - `src/worker.js` — `run(msg, deps)` / writeResults (FR-098; stay-dark)
 - `src/selftestProbe.js` — FR-099 selftest (injectable connect)
-- `.env.example` — placeholders (`MSSQL_*`, `AVANTLINK_AFFILIATE_ID`, `AVANTLINK_API_TOKEN`)
+- `src/parseFeed.js` — maintainer feed-parser hook (FR-100)
+- `fixtures/products-ok.csv` — recorded Avantlink-shaped CSV
+- `.env.example` — placeholders (`MSSQL_*`, `AVANTLINK_AFFILIATE_ID`, `AVANTLINK_API_TOKEN`, `AVANTLINK_FEED_*`)
 - Registry `rateLimit` 1/250 (stay-dark)
