@@ -14,7 +14,7 @@ everywhere it accepts or emits a tenant / `user_id` / JWT `userId`.
 | Length | exactly **8** |
 | Charset | `[0-9A-Z]` only (uppercase) |
 | Regex | `^[0-9A-Z]{8}$` |
-| Minting | `dbo.GenerateUniqueUserId` — 7 random chars from `[0-9A-Z]` plus 1 checksum char, uniqueness checked against `Users` |
+| Minting | `dbo.GenerateUniqueUserId` -- 7 random chars from `[0-9A-Z]` plus 1 checksum char, uniqueness checked against `Users` |
 | Shared helper | `shared/identity/userId.js` (`isValidUserId`, `assertUserId`) |
 
 Examples from live data (no PII): `L7WDZWC8`, `GV2K0K7O`. Docs and fixtures
@@ -48,7 +48,7 @@ Dotted names for agents/pins: Users.user_id, Catalog.UserId, Products.UserId, Me
 | AwinHighApprovalMerchants | `PartnerID` | nvarchar(8) | Partner code |
 | AwinHighApprovalMerchants | `ClubID` | varchar(8) | Club code |
 
-Almost all of these joins are **logical (no FK)** — see FR-117 / data-model.
+Almost all of these joins are **logical (no FK)** -- see FR-117 / data-model.
 Only `UserApiKeys.user_id` is a declared FK to `Users`.
 
 ## Roles vs permissions vs Partner table (open question)
@@ -77,7 +77,7 @@ itself. No dangling referrers in the snapshot.
 
 `dbo.PartnerSites(@referrer)` and `dbo.TrafficAv(@referrer)` count a partner's
 sites through `Users.referrer` plus `permissions` containing `community` /
-`merchant`. **Inferred:** the partners API (`…/prod/token/network?type=partners`)
+`merchant`. **Inferred:** the partners API (`.../prod/token/network?type=partners`)
 reads this model. a-search does not call that API today. Treat
 "referrer = owning partner" as **inferred pending Simon confirmation**.
 
@@ -97,14 +97,14 @@ and only joins Partner details when `Partner.Approved = 1`.
 1. **JWT `userId`** must be a `Users.user_id` code (`^[0-9A-Z]{8}$`). Entry auth
    (`entry/src/auth/jwt.js`) rejects other shapes.
 2. **Onboarding** (`createMerchantUser`, Impact signup emit) must not mint
-   `usr_…` or other non-codes. Callers inject `newUserId` that returns a valid
+   `usr_...` or other non-codes. Callers inject `newUserId` that returns a valid
    code (prefer `dbo.GenerateUniqueUserId` in live SQL).
 3. **Signup rows** validate `user_id` with the same helper before emit.
-4. No PII (names, emails of real people) in this doc or in identity fixtures —
-   use `@….invalid` addresses in tests.
+4. No PII (names, emails of real people) in this doc or in identity fixtures --
+   use `@....invalid` addresses in tests.
 
 ## Related
 
-- [data-model.md](data-model.md) — dbo inventory + ERD
-- [daily-report-signups.md](daily-report-signups.md) — signup field map (`user_id`)
-- [endpoint-search.md](endpoint-search.md) — JWT tenant in search accept
+- [data-model.md](data-model.md) -- dbo inventory + ERD
+- [daily-report-signups.md](daily-report-signups.md) -- signup field map (`user_id`)
+- [endpoint-search.md](endpoint-search.md) -- JWT tenant in search accept
