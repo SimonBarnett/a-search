@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search FR-065: kijiji worker run(msg) wires searchKijiji → normalizeSearchResponse (buildTrackedUrl + KELKOO_PUBLISHER_ID) → writeResults; stay-dark; merge conflicts with FR-064 normalize keep tracked URL + skip partial offers
