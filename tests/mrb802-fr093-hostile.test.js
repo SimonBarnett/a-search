@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #789 hostile pins for FR-090 tradedoubler selftestProbe + rateLimit (stay-dark).
+ * MRB #802 hostile pins for FR-093 admitad selftestProbe + rateLimit (stay-dark).
  */
 
 const { describe, it } = require('node:test');
@@ -12,26 +12,26 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const { rateLimit } = require('../providers/loadRegistry');
 const {
-  probeTradedoublerSelftest,
-  tradedoublerSelftestProbe,
-} = require('../providers/local/tradedoubler/src/selftestProbe');
+  probeAdmitadSelftest,
+  admitadSelftestProbe,
+} = require('../providers/local/admitad/src/selftestProbe');
 
-describe('MRB-789 FR-090 hostile', () => {
+describe('MRB-802 FR-093 hostile', () => {
   it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
-    assert.deepEqual(rateLimit('tradedoubler'), {
+    assert.deepEqual(rateLimit('admitad'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    const row = registry.sources.find((s) => s.id === 'tradedoubler');
+    const row = registry.sources.find((s) => s.id === 'admitad');
     assert.equal(row.enabled.live, false);
     assert.equal(row.enabled.sandbox, false);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {
-    const ok = await probeTradedoublerSelftest({
+    const ok = await probeAdmitadSelftest({
       env: {
         MSSQL_SERVER: 's',
         MSSQL_DATABASE: 'd',
@@ -57,57 +57,63 @@ describe('MRB-789 FR-090 hostile', () => {
       })(),
     });
     assert.equal(ok.ok, true);
-    assert.equal(ok.source, 'tradedoubler');
+    assert.equal(ok.source, 'admitad');
     assert.equal(typeof ok.latencyMs, 'number');
     assert.equal(ok.error, undefined);
 
-    const bad = await tradedoublerSelftestProbe('ebay', { env: {} });
+    const bad = await admitadSelftestProbe('ebay', { env: {} });
     assert.equal(bad.ok, false);
     assert.equal(bad.error, 'wrong_source');
   });
 
-  it('skill Selftest + pacing and Maintainer feed-parser both present', () => {
+  it('token feed-ready path without MSSQL', async () => {
+    const out = await probeAdmitadSelftest({
+      env: { ADMITAD_API_TOKEN: 'tok-test' },
+      connect: async () => {
+        throw new Error('should not connect');
+      },
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.source, 'admitad');
+  });
+
+  it('skill Selftest + pacing + FR-092 Search path both present', () => {
     const skill = fs.readFileSync(
       path.join(
         root,
         'providers',
         'local',
-        'tradedoubler',
+        'admitad',
         '.grok',
         'skills',
-        'a-search-tradedoubler',
+        'a-search-admitad',
         'SKILL.md',
       ),
       'utf8',
     );
-    assert.match(skill, /## Selftest \+ pacing \(FR-090\)/);
-    assert.match(skill, /## Maintainer feed-parser \(FR-091\)/);
+    assert.match(skill, /## Selftest \+ pacing \(FR-093\)/);
+    assert.match(skill, /## Search path \(FR-092\)/);
     assert.match(skill, /maxConcurrency:\s*1/);
     assert.match(skill, /minIntervalMs:\s*250/);
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example is flexoffers not tradedoubler/admitad', () => {
+  it('fr058b no-rateLimit example is flexoffers not admitad', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
     assert.match(src, /rateLimit\('flexoffers'\)/);
-    assert.ok(!/rateLimit\('tradedoubler'\)\s*,\s*undefined/.test(src));
     assert.ok(!/rateLimit\('admitad'\)\s*,\s*undefined/.test(src));
     assert.equal(rateLimit('flexoffers'), undefined);
   });
 
-  it('.env.example keep-both FR-091 feed keys and FR-090 API token empty', () => {
+  it('.env.example keep-both WEBSITE_ID and API_TOKEN empty', () => {
     const envEx = fs.readFileSync(
-      path.join(root, 'providers', 'local', 'tradedoubler', '.env.example'),
+      path.join(root, 'providers', 'local', 'admitad', '.env.example'),
       'utf8',
     );
-    for (const key of [
-      'TRADEDOUBLER_FEED_URL=',
-      'TRADEDOUBLER_API_KEY=',
-      'TRADEDOUBLER_API_TOKEN=',
-    ]) {
+    for (const key of ['ADMITAD_WEBSITE_ID=', 'ADMITAD_API_TOKEN=', 'MSSQL_PASSWORD=']) {
       const line = envEx.split(/\r?\n/).find((l) => l.startsWith(key));
       assert.equal(line, key);
     }
