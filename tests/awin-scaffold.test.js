@@ -72,6 +72,7 @@ describe('FR-020 awin local provider scaffold', () => {
         env: {
           A_SEARCH_ENV: 'sandbox',
           S3_RESULTS_BUCKET: 'test-results',
+          AWIN_PUBLISHER_ID: 'pub-test',
         },
         queryParts: async (msg) => {
           assert.equal(msg.source, 'awin');
