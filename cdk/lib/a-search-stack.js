@@ -112,11 +112,17 @@ class ASearchStack extends cdk.Stack {
             },
           },
         );
-        worker.addEventSource(
-          new SqsEventSource(queue, {
-            batchSize: 1,
-          }),
-        );
+        // FR-058f: ebay Browse API pacing — SQS maxConcurrency only for ebay
+        // (other providers stay later FR-058 slices).
+        // AWS requires MaximumConcurrency between 2 and 1000 for SQS ESM.
+        const eventSourceProps = { batchSize: 1 };
+        if (src.id === 'ebay') {
+          const n =
+            src.rateLimit && Number(src.rateLimit.maxConcurrency);
+          eventSourceProps.maxConcurrency =
+            Number.isFinite(n) && n >= 2 ? n : 2;
+        }
+        worker.addEventSource(new SqsEventSource(queue, eventSourceProps));
 
         new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
           value: queue.queueUrl,
