@@ -15,6 +15,9 @@ const DISABLED_LOCAL = [
   'admitad',
   'flexoffers',
   'avantlink',
+  'shopify',
+  'wix',
+  'woocommerce',
 ];
 
 function assertHarvestNeedles(text, label) {

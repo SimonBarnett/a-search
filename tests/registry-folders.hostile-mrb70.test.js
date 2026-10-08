@@ -10,7 +10,7 @@ const registry = require('../providers/registry.json');
 
 describe('MRB #70 hostile: FR-022 registry folders', () => {
   it('every registry sources[].folder has AGENTS skill env worker run()', () => {
-    assert.equal(registry.sources.length, 17);
+    assert.equal(registry.sources.length, 20);
     for (const s of registry.sources) {
       const base = path.join(root, s.folder);
       assert.ok(fs.existsSync(path.join(base, 'AGENTS.md')), `${s.id} AGENTS`);
