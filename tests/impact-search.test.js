@@ -35,6 +35,7 @@ const mssqlEnv = {
   MSSQL_USER: 'app',
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
+  IMPACT_CAMPAIGN_ID: 'camp-test',
 };
 
 function mockPool(recordset) {
