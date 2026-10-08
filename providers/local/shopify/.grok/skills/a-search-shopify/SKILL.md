@@ -20,13 +20,20 @@ Registry folder `providers/local/shopify`. Enabled: live=false, sandbox=false (s
 Recorded fixture: `fixtures/products-ok.json`. Pin tests: `tests/fr101-shopify-catalog.test.js`.
 Out of scope for FR-101: MSSQL upsert, registry enable, multi-merchant router.
 
+## Normalize + upsert (FR-102)
+
+- `src/normalize.js` - Admin REST product to Parts staging columns (`Source`, `FeedKey`, `MerchantProductId`, `Env`, `Title`, ... + `ContentHash`).
+- `src/upsert.js` - `upsertShopifyParts` / `shopifyUpsertPartsHook` wraps maintainer set-based MERGE; inject `clearStaging` / `bulkLoadStaging` / `runMerge` for deploy, or use in-memory `mergePartsSetBased` offline.
+- Fixture: `fixtures/products-ok.json`. Pin: `tests/fr102-shopify-normalize-upsert.test.js`.
+- Out of scope for FR-102: registry enable, live merchant tokens, worker query path (FR-103).
+
 ## Search path
 
 SELECT dbo.Parts WHERE Source='shopify' (maintainer owns store sync / feeds).
 
 ## Worker stub
 
-`src/worker.js` exports `run(msg)` (FR-607). Still a stub; catalogue sync is separate.
+`src/worker.js` exports `run(msg)` (FR-607). Still a stub until FR-103; catalogue sync / upsert are separate.
 
 ## Env
 
