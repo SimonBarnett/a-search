@@ -42,7 +42,7 @@ function signHs256(payload, key = FIXTURE_HS256_KEY) {
   return `${data}.${b64url(sig)}`;
 }
 
-function validToken(userId = 'FROM_JWT') {
+function validToken(userId = 'JWTUSER1') {
   return signHs256({
     userId,
     iss: ISSUER,
@@ -74,7 +74,7 @@ describe('FR-053c performance clicks/visits aggregate', () => {
 
   it('excludes other userId / env / out-of-range days', () => {
     const got = aggregateClickVisitEvents(fixture.events, {
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-01',
       to: '2026-10-08',
@@ -115,7 +115,7 @@ describe('FR-053c performance clicks/visits aggregate', () => {
 
   it('empty read model stays zeros', async () => {
     const got = await aggregateClicksVisits({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-01',
       to: '2026-10-08',

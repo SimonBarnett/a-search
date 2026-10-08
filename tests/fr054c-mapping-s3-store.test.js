@@ -73,10 +73,10 @@ describe('FR-054c mapping durable S3 store', () => {
     await upsertMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'amazon',
         tokenOrClickRef: 'clk_persist',
-        s3Key: 'live/amazon/FROM_JWT/9/srch_p.json',
+        s3Key: 'live/amazon/JWTUSER1/9/srch_p.json',
         meta: { wave: 1 },
       },
       { store: store1 },
@@ -93,19 +93,19 @@ describe('FR-054c mapping durable S3 store', () => {
     const got = await getMapping(
       {
         env: 'live',
-        userId: 'FROM_JWT',
+        userId: 'JWTUSER1',
         source: 'amazon',
         token: 'clk_persist',
       },
       { store: store2 },
     );
     assert.ok(got, 'second instance must read durable S3 object');
-    assert.equal(got.s3Key, 'live/amazon/FROM_JWT/9/srch_p.json');
+    assert.equal(got.s3Key, 'live/amazon/JWTUSER1/9/srch_p.json');
     assert.equal(got.meta.wave, 1);
 
     const expectedKey = mappingObjectKey({
       env: 'live',
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       source: 'amazon',
       tokenOrClickRef: 'clk_persist',
     });
