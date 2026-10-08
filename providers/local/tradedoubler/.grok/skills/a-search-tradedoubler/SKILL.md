@@ -28,6 +28,13 @@ Registry folder `providers/local/tradedoubler`. Enabled: live=false, sandbox=fal
 `tduid`) -> `writeResults`. Optional `handler` for SQS Records.
 Stay-dark; no "not wired" stub on the happy path.
 
+## Selftest + pacing (FR-090)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`TRADEDOUBLER_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_TRADEDOUBLER_URL`.

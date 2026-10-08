@@ -79,12 +79,12 @@ describe('MRB-752 FR-087 hostile', () => {
     assert.equal(r.source, 'webgains');
   });
 
-  it('fr058b no-rateLimit example is tradedoubler not webgains', () => {
+  it('fr058b no-rateLimit example is admitad not webgains', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /tradedoubler/);
+    assert.match(src, /admitad/);
     assert.doesNotMatch(src, /rateLimit\(['\"]webgains['\"]\)\s*===?\s*undefined/);
   });
 

@@ -186,7 +186,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_TRADEDOUBLER_URL"
+      "queueEnv": "SQS_TRADEDOUBLER_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "admitad",
