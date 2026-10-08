@@ -70,7 +70,7 @@ describe('FR-059b selftest route stub', () => {
     const res = await handler(
       selftestEvent({
         method: 'GET',
-        auth: `Bearer ${validToken('FROM_JWT')}`,
+        auth: `Bearer ${validToken('JWTUSER1')}`,
       }),
       {},
       { env: jwtEnv },
@@ -78,7 +78,7 @@ describe('FR-059b selftest route stub', () => {
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
     assert.equal(json.ok, true);
-    assert.equal(json.userId, 'FROM_JWT');
+    assert.equal(json.userId, 'JWTUSER1');
     assert.equal(json.env, 'live');
     assert.ok(Array.isArray(json.providers));
     assert.equal(json.providers.length, 0);
@@ -92,7 +92,7 @@ describe('FR-059b selftest route stub', () => {
     const res = await handler(
       selftestEvent({
         method: 'POST',
-        auth: `Bearer ${validToken('FROM_JWT')}`,
+        auth: `Bearer ${validToken('JWTUSER1')}`,
         body: { userId: 'ATTACKER', sandbox: false },
       }),
       {},
@@ -108,7 +108,7 @@ describe('FR-059b selftest route stub', () => {
     const res = await handler(
       selftestEvent({
         method: 'POST',
-        auth: `Bearer ${validToken('U1')}`,
+        auth: `Bearer ${validToken('USER0001')}`,
         body: { sandbox: true },
       }),
       {},
@@ -116,7 +116,7 @@ describe('FR-059b selftest route stub', () => {
     );
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
-    assert.equal(json.userId, 'U1');
+    assert.equal(json.userId, 'USER0001');
     assert.equal(json.env, 'sandbox');
     assert.deepEqual(json.providers, []);
   });
@@ -125,7 +125,7 @@ describe('FR-059b selftest route stub', () => {
     const res = await handler(
       selftestEvent({
         method: 'GET',
-        auth: `Bearer ${validToken('U2')}`,
+        auth: `Bearer ${validToken('USER0002')}`,
         query: { sandbox: 'true' },
       }),
       {},

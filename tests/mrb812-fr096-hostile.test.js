@@ -114,15 +114,16 @@ describe('MRB-812 FR-096 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example retargeted off flexoffers/avantlink/shopify', () => {
+  it('fr058b no-rateLimit example retargeted off flexoffers/avantlink/shopify/wix', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('wix'\)/);
+    assert.match(src, /rateLimit\('woocommerce'\)/);
     assert.ok(!/assert\.equal\(rateLimit\('flexoffers'\),\s*undefined\)/.test(src));
     assert.ok(!/assert\.equal\(rateLimit\('avantlink'\),\s*undefined\)/.test(src));
     assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
     assert.deepEqual(rateLimit('flexoffers'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
@@ -132,6 +133,10 @@ describe('MRB-812 FR-096 hostile', () => {
       minIntervalMs: 250,
     });
     assert.deepEqual(rateLimit('shopify'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.deepEqual(rateLimit('wix'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });

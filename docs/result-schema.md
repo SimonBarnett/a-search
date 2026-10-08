@@ -11,9 +11,9 @@ Canonical helper: `worker/lib/normalizeProduct.js`
 
 | Field | Type | Notes |
 |-------|------|--------|
-| `id` | string | Provider product id (ASIN, itemId, adId, …). Empty string only for unusable rows. |
+| `id` | string | Provider product id (ASIN, itemId, adId, ...). Empty string only for unusable rows. |
 | `title` | string | Display title. |
-| `source` | string | Registry provider id (`amazon`, `ebay`, `cj`, `rakuten`, …). |
+| `source` | string | Registry provider id (`amazon`, `ebay`, `cj`, `rakuten`, ...). |
 
 ## Optional fields
 
@@ -28,7 +28,7 @@ Canonical helper: `worker/lib/normalizeProduct.js`
 
 ## Rules
 
-- Use `normalizeProduct({ … })` (or assert with `assertProductSchema`) before
+- Use `normalizeProduct({ ... })` (or assert with `assertProductSchema`) before
   writing results so top-level keys stay aligned.
 - **Do not invent incompatible top-level keys** without updating this doc and
   the shared helper. Provider-specific extras belong under `raw`, not as new

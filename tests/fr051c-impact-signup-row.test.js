@@ -33,7 +33,7 @@ describe('FR-051c impact emitSignupRow', () => {
 
   it('signup includes user_id, company_name, email, advertiserId, env', () => {
     const row = emitSignupRow({
-      user_id: 'usr_imp_1',
+      user_id: 'IMPACT01',
       company_name: 'Impact Retail',
       email: 'Ops@Impact.Example',
       advertiserId: 2002,
@@ -44,7 +44,7 @@ describe('FR-051c impact emitSignupRow', () => {
     for (const key of REQUIRED_KEYS) {
       assert.ok(row[key] != null && String(row[key]).length > 0, key);
     }
-    assert.equal(row.user_id, 'usr_imp_1');
+    assert.equal(row.user_id, 'IMPACT01');
     assert.equal(row.company_name, 'Impact Retail');
     assert.equal(row.email, 'ops@impact.example');
     assert.equal(row.advertiserId, '2002');
@@ -80,7 +80,7 @@ describe('FR-051c impact emitSignupRow', () => {
     ]);
     const out = await runOnce({
       envVars: { A_SEARCH_ENV: 'sandbox' },
-      newUserId: () => 'usr_from_drain',
+      newUserId: () => 'IMPACT02',
       ...q,
     });
     assert.equal(out.processed, 1);
@@ -91,7 +91,7 @@ describe('FR-051c impact emitSignupRow', () => {
     assert.equal(row.source, 'impact');
     assert.equal(row.advertiserId, 'camp-7');
     assert.equal(row.company_name, 'Camp Seven');
-    assert.equal(row.user_id, 'usr_from_drain');
+    assert.equal(row.user_id, 'IMPACT02');
     assert.equal(row.env, 'sandbox');
   });
 });

@@ -2,19 +2,19 @@
 
 Every link a-search **creates** (affiliate, deep, or tracking URLs written into
 results JSON or signup/report payloads) must be built from that provider
-folder’s `.env` **account** fields, with the Bearer JWT **`userId`** claim as
-the **tenant** stamp. Never hardcode publisher IDs or reuse another tenant’s
+folder's `.env` **account** fields, with the Bearer JWT **`userId`** claim as
+the **tenant** stamp. Never hardcode publisher IDs or reuse another tenant's
 account.
 
-Helper (FR-057a): `shared/links/buildTrackedUrl.js` → `buildTrackedUrl`.
+Helper (FR-057a): `shared/links/buildTrackedUrl.js` -> `buildTrackedUrl`.
 
 ## Rules (CAST IRON)
 
 | Rule | Detail |
 |------|--------|
 | Tenant | Always `String(jwtUserId)` from the JWT claim. Reject empty. **Never** take tenant from the request body. |
-| Account | Publisher / associate / campaign identifiers come **only** from that provider folder’s process env / `.env` (documented in each `.env.example`). |
-| Fail closed | Missing required account env → clear error; do not emit an untracked raw offer URL when a tracked link is required. |
+| Account | Publisher / associate / campaign identifiers come **only** from that provider folder's process env / `.env` (documented in each `.env.example`). |
+| Fail closed | Missing required account env -> clear error; do not emit an untracked raw offer URL when a tracked link is required. |
 | Isolation | Stamp `a_search_env` when `env` is passed (`live` \| `sandbox`). |
 | Secrets | Never commit real account values; placeholders only in `.env.example`. |
 
@@ -61,7 +61,7 @@ when serving SQL results:
 
 **Do not tag twice.** If a-search already applied `buildTrackedUrl` (JWT
 `userId` + provider `.env` account) into S3/results JSON, do not also assume
-`Part2` will run on that JSON — `Part2` is a **SQL** read path over `Products`.
+`Part2` will run on that JSON -- `Part2` is a **SQL** read path over `Products`.
 Conversely, rows that only ever surface through `Part2` may rely on that
 rewrite; workers writing `Products.AffiliateUrl` should leave placeholders
 compatible with `Part2` or document that a-search owns final tagging.
@@ -71,6 +71,6 @@ Full catalog/product map: [catalog-model.md](catalog-model.md) (FR-115).
 ## Out of scope here
 
 - Wiring workers / normalize paths (FR-057c..h)
-- Other providers’ `.env.example` account rows (later FR-057 slices)
+- Other providers' `.env.example` account rows (later FR-057 slices)
 - Vision Success row (FR-057i)
 - Changing the JWT issuer

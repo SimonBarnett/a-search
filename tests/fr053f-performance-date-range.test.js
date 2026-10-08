@@ -51,7 +51,7 @@ function signHs256(payload, key = FIXTURE_HS256_KEY) {
   return `${data}.${b64url(sig)}`;
 }
 
-function validToken(userId = 'FROM_JWT') {
+function validToken(userId = 'JWTUSER1') {
   return signHs256({
     userId,
     iss: ISSUER,
@@ -95,9 +95,9 @@ describe('FR-053f performance date-range filter', () => {
     });
     assert.equal(got.clicks, exp.clicks);
     assert.equal(got.visits, exp.visits);
-    // Narrow window: only Oct 5 click/visit for FROM_JWT live
+    // Narrow window: only Oct 5 click/visit for JWTUSER1 live
     const narrow = await aggregateClicksVisits({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-05',
       to: '2026-10-05',
@@ -118,7 +118,7 @@ describe('FR-053f performance date-range filter', () => {
     });
     assert.equal(got.sales.count, exp.sales.count);
     const narrow = await aggregateSales({
-      userId: 'FROM_JWT',
+      userId: 'JWTUSER1',
       env: 'live',
       from: '2026-10-05',
       to: '2026-10-05',

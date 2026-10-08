@@ -19,12 +19,12 @@ Content-Type: application/json
 |------|--------|
 | Scheme | `Authorization: Bearer <jwt>` from the login issuer |
 | User id | Taken from JWT claim **`userId`** (string). This value is the search principal and the S3 partition key for results |
-| Body `userId` | **Not accepted** as authority. If present and differs from JWT `userId` → **401/403**. Prefer omitting it from the body |
-| Missing / invalid / expired JWT | **401** `{ "accepted": false, "error": "unauthorized" }` — no enqueue |
+| Body `userId` | **Not accepted** as authority. If present and differs from JWT `userId` -> **401/403**. Prefer omitting it from the body |
+| Missing / invalid / expired JWT | **401** `{ "accepted": false, "error": "unauthorized" }` -- no enqueue |
 | Missing `userId` claim | **401** `{ "accepted": false, "error": "missing_user_id_claim" }` |
 
 Issuer / JWKS URL / audience: configure via `entry/.env` (`JWT_ISSUER`,
-`JWT_AUDIENCE`, `JWT_JWKS_URL` or shared secret) — values UNKNOWN until deploy.
+`JWT_AUDIENCE`, `JWT_JWKS_URL` or shared secret) -- values UNKNOWN until deploy.
 
 ### Body
 
@@ -44,11 +44,11 @@ Issuer / JWKS URL / audience: configure via `entry/.env` (`JWT_ISSUER`,
 |-------|----------|------|---------|
 | `q` | one of `q` or `searchterms` | string | Primary search text |
 | `searchterms` | one of `q` or `searchterms` | string[] | Extra/alternate terms (legacy Madeira shape) |
-| `catalogId` | yes | string \| number | **`Catalog.ID`** (`int`) of a `dbo.Catalog` row owned by the JWT `userId` (`Catalog.UserId`). Not a free-form club string — see [catalog-model.md](catalog-model.md). |
+| `catalogId` | yes | string \| number | **`Catalog.ID`** (`int`) of a `dbo.Catalog` row owned by the JWT `userId` (`Catalog.UserId`). Not a free-form club string -- see [catalog-model.md](catalog-model.md). |
 | `category` | yes | string | `Catalog.MainCategory` for that catalog row |
 | `subcategory` | yes | string | `Catalog.SubCategory` for that catalog row |
 | `sources` | no | string[] | Optional subset of **already enabled** registry ids; omit = all enabled |
-| `sandbox` | no | boolean | `true` → **sandbox** env; `false`/omit → **live** |
+| `sandbox` | no | boolean | `true` -> **sandbox** env; `false`/omit -> **live** |
 
 Do **not** send `userId` in the body; it is derived from the JWT.
 
@@ -102,11 +102,11 @@ Each enqueued message includes at least:
 }
 ```
 
-`userId` is copied from the verified JWT by the entry Lambda — workers must
+`userId` is copied from the verified JWT by the entry Lambda -- workers must
 not invent or trust a different user id. Workers must refuse messages whose
 `env` does not match process `A_SEARCH_ENV`.
 
-## Results path (LOCKED) — S3 + rclone on SQL server
+## Results path (LOCKED) -- S3 + rclone on SQL server
 
 Logical object key:
 
@@ -172,4 +172,4 @@ curl -sS -X POST "https://<api-host>/search" \
 
 ## Not in this response
 
-Product hits — written later under the S3 path above by offline workers.
+Product hits -- written later under the S3 path above by offline workers.

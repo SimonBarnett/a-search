@@ -11,12 +11,12 @@ when merged; identity codes: [identity.md](identity.md) / FR-114).
 
 | a-search term | dbo home | Notes |
 |---------------|----------|-------|
-| JWT `userId` | `Users.user_id` / `Catalog.UserId` / `Products.UserId` / … | 8-char code (`^[0-9A-Z]{8}$`); see [identity.md](identity.md) |
+| JWT `userId` | `Users.user_id` / `Catalog.UserId` / `Products.UserId` / ... | 8-char code (`^[0-9A-Z]{8}$`); see [identity.md](identity.md) |
 | `catalogId` | **`Catalog.ID`** (`int IDENTITY` PK) | Must be a Catalog row **owned by** the JWT `userId` (`Catalog.UserId`). HTTP body may send string or number; treat as int Catalog.ID. |
 | `category` | `Catalog.MainCategory` / `Products.Category` / `RejectedAsins.MainCategory` | Club main category label |
 | `subcategory` | `Catalog.SubCategory` / `Products.Subcategory` / `RejectedAsins.SubCategory` | Club subcategory; one Catalog row = one club subcategory |
-| `source` (registry id) | `Products.Source` / `RejectedAsins.AffiliateKey` / `CatalogAffiliateUpdates.AffiliateKey` / `MerchantProducts` source | Case differs in DB — see mapping table below |
-| product `id` | `ASIN` | Provider product id stored in `ASIN` columns (Amazon ASIN, eBay item id, Awin product id, …) |
+| `source` (registry id) | `Products.Source` / `RejectedAsins.AffiliateKey` / `CatalogAffiliateUpdates.AffiliateKey` / `MerchantProducts` source | Case differs in DB -- see mapping table below |
+| product `id` | `ASIN` | Provider product id stored in `ASIN` columns (Amazon ASIN, eBay item id, Awin product id, ...) |
 | accept result | **`Products`** | Per-club curated accepted items |
 | reject result | **`RejectedAsins`** | Per-club rejected ASINs |
 | merchant catalogue | **`MerchantProducts`** | Merchant-side feed rows (`UserId` = merchant code) |
@@ -28,7 +28,7 @@ when merged; identity codes: [identity.md](identity.md) / FR-114).
 
 | Column | Role |
 |--------|------|
-| `ID` | PK — this is a-search **`catalogId`** |
+| `ID` | PK -- this is a-search **`catalogId`** |
 | `UserId` | Owning club / user code (nvarchar; logical link, no FK) |
 | `MainCategory`, `SubCategory` | Category pair |
 | `SearchTerms`, `RelevantKeywords`, `IrrelevantKeywords` | Search aids |
@@ -69,7 +69,7 @@ must not invent a second conflicting queue for.
 
 **Unique key:** `(UserId, Category, Subcategory, ASIN, Source)`.
 
-Any a-search writer that upserts into Products **must** respect this UQ — no
+Any a-search writer that upserts into Products **must** respect this UQ -- no
 duplicate `(UserId, Category, Subcategory, ASIN, Source)`.
 
 ## RejectedAsins
@@ -96,7 +96,7 @@ paapi 55,796.
 | `UserId` | **Merchant** code (not the searching club) |
 | `ASIN` | Merchant product id (inferred) |
 | `Title`, string Price/Discount/WasPrice, `AffiliateUrl` | Presentation |
-| `CategoryId`, `CategoryName`, `Mpn`, `Brand`, … | Taxonomy / attributes |
+| `CategoryId`, `CategoryName`, `Mpn`, `Brand`, ... | Taxonomy / attributes |
 | `ProcessedBatchId` | Feed batch |
 
 PK `PK_MerchantProducts(ID)` was **disabled** (heap) in the FR-113 inventory;
@@ -113,7 +113,7 @@ different spellings:
 | `ebay` | `eBay` **or** `ebay` | CatalogAffiliateUpdates / RejectedAsins use `eBay`; Products uses `ebay` |
 | `awin` | `awin` | Local feed / affiliate |
 | `wix` / merchant feeds | `wixStore` (MerchantProducts) | Merchant catalogue only in snapshot |
-| other registry ids (`cj`, `rakuten`, `impact`, Phase-2 stubs, …) | **not present** in CatalogAffiliateUpdates snapshot | New sources need an explicit AffiliateKey convention before writing schedule rows |
+| other registry ids (`cj`, `rakuten`, `impact`, Phase-2 stubs, ...) | **not present** in CatalogAffiliateUpdates snapshot | New sources need an explicit AffiliateKey convention before writing schedule rows |
 
 When reading or writing, normalize carefully: do not assume `ebay` == `eBay`
 without a translation layer.
@@ -136,8 +136,8 @@ decimal column in docs that the DB does not have.
 
 ## Read paths: `Part` / `Part2` and tracked links
 
-- **`dbo.Part`** — unions `MerchantCatalog`+`MerchantProducts` with `Products`.
-- **`dbo.Part2`** — reads **Products only** and rewrites affiliate links at
+- **`dbo.Part`** -- unions `MerchantCatalog`+`MerchantProducts` with `Products`.
+- **`dbo.Part2`** -- reads **Products only** and rewrites affiliate links at
   **read time**:
   - `paapi`: replaces `tag=mymodelflying-21` with
     `tag=mymodelflying-<lower(UserId)>-21`
@@ -149,23 +149,23 @@ double-tag URLs that will also pass through `Part2`, and must not assume
 `Part2` runs on S3 result JSON (it is a SQL read helper). See the Part2 note
 in tracked-links.md.
 
-## UserApiKeys (feed state — no secrets in docs)
+## UserApiKeys (feed state -- no secrets in docs)
 
 Feed progress per merchant lives on `UserApiKeys`: `api_key_type` (awin /
 wixStore / bigcommerce counts in snapshot), `LastStatus`, `CurrentBatchId`,
 `BatchStartedAt`, `TotalParts`, `count_inserted`, `count_updated`.
 
-**`api_key_data` holds credentials — never log, never paste into docs or
+**`api_key_data` holds credentials -- never log, never paste into docs or
 fixtures.**
 
 Ops note (snapshot): Products / RejectedAsins / CatalogAffiliateUpdates last
 wrote ~2026-09-23 19:12 (evening of RDS -> IONOS move). Several UserApiKeys
-rows stuck since ~21:02–21:14 with `LastStatus=500` and `CurrentBatchId` set.
+rows stuck since ~21:02-21:14 with `LastStatus=500` and `CurrentBatchId` set.
 
 ## Related docs
 
-- [endpoint-search.md](endpoint-search.md) — HTTP `catalogId` / category fields
-- [result-schema.md](result-schema.md) — JSON product shape + numeric price
-- [tracked-links.md](tracked-links.md) — create-time tracking vs Part2 rewrite
-- [identity.md](identity.md) — 8-char user / partner / club codes (FR-114)
-- [data-model.md](data-model.md) — full dbo inventory (FR-113, when present)
+- [endpoint-search.md](endpoint-search.md) -- HTTP `catalogId` / category fields
+- [result-schema.md](result-schema.md) -- JSON product shape + numeric price
+- [tracked-links.md](tracked-links.md) -- create-time tracking vs Part2 rewrite
+- [identity.md](identity.md) -- 8-char user / partner / club codes (FR-114)
+- [data-model.md](data-model.md) -- full dbo inventory (FR-113, when present)
