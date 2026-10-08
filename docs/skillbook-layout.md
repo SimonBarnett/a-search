@@ -98,6 +98,9 @@ Example blurb (paste into new provider `AGENTS.md` / onboarding skills):
 CAST IRON harvest: file every issue/FR/gap via
   Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...
 or POST https://irc.ntsa.uk/bob/v1/intake with the same -Repo.
+End-of-session harvest from a Bob worker seat:
+  Invoke-BobiverseHarvest.ps1 -Repo SimonBarnett/a-search -Book harvest-agent-skills ...
+(never without -Repo: the script defaults to SimonBarnett/bobiverse).
 Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 Never park a-search product lessons under bobiverse harvest/SKILL.md.
 ```

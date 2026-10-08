@@ -35,6 +35,11 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 
 ## How to report (strict order)
 
+0. **End-of-session fleet harvest (Bob worker seats):** always name this repo:
+   `Invoke-BobiverseHarvest.ps1 -Repo SimonBarnett/a-search -Book harvest-agent-skills -Summary "..." -Lesson "..."`
+   **Never** run `Invoke-BobiverseHarvest.ps1` without `-Repo SimonBarnett/a-search` for
+   a-search work: its built-in default is `SimonBarnett/bobiverse`, which files the lesson
+   in the wrong repo (bobiverse 2026-10-08 incident). Same for `Report-BobiverseIntakeIssue.ps1`.
 1. **Playbook / fix with write access** -> branch + **pull request** to
    `SimonBarnett/a-search`. Never `git push origin main` for harvest.
 2. **No GitHub write / API fail** -> Bobiverse intake webhook with
@@ -93,7 +98,7 @@ starts the next wave:
 
 | Tip class | Durable home |
 |-----------|----------------|
-| Behind-main merge, docs/mrb already-merged DONE PASS, CDK npm ci/synth | `SimonBarnett/bobiverse` `bobiverse-bob-job-mrb` (or a-search MRB seat notes) — FAIL-supersede if parked here as harvest tips |
+| Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
 | Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill — already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 

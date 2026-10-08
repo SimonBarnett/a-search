@@ -7,6 +7,9 @@
 >    `POST https://irc.ntsa.uk/bob/v1/intake`; offline it is queued locally and retried):
 >    `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest -Title "..." -Body "..."`
 >    Always pass an explicit `-Repo SimonBarnett/a-search` for this product.
+>    End-of-session harvest from a Bob worker seat:
+>    `Invoke-BobiverseHarvest.ps1 -Repo SimonBarnett/a-search -Book harvest-agent-skills -Summary "..." -Lesson "..."`
+>    (never without `-Repo`: the script defaults to SimonBarnett/bobiverse).
 > 3. BEFORE finishing ANY debugging session: promote playbooks via PR to this repo (or intake
 >    when push is blocked), then flush any offline intake queue.
 > 4. Never put a token, password, JWT secret, MSSQL password, affiliate API key, or private
@@ -26,9 +29,10 @@ You are in the **a-search** product root. Per-folder CWDs live under `entry/`,
 
 `Foundation: harvest-agent-skills (honesty box) -> report back to https://github.com/SimonBarnett/a-search.`
 
-Product playbooks (providers, Parts, CDK, entry JWT/fan-out) harvest **here**.
-Bobiverse fleet/chair/worker lessons go to `SimonBarnett/bobiverse` — do not park
-a-search product tips under bobiverse `harvest/SKILL.md`.
+Product playbooks (providers, Parts, CDK, entry JWT/fan-out) and every lesson learned
+while doing a-search work (FR, MRB, UAT, plan) harvest **here**. Only Bob fleet tooling
+defects (bob-worker exe, Jeeves, tray, intake service) go to `SimonBarnett/bobiverse` - do
+not park a-search tips under bobiverse `harvest/SKILL.md`.
 
 ## Tests and secrets (bobiverse#3304 / a-search#611)
 
