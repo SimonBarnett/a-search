@@ -224,7 +224,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_AVANTLINK_URL"
+      "queueEnv": "SQS_AVANTLINK_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "shopify",
