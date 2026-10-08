@@ -6,21 +6,19 @@ description: >
 
 # a-search etsy (live)
 
-Registry folder `providers/live/etsy`. Enabled: live=false, sandbox=false.
+Registry folder `providers/live/etsy`. Enabled: live=false, sandbox=false
+(CAST IRON stay-dark -- see `docs/phase2-providers.md`).
 
-## Search path
+## Search path (FR-075)
 
-Live etsy API client lands in a later FR.
+`src/search.js` -- injectable `httpRequest`, Open API v3 `GET /application/listings/active`
+with `x-api-key` / `ETSY_API_KEY`, fixture `fixtures/listings-ok.json`
+(`etsyProductAPI.results[]`). Stay-dark.
 
-## Worker stub
+## Normalize / worker
 
-`src/worker.js` exports `run(msg)`.
+Normalize (FR-076) and worker wiring (FR-077) are separate later FRs.
 
 ## Env
 
 See `.env.example`. Queue env: `SQS_ETSY_URL`.
-## Search path (FR-075)
-
-`src/search.js` — injectable `httpRequest`, Open API v3 `GET /application/listings/active`
-with `x-api-key` / `ETSY_API_KEY`, fixture `fixtures/listings-ok.json`
-(`etsyProductAPI.results[]`). Stay-dark.
