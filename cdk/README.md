@@ -88,3 +88,11 @@ Requires AWS credentials. Not required for FR-023.
 
 A future FR may add `template.yaml` for `sam validate`. Prefer CDK synth here
 until SAM CLI is standard on fleet seats.
+
+## Node version for synth / tests (FR-365)
+
+CDK synth and npm-test synth children need **Node 20+** (`node:` builtins).
+On marchhare the default PATH may resolve Node 8 first (`Cannot find module 'node:fs'`).
+
+- Prefer `D:\Tools\node\node.exe` (or `D:\tools\node`) on PATH, or set `A_SEARCH_NODE_BIN`.
+- Test helper `tests/helpers/runCdkSynth.js` prepends that Node directory to PATH for every `npm run synth` spawn.

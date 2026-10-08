@@ -10,7 +10,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -50,11 +50,7 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
   });
 
   it('npm run synth: template rules target onboarding function names', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');

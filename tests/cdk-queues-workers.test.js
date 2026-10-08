@@ -8,7 +8,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { runCdkSynth } = require('./helpers/runCdkSynth');
 const { loadRegistry } = require('../providers/loadRegistry');
 const { queueName } = require('../providers/queueName');
 
@@ -24,7 +24,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     );
     assert.match(text, /loadRegistry|enabledSources/);
     assert.match(text, /SqsEventSource/);
-    assert.match(text, /worker\.handler/);
+    assert.match(text, /workerHandlerPath\(src\)|worker\.handler/);
     // functionName template: a-search-${src.id}-worker-${env}
     assert.match(text, /a-search-\$\{src\.id\}-worker-\$\{env\}/);
   });
@@ -45,11 +45,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
   });
 
   it('npm run synth emits queues for each enabled id x env and event source', () => {
-    const r = spawnSync(
-      process.platform === 'win32' ? 'npm.cmd' : 'npm',
-      ['run', 'synth'],
-      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
-    );
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
 
     const templatePath = path.join(
