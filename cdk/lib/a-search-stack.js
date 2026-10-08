@@ -41,7 +41,7 @@ function queueUrlEnvKey(queueEnv, env) {
 /**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
- * maintainer EventBridge schedules.
+ * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding sandbox Lambdas (FR-056a/b/d).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -196,7 +196,7 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
-    // FR-056a: Awin onboarding live Lambda (A_SEARCH_ENV fixed).
+    // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
     const awinOnboardingCode = lambda.Code.fromAsset(
       path.join(
         __dirname,
@@ -220,6 +220,20 @@ class ASearchStack extends cdk.Stack {
         timeout: cdk.Duration.minutes(5),
         environment: {
           A_SEARCH_ENV: 'live',
+        },
+      },
+    );
+    const awinOnboardingSandbox = new lambda.Function(
+      this,
+      'AwinOnboardingSandboxFunction',
+      {
+        functionName: 'a-search-awin-onboarding-sandbox',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: awinOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'sandbox',
         },
       },
     );
@@ -252,21 +266,35 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
-    // FR-056e: daily EventBridge rules for onboarding Lambdas in this stack
+    // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
     const onboardingSchedule = events.Schedule.rate(cdk.Duration.days(1));
-    new events.Rule(this, 'AwinOnboardingLiveSchedule', {
+    const awinOnboardingLiveRule = new events.Rule(this, 'AwinOnboardingLiveSchedule', {
       ruleName: 'a-search-awin-onboarding-live',
       description: 'Daily drain for Awin onboarding A_SEARCH_ENV=live',
       schedule: onboardingSchedule,
       targets: [new targets.LambdaFunction(awinOnboardingLive)],
     });
-    new events.Rule(this, 'ImpactOnboardingSandboxSchedule', {
-      ruleName: 'a-search-impact-onboarding-sandbox',
-      description: 'Daily drain for Impact onboarding A_SEARCH_ENV=sandbox',
-      schedule: onboardingSchedule,
-      targets: [new targets.LambdaFunction(impactOnboardingSandbox)],
-    });
+    const awinOnboardingSandboxRule = new events.Rule(
+      this,
+      'AwinOnboardingSandboxSchedule',
+      {
+        ruleName: 'a-search-awin-onboarding-sandbox',
+        description: 'Daily drain for Awin onboarding A_SEARCH_ENV=sandbox',
+        schedule: onboardingSchedule,
+        targets: [new targets.LambdaFunction(awinOnboardingSandbox)],
+      },
+    );
+    const impactOnboardingSandboxRule = new events.Rule(
+      this,
+      'ImpactOnboardingSandboxSchedule',
+      {
+        ruleName: 'a-search-impact-onboarding-sandbox',
+        description: 'Daily drain for Impact onboarding A_SEARCH_ENV=sandbox',
+        schedule: onboardingSchedule,
+        targets: [new targets.LambdaFunction(impactOnboardingSandbox)],
+      },
+    );
 
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
@@ -282,14 +310,20 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'AwinOnboardingLiveFunctionName', {
       value: awinOnboardingLive.functionName,
     });
+    new cdk.CfnOutput(this, 'AwinOnboardingSandboxFunctionName', {
+      value: awinOnboardingSandbox.functionName,
+    });
     new cdk.CfnOutput(this, 'ImpactOnboardingSandboxFunctionName', {
       value: impactOnboardingSandbox.functionName,
     });
     new cdk.CfnOutput(this, 'AwinOnboardingLiveRuleName', {
-      value: 'a-search-awin-onboarding-live',
+      value: awinOnboardingLiveRule.ruleName,
+    });
+    new cdk.CfnOutput(this, 'AwinOnboardingSandboxRuleName', {
+      value: awinOnboardingSandboxRule.ruleName,
     });
     new cdk.CfnOutput(this, 'ImpactOnboardingSandboxRuleName', {
-      value: 'a-search-impact-onboarding-sandbox',
+      value: impactOnboardingSandboxRule.ruleName,
     });
   }
 }

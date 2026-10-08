@@ -17,15 +17,19 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
   - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
 - FR-056a: Awin onboarding live Lambda `a-search-awin-onboarding-live`
   (`A_SEARCH_ENV=live`, handler `handler.handler` from
-  `providers/local/awin/onboarding/src`).
-- FR-056d: Impact onboarding sandbox Lambda `a-search-impact-onboarding-sandbox`
-  (`A_SEARCH_ENV=sandbox`).
-- FR-056e: EventBridge onboarding schedules (daily / `Schedule.rate(Duration.days(1))`,
-  clubscan `Awin-Onboarding` intent):
-  - rule `a-search-awin-onboarding-live` → `a-search-awin-onboarding-live`
-  - rule `a-search-impact-onboarding-sandbox` → `a-search-impact-onboarding-sandbox`
-  Outputs: `AwinOnboardingLiveRuleName`, `ImpactOnboardingSandboxRuleName`.
-  Open twins (awin sandbox / impact live) add matching rules when those Lambdas land.
+  providers/local/awin/onboarding/src).
+- FR-056b: Awin onboarding sandbox Lambda -search-awin-onboarding-sandbox
+  (A_SEARCH_ENV=sandbox).
+- FR-056d: Impact onboarding sandbox Lambda -search-impact-onboarding-sandbox
+  (A_SEARCH_ENV=sandbox).
+- FR-056e: EventBridge onboarding schedules (daily / Schedule.rate(Duration.days(1)),
+  clubscan Awin-Onboarding intent):
+  - rule -search-awin-onboarding-live → Lambda -search-awin-onboarding-live
+  - rule -search-awin-onboarding-sandbox → Lambda -search-awin-onboarding-sandbox
+  - rule -search-impact-onboarding-sandbox → Lambda -search-impact-onboarding-sandbox
+  Outputs: AwinOnboardingLiveRuleName, AwinOnboardingSandboxRuleName,
+  ImpactOnboardingSandboxRuleName. Impact live rule follows when that Lambda lands.
+
 
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 Disabled shortlist providers are not synthesised until enabled.
