@@ -42,6 +42,7 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `intake/reportException.js` | FR-048a fatal → intake POST |
 | `intake/redact.js` | FR-048b `redactSecrets` for intake bodies |
 | `links/buildTrackedUrl.js` | FR-057a tracked URL helper |
+| `pacing/throttleBackoff.js` | FR-058d 407/429 classify + Retry-After backoff |
 | `mapping/mapping.js` | FR-054b upsert/get + FR-054e `listMappingsByUserId` (injectable store) |
 | `mapping/s3Store.js` | FR-054c durable S3 `{env}/_mapping/{userId}/{source}/{tokenHash}.json` (+ list prefix) |
 | `writeResults.js` | Results PutObject; FR-054d upserts mapping after success |
