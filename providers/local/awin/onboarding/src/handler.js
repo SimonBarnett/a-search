@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * Lambda entry for awin onboarding drain (FR-056b sandbox / FR-056a live).

@@ -1,8 +1,9 @@
-﻿'use strict';
+'use strict';
 
 /**
  * FR-056b: CDK awin onboarding Lambda sandbox (A_SEARCH_ENV=sandbox).
  * Schedules OOS (FR-056 parent / later slices).
+ * MRB #503 hostile: synth template pin + UTF-8 no-BOM.
  */
 
 const { describe, it } = require('node:test');
@@ -13,6 +14,23 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
+const handlerPath = path.join(
+  root,
+  'providers',
+  'local',
+  'awin',
+  'onboarding',
+  'src',
+  'handler.js',
+);
+
+function assertNoBom(filePath) {
+  const buf = fs.readFileSync(filePath);
+  assert.ok(
+    !(buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf),
+    `${path.relative(root, filePath)} must be UTF-8 without BOM`,
+  );
+}
 
 describe('FR-056b CDK awin onboarding Lambda sandbox', () => {
   it('stack source defines a-search-awin-onboarding-sandbox with A_SEARCH_ENV sandbox', () => {
@@ -23,27 +41,43 @@ describe('FR-056b CDK awin onboarding Lambda sandbox', () => {
       text,
       /providers[/\\]local[/\\]awin[/\\]onboarding[/\\]src|onboarding', 'src'|onboarding", "src"/,
     );
-    // Sandbox env stamp near the awin onboarding function (not only maintainer)
     const idx = text.indexOf('a-search-awin-onboarding-sandbox');
     assert.ok(idx > 0, 'functionName missing');
     const window = text.slice(Math.max(0, idx - 400), idx + 500);
     assert.match(window, /A_SEARCH_ENV:\s*'sandbox'/);
-    // Live sibling is a separate FR (#192 / FR-056a) — do not require it here
     assert.doesNotMatch(window, /A_SEARCH_ENV:\s*'live'/);
   });
 
-  it('onboarding src exports Lambda handler wrapping runOnce', () => {
-    const handlerPath = path.join(
-      root,
-      'providers',
-      'local',
-      'awin',
-      'onboarding',
-      'src',
-      'handler.js',
-    );
+  it('onboarding src exports Lambda handler wrapping runOnce (no BOM)', () => {
     assert.ok(fs.existsSync(handlerPath), 'missing handler.js');
+    assertNoBom(handlerPath);
+    assertNoBom(path.join(root, 'tests', 'fr056b-cdk-awin-onboarding-sandbox.test.js'));
     const { handler } = require(handlerPath);
     assert.equal(typeof handler, 'function');
+  });
+
+  it('npm run synth exits 0; template has sandbox function + A_SEARCH_ENV sandbox', () => {
+    const r = spawnSync(
+      process.platform === 'win32' ? 'npm.cmd' : 'npm',
+      ['run', 'synth'],
+      { cwd: root, encoding: 'utf8', shell: true, timeout: 180_000 },
+    );
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
+    const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+    const fns = Object.values(parsed.Resources || {}).filter(
+      (res) => res.Type === 'AWS::Lambda::Function',
+    );
+    const sandbox = fns.find(
+      (res) =>
+        res.Properties &&
+        res.Properties.FunctionName === 'a-search-awin-onboarding-sandbox',
+    );
+    assert.ok(sandbox, 'template must include a-search-awin-onboarding-sandbox');
+    assert.equal(
+      sandbox.Properties.Environment.Variables.A_SEARCH_ENV,
+      'sandbox',
+    );
   });
 });
