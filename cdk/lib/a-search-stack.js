@@ -158,7 +158,8 @@ class ASearchStack extends cdk.Stack {
     // FR-035: HTTP API POST /search â†’ entry (JWT still verified in Lambda)
     const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
       apiName: 'a-search',
-      description: 'a-search POST /search â†’ entry Lambda',
+      description:
+        'a-search POST /search + GET|POST /selftest + /account/performance → entry Lambda',
     });
     httpApi.addRoutes({
       path: '/search',
@@ -177,7 +178,7 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
-    // FR-059b: selftest stub (JWT verified in Lambda; real probes later)
+    // FR-059b/l: API Gateway /selftest next to /search (JWT in Lambda; probes OOS here)
     httpApi.addRoutes({
       path: '/selftest',
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
@@ -336,7 +337,7 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
       value: httpApi.apiEndpoint,
-      description: 'HTTP API base URL (POST {url}/search)',
+      description: 'HTTP API base URL (POST {url}/search; GET|POST {url}/selftest)',
     });
     new cdk.CfnOutput(this, 'MaintainerLiveFunctionName', {
       value: maintainerLive.functionName,
