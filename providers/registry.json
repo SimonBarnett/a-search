@@ -109,7 +109,10 @@
         "live": true,
         "sandbox": true
       },
-      "queueEnv": "SQS_AWIN_URL"
+      "queueEnv": "SQS_AWIN_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      }
     },
     {
       "id": "impact",

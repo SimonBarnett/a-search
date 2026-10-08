@@ -39,7 +39,7 @@ function queueUrlEnvKey(queueEnv, env) {
 }
 
 /**
- * FR-058e/f/g: amazon+ebay+rakuten SQS event-source maxConcurrency from registry
+ * FR-058e/f/g/i: amazon+ebay+rakuten+awin SQS event-source maxConcurrency from registry
  * rateLimit (safe default). AWS EventSourceMapping ScalingConfig.MaximumConcurrency
  * valid range is 2-1000, so registry 1 clamps to 2. Other providers OOS.
  * @param {{ id?: string, rateLimit?: { maxConcurrency?: number } }} src
@@ -48,7 +48,10 @@ function queueUrlEnvKey(queueEnv, env) {
 function sqsMaxConcurrencyForSource(src) {
   if (
     !src ||
-    (src.id !== 'amazon' && src.id !== 'ebay' && src.id !== 'rakuten')
+    (src.id !== 'amazon' &&
+      src.id !== 'ebay' &&
+      src.id !== 'rakuten' &&
+      src.id !== 'awin')
   ) {
     return undefined;
   }
