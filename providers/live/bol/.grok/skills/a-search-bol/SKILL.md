@@ -11,7 +11,7 @@ Registry folder `providers/live/bol`. Enabled: live=false, sandbox=false
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_BOL_URL`. Creds: `BOL_API_KEY` (or `BOL_CLIENT_ID`).
+See `.env.example`. Queue env: `SQS_BOL_URL`. Creds: `BOL_API_KEY` (or `BOL_CLIENT_ID`). Tracking: `BOL_TRACKING_ID`.
 
 ## Search path (FR-079)
 
@@ -19,9 +19,26 @@ See `.env.example`. Queue env: `SQS_BOL_URL`. Creds: `BOL_API_KEY` (or `BOL_CLIE
 with `X-API-KEY` / `BOL_API_KEY`, fixture `fixtures/products-ok.json`
 (`bolProductAPI.products[]`). Stay-dark.
 
-## Normalize / worker
+## Normalize (FR-080)
 
-Normalize (FR-080) and worker wiring (FR-081) are separate later FRs.
+`src/normalize.js` maps catalog JSON to `worker/lib/normalizeProduct`:
+
+| Bol field | Product field |
+|-----------|---------------|
+| `id` / `ean` | `id` |
+| `title` | `title` |
+| `url` | `url` via `buildTrackedUrl` + `BOL_TRACKING_ID` |
+| `imageUrl` | `imageUrl` |
+| `offerPrice` | `price` |
+| `currency` | `currency` |
+| `seller` | `description` |
+
+Accepts `bolProductAPI.products[]` (FR-079 fixture) and top-level `products[]`.
+Partial rows without id+title are skipped (no throw). Stay-dark.
+
+## Worker
+
+Worker wiring (FR-081) is a later FR.
 
 ## Selftest
 
