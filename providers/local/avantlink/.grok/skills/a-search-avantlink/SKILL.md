@@ -12,16 +12,22 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/avantlink`. Enabled: live=false, sandbox=false.
+Registry folder `providers/local/avantlink`. Enabled: live=false, sandbox=false
+(CAST IRON stay-dark -- see `docs/phase2-providers.md`).
 
-## Search path
+## Search path (FR-098)
 
-SELECT dbo.Parts WHERE Source='avantlink' (maintainer owns feeds).
+SELECT dbo.Parts WHERE Source='avantlink' AND DeletedAt IS NULL (maintainer owns feeds).
+`src/queryParts.js` -- `defaultQueryParts` / `mssqlConfigFromEnv` with injectable
+`connect` (no live SQL). Stay-dark.
 
-## Worker stub
+## Worker (FR-098)
 
-`src/worker.js` exports `run(msg)`.
+`src/worker.js` exports `run(msg, deps)` / `handler` / `normalizePart`.
+Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `AVANTLINK_AFFILIATE_ID`
+-> query param `avad`, then `writeResults`. Stay-dark; no "not wired" stub on the happy path.
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_AVANTLINK_URL`.
+See `.env.example`. Queue env: `SQS_AVANTLINK_URL`. Placeholders only:
+`MSSQL_*`, `AVANTLINK_AFFILIATE_ID=`.
