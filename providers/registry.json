@@ -248,7 +248,11 @@
         "live": false,
         "sandbox": false
       },
-      "queueEnv": "SQS_WIX_URL"
+      "queueEnv": "SQS_WIX_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      }
     },
     {
       "id": "woocommerce",

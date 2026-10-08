@@ -29,5 +29,6 @@ Provider CWD for registry id `wix` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` - `run(msg)` stub (FR-607)
+- `src/worker.js` + `src/queryParts.js` - MSSQL Parts worker (FR-107)
+- `src/selftestProbe.js` - injectable Parts / `WIX_API_TOKEN` probe (FR-108)
 - `.env.example` - placeholders
