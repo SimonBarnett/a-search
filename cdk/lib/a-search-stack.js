@@ -72,7 +72,7 @@ function sqsMaxConcurrencyForSource(src) {
 /**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
- * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding sandbox Lambdas (FR-056a/b/d).
+ * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
  */
 class ASearchStack extends cdk.Stack {
@@ -309,6 +309,23 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
+
+    // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
+    const impactOnboardingLive = new lambda.Function(
+      this,
+      'ImpactOnboardingLiveFunction',
+      {
+        functionName: 'a-search-impact-onboarding-live',
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'handler.handler',
+        code: impactOnboardingCode,
+        timeout: cdk.Duration.minutes(5),
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+      },
+    );
+
     // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
     const onboardingSchedule = events.Schedule.rate(cdk.Duration.days(1));
@@ -358,6 +375,9 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ImpactOnboardingSandboxFunctionName', {
       value: impactOnboardingSandbox.functionName,
+    });
+    new cdk.CfnOutput(this, 'ImpactOnboardingLiveFunctionName', {
+      value: impactOnboardingLive.functionName,
     });
     new cdk.CfnOutput(this, 'AwinOnboardingLiveRuleName', {
       value: awinOnboardingLiveRule.ruleName,
