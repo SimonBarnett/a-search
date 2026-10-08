@@ -217,7 +217,11 @@ async function searchAmazon(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
   const json = await httpRequest(signed);
-  return normalizeSearchResponse(json);
+  return normalizeSearchResponse(json, {
+    userId: msg && msg.userId,
+    env: msg && msg.env,
+    envVars: env,
+  });
 }
 
 module.exports = {

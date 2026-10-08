@@ -95,7 +95,11 @@ describe('FR-042 result schema + normalizeProduct', () => {
       '../providers/live/amazon/src/normalize',
     );
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-    const products = normalizeSearchResponse(fixture);
+    const products = normalizeSearchResponse(fixture, {
+      userId: 'U-SCHEMA',
+      env: 'sandbox',
+      envVars: { AMAZON_PARTNER_TAG: 'tag-20' },
+    });
     assert.equal(products.length, 2);
     for (const p of products) {
       assertProductSchema(p);
@@ -103,5 +107,7 @@ describe('FR-042 result schema + normalizeProduct', () => {
     }
     assert.equal(products[0].id, 'B0TESTASIN1');
     assert.equal(products[0].title, 'Fixture Wireless Headphones');
+    assert.match(products[0].url, /userId=U-SCHEMA/);
+    assert.match(products[0].url, /tag=tag-20/);
   });
 });
