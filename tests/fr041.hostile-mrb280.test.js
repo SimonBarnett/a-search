@@ -47,6 +47,7 @@ describe('MRB #280 hostile: FR-041 cj GraphQL search', () => {
             env: {
               A_SEARCH_ENV: 'sandbox',
               CJ_API_TOKEN: 't',
+              CJ_WEBSITE_ID: 'web-test',
               S3_RESULTS_BUCKET: 'b',
             },
             httpRequest: async () => {
@@ -79,6 +80,7 @@ describe('MRB #280 hostile: FR-041 cj GraphQL search', () => {
             A_SEARCH_ENV: 'sandbox',
             CJ_API_TOKEN: 't',
             CJ_COMPANY_ID: 'CID-99',
+            CJ_WEBSITE_ID: 'web-test',
             S3_RESULTS_BUCKET: 'b',
           },
           httpRequest: async (req) => {
