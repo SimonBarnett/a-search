@@ -19,8 +19,9 @@ results write.
 
 ## Read first
 
-1. `.grok/skills/a-search-cj/SKILL.md`
-2. Repo docs: `docs/endpoint-search.md`, `docs/environments.md`
+1. `.grok/skills/a-search-cj-onboarding/SKILL.md` — obtain `.env` / sandbox vs live (FR-060f)
+2. `.grok/skills/a-search-cj/SKILL.md` — GraphQL runtime worker
+3. Repo docs: `docs/endpoint-search.md`, `docs/environments.md`, `docs/provider-onboarding-skills.md`
 
 ## CAST IRON
 
