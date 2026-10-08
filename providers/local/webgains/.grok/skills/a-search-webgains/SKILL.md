@@ -28,6 +28,21 @@ Registry folder `providers/local/webgains`. Enabled: live=false, sandbox=false
 `wgcampaignid`) -> `writeResults`. Optional `handler` for SQS Records.
 Stay-dark; no "not wired" stub on the happy path.
 
+## Maintainer feed-parser (FR-088)
+
+`src/parseFeed.js` -- `parseWebgainsFeedRows(body, meta)` / `webgainsParseFeedRowsHook`
+for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
+Maps Webgains product CSV/JSON into Parts staging columns
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
+
+Credential / locator placeholders (never commit real values):
+
+- `WEBGAINS_FEED_URL` -- optional default feed locator (PartFeedKeys.FeedUrl wins)
+- `WEBGAINS_API_KEY` or `WEBGAINS_FEED_TOKEN` -- feed fetch auth
+- `WEBGAINS_PUBLISHER_ID` -- account / programme id when required
+
+`assertWebgainsFeedCreds(env)` throws `webgains_missing_feed_credentials` when the API key is absent.
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_WEBGAINS_URL`.
