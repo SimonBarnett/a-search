@@ -19,8 +19,9 @@ results write.
 
 ## Read first
 
-1. `.grok/skills/a-search-rakuten/SKILL.md` — XML + rate limits
-2. Repo docs: `docs/endpoint-search.md`, `docs/environments.md`
+1. `.grok/skills/a-search-rakuten-onboarding/SKILL.md` — obtain `.env` / sandbox vs live (FR-060e)
+2. `.grok/skills/a-search-rakuten/SKILL.md` — XML + rate limits (runtime)
+3. Repo docs: `docs/endpoint-search.md`, `docs/environments.md`, `docs/provider-onboarding-skills.md`
 
 ## CAST IRON
 
