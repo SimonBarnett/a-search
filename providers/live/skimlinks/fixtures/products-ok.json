@@ -1,23 +1,31 @@
 {
-  "query": "headphones",
-  "products": [
-    {
-      "id": "sl-fix-001",
-      "title": "Fixture Wireless Headphones",
-      "price": 49.99,
-      "currency": "GBP",
-      "merchant": "Fixture Shop A",
-      "url": "https://example.test/skimlinks/product/sl-fix-001",
-      "image": "https://example.test/img/sl-fix-001.jpg"
-    },
-    {
-      "id": "sl-fix-002",
-      "title": "Fixture Noise-Cancel Headphones",
-      "price": 129.0,
-      "currency": "GBP",
-      "merchant": "Fixture Shop B",
-      "url": "https://example.test/skimlinks/product/sl-fix-002",
-      "image": "https://example.test/img/sl-fix-002.jpg"
-    }
-  ]
+  "skimlinksProductAPI": {
+    "numFound": 2,
+    "start": 0,
+    "rows": 20,
+    "products": [
+      {
+        "id": "sk-fix-001",
+        "title": "Fixture Ultrabook Laptop",
+        "price": 89900,
+        "currency": "GBP",
+        "merchant": "Fixture Merchant A",
+        "merchant_id": 1001,
+        "url": "https://example.test/skimlinks/product/sk-fix-001",
+        "image_url": "https://example.test/img/sk-fix-001.jpg",
+        "country": "UK"
+      },
+      {
+        "id": "sk-fix-002",
+        "title": "Fixture Gaming Laptop",
+        "price": 129900,
+        "currency": "GBP",
+        "merchant": "Fixture Merchant B",
+        "merchant_id": 1002,
+        "url": "https://example.test/skimlinks/product/sk-fix-002",
+        "image_url": "https://example.test/img/sk-fix-002.jpg",
+        "country": "UK"
+      }
+    ]
+  }
 }

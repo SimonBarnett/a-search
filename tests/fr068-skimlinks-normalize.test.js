@@ -54,12 +54,13 @@ describe('FR-068 skimlinks normalize', () => {
       assert.ok(p.id);
       assert.ok(p.title);
     }
-    assert.equal(products[0].id, 'sl-fix-001');
-    assert.equal(products[0].title, 'Fixture Wireless Headphones');
-    assert.equal(products[0].price, 49.99);
+    // FR-067 recorded fixture (skimlinksProductAPI; price minor units)
+    assert.equal(products[0].id, 'sk-fix-001');
+    assert.equal(products[0].title, 'Fixture Ultrabook Laptop');
+    assert.equal(products[0].price, 899);
     assert.equal(products[0].currency, 'GBP');
     assert.match(String(products[0].url), /example\.test\/skimlinks/);
-    assert.equal(products[0].description, 'Fixture Shop A');
+    assert.equal(products[0].description, 'Fixture Merchant A');
   });
 
   it('empty/partial payloads yield empty or filtered products without throw', () => {

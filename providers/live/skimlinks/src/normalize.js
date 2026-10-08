@@ -103,7 +103,7 @@ function normalizeSkimlinksProduct(item, track) {
       imageRaw != null && String(imageRaw).trim() !== ''
         ? String(imageRaw)
         : undefined,
-    price: item.price != null ? Number(item.price) : undefined,
+    price: coerceSkimlinksPrice(item.price),
     currency:
       item.currency != null && String(item.currency).trim() !== ''
         ? String(item.currency)
@@ -123,9 +123,29 @@ function normalizeSkimlinksProduct(item, track) {
  * @param {object} body
  * @returns {object[]}
  */
+/**
+ * Product API often returns integer minor units (89900 = 899.00).
+ * Major-unit decimals (49.99) pass through.
+ * @param {unknown} raw
+ * @returns {number|undefined}
+ */
+function coerceSkimlinksPrice(raw) {
+  if (raw == null || String(raw).trim() === '') return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  if (Number.isInteger(n) && Math.abs(n) >= 1000) return n / 100;
+  return n;
+}
+
 function productsFromBody(body) {
   if (!body || typeof body !== 'object') return [];
   if (Array.isArray(body.products)) return body.products;
+  if (
+    body.skimlinksProductAPI &&
+    Array.isArray(body.skimlinksProductAPI.products)
+  ) {
+    return body.skimlinksProductAPI.products;
+  }
   if (
     body.skimlinksProduct &&
     Array.isArray(body.skimlinksProduct.products)
@@ -175,5 +195,6 @@ module.exports = {
   normalizeSkimlinksProduct,
   normalizeSearchResponse,
   productsFromBody,
+  coerceSkimlinksPrice,
   TrackedUrlError,
 };

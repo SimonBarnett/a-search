@@ -11,8 +11,9 @@ Registry folder `providers/live/skimlinks`. Enabled: live=false, sandbox=false
 
 ## Search path (FR-067)
 
-`src/search.js` lands in FR-067. Recorded normalize fixture:
-`fixtures/products-ok.json`.
+`src/search.js` — injectable `httpRequest`, Product API `/product/query` with
+`SKIMLINKS_API_KEY`, fixture `fixtures/products-ok.json`
+(`skimlinksProductAPI.products[]`). Stay-dark.
 
 ## Normalize (FR-068)
 
@@ -24,9 +25,10 @@ Registry folder `providers/live/skimlinks`. Enabled: live=false, sandbox=false
 | `title` / `name` | `title` |
 | `url` / `deep_link` / `click_url` | `url` via `buildTrackedUrl` + `SKIMLINKS_PUBLISHER_ID` |
 | `image` / `image_url` | `imageUrl` |
-| `price` / `currency` | `price` / `currency` |
+| `price` / `currency` | `price` / `currency` (integer ≥1000 treated as minor units /100) |
 | `merchant` / `merchant_name` | `description` (optional) |
 
+Accepts top-level `products[]` or `skimlinksProductAPI.products[]`.
 Partial rows without id+title are skipped (no throw).
 
 ## Worker stub
@@ -35,4 +37,5 @@ Partial rows without id+title are skipped (no throw).
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_SKIMLINKS_URL`.
+See `.env.example`. Queue env: `SQS_SKIMLINKS_URL`. Requires
+`SKIMLINKS_PUBLISHER_ID` for tracked product URLs.
