@@ -17,6 +17,7 @@ const {
 } = require('./performance');
 const { aggregateClicksVisits } = require('./performanceClicksVisits');
 const { aggregateSales } = require('./performanceSales');
+const { aggregateTop } = require('./performanceTop');
 const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
@@ -290,6 +291,23 @@ async function handlePerformance(event, deps = {}) {
   }
   payload.currencies = Array.isArray(saleStats && saleStats.currencies)
     ? saleStats.currencies
+    : [];
+
+  // FR-053e: top links / merchants (scoped to userId+env; date filter FR-053f).
+  const aggregateTopFn =
+    typeof deps.aggregateTop === 'function' ? deps.aggregateTop : aggregateTop;
+  const topStats = await aggregateTopFn({
+    userId,
+    env: range.env,
+    limit: deps.topLimit,
+    events: deps.topEvents,
+    listEvents: deps.listTopEvents,
+  });
+  payload.topLinks = Array.isArray(topStats && topStats.topLinks)
+    ? topStats.topLinks
+    : [];
+  payload.topMerchants = Array.isArray(topStats && topStats.topMerchants)
+    ? topStats.topMerchants
     : [];
 
   return jsonResponse(200, payload);
