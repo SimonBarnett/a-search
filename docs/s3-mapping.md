@@ -49,34 +49,34 @@ Canonical example:
 `token` and `tokenOrClickRef` are the same logical value; writers may emit
 either or both. Readers accept both names.
 
-## Store choice (LOCKED options)
+## Store choice (LOCKED — FR-054c)
 
-Backing store is **one** of:
+**LOCKED:** S3 inventory JSON under the results bucket / rclone root:
 
-| Option | Layout / table | When to prefer |
-|--------|----------------|----------------|
-| **MSSQL** | Dedicated mapping table (DDL in a later FR) | Performance queries need joins / indexes by `userId`+`env`+`token` |
-| **S3 inventory JSON** | `{env}/_mapping/{userId}/…` under the results bucket / rclone root | Simple durable file inventory; no SQL join required yet |
+```text
+{env}/_mapping/{userId}/{source}/{tokenHash}.json
+```
 
-Prefer **MSSQL** when FR-053 / FR-054e list-by-userId needs efficient joins.
-Prefer **S3 `{env}/_mapping/{userId}/`** when the fleet already treats the
-results bucket as the source of truth and SQL is not ready.
+- `tokenHash` = first 40 hex chars of SHA-256(`tokenOrClickRef`) (safe object name)
+- Bucket: `S3_RESULTS_BUCKET` (same family as results / signups)
+- Adapter: `shared/mapping/s3Store.js` (`createS3MappingStore`)
+- Natural key for upsert/get remains `(env, userId, source, tokenOrClickRef)`
 
-Either choice must:
+MSSQL table store is **not** used for FR-054c (may be revisited later if
+list-by-userId joins demand it). Memory-only / Lambda locals are **forbidden**.
 
-- Persist across Lambda invokes (not memory-only)
-- Isolate **live** vs **sandbox** (`env` column or path prefix)
-- Support upsert by natural key `(env, userId, source, tokenOrClickRef)` (exact
-  unique key confirmed in FR-054b/c)
+Must:
 
-Do **not** invent a third ephemeral store.
+- Persist across Lambda invokes / new module instances (S3, not process RAM)
+- Isolate **live** vs **sandbox** via the `{env}/` prefix
+- Support upsert by natural key through `upsertMapping` + `createS3MappingStore`
 
 ## Writers / readers (pointers — OOS here)
 
 | Role | Later FR | Intent |
 |------|----------|--------|
 | Upsert / get API module | FR-054b | `shared/mapping/` or `services/s3-mapping/` |
-| Durable backing wire | FR-054c | MSSQL **or** S3 `_mapping/` |
+| Durable backing wire | FR-054c | S3 `{env}/_mapping/...` (**LOCKED**) |
 | `writeResults` registers entry | FR-054d | Search result write path |
 | List by `userId` for performance | FR-054e | FR-053 read model |
 | Live/sandbox isolation test | FR-054f | Rows/prefixes never mix |

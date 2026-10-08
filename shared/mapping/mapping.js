@@ -8,7 +8,8 @@
  *     catalogId?, searchId?, createdAt?, meta? }
  *
  * Natural key: (env, userId, source, tokenOrClickRef).
- * Backing store choice is FR-054c — callers inject `deps.store`.
+ * Durable store (FR-054c LOCKED): S3 via `createS3MappingStore` in
+ * `./s3Store.js` — callers inject `deps.store` (`get`/`put`).
  * List-by-userId is FR-054e (out of scope).
  */
 
