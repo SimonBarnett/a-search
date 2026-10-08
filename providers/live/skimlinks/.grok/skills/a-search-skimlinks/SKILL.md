@@ -19,3 +19,6 @@ Live skimlinks API client lands in a later FR.
 ## Env
 
 See `.env.example`. Queue env: `SQS_SKIMLINKS_URL`.
+## Search path (FR-067)
+
+`src/search.js` — injectable `httpRequest`, Product API `/product/query` with `SKIMLINKS_API_KEY`, fixture `fixtures/products-ok.json`. Stay-dark.
