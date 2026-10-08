@@ -16,6 +16,8 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
   - `a-search-maintainer-live` â†’ Lambda with `A_SEARCH_ENV=live`
   - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
 
+- FR-056d: Impact onboarding sandbox Lambda `a-search-impact-onboarding-sandbox` (A_SEARCH_ENV=sandbox). EventBridge rules are FR-056e.
+
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 Disabled shortlist providers are not synthesised until enabled.
 
