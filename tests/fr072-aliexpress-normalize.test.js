@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-072: aliexpress normalize.js → shared product schema (stay-dark).
+ * FR-072: aliexpress normalize.js -> shared product schema (stay-dark).
  */
 
 const { describe, it } = require('node:test');
@@ -46,6 +46,7 @@ describe('FR-072 aliexpress normalize', () => {
     const { normalizeSearchResponse } = require(normalizePath);
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+    assert.ok(fixture.aliexpressProductAPI);
     const products = normalizeSearchResponse(fixture, track);
     assert.equal(products.length, 2);
     for (const p of products) {
@@ -69,13 +70,13 @@ describe('FR-072 aliexpress normalize', () => {
     assert.deepEqual(normalizeSearchResponse(null, track), []);
     assert.deepEqual(normalizeSearchResponse({}, track), []);
     assert.deepEqual(
-      normalizeSearchResponse({ result: { products: [] } }, track),
+      normalizeSearchResponse({ aliexpressProductAPI: { products: [] } }, track),
       [],
     );
     assert.deepEqual(
       normalizeSearchResponse(
         {
-          result: {
+          aliexpressProductAPI: {
             products: [
               { product_id: '', product_title: 'x' },
               { product_title: 'no-id' },

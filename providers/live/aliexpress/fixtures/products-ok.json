@@ -11,7 +11,8 @@
         "target_sale_price_currency": "GBP",
         "product_main_image_url": "https://example.test/img/ae-fix-001.jpg",
         "promotion_link": "https://example.test/aliexpress/product/ae-fix-001",
-        "shop_id": 9001
+        "shop_id": 9001,
+        "shop_name": "Fixture AE Shop A"
       },
       {
         "product_id": "ae-fix-002",
@@ -20,7 +21,8 @@
         "target_sale_price_currency": "GBP",
         "product_main_image_url": "https://example.test/img/ae-fix-002.jpg",
         "promotion_link": "https://example.test/aliexpress/product/ae-fix-002",
-        "shop_id": 9002
+        "shop_id": 9002,
+        "shop_name": "Fixture AE Shop B"
       }
     ]
   }

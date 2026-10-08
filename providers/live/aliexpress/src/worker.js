@@ -2,7 +2,7 @@
 
 /**
  * AliExpress live provider worker (FR-073).
- * search → normalize → writeResults (injectable HTTP + putObject).
+ * search -> normalize -> writeResults (injectable HTTP + putObject).
  * Stay-dark: registry enabled remains false until a later enable FR.
  */
 
