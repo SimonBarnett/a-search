@@ -29,5 +29,6 @@ Provider CWD for registry id `webgains` (`kind: local`).
 
 ## Shape
 
-- `src/worker.js` — `run(msg)` stub
-- `.env.example` — placeholders
+- `src/queryParts.js` — MSSQL Parts SELECT (FR-086)
+- `src/worker.js` — `run(msg)` queryParts → writeResults (FR-086)
+- `.env.example` — MSSQL + `WEBGAINS_CAMPAIGN_ID` placeholders
