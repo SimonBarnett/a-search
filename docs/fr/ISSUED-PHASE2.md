@@ -1,0 +1,60 @@
+﻿# Phase-2 FRs filed on SimonBarnett/a-search
+
+Filed by plan-20261008-095625. Stay-dark: enabled stays false.
+
+| Code | Issue | Title |
+|------|------|-------|
+| FR-061 | [#614](https://github.com/SimonBarnett/a-search/issues/614) | FR-061: Phase-2 provider completion docs + stay-dark rule |
+| FR-062 | [#615](https://github.com/SimonBarnett/a-search/issues/615) | FR-062: Live stub providers: add a-search-id-onboarding skillbooks |
+| FR-063 | [#616](https://github.com/SimonBarnett/a-search/issues/616) | FR-063: kelkoo search.js client + recorded fixtures (enabled stays false) |
+| FR-064 | [#617](https://github.com/SimonBarnett/a-search/issues/617) | FR-064: kelkoo normalize.js to shared product schema |
+| FR-065 | [#618](https://github.com/SimonBarnett/a-search/issues/618) | FR-065: kelkoo worker.js wires search to normalize to writeResults (replace stub) |
+| FR-066 | [#619](https://github.com/SimonBarnett/a-search/issues/619) | FR-066: kelkoo selftestProbe + rateLimit registry rows |
+| FR-067 | [#620](https://github.com/SimonBarnett/a-search/issues/620) | FR-067: skimlinks search.js client + recorded fixtures (enabled stays false) |
+| FR-068 | [#621](https://github.com/SimonBarnett/a-search/issues/621) | FR-068: skimlinks normalize.js to shared product schema |
+| FR-069 | [#622](https://github.com/SimonBarnett/a-search/issues/622) | FR-069: skimlinks worker.js wires search to normalize to writeResults (replace stub) |
+| FR-070 | [#623](https://github.com/SimonBarnett/a-search/issues/623) | FR-070: skimlinks selftestProbe + rateLimit registry rows |
+| FR-071 | [#624](https://github.com/SimonBarnett/a-search/issues/624) | FR-071: aliexpress search.js client + recorded fixtures (enabled stays false) |
+| FR-072 | [#625](https://github.com/SimonBarnett/a-search/issues/625) | FR-072: aliexpress normalize.js to shared product schema |
+| FR-073 | [#626](https://github.com/SimonBarnett/a-search/issues/626) | FR-073: aliexpress worker.js wires search to normalize to writeResults (replace stub) |
+| FR-074 | [#627](https://github.com/SimonBarnett/a-search/issues/627) | FR-074: aliexpress selftestProbe + rateLimit registry rows |
+| FR-075 | [#628](https://github.com/SimonBarnett/a-search/issues/628) | FR-075: etsy search.js client + recorded fixtures (enabled stays false) |
+| FR-076 | [#629](https://github.com/SimonBarnett/a-search/issues/629) | FR-076: etsy normalize.js to shared product schema |
+| FR-077 | [#630](https://github.com/SimonBarnett/a-search/issues/630) | FR-077: etsy worker.js wires search to normalize to writeResults (replace stub) |
+| FR-078 | [#631](https://github.com/SimonBarnett/a-search/issues/631) | FR-078: etsy selftestProbe + rateLimit registry rows |
+| FR-079 | [#632](https://github.com/SimonBarnett/a-search/issues/632) | FR-079: bol search.js client + recorded fixtures (enabled stays false) |
+| FR-080 | [#633](https://github.com/SimonBarnett/a-search/issues/633) | FR-080: bol normalize.js to shared product schema |
+| FR-081 | [#634](https://github.com/SimonBarnett/a-search/issues/634) | FR-081: bol worker.js wires search to normalize to writeResults (replace stub) |
+| FR-082 | [#635](https://github.com/SimonBarnett/a-search/issues/635) | FR-082: bol selftestProbe + rateLimit registry rows |
+| FR-083 | [#636](https://github.com/SimonBarnett/a-search/issues/636) | FR-083: partnerize queryParts MSSQL SELECT + worker replace stub |
+| FR-084 | [#637](https://github.com/SimonBarnett/a-search/issues/637) | FR-084: partnerize selftestProbe + rateLimit (stay dark) |
+| FR-085 | [#638](https://github.com/SimonBarnett/a-search/issues/638) | FR-085: partnerize maintainer feed-parser hook stub to contract |
+| FR-086 | [#639](https://github.com/SimonBarnett/a-search/issues/639) | FR-086: webgains queryParts MSSQL SELECT + worker replace stub |
+| FR-087 | [#640](https://github.com/SimonBarnett/a-search/issues/640) | FR-087: webgains selftestProbe + rateLimit (stay dark) |
+| FR-088 | [#641](https://github.com/SimonBarnett/a-search/issues/641) | FR-088: webgains maintainer feed-parser hook stub to contract |
+| FR-089 | [#642](https://github.com/SimonBarnett/a-search/issues/642) | FR-089: tradedoubler queryParts MSSQL SELECT + worker replace stub |
+| FR-090 | [#643](https://github.com/SimonBarnett/a-search/issues/643) | FR-090: tradedoubler selftestProbe + rateLimit (stay dark) |
+| FR-091 | [#644](https://github.com/SimonBarnett/a-search/issues/644) | FR-091: tradedoubler maintainer feed-parser hook stub to contract |
+| FR-092 | [#645](https://github.com/SimonBarnett/a-search/issues/645) | FR-092: admitad queryParts MSSQL SELECT + worker replace stub |
+| FR-093 | [#646](https://github.com/SimonBarnett/a-search/issues/646) | FR-093: admitad selftestProbe + rateLimit (stay dark) |
+| FR-094 | [#647](https://github.com/SimonBarnett/a-search/issues/647) | FR-094: admitad maintainer feed-parser hook stub to contract |
+| FR-095 | [#648](https://github.com/SimonBarnett/a-search/issues/648) | FR-095: flexoffers queryParts MSSQL SELECT + worker replace stub |
+| FR-096 | [#649](https://github.com/SimonBarnett/a-search/issues/649) | FR-096: flexoffers selftestProbe + rateLimit (stay dark) |
+| FR-097 | [#650](https://github.com/SimonBarnett/a-search/issues/650) | FR-097: flexoffers maintainer feed-parser hook stub to contract |
+| FR-098 | [#651](https://github.com/SimonBarnett/a-search/issues/651) | FR-098: avantlink queryParts MSSQL SELECT + worker replace stub |
+| FR-099 | [#652](https://github.com/SimonBarnett/a-search/issues/652) | FR-099: avantlink selftestProbe + rateLimit (stay dark) |
+| FR-100 | [#653](https://github.com/SimonBarnett/a-search/issues/653) | FR-100: avantlink maintainer feed-parser hook stub to contract |
+| FR-101 | [#654](https://github.com/SimonBarnett/a-search/issues/654) | FR-101: shopify Admin/REST catalogue client + fixtures (stay dark) |
+| FR-102 | [#655](https://github.com/SimonBarnett/a-search/issues/655) | FR-102: shopify normalize + Parts upsert contract |
+| FR-103 | [#656](https://github.com/SimonBarnett/a-search/issues/656) | FR-103: shopify worker.js local search replace stub |
+| FR-104 | [#657](https://github.com/SimonBarnett/a-search/issues/657) | FR-104: shopify selftestProbe + rateLimit (stay dark) |
+| FR-105 | [#658](https://github.com/SimonBarnett/a-search/issues/658) | FR-105: wix Admin/REST catalogue client + fixtures (stay dark) |
+| FR-106 | [#659](https://github.com/SimonBarnett/a-search/issues/659) | FR-106: wix normalize + Parts upsert contract |
+| FR-107 | [#660](https://github.com/SimonBarnett/a-search/issues/660) | FR-107: wix worker.js local search replace stub |
+| FR-108 | [#661](https://github.com/SimonBarnett/a-search/issues/661) | FR-108: wix selftestProbe + rateLimit (stay dark) |
+| FR-109 | [#662](https://github.com/SimonBarnett/a-search/issues/662) | FR-109: woocommerce Admin/REST catalogue client + fixtures (stay dark) |
+| FR-110 | [#663](https://github.com/SimonBarnett/a-search/issues/663) | FR-110: woocommerce normalize + Parts upsert contract |
+| FR-111 | [#664](https://github.com/SimonBarnett/a-search/issues/664) | FR-111: woocommerce worker.js local search replace stub |
+| FR-112 | [#665](https://github.com/SimonBarnett/a-search/issues/665) | FR-112: woocommerce selftestProbe + rateLimit (stay dark) |
+
+Count: 52

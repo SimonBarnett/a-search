@@ -1,4 +1,4 @@
-# a-search
+﻿# a-search
 
 JWT-authenticated search entry for Club Madeira affiliate / local parts
 discovery. One `POST /search` accepts the job (**HTTP 200**) and fans out
@@ -31,6 +31,8 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Legacy madeira-awin-clubscan](https://github.com/SimonBarnett/AWS/tree/main/Lambdas/madeira-awin-clubscan) (daily onboarding / signup report — read-only; HTML email stays in AWS until cutover)
 - [Impact pending-onboard queue](docs/impact-pending-onboard-queue.md) (FR-051a — API UNKNOWN fallback)
 - [Provider onboarding skills](docs/provider-onboarding-skills.md) (FR-060a)
+- [Phase 2 stub providers (stay dark)](docs/feature-request-phase2-all-providers-2026-10-08.md) (FR-061..112 / issues #614-#665)
+- [Phase 2 FR index](docs/fr/ISSUED-PHASE2.md)
 - [Functional spec](docs/functional-spec.md)
 
 ## Agent caller skill
