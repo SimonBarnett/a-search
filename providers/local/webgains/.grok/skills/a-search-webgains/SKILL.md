@@ -28,8 +28,16 @@ Registry folder `providers/local/webgains`. Enabled: live=false, sandbox=false
 `wgcampaignid`) -> `writeResults`. Optional `handler` for SQS Records.
 Stay-dark; no "not wired" stub on the happy path.
 
+## Selftest + pacing (FR-087)
+
+`src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
+`WEBGAINS_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
+(stay-dark; do not flip `enabled`).
+
 ## Env
 
 See `.env.example`. Queue env: `SQS_WEBGAINS_URL`.
 MSSQL: `MSSQL_SERVER`, `MSSQL_DATABASE`, `MSSQL_USER` / `MSSQL_PASSWORD`
 (or `MSSQL_TRUSTED_CONNECTION`). Account: `WEBGAINS_CAMPAIGN_ID`.
+Selftest placeholder: `WEBGAINS_API_TOKEN=`.
