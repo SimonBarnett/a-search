@@ -1,0 +1,34 @@
+{
+  "request": {
+    "country": "uk",
+    "query": {
+      "keyword": "laptop",
+      "matchStrength": "all"
+    },
+    "pagination": {
+      "page": 1,
+      "pageSize": 20
+    }
+  },
+  "offers": [
+    {
+      "offerId": "kk-fix-001",
+      "title": "Fixture Ultrabook Laptop",
+      "price": 899.0,
+      "currency": "GBP",
+      "merchantName": "Fixture Merchant A",
+      "landingPageUrl": "https://example.test/kelkoo/offer/kk-fix-001",
+      "imageUrl": "https://example.test/img/kk-fix-001.jpg"
+    },
+    {
+      "offerId": "kk-fix-002",
+      "title": "Fixture Gaming Laptop",
+      "price": 1299.0,
+      "currency": "GBP",
+      "merchantName": "Fixture Merchant B",
+      "landingPageUrl": "https://example.test/kelkoo/offer/kk-fix-002",
+      "imageUrl": "https://example.test/img/kk-fix-002.jpg"
+    }
+  ],
+  "meta": []
+}
