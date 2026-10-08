@@ -1,0 +1,24 @@
+{
+  "result": {
+    "products": [
+      {
+        "product_id": "ae-fix-001",
+        "product_title": "Fixture Wireless Earbuds",
+        "target_sale_price": "19.99",
+        "target_sale_price_currency": "USD",
+        "shop_name": "Fixture AE Shop A",
+        "promotion_link": "https://example.test/aliexpress/product/ae-fix-001",
+        "product_main_image_url": "https://example.test/img/ae-fix-001.jpg"
+      },
+      {
+        "product_id": "ae-fix-002",
+        "product_title": "Fixture Phone Case",
+        "target_sale_price": "8.50",
+        "target_sale_price_currency": "USD",
+        "shop_name": "Fixture AE Shop B",
+        "promotion_link": "https://example.test/aliexpress/product/ae-fix-002",
+        "product_main_image_url": "https://example.test/img/ae-fix-002.jpg"
+      }
+    ]
+  }
+}
