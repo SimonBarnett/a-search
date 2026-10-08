@@ -19,11 +19,14 @@ Registry folder `providers/local/flexoffers`. Enabled: live=false, sandbox=false
 ## Search path (FR-095)
 
 SELECT dbo.Parts WHERE Source='flexoffers' AND DeletedAt IS NULL (maintainer owns feeds).
-`src/queryParts.js` when present -- injectable `connect` (no live SQL). Stay-dark.
+`src/queryParts.js` -- `defaultQueryParts` / `mssqlConfigFromEnv` with injectable
+`connect` (no live SQL). Stay-dark.
 
-## Worker
+## Worker (FR-095)
 
-`src/worker.js` exports `run(msg[, deps])`. Stay-dark.
+`src/worker.js` exports `run(msg, deps)` / `handler` / `normalizePart`.
+Reads Parts via queryParts, normalizes, `buildTrackedUrl` with `FLEXOFFERS_AFFILIATE_ID`
+-> query param `foid`, then `writeResults`. Stay-dark; no "not wired" stub on the happy path.
 
 ## Selftest + pacing (FR-096)
 
