@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * Lambda entry for Awin onboarding drain (FR-056a).
- * Invokes runOnce once per EventBridge tick; multi-tick drain cadence is FR-056e.
+ * Lambda entry for Awin onboarding drain (FR-056a live / FR-056b sandbox).
+ * Invokes runOnce once per tick; EventBridge cadence is FR-056e.
  */
 
 const { runOnce } = require('./run');
