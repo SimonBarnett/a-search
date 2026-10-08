@@ -111,3 +111,7 @@ force-push history only to clear GG false positives — fix the fixture instead.
 - Force-push, secrets, or live credentials into skills
 - Dispatch product builds under the harvest label alone
 - File thin session-receipt tips that only restate a merged product FR (close as twin)
+
+## Harvested lessons (intake)
+
+- a-search disabled live stubs still need a-search-<id>-onboarding/SKILL.md stay-dark stubs (FR-062 / #615 / #673); extend provider-onboarding-skills tests beyond enabled-only
