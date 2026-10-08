@@ -92,13 +92,15 @@ describe('MRB-854 FR-105 hostile', () => {
     assert.match(buildProductsQueryUrl(DEFAULT_API_BASE), /products\/query/);
   });
 
-  it('worker remains stub; catalog is separate (FR-105 out of scope)', () => {
+  it('worker does not import catalogue client (FR-105 stays separate from FR-107)', () => {
     const worker = fs.readFileSync(
       path.join(root, 'providers', 'local', 'wix', 'src', 'worker.js'),
       'utf8',
     );
+    // FR-107 replaced the stub with queryParts+writeResults; catalogue fetch stays in catalog.js.
     assert.doesNotMatch(worker, /fetchCatalogPage|catalog\.js/);
-    assert.match(worker, /module\.exports\s*=\s*\{\s*run\s*\}/);
+    assert.match(worker, /defaultQueryParts|queryParts/);
+    assert.match(worker, /writeResults/);
   });
 
   it('skill documents FR-105 catalogue; .env.example secrets empty; ASCII', () => {

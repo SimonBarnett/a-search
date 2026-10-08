@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #852 hostile pins for FR-104 shopify selftestProbe + rateLimit (stay-dark).
+ * MRB #880 hostile pins for FR-112 woocommerce selftestProbe + rateLimit (stay-dark).
  */
 
 const { describe, it } = require('node:test');
@@ -12,26 +12,26 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const { rateLimit } = require('../providers/loadRegistry');
 const {
-  probeShopifySelftest,
-  shopifySelftestProbe,
-} = require('../providers/local/shopify/src/selftestProbe');
+  probeWooCommerceSelftest,
+  woocommerceSelftestProbe,
+} = require('../providers/local/woocommerce/src/selftestProbe');
 
-describe('MRB-852 FR-104 hostile', () => {
+describe('MRB-880 FR-112 hostile', () => {
   it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
-    assert.deepEqual(rateLimit('shopify'), {
+    assert.deepEqual(rateLimit('woocommerce'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
     });
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    const row = registry.sources.find((s) => s.id === 'shopify');
+    const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.equal(row.enabled.live, false);
     assert.equal(row.enabled.sandbox, false);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {
-    const ok = await probeShopifySelftest({
+    const ok = await probeWooCommerceSelftest({
       env: {
         MSSQL_SERVER: 's',
         MSSQL_DATABASE: 'd',
@@ -57,82 +57,75 @@ describe('MRB-852 FR-104 hostile', () => {
       })(),
     });
     assert.equal(ok.ok, true);
-    assert.equal(ok.source, 'shopify');
+    assert.equal(ok.source, 'woocommerce');
     assert.equal(typeof ok.latencyMs, 'number');
     assert.equal(ok.error, undefined);
 
-    const bad = await shopifySelftestProbe('ebay', { env: {} });
+    const bad = await woocommerceSelftestProbe('ebay', { env: {} });
     assert.equal(bad.ok, false);
     assert.equal(bad.error, 'wrong_source');
   });
 
-  it('ACCESS_TOKEN feed-ready path without MSSQL', async () => {
-    const out = await probeShopifySelftest({
-      env: { SHOPIFY_ACCESS_TOKEN: 'shpat_test' },
+  it('WOOCOMMERCE_CONSUMER_KEY feed-ready path without MSSQL', async () => {
+    const out = await probeWooCommerceSelftest({
+      env: { WOOCOMMERCE_CONSUMER_KEY: 'ck_test' },
       connect: async () => {
         throw new Error('should not connect');
       },
     });
     assert.equal(out.ok, true);
-    assert.equal(out.source, 'shopify');
+    assert.equal(out.source, 'woocommerce');
   });
 
-  it('missing MSSQL and empty token -> ok false', async () => {
-    const out = await probeShopifySelftest({
+  it('missing MSSQL and empty key -> ok false', async () => {
+    const out = await probeWooCommerceSelftest({
       env: {
         MSSQL_SERVER: '',
         MSSQL_DATABASE: '',
-        SHOPIFY_ACCESS_TOKEN: '',
+        WOOCOMMERCE_CONSUMER_KEY: '',
       },
       connect: async () => {
         throw new Error('should not connect');
       },
     });
     assert.equal(out.ok, false);
-    assert.equal(out.source, 'shopify');
+    assert.equal(out.source, 'woocommerce');
     assert.ok(out.error);
   });
 
-  it('skill Selftest + pacing + prior FR-101/102/103 keep-both', () => {
+  it('skill Selftest + pacing + prior FR-109/110/111 keep-both', () => {
     const skill = fs.readFileSync(
       path.join(
         root,
         'providers',
         'local',
-        'shopify',
+        'woocommerce',
         '.grok',
         'skills',
-        'a-search-shopify',
+        'a-search-woocommerce',
         'SKILL.md',
       ),
       'utf8',
     );
-    assert.match(skill, /## Selftest \+ pacing \(FR-104\)/);
-    assert.match(skill, /## Catalogue client \(FR-101\)/);
-    assert.match(skill, /## Normalize \+ upsert \(FR-102\)/);
-    assert.match(skill, /## Worker \+ queryParts \(FR-103\)/);
+    assert.match(skill, /## Selftest \+ pacing \(FR-112\)/);
+    assert.match(skill, /## Catalogue client \(FR-109\)/);
+    assert.match(skill, /## Normalize \+ upsert \(FR-110\)/);
+    assert.match(skill, /## Worker \+ queryParts \(FR-111\)/);
     assert.match(skill, /maxConcurrency:\s*1/);
     assert.match(skill, /minIntervalMs:\s*250/);
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
   });
 
-  it('fr058b no-rateLimit example retargeted off shopify/wix to woocommerce', () => {
+  it('fr058b no-rateLimit example retargeted off woocommerce to __no_such_source__', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
     assert.match(src, /rateLimit\('__no_such_source__'\)/);
-    assert.ok(!/assert\.equal\(rateLimit\('shopify'\),\s*undefined\)/.test(src));
-    assert.ok(!/assert\.equal\(rateLimit\('wix'\),\s*undefined\)/.test(src));
-    assert.deepEqual(rateLimit('shopify'), {
-      maxConcurrency: 1,
-      minIntervalMs: 250,
-    });
-    assert.deepEqual(rateLimit('wix'), {
-      maxConcurrency: 1,
-      minIntervalMs: 250,
-    });
+    assert.ok(
+      !/assert\.equal\(rateLimit\('woocommerce'\),\s*undefined\)/.test(src),
+    );
     assert.deepEqual(rateLimit('woocommerce'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
