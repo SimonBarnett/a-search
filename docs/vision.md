@@ -39,6 +39,7 @@ LOCKED
 | S11 | Shared layer only for shared code | `resultsPath`, `writeResults`, `assertEnv`, intake reporter, and related helpers live under `shared/` (Lambda layer `/opt/nodejs/a-search`); providers do not copy-paste those helpers | `tests/shared-no-dup.test.js` + FR-047 shared-package / resultsPath / writeResults pin tests; `docs/shared-layer.md` | Duplicate shared helpers reappear under `providers/*/src` |
 | S12 | Deterministic exceptions ÔåÆ a-search intake | Uncaught/handled fatal errors in entry/worker/maintainer/onboarding call the intake helper with `repo=SimonBarnett/a-search` (deduped; secrets redacted) | `tests/report-exception.test.js` + FR-048 entry/amazon/maintainer intake pins; `docs/intake-on-exception.md` | Fatal path logs only and never POSTs intake |
 | S13 | Local onboarding agents | Each enabled local source has an `onboarding/` agent CWD + scheduled runner that drains until `remaining=0` then exits | `tests/onboarding-drain.test.js` + FR-049 awin/impact scaffold pins; `docs/onboarding-agents.md` | No onboarding folder for awin/impact, or runner loops forever with no exit |
+| S14 | Daily report signup feed | Onboarding emits signup rows compatible with clubscan daily report fields (new merchants / counts) documented vs madeira-awin-clubscan | `tests/fr052a-daily-report-signups-docs.test.js` + FR-052 write/read signup pins; `docs/daily-report-signups.md` | Signup payload undocumented or missing new-advertiser rows |
 
 LOCKED
 
