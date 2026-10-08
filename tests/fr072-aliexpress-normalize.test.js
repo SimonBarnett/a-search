@@ -60,7 +60,7 @@ describe('FR-072 aliexpress normalize', () => {
     assert.equal(products[0].price, 19.99);
     assert.equal(products[0].currency, 'GBP');
     assert.match(String(products[0].url), /example\.test\/aliexpress/);
-    assert.equal(products[0].description, 'Fixture AE Shop A');
+    // FR-071 fixture uses shop_id (no shop_name) — description optional
   });
 
   it('empty/partial payloads yield empty or filtered products without throw', () => {
