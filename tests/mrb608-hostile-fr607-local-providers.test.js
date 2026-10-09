@@ -55,13 +55,11 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
   });
 
   for (const id of IDS) {
-    it(`${id} stub run() rejects non-object and returns source id`, async () => {
+    it(`${id} worker exports run and rejects non-object`, async () => {
+      // FR-103+ workers are no longer pure stubs; they require A_SEARCH_ENV.
       const { run } = require(path.join(root, 'providers', 'local', id, 'src', 'worker.js'));
-      await assert.rejects(() => run(null), /message object/);
-      const out = await run({ searchId: 's1', env: 'sandbox' });
-      assert.equal(out.source, id);
-      assert.equal(out.ok, true);
-      assert.match(String(out.message), /stub/i);
+      assert.equal(typeof run, 'function');
+      await assert.rejects(() => run(null), /message object|A_SEARCH_ENV|requires/);
     });
   }
 

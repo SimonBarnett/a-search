@@ -1,0 +1,8 @@
+fr	issue	title	url
+FR-225	#1235	Docs lock shared OAuth registry and email magic OTP	https://github.com/SimonBarnett/a-search/issues/1235
+FR-226	#1236	Auth provider registry pluggable contact claims	https://github.com/SimonBarnett/a-search/issues/1236
+FR-227	#1237	OAuth shortlist adapter scaffolds X GitHub Facebook Google Instagram	https://github.com/SimonBarnett/a-search/issues/1237
+FR-228	#1238	Email magic link or OTP login path	https://github.com/SimonBarnett/a-search/issues/1238
+FR-229	#1239	Shared login entry for merchant partner club roles	https://github.com/SimonBarnett/a-search/issues/1239
+FR-230	#1240	HTML mocks shared login OAuth and email OTP	https://github.com/SimonBarnett/a-search/issues/1240
+FR-231	#1241	Reject OAuth login when no email phone or contact	https://github.com/SimonBarnett/a-search/issues/1241

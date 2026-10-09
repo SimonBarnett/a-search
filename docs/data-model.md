@@ -20,7 +20,7 @@ to map vision-era names (`Parts`, `PartFeedKeys`, `PartsStaging`,
 `dbo.PartsStaging`, `dbo.PartFeedKeys`, or `dbo.ImpactPendingOnboard` exist
 in madeiradb **yet**. a-search will create them via ops-applied
 `maintainer/sql` migrations (runtime never DDL). Local Awin/Impact search
-reads `dbo.Parts` — not `dbo.MerchantProducts` (heap / shape mismatch).
+reads `dbo.Parts` - not `dbo.MerchantProducts` (heap / shape mismatch).
 See [parts-maintainer.md](parts-maintainer.md) Decision (FR-120).
 
 ## Foreign keys (only five)
