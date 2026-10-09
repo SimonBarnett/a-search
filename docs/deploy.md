@@ -141,22 +141,36 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
   --output text
 ```
 
-## 7. Smoke (manual until FR-144 script)
+## 7. Smoke (FR-144)
 
 With a **fixture** JWT issued for the configured issuer/audience (never a
 production user token in git):
 
-1. `POST {SearchApiUrl}/search` with `Authorization: Bearer <fixture>` -> **HTTP 200** accept (fan-out async).
-2. `GET` or `POST {SearchApiUrl}/selftest` -> shape per [endpoint-selftest.md](endpoint-selftest.md).
-3. Confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
+```bash
+export A_SEARCH_API_URL="<SearchApiUrl>"
+export A_SEARCH_SMOKE_JWT="<fixture jwt>"
+npm run smoke-deploy
+# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL" --jwt "$A_SEARCH_SMOKE_JWT"
+```
 
-Automated post-deploy smoke script is **FR-144** (out of scope here).
+The script asserts:
+
+1. `POST {SearchApiUrl}/search` with `Authorization: Bearer <fixture>` -> **HTTP 200** + `accepted: true` + `searchId`
+2. `GET {SearchApiUrl}/selftest?sandbox=true` -> **HTTP 200** + selftest JSON shape (`ok`, `providers[].id`/`ok`) per [endpoint-selftest.md](endpoint-selftest.md). Provider probe failures are reported in the table and are **not** fatal (no live provider credentials required for the accept/shape path).
+
+Optional manual follow-up: confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
+
+Do **not** wire this against production from CI without an explicit approval gate.
 
 ## 8. Point rclone (SQL host)
 
 On the MSSQL host, mount the results bucket and set
 `A_SEARCH_RCLONE_ROOT` to the bucket folder (LOCKED example letter **`X:`** -
-ops may remap). Full procedure: [rclone-results.md](rclone-results.md).
+ops may remap).
+
+Step-by-step installable mount runbook (remote, mount, live/sandbox roots,
+verify path, reboot persistence): [rclone-results.md](rclone-results.md)
+**Installable mount runbook (FR-147)**. FR-124 scheme locks stay in that doc.
 
 Workers already have `S3_RESULTS_BUCKET` + IAM from the stack (FR-130).
 
@@ -169,9 +183,40 @@ npm run synth
 Template must show Secrets Manager dynamic references for JWT_* / MSSQL_* /
 provider credentials - never a real password, API token, or JWT string.
 
+## 9. MSSQL network path - no-VPC + fixed egress (FR-149)
+
+`ASearchStack` is **explicit no-VPC**: Lambdas use default AWS networking.
+There are no `ec2.Vpc`, NAT gateway, or Security Group constructs in this
+product stack. Cross-link: [environments.md](environments.md) **Network path
+(FR-122)** (options A / B / C; Chosen may stay PENDING).
+
+**When ops selects FR-122 option A (fixed egress allowlist)** - the installable
+path for off-box MSSQL from AWS workers/maintainer/onboarding:
+
+1. Confirm which Lambdas need MSSQL (maintainer, local/onboarding workers with
+   `MSSQL_*` - not live marketplace amazon/ebay workers that stay SQL-free).
+2. In the deploy account/region, identify the **egress IP set** AWS will present
+   to the public internet (typically NAT Gateway Elastic IPs if you later add a
+   VPC, or the documented regional Lambda egress behaviour for default
+   networking). Record that set in the **ops** runbook only - **never** commit
+   real CIDRs or private IPs into this repo.
+3. On the IONOS edge or `WIN-MPRE8VI4U6U` host firewall, allow **SQL TCP**
+   (usually **1433**) from that egress set only (least privilege). Opening the
+   firewall is **ops** - out of scope for this repo (FR-149 / FR-122).
+4. Confirm `MSSQL_SERVER` / Secrets Manager MSSQL secret resolve from a worker
+   and sandbox selftest returns `ok` or a classified `mssql_*` error (never a
+   hang). See [endpoint-selftest.md](endpoint-selftest.md).
+5. If ops instead locks **B (VPN)** or **C (on-box only)**, follow the FR-122
+   checklist in environments.md; do not invent VPC/VPN IaC in product git under
+   this FR.
+
+**Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
+FR-122 Chosen option.
+
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
-- Automated smoke script (**FR-144**)
+- CI auto-smoke against production without approval
 - Enabling stay-dark providers
-- Creating sandbox DB DDL on IONOS (ops runbook after FR-121)
+- Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
+- Opening IONOS firewall ports (ops; FR-149 / FR-122)
