@@ -37,13 +37,13 @@ An **installable release** means:
 |------|---------------|----------|
 | CDK entry + API GW `/search` `/selftest` `/account/performance` | Yes | No |
 | CDK queues/workers for enabled sources | Yes | No |
-| CDK maintainer schedules | Yes | Partial — asset broken (shared/) |
+| CDK maintainer schedules | Yes | No (FR-131 stages `maintainer/src` + `shared/`) |
 | CDK awin/impact onboarding Lambdas | Yes | Partial — asset broken; impact **live** EventBridge rule **missing** |
-| S3 results bucket in CDK | **No** | **Yes** |
-| `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **No** | **Yes** |
+| S3 results bucket in CDK | **Yes** (FR-129 `ResultsBucket`) | No |
+| `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **Yes** (FR-130 `wireResultsBucketAccess`) | No |
 | JWT_* / MSSQL_* / provider secrets in CDK | **No** | **Yes** |
 | Worker zip includes `@aws-sdk/client-s3` + `mssql` | **No** (entry stages SDK; workers do not) | **Yes** |
-| Maintainer zip includes `shared/` | **No** (`Code.fromAsset(maintainer/src)` only; schedule requires shared/intake) | **Yes** |
+| Maintainer zip includes `shared/` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131) | No (mssql package staging = FR-135 #971) |
 | Onboarding zip includes `shared/` | **No** (requires shared/identity) | **Yes** |
 | SQS DLQ | **No** | Yes (ops safety) |
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
