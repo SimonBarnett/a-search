@@ -155,3 +155,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 ## Harvested lessons (intake)
 
 - When adding a sibling EventBridge rule that older FR pins explicitly forbade (fr056c/mrb501 no ImpactOnboardingLiveSchedule), flip those absence asserts to presence or FR-N ownership comments in the same product PR as the new rule; put release-gap refresh on docs/mrb-N (context: FR-133/#1109 + docs/mrb #1115; twin tip #1116 folded)
+- When FR-135 mssql staging tips CONFLICT with FR-134 worker S3 SDK staging, keep-both SDK copy + local-only stageMssqlNodeModules and both marker fields before product merge; refresh release-gap mssql rows on docs/mrb-N.
