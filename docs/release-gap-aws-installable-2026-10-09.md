@@ -49,7 +49,7 @@ An **installable release** means:
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
 | SQS DLQ | **No** | Yes (ops safety) |
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
-| `.github/workflows` CI | **No** | **Yes** (vision S4) |
+| `.github/workflows` CI | **Yes** — `.github/workflows/ci.yml` Node 20 `npm ci` + `npm test` + `npm run synth` on PR/push main (FR-139 #975) | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** (FR-136 `docs/deploy.md`) | Partial (expand install playbook) |
 | `npm run deploy` / account-region context | Partial (README only) | Yes |
 | Post-deploy smoke | **No** | Yes |

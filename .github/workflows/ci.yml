@@ -1,0 +1,32 @@
+# FR-139: Node 20 CI gate — npm test + npm run synth (vision S4 / release D1)
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-synth:
+    runs-on: ubuntu-latest
+    # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Synth
+        run: npm run synth
