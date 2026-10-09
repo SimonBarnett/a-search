@@ -141,22 +141,36 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
   --output text
 ```
 
-## 7. Smoke (manual until FR-144 script)
+## 7. Smoke (FR-144)
 
 With a **fixture** JWT issued for the configured issuer/audience (never a
 production user token in git):
 
-1. `POST {SearchApiUrl}/search` with `Authorization: Bearer <fixture>` -> **HTTP 200** accept (fan-out async).
-2. `GET` or `POST {SearchApiUrl}/selftest` -> shape per [endpoint-selftest.md](endpoint-selftest.md).
-3. Confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
+```bash
+export A_SEARCH_API_URL="<SearchApiUrl>"
+export A_SEARCH_SMOKE_JWT="<fixture jwt>"
+npm run smoke-deploy
+# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL" --jwt "$A_SEARCH_SMOKE_JWT"
+```
 
-Automated post-deploy smoke script is **FR-144** (out of scope here).
+The script asserts:
+
+1. `POST {SearchApiUrl}/search` with `Authorization: Bearer <fixture>` -> **HTTP 200** + `accepted: true` + `searchId`
+2. `GET {SearchApiUrl}/selftest?sandbox=true` -> **HTTP 200** + selftest JSON shape (`ok`, `providers[].id`/`ok`) per [endpoint-selftest.md](endpoint-selftest.md). Provider probe failures are reported in the table and are **not** fatal (no live provider credentials required for the accept/shape path).
+
+Optional manual follow-up: confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
+
+Do **not** wire this against production from CI without an explicit approval gate.
 
 ## 8. Point rclone (SQL host)
 
 On the MSSQL host, mount the results bucket and set
 `A_SEARCH_RCLONE_ROOT` to the bucket folder (LOCKED example letter **`X:`** -
-ops may remap). Full procedure: [rclone-results.md](rclone-results.md).
+ops may remap).
+
+Step-by-step installable mount runbook (remote, mount, live/sandbox roots,
+verify path, reboot persistence): [rclone-results.md](rclone-results.md)
+**Installable mount runbook (FR-147)**. FR-124 scheme locks stay in that doc.
 
 Workers already have `S3_RESULTS_BUCKET` + IAM from the stack (FR-130).
 
@@ -172,6 +186,6 @@ provider credentials - never a real password, API token, or JWT string.
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
-- Automated smoke script (**FR-144**)
+- CI auto-smoke against production without approval
 - Enabling stay-dark providers
-- Creating sandbox DB DDL on IONOS (ops runbook after FR-121)
+- Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
