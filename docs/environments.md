@@ -182,11 +182,16 @@ Until then, treat off-box MSSQL connects as may-fail: local selftest probes
 map connect failures to `mssql_unreachable` / `mssql_auth_failed`
 (`shared/mssql/classifyConnectError.js`).
 
+**Installable pattern (FR-149):** CDK is **explicit no-VPC** (default Lambda
+egress; no NAT/SG in `ASearchStack`). When ops selects **A**, follow the
+fixed-egress allowlist steps in [deploy.md](deploy.md) (FR-149 section). Do not
+invent private IPs in git. B/C stay valid FR-122 options without VPC IaC here.
+
 **Ops checklist** (no ports opened by this FR):
 
 1. Pick exactly one of A / B / C and record it here as LOCKED (replace PENDING).
-2. If A: publish the egress CIDR/IP set in the ops runbook; open SQL TCP only
-   for that set on the IONOS edge/host firewall.
+2. If A: publish the egress CIDR/IP set in the ops runbook (see deploy.md FR-149);
+   open SQL TCP only for that set on the IONOS edge/host firewall.
 3. If B: stand up the VPN; confirm name resolution for
    `MSSQL_SERVER` / `WIN-MPRE8VI4U6U` from the worker side.
 4. If C: document which processes on the box run MSSQL readers; keep AWS
