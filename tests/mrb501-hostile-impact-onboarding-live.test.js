@@ -2,7 +2,7 @@
 
 /**
  * MRB #501 hostile pins: FR-056c live Impact onboarding Lambda coexists with
- * sandbox (FR-056d) and does not invent a live EventBridge rule (FR-056e scope).
+ * sandbox (FR-056d). Live EventBridge rule is FR-133.
  */
 
 const { describe, it } = require('node:test');
@@ -22,8 +22,8 @@ describe('MRB #501 hostile Impact onboarding live', () => {
     assert.match(text, /ImpactOnboardingLiveFunction/);
     assert.match(text, /ImpactOnboardingSandboxFunction/);
     assert.doesNotMatch(text, /<<<<<<<|>>>>>>>/);
-    // No live Impact schedule construct (schedules for live Impact remain FR-056e follow-on).
-    assert.doesNotMatch(text, /ImpactOnboardingLiveSchedule/);
+    // FR-133: live Impact schedule present (see fr133-impact-onboarding-live-schedule.test.js).
+    assert.match(text, /ImpactOnboardingLiveSchedule/);
   });
 
   it('synth template includes live Impact Lambda with A_SEARCH_ENV=live', () => {
