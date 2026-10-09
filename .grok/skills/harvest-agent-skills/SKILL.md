@@ -159,3 +159,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CDK MSSQL_* wiring: fromSecretCompleteArn via -c mssqlSecretArn (complete ARN needs 6-char suffix); wire SERVER/USER/PASSWORD from JSON + plain MSSQL_DATABASE per env; local workers + maintainer + onboarding only; prefer in-process app.synth() for pins when mssql asset staging exceeds npm spawnSync timeouts.
 - a-search FR-139: ci.yml on push/PR main with setup-node 20, npm ci, npm test, npm run synth; pin fr139 needles; release-gap CI Yes
 - GitHub Actions on Linux: quoted node --test tests/**/*.test.js is a literal path -> use scripts/run-tests.js walker + --test-concurrency=1; fleet-only validate-vision-pack.py paths break CI until vendored
+- FR-143: prefer lambda logGroup: new logs.LogGroup({retention:ONE_MONTH}) over deprecated logRetention (Custom::LogRetention); DLQ alarms need FR-142 sibling queues; ApproximateNumberOfMessagesVisible >= 1 -> SnsAction on placeholder topic
