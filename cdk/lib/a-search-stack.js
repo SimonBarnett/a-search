@@ -8,10 +8,30 @@ const s3 = require('aws-cdk-lib/aws-s3');
 const secretsmanager = require('aws-cdk-lib/aws-secretsmanager');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+const logs = require('aws-cdk-lib/aws-logs');
+const cloudwatch = require('aws-cdk-lib/aws-cloudwatch');
+const cw_actions = require('aws-cdk-lib/aws-cloudwatch-actions');
+const sns = require('aws-cdk-lib/aws-sns');
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
+
+/** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
+const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
+
+/**
+ * FR-143: dedicated LogGroup with 30-day retention (prefer over deprecated logRetention).
+ * @param {Construct} scope
+ * @param {string} id
+ * @returns {logs.LogGroup}
+ */
+function lambdaLogGroup(scope, id) {
+  return new logs.LogGroup(scope, id, {
+    retention: LOG_RETENTION,
+    removalPolicy: cdk.RemovalPolicy.RETAIN,
+  });
+}
 const { loadRegistry } = require('../../providers/loadRegistry');
 const { queueName } = require('../../providers/queueName');
 const {
@@ -275,6 +295,9 @@ function applyProviderPlainDefaults(fn, sourceId, env) {
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
+ *
+ * FR-149: explicit no-VPC - Lambdas use default AWS networking (no ec2.Vpc / NAT / SG in this stack).
+ * MSSQL reachability is ops fixed-egress allowlist (FR-122 option A) documented in docs/deploy.md.
  */
 class ASearchStack extends cdk.Stack {
   /**
@@ -285,6 +308,7 @@ class ASearchStack extends cdk.Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
+    // FR-149: no VPC/NAT/SecurityGroup constructs - default Lambda egress.
     const { sources } = loadRegistry();
     const enabledSources = sources.filter(
       (s) =>
@@ -293,10 +317,10 @@ class ASearchStack extends cdk.Stack {
         (s.enabled.live === true || s.enabled.sandbox === true),
     );
 
+    // FR-148: entry is env-agnostic for accept - do not pin A_SEARCH_ENV.
+    // Job env comes from body.sandbox (default live); workers/maintainer stay pinned.
     /** @type {Record<string, string>} */
-    const entryEnv = {
-      A_SEARCH_ENV: 'sandbox',
-    };
+    const entryEnv = {};
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
@@ -355,6 +379,7 @@ class ASearchStack extends cdk.Stack {
       code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
       environment: entryEnv,
+      logGroup: lambdaLogGroup(this, 'EntryFunctionLogGroup'),
     });
     wireResultsBucketAccess(entry, resultsBucket);
     // FR-136: JWT_* from Secrets Manager (context jwtSecretArn or created secret)
@@ -365,7 +390,17 @@ class ASearchStack extends cdk.Stack {
       description: 'Secrets Manager ARN for entry JWT_* JSON (FR-136)',
     });
 
-    // FR-036: queues + workers for every enabled shortlist source Ã— env
+    // FR-143: placeholder SNS topic for ops alarms (subscriptions out of scope)
+    const opsAlarmTopic = new sns.Topic(this, 'OpsAlarmTopic', {
+      topicName: 'a-search-ops-alarms',
+      displayName: 'a-search ops alarms (FR-143 placeholder)',
+    });
+    new cdk.CfnOutput(this, 'OpsAlarmTopicArn', {
+      value: opsAlarmTopic.topicArn,
+      description: 'FR-143 placeholder SNS topic for DLQ depth alarms',
+    });
+
+    // FR-036: queues + workers for every enabled shortlist source x env
     for (const src of enabledSources) {
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src);
@@ -407,6 +442,10 @@ class ASearchStack extends cdk.Stack {
             environment: {
               A_SEARCH_ENV: env,
             },
+            logGroup: lambdaLogGroup(
+              this,
+              `${pascal}${envPascal}WorkerLogGroup`,
+            ),
           },
         );
         wireResultsBucketAccess(worker, resultsBucket);
@@ -440,6 +479,24 @@ class ASearchStack extends cdk.Stack {
         new cdk.CfnOutput(this, `${pascal}${envPascal}WorkerFunctionName`, {
           value: worker.functionName,
         });
+
+        // FR-143: alarm when DLQ has visible messages (>= 1)
+        const dlqAlarm = new cloudwatch.Alarm(
+          this,
+          `${pascal}${envPascal}DlqDepthAlarm`,
+          {
+            alarmName: `a-search-${src.id}-${env}-dlq-depth`,
+            alarmDescription: `FR-143: ${qName}-dlq ApproximateNumberOfMessagesVisible >= 1`,
+            metric: dlq.metricApproximateNumberOfMessagesVisible(),
+            threshold: 1,
+            comparisonOperator:
+              cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            evaluationPeriods: 1,
+            datapointsToAlarm: 1,
+            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+          },
+        );
+        dlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
       }
     }
 
@@ -490,6 +547,7 @@ class ASearchStack extends cdk.Stack {
         A_SEARCH_ENV: 'live',
         MAINTAINER_TOP: '10',
       },
+      logGroup: lambdaLogGroup(this, 'MaintainerLiveLogGroup'),
     });
     wireResultsBucketAccess(maintainerLive, resultsBucket);
     wireMssqlSecretEnv(maintainerLive, mssqlSecret, {
@@ -508,6 +566,7 @@ class ASearchStack extends cdk.Stack {
           A_SEARCH_ENV: 'sandbox',
           MAINTAINER_TOP: '10',
         },
+        logGroup: lambdaLogGroup(this, 'MaintainerSandboxLogGroup'),
       },
     );
     wireResultsBucketAccess(maintainerSandbox, resultsBucket);
@@ -549,6 +608,7 @@ class ASearchStack extends cdk.Stack {
         environment: {
           A_SEARCH_ENV: 'live',
         },
+        logGroup: lambdaLogGroup(this, 'AwinOnboardingLiveLogGroup'),
       },
     );
     wireResultsBucketAccess(awinOnboardingLive, resultsBucket);
@@ -572,6 +632,7 @@ class ASearchStack extends cdk.Stack {
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
+        logGroup: lambdaLogGroup(this, 'AwinOnboardingSandboxLogGroup'),
       },
     );
     wireResultsBucketAccess(awinOnboardingSandbox, resultsBucket);
@@ -603,6 +664,7 @@ class ASearchStack extends cdk.Stack {
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
+        logGroup: lambdaLogGroup(this, 'ImpactOnboardingSandboxLogGroup'),
       },
     );
     wireResultsBucketAccess(impactOnboardingSandbox, resultsBucket);
@@ -629,6 +691,7 @@ class ASearchStack extends cdk.Stack {
         environment: {
           A_SEARCH_ENV: 'live',
         },
+        logGroup: lambdaLogGroup(this, 'ImpactOnboardingLiveLogGroup'),
       },
     );
     wireResultsBucketAccess(impactOnboardingLive, resultsBucket);
