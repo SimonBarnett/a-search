@@ -83,6 +83,28 @@ Without `mssqlSecretArn`, synth uses a non-production placeholder ARN
 (`000000000000`) so pins stay green. Never put real passwords in git.
 See `docs/environments.md` (FR-137).
 
+## Provider credentials Secrets Manager (FR-138)
+
+Each **enabled** provider worker (amazon, ebay, rakuten, cj, awin, impact)
+reads credential keys from a **per-source** Secrets Manager JSON secret.
+Awin/impact onboarding share the same source secret. Stay-dark providers
+get no secret construct and no IAM grant.
+
+```bash
+npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
+  -c amazonProviderSecretArn=arn:aws:secretsmanager:eu-west-2:ACCOUNT:secret:NAME \
+  -c ebayProviderSecretArn=arn:aws:secretsmanager:eu-west-2:ACCOUNT:secret:NAME \
+  -c rakutenProviderSecretArn=arn:... \
+  -c cjProviderSecretArn=arn:... \
+  -c awinProviderSecretArn=arn:... \
+  -c impactProviderSecretArn=arn:...
+```
+
+JSON keys match that provider's `.env.example` credential names
+(e.g. `AMAZON_ACCESS_KEY`, `EBAY_CLIENT_SECRET`, `AWIN_API_TOKEN`).
+Without overrides, synth uses `000000000000` placeholder ARNs
+(`a-search/provider/<id>-AbCdEf`). Matrix: `docs/secrets-matrix.md`.
+
 ## Synth (required check)
 
 From the **repo root** (Node >=20):
