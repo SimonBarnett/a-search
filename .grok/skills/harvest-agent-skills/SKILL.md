@@ -161,3 +161,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - GitHub Actions on Linux: quoted node --test tests/**/*.test.js is a literal path -> use scripts/run-tests.js walker + --test-concurrency=1; fleet-only validate-vision-pack.py paths break CI until vendored
 - FR-139 Ubuntu CI: after POSIX run-tests + concurrency + vendored validate-vision-pack + FR-051b newUserId, remaining reds are stale hostile/harvest pins and release-gap drift -> file suite-debt FR; do not merge while Actions red
 - FR-142 SQS DLQ: sibling {queueName}-dlq (14d retention) + deadLetterQueue:{queue,maxReceiveCount:3} on primary; pin RedrivePolicy via in-process app.synth (not npm spawn) for all live/sandbox enabled sources; alarms stay FR-143
+- FR-144 smoke: export runSmoke({fetchImpl,baseUrl,jwt}); assert /search accepted+searchId and /selftest ok+providers[].id/ok; fixture JWT via A_SEARCH_SMOKE_JWT never printed; provider probe fails not fatal
