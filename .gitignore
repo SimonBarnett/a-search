@@ -21,5 +21,7 @@ cdk/entry-lambda-asset/
 cdk/worker-lambda-asset/
 # FR-132 staged onboarding assets (src + shared/)
 cdk/onboarding-lambda-asset/
+# FR-131 staged maintainer Lambda asset (regenerated during synth / stage script)
+cdk/maintainer-lambda-asset/
 
 .bobiverse-seat
