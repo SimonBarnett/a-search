@@ -109,6 +109,9 @@ image, affiliate target, freshness, plus partNumber, score, expiresAt when live.
 | PW1 | docs/mocks/components-piece-partner/home.html | Partner/club register + copy widget |
 | PW2 | docs/mocks/components-piece-partner/empty.html | Partner/club before registration |
 | PW3 | docs/mocks/components-piece-partner/error.html | Partner/club errors / payout setup |
+| AL1 | docs/mocks/components-piece-auth/home.html | Shared login - OAuth + email OTP |
+| AL2 | docs/mocks/components-piece-auth/empty.html | Shared login - signed out |
+| AL3 | docs/mocks/components-piece-auth/error.html | Shared login - no contact / OTP error |
 
 ## Gap vs origin/main @ 065e457 (docs park branch)
 
@@ -187,6 +190,53 @@ clubmadeira.uk.
 FR-214..FR-224 (see `docs/fr/`). File after approve.
 
 
+
+
+## Amendment 2026-10-09c - Shared login (OAuth pluggable + email OTP)
+
+LOCKED from Plan seat:
+
+### Who
+
+Merchants, partners, and clubs share the same login surfaces (role chosen or
+inferred after identity). Applies to wizard, partner registration, and club
+flows.
+
+### OAuth (pluggable)
+
+- Support **all OAuth providers that return at least one of:** email, phone, or
+  other durable **contact** identifier.
+- Providers are a **registry** (add without rewriting core auth). Shortlist
+  adapters may include X, GitHub, Facebook, Instagram, Google, and others;
+  enabling a provider is config + credentials (Secrets Manager), not a core
+  rewrite.
+- Fail closed: if a provider returns **none** of email / phone / contact,
+  reject that login (do not create a silent orphan identity).
+
+### Email-only path
+
+- User may **enter email** only.
+- Path: **magic link / OTP to email** (no password required for this Phase).
+
+### Identity link
+
+- Successful login maps to the 8-char identity code shape in `docs/identity.md`
+  (mint or attach). Do not invent a second tenant id scheme.
+
+### New Success rows
+
+| id | metric | target | how measured | fail-when |
+|----|--------|--------|--------------|-----------|
+| CP19 | Pluggable OAuth registry | New provider = registry entry + adapter; core auth unchanged | `tests/components-piece-auth-registry.test.js` | Core rewrite required for new provider |
+| CP20 | Contact claim required | OAuth accept only when email OR phone OR contact present | auth pin with fixture profiles | Accept with empty contact set |
+| CP21 | Email magic/OTP | Enter email -> magic link or OTP verifies and session starts | `tests/components-piece-auth-email.test.js` | Password-only gate or unverified email session |
+| CP22 | Shared roles | Same login serves merchant / partner / club entry points | pin + mocks | Separate incompatible auth stacks per role |
+
+### New small FRs
+
+FR-225..FR-231 (see `docs/fr/`). File after approve.
+
+
 ## Out of scope
 
 - Changing JWT `POST /search` fan-out or provider registry enablement
@@ -195,6 +245,11 @@ FR-214..FR-224 (see `docs/fr/`). File after approve.
 - Omnibus single issue for the whole Phase 5 backlog
 
 ## UNKNOWN
+
+- Exact OAuth client ids / redirect URIs (deploy-time Secrets Manager)
+- Which shortlist providers are enabled=true on day one vs stay-dark
+- OTP length / magic-link TTL defaults beyond fixtures
+- Whether phone OTP is in Phase 5 or email-only for the non-OAuth path
 
 - Merchant Stripe Price/Product ids (deploy-time); Connect account type for payouts
 - Exact OAuth app ids for Shopify / Wix / Woo (deploy-time)
@@ -232,3 +287,8 @@ Implementation issues (leave open; docs park PR uses Refs not Closes):
 
 - Refs #1219 #1220 #1221 #1222 #1223 #1224 #1225 #1226 #1227 #1228 #1229
 - Index: docs/fr/ISSUED-PHASE5B.tsv
+
+## Issued Phase 5c (Refs)
+
+- Refs #1235 #1236 #1237 #1238 #1239 #1240 #1241
+- Index: docs/fr/ISSUED-PHASE5C.tsv
