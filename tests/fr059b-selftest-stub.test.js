@@ -1,6 +1,6 @@
 'use strict';
 
-/** FR-059b: selftest route stub — JWT required; empty providers; env from body/default */
+/** FR-059b: selftest route — JWT required; env from body/default (FR-152 fills providers) */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -66,14 +66,22 @@ describe('FR-059b selftest route stub', () => {
     assert.equal(json.error, 'unauthorized');
   });
 
-  it('200 empty providers shape scoped to JWT userId (default live)', async () => {
+  it('200 providers shape scoped to JWT userId (default live)', async () => {
     const res = await handler(
       selftestEvent({
         method: 'GET',
         auth: `Bearer ${validToken('JWTUSER1')}`,
       }),
       {},
-      { env: jwtEnv },
+      {
+        env: jwtEnv,
+        // Auth-focused pin: empty enabled set so FR-059b stays independent of probes.
+        listEnabled: () => [],
+        probe: async () => {
+          throw new Error('probe must not run when listEnabled is empty');
+        },
+        reportSelftestFailures: async () => ({ intakeFiled: [] }),
+      },
     );
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
@@ -112,7 +120,11 @@ describe('FR-059b selftest route stub', () => {
         body: { sandbox: true },
       }),
       {},
-      { env: jwtEnv },
+      {
+        env: jwtEnv,
+        listEnabled: () => [],
+        reportSelftestFailures: async () => ({ intakeFiled: [] }),
+      },
     );
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
@@ -129,7 +141,11 @@ describe('FR-059b selftest route stub', () => {
         query: { sandbox: 'true' },
       }),
       {},
-      { env: jwtEnv },
+      {
+        env: jwtEnv,
+        listEnabled: () => [],
+        reportSelftestFailures: async () => ({ intakeFiled: [] }),
+      },
     );
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);

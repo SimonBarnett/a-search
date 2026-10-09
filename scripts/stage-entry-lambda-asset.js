@@ -4,6 +4,8 @@
  * FR-037: stage entry Lambda asset so runtime can require providers/*
  * (Code.fromAsset(entry/src) alone cannot resolve ../../providers).
  * FR-415: also stage shared/ so entry can require ../../shared/intake/reportException.
+ * FR-152: stage enabled providers' src/selftestProbe.js trees (+ fixtures) so
+ * /selftest can require probe modules from the zip.
  *
  * Layout (asset root):
  *   entry/src/**           handler entry/src/index.handler
@@ -11,14 +13,19 @@
  *   providers/loadRegistry.js
  *   providers/queueName.js
  *   providers/resolveQueueUrl.js
- *   shared/**              intake/reportException + redact (and rest of shared/)
+ *   providers/<kind>/<id>/src/**   enabled selftest probes (FR-152)
+ *   shared/**              intake/reportException + selftest/ + rest
  *
  * No .env / secrets. Optional: copies @aws-sdk/client-sqs from repo
- * node_modules when present (enqueue dep).
+ * node_modules when present (enqueue dep). Optional mssql for local probes.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  stageMssqlNodeModules,
+  isLocalProviderFolder,
+} = require('./stage-mssql-node-modules');
 
 const PROVIDER_FILES = [
   'registry.json',
@@ -26,6 +33,25 @@ const PROVIDER_FILES = [
   'queueName.js',
   'resolveQueueUrl.js',
 ];
+
+/**
+ * Sources enabled for live or sandbox (union) — probes staged for /selftest.
+ * @param {string} root
+ * @returns {Array<{ id: string, folder: string }>}
+ */
+function enabledSelftestSources(root) {
+  const registryPath = path.join(root, 'providers', 'registry.json');
+  const data = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  const sources = Array.isArray(data.sources) ? data.sources : [];
+  return sources.filter(
+    (s) =>
+      s &&
+      s.id &&
+      s.folder &&
+      s.enabled &&
+      (s.enabled.live === true || s.enabled.sandbox === true),
+  );
+}
 
 /**
  * @param {string} [repoRoot]
@@ -61,6 +87,40 @@ function stageEntryLambdaAsset(repoRoot, opts) {
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
 
+  // FR-152: stage enabled provider src (+ fixtures) for selftestProbe requires.
+  const selftestSources = enabledSelftestSources(root);
+  /** @type {string[]} */
+  const stagedProbeIds = [];
+  let needsMssql = false;
+  for (const src of selftestSources) {
+    const folderPosix = String(src.folder).replace(/\\/g, '/');
+    const providerSrc = path.join(root, ...folderPosix.split('/'), 'src');
+    const probeFile = path.join(providerSrc, 'selftestProbe.js');
+    if (!fs.existsSync(probeFile)) {
+      throw new Error(
+        `stage-entry-lambda-asset: enabled source ${src.id} missing ${probeFile}`,
+      );
+    }
+    const providerDest = path.join(outDir, ...folderPosix.split('/'), 'src');
+    fs.mkdirSync(path.dirname(providerDest), { recursive: true });
+    fs.cpSync(providerSrc, providerDest, { recursive: true });
+
+    const fixturesSrc = path.join(root, ...folderPosix.split('/'), 'fixtures');
+    if (fs.existsSync(fixturesSrc)) {
+      const fixturesDest = path.join(
+        outDir,
+        ...folderPosix.split('/'),
+        'fixtures',
+      );
+      fs.cpSync(fixturesSrc, fixturesDest, { recursive: true });
+    }
+
+    stagedProbeIds.push(String(src.id));
+    if (isLocalProviderFolder(folderPosix)) {
+      needsMssql = true;
+    }
+  }
+
   // Enqueue uses @aws-sdk/client-sqs — include from root install when available.
   const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
   if (fs.existsSync(sdkSrc)) {
@@ -82,16 +142,26 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     }
   }
 
+  // Local selftest probes need mssql when present (soft — same class as aws-sdk).
+  let mssqlPackages = [];
+  if (needsMssql && fs.existsSync(path.join(root, 'node_modules', 'mssql'))) {
+    mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
+  }
+
   // Marker for tests / operators
   fs.writeFileSync(
     path.join(outDir, '.a-search-entry-asset.json'),
     JSON.stringify(
       {
         fr: '037',
+        fr152: true,
         handler: 'entry/src/index.handler',
         providers: PROVIDER_FILES,
         shared: true,
         fr415: 'shared/intake/reportException',
+        selftestProbes: stagedProbeIds,
+        mssql: mssqlPackages.length > 0,
+        mssqlPackages,
       },
       null,
       2,
@@ -110,12 +180,17 @@ function requiredEntryAssetPaths() {
   return [
     'entry/src/index.js',
     'entry/src/enqueue.js',
+    'entry/src/selftestProbes.js',
     'providers/registry.json',
     'providers/loadRegistry.js',
     'providers/queueName.js',
     'providers/resolveQueueUrl.js',
+    'providers/live/amazon/src/selftestProbe.js',
+    'providers/live/ebay/src/selftestProbe.js',
+    'providers/local/awin/src/selftestProbe.js',
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
+    'shared/selftest/orchestrator.js',
   ];
 }
 
@@ -127,5 +202,6 @@ if (require.main === module) {
 module.exports = {
   stageEntryLambdaAsset,
   requiredEntryAssetPaths,
+  enabledSelftestSources,
   PROVIDER_FILES,
 };
