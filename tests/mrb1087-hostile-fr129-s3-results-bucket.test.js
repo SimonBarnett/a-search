@@ -1,6 +1,9 @@
 'use strict';
 
-/** docs/mrb-1087: hostile pins for FR-129 CDK ResultsBucket (PR #1087). */
+/** docs/mrb-1087: hostile pins for FR-129 CDK ResultsBucket (PR #1087).
+ * After FR-130 (#1092), stack also wires S3_RESULTS_BUCKET + grantReadWrite;
+ * those absences are no longer asserted here (see fr130 / docs/mrb-1092).
+ */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -28,11 +31,6 @@ describe('MRB #1087 hostile FR-129 ResultsBucket', () => {
     assert.match(t, /FR-124|live\/|sandbox\//);
     assert.doesNotMatch(t, /bucketName:\s*['"]/);
     assert.doesNotMatch(t, /madeira-results-bucket/);
-    assert.doesNotMatch(t, /grantPut|grantReadWrite|addToRolePolicy/);
-    assert.doesNotMatch(
-      t,
-      /addEnvironment\(\s*['"]S3_RESULTS_BUCKET['"]/,
-    );
   });
 
   it('FR-129 park Decision LOCKED; IAM deferred to FR-130', () => {

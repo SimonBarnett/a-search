@@ -71,6 +71,16 @@ function sqsMaxConcurrencyForSource(src) {
 }
 
 /**
+ * FR-130: S3_RESULTS_BUCKET env + least-privilege read/write on the results bucket.
+ * @param {lambda.Function} fn
+ * @param {s3.IBucket} bucket
+ */
+function wireResultsBucketAccess(fn, bucket) {
+  fn.addEnvironment('S3_RESULTS_BUCKET', bucket.bucketName);
+  bucket.grantReadWrite(fn);
+}
+
+/**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
@@ -98,6 +108,17 @@ class ASearchStack extends cdk.Stack {
       A_SEARCH_ENV: 'sandbox',
     };
 
+    // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
+    // Auto-named - do not invent production account IDs or hard-code bucket names.
+    // FR-130 wires env + IAM below. SSE defaults deepen in FR-154.
+    const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      autoDeleteObjects: false,
+    });
+
     // FR-037: staged asset includes entry/src + providers/* (not entry/src alone)
     const repoRoot = path.join(__dirname, '..', '..');
     const entryAssetDir = stageEntryLambdaAsset(repoRoot);
@@ -109,6 +130,7 @@ class ASearchStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
       environment: entryEnv,
     });
+    wireResultsBucketAccess(entry, resultsBucket);
 
     // FR-036: queues + workers for every enabled shortlist source Ã— env
     for (const src of enabledSources) {
@@ -145,6 +167,7 @@ class ASearchStack extends cdk.Stack {
             },
           },
         );
+        wireResultsBucketAccess(worker, resultsBucket);
         const sqsOpts = { batchSize: 1 };
         const maxConcurrency = sqsMaxConcurrencyForSource(src);
         if (maxConcurrency != null) {
@@ -209,6 +232,7 @@ class ASearchStack extends cdk.Stack {
         MAINTAINER_TOP: '10',
       },
     });
+    wireResultsBucketAccess(maintainerLive, resultsBucket);
     const maintainerSandbox = new lambda.Function(
       this,
       'MaintainerSandboxFunction',
@@ -224,6 +248,7 @@ class ASearchStack extends cdk.Stack {
         },
       },
     );
+    wireResultsBucketAccess(maintainerSandbox, resultsBucket);
 
     // Default proposal: every 15 minutes (MAINTAINER_INTERVAL_MINUTES)
     const schedule = events.Schedule.rate(cdk.Duration.minutes(15));
@@ -267,6 +292,7 @@ class ASearchStack extends cdk.Stack {
         },
       },
     );
+    wireResultsBucketAccess(awinOnboardingLive, resultsBucket);
     const awinOnboardingSandbox = new lambda.Function(
       this,
       'AwinOnboardingSandboxFunction',
@@ -281,6 +307,7 @@ class ASearchStack extends cdk.Stack {
         },
       },
     );
+    wireResultsBucketAccess(awinOnboardingSandbox, resultsBucket);
 
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
     const impactOnboardingCode = lambda.Code.fromAsset(
@@ -309,6 +336,7 @@ class ASearchStack extends cdk.Stack {
         },
       },
     );
+    wireResultsBucketAccess(impactOnboardingSandbox, resultsBucket);
 
 
     // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
@@ -326,6 +354,7 @@ class ASearchStack extends cdk.Stack {
         },
       },
     );
+    wireResultsBucketAccess(impactOnboardingLive, resultsBucket);
 
     // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
@@ -357,16 +386,6 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
-    // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
-    // Auto-named - do not invent production account IDs or hard-code bucket names.
-    // IAM / results-bucket env wiring is FR-130. SSE defaults deepen in FR-154.
-    const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      enforceSSL: true,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-      autoDeleteObjects: false,
-    });
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
       description:
@@ -374,7 +393,7 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ResultsBucketArn', {
       value: resultsBucket.bucketArn,
-      description: 'ARN of the a-search results bucket (IAM wiring = FR-130)',
+      description: 'ARN of the a-search results bucket (env + IAM = FR-130)',
     });
 
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
@@ -412,4 +431,9 @@ class ASearchStack extends cdk.Stack {
   }
 }
 
-module.exports = { ASearchStack, queueUrlEnvKey, pascalSource };
+module.exports = {
+  ASearchStack,
+  queueUrlEnvKey,
+  pascalSource,
+  wireResultsBucketAccess,
+};

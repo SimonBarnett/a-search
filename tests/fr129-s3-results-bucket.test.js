@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-129: CDK S3 results bucket + ResultsBucketName/Arn outputs (no IAM yet).
+ * FR-129: CDK S3 results bucket + ResultsBucketName/Arn outputs.
+ * IAM / S3_RESULTS_BUCKET env wiring is FR-130 (see fr130-s3-results-env.test.js).
  */
 
 const { describe, it } = require('node:test');
@@ -14,24 +15,13 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 describe('FR-129 CDK S3 results bucket', () => {
-  it('stack source declares ResultsBucket + outputs (no IAM grants yet)', () => {
+  it('stack source declares ResultsBucket + outputs', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /aws-s3|aws_s3/);
     assert.match(text, /ResultsBucket/);
     assert.match(text, /ResultsBucketName/);
     assert.match(text, /ResultsBucketArn/);
     assert.match(text, /BlockPublicAccess|blockPublicAccess/);
-    // FR-130 owns env + IAM — this tip must not grant PutObject yet.
-    assert.doesNotMatch(
-      text,
-      /grantPut|grantReadWrite|addToRolePolicy/,
-      'FR-129 must not add IAM grants (FR-130)',
-    );
-    assert.doesNotMatch(
-      text,
-      /addEnvironment\(\s*['"]S3_RESULTS_BUCKET['"]/,
-      'FR-129 must not set S3_RESULTS_BUCKET on Lambda env (FR-130)',
-    );
   });
 
   it('npm run synth emits AWS::S3::Bucket + ResultsBucket outputs', () => {
