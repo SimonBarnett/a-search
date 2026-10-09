@@ -1,4 +1,4 @@
-﻿# Phase-3 FR mirrors (FR-121..127)
+# Phase-3 FR mirrors (FR-121..127)
 
 Filed GitHub issues: #950-#956. These markdown files mirror the issue bodies for docs park.
 
@@ -12,5 +12,5 @@ Filed GitHub issues: #950-#956. These markdown files mirror the issue bodies for
 | FR-126 | #955 |
 | FR-127 | #956 |
 
-Umbrella: [feature-request-phase3-unlock-2026-10-09.md](../feature-request-phase3-unlock-2026-10-09.md)
+Umbrella: [feature-request-phase3-unlock-2026-10-09.md](../feature-request-phase3-unlock-2026-10-09.md)  
 Gap: [gap-analysis-phase3-2026-10-09.md](../gap-analysis-phase3-2026-10-09.md)

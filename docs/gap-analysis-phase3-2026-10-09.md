@@ -8,13 +8,13 @@ Method: `git fetch` + detached worktree `plan/work/plan-20261009-065037/repo` fr
 
 | Check | Result |
 |-------|--------|
-| Open GitHub issues | **0** |
-| Open feature-request search | **0** |
-| Phase-2 issues #614–#665 | **52/52 CLOSED** |
-| Schema/docs FR-113…FR-120 | **CLOSED** (merged product + docs/mrb) |
-| Vision Success S1–S20 how-measured core tests | **All present** (344 `*.test.js` on main) |
+| Open GitHub issues (at gap snapshot @ 0342707) | **0** |
+| Phase-3 implementation issues (filed after park) | **#950-#956 open** (FR-121..127); twin #957 closed Duplicate of #950 |
+| Phase-2 issues #614-#665 | **52/52 CLOSED** |
+| Schema/docs FR-113..FR-120 | **CLOSED** (merged product + docs/mrb) |
+| Vision Success S1-S20 how-measured core tests | **All present** (344 `*.test.js` on main) |
 | Shape | **service** LOCKED |
-| Open PRs | Draft harvest leftovers `#613`, `#726` only |
+| Open PRs (hygiene) | Draft harvest leftovers `#613`, `#726` (FR-127); park PR #958; FR-122 tip #960 |
 
 Phase 0 / 1 / 1b / **2 (stay-dark providers)** pin evidence is on main.  
 Next work is **Phase 3: unlock deploy unknowns + parked drains + per-account enable**.
@@ -81,4 +81,4 @@ These need human decisions or account details; they are **not** re-opens of Phas
 ## Draft backlog
 
 See `docs/feature-request-phase3-unlock-2026-10-09.md` and `docs/fr/FR-121.md` … (small Goal/Deliverables/Testable drafts).  
-**GitHub filing: drafts only until operator says which slice to file.**
+**GitHub filing:** implementation issues **#950-#956** are filed; park docs use **Refs** (not Closes). FR-121 operator lock (separate DB on same instance) is recorded in `docs/fr/FR-121.md`; `docs/environments.md` sandbox UNKNOWN remains until the FR-121 implement PR.
