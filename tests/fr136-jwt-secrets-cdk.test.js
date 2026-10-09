@@ -9,7 +9,6 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { runCdkSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -58,36 +57,16 @@ describe('FR-136 CDK entry JWT Secrets Manager wiring', () => {
   });
 
   it('synth entry has JWT_* as Secrets Manager resolve refs (no plaintext secrets)', () => {
-    const templatePath = path.join(
-      root,
-      'cdk.out',
-      'ASearchStack.template.json',
-    );
-    const altPath = path.join(
-      root,
-      'cdk.out-fr136',
-      'ASearchStack.template.json',
-    );
-    const looksWired = (p) => {
-      if (!fs.existsSync(p)) return false;
-      const t = fs.readFileSync(p, 'utf8');
-      return (
-        t.includes('JWT_ISSUER') &&
-        /secretsmanager|resolve:secretsmanager/i.test(t)
-      );
-    };
-    // Reuse a fresh local synth (cdk.out or unique cdk.out-fr136) to avoid
-    // 30m+ re-hash of mssql worker assets when a sibling already synched.
-    if (!looksWired(templatePath)) {
-      if (looksWired(altPath)) {
-        fs.mkdirSync(path.dirname(templatePath), { recursive: true });
-        fs.copyFileSync(altPath, templatePath);
-      } else {
-        const r = runCdkSynth(root, { timeout: 900_000 });
-        assert.equal(r.status, 0, r.stderr || r.stdout);
-      }
-    }
-    assert.equal(fs.existsSync(templatePath), true, 'missing synth template');
+    // In-process synth (not npm spawn): mssql worker asset staging can exceed
+    // spawnSync timeouts on fleet seats (same pattern as FR-137).
+    const cdk = require('aws-cdk-lib');
+    const { ASearchStack } = require('../cdk/lib/a-search-stack');
+    const outdir = path.join(root, 'cdk.out');
+    const app = new cdk.App({ outdir });
+    new ASearchStack(app, 'ASearchStack');
+    app.synth();
+    const templatePath = path.join(outdir, 'ASearchStack.template.json');
+    assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
     const raw = fs.readFileSync(templatePath, 'utf8');
     const tpl = JSON.parse(raw);
     const resources = tpl.Resources || {};
