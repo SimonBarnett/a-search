@@ -156,4 +156,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 
 - When adding a sibling EventBridge rule that older FR pins explicitly forbade (fr056c/mrb501 no ImpactOnboardingLiveSchedule), flip those absence asserts to presence or FR-N ownership comments in the same product PR as the new rule; put release-gap refresh on docs/mrb-N (context: FR-133/#1109 + docs/mrb #1115; twin tip #1116 folded)
 - Stage mssql only for providers/local/* workers + maintainer (shared stageMssqlNodeModules walks package.json deps); keep maintainer marker fr:131 and add mssql:true so fr131 pins stay green. When the tip CONFLICTS with FR-134 worker S3 SDK staging, keep-both SDK copy + local-only stageMssqlNodeModules and both marker fields before product merge; refresh release-gap mssql rows on docs/mrb-N (context: FR-135/#1113 + docs/mrb #1121; twin tip #1122 folded)
-
+- Harvest tip that restates merged FR-134 stage @aws-sdk/client-s3 into stage-provider-worker-lambda-asset FAIL-supersede when #1112 was already closed for the same lesson; durable home is product #1111 + docs/mrb #1117.
