@@ -8,6 +8,18 @@ Installable deploy notes for `ASearchStack`. Secrets never belong in git.
 - AWS credentials / account+region for `cdk deploy`
 - See [cdk/README.md](../cdk/README.md) for stack contents
 
+## npm run deploy (FR-141)
+
+Pass account + region via CDK context (never commit account IDs):
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
+```
+
+`npm run deploy` sets `-c requireDeployEnv=true` so a missing account exits
+with `FR-141: missing deploy account...`. Aliases: `deployAccount` /
+`deployRegion`. Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`.
+
 ## Entry JWT_* via Secrets Manager (FR-136)
 
 Entry Lambda verifies Bearer tokens using **FR-123** key names

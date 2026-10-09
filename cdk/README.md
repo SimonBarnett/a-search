@@ -98,11 +98,28 @@ npm run synth
 npx cdk synth --app "node cdk/bin/a-search.js"
 ```
 
-## Deploy (later)
+## Deploy (FR-141)
+
+Prefer the package script (stages the entry asset, then deploys with
+`requireDeployEnv=true` so a missing account fails clearly):
 
 ```bash
-npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
+# aliases also accepted: -c deployAccount=... -c deployRegion=...
+# or export CDK_DEFAULT_ACCOUNT / CDK_DEFAULT_REGION before npm run deploy
 ```
+
+Equivalent:
+
+```bash
+npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
+  -c requireDeployEnv=true -c account=ACCOUNT_ID -c region=eu-west-2
+```
+
+**Do not** put real AWS account IDs in `cdk/cdk.json`, source, or git.
+`cdk/lib/resolve-deploy-env.js` reads context / env only. Synth may omit
+`account` (env-agnostic); deploy must pass account via `-c` or
+`CDK_DEFAULT_ACCOUNT`.
 
 Requires AWS credentials. Not required for FR-023.
 

@@ -51,7 +51,7 @@ An **installable release** means:
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
 | `.github/workflows` CI | **No** | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** (FR-136 `docs/deploy.md`) | Partial (expand install playbook) |
-| `npm run deploy` / account-region context | Partial (README only) | Yes |
+| `npm run deploy` / account-region context | **Yes** — `npm run deploy` + `-c account`/`region` via `resolve-deploy-env` (FR-141 #977); no account IDs in source | **Yes** |
 | Post-deploy smoke | **No** | Yes |
 | VERSION + release checklist | **No** | Yes |
 | Sandbox DB create + DDL apply runbook | UNKNOWN/ops | Yes (after #950) |
