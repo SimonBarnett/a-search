@@ -27,12 +27,13 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
   - rule `a-search-awin-onboarding-live` -> Lambda `a-search-awin-onboarding-live`
   - rule `a-search-awin-onboarding-sandbox` -> Lambda `a-search-awin-onboarding-sandbox`
   - rule `a-search-impact-onboarding-sandbox` -> Lambda `a-search-impact-onboarding-sandbox`
+  - rule `a-search-impact-onboarding-live` -> Lambda `a-search-impact-onboarding-live` (FR-133)
   Outputs: `AwinOnboardingLiveRuleName`, `AwinOnboardingSandboxRuleName`,
-  `ImpactOnboardingSandboxRuleName`. Impact live rule follows when that Lambda lands.
+  `ImpactOnboardingSandboxRuleName`, `ImpactOnboardingLiveRuleName`.
 
 - FR-056c: Impact onboarding live Lambda `a-search-impact-onboarding-live`
   (`A_SEARCH_ENV=live`, handler `handler.handler` from
-  `providers/local/impact/onboarding/src`). EventBridge rules are FR-056e.
+  `providers/local/impact/onboarding/src`). EventBridge live rule is FR-133 (extends FR-056e).
 Queue names match `providers/queueName.js` (`a-search-{source}-{env}`).
 Disabled shortlist providers are not synthesised until enabled.
 

@@ -3,6 +3,8 @@
 /**
  * FR-444: stage provider worker Lambda assets so runtime can require
  * ../../../../shared/* (assertEnv, writeResults, intake/reportException).
+ * FR-134: also bundle @aws-sdk/client-s3 (+ @smithy) so writeResults PutObject
+ * works without a Lambda layer (mirror scripts/stage-entry-lambda-asset.js).
  *
  * CDK previously used Code.fromAsset(<provider>/src) with handler worker.handler.
  * That zip has no shared/ tree, so relative requires break in Lambda.
@@ -10,6 +12,7 @@
  * Layout (asset root), preserving monorepo-relative requires from src/*.js:
  *   <src.folder>/src/**     e.g. providers/live/amazon/src/worker.js
  *   shared/**               including shared/intake/reportException.js
+ *   node_modules/@aws-sdk/** (+ @smithy + small transitives when present)
  *
  * Handler string: <src.folder>/src/worker.handler (posix).
  */
@@ -62,15 +65,42 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
 
+  // FR-134: writeResults uses @aws-sdk/client-s3 — include from root install when available.
+  const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
+  let awsSdkS3 = false;
+  if (fs.existsSync(sdkSrc)) {
+    fs.cpSync(sdkSrc, path.join(outDir, 'node_modules', '@aws-sdk'), {
+      recursive: true,
+    });
+    awsSdkS3 = fs.existsSync(
+      path.join(outDir, 'node_modules', '@aws-sdk', 'client-s3'),
+    );
+  }
+  const smithySrc = path.join(root, 'node_modules', '@smithy');
+  if (fs.existsSync(smithySrc)) {
+    fs.cpSync(smithySrc, path.join(outDir, 'node_modules', '@smithy'), {
+      recursive: true,
+    });
+  }
+  // Common transitive packages used by client-s3 (best-effort; synth tests do not require network).
+  for (const pkg of ['tslib', 'bowser', 'fast-xml-parser', 'strnum']) {
+    const p = path.join(root, 'node_modules', pkg);
+    if (fs.existsSync(p)) {
+      fs.cpSync(p, path.join(outDir, 'node_modules', pkg), { recursive: true });
+    }
+  }
+
   fs.writeFileSync(
     path.join(outDir, '.a-search-worker-asset.json'),
     JSON.stringify(
       {
         fr: '444',
+        fr134: 'node_modules/@aws-sdk/client-s3',
         id: src.id,
         folder: folderPosix,
         handler: workerHandlerPath(src),
         shared: true,
+        awsSdkS3,
         reportException: 'shared/intake/reportException.js',
       },
       null,
@@ -94,6 +124,7 @@ function requiredWorkerAssetPaths(src) {
     'shared/intake/redact.js',
     'shared/assertEnv.js',
     'shared/writeResults.js',
+    'node_modules/@aws-sdk/client-s3',
   ];
 }
 
