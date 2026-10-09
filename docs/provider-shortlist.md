@@ -53,6 +53,10 @@ first deploy; every id remains individually switchable.
 keeping registry `enabled` false until credentials exist — see
 `docs/phase2-providers.md` (CAST IRON stay-dark).
 
+**Phase 3 enable (FR-126):** one-provider enable ritual (credentials, selftest,
+flip only that id, pin others stay dark) — see
+`docs/phase3-enable-provider.md`. Do not bulk-enable Phase-2 ids.
+
 ## Example `providers/registry.json`
 
 ```json
