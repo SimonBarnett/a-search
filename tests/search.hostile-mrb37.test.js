@@ -27,7 +27,8 @@ function signHs256(payload, key = FIXTURE_HS256_KEY) {
   return `${data}.${b64url(sig)}`;
 }
 
-function validToken(userId = 'U1') {
+// FR-114: USER_ID_RE is ^[0-9A-Z]{8}$ - fixture must be 8 chars.
+function validToken(userId = 'U1TEST01') {
   return signHs256({
     userId,
     iss: ISSUER,
@@ -74,7 +75,7 @@ describe('MRB #37 hostile: FR-005 accept handler', () => {
     assert.equal(res.statusCode, 200);
     const json = JSON.parse(res.body);
     assert.equal(json.accepted, true);
-    assert.equal(json.userId, 'U1');
+    assert.equal(json.userId, 'U1TEST01');
     assert.equal(json.env, 'sandbox');
     assert.match(json.searchId, /^srch_/);
     assert.deepEqual(json.enqueued, ['amazon']);

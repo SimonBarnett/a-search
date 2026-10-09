@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book â€” FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book Ã¢â‚¬â€ FAIL-supersede).
 
-Branch `harvest/â€¦` or `fix/â€¦` -> PR to `main`.
+Branch `harvest/Ã¢â‚¬Â¦` or `fix/Ã¢â‚¬Â¦` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) â€” **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) Ã¢â‚¬â€ **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll â†’ fetch â†’ upsert â†’ delete (not
+   `schedule.handler`** must orchestrate roll Ã¢â€ â€™ fetch Ã¢â€ â€™ upsert Ã¢â€ â€™ delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill â€” already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill Ã¢â‚¬â€ already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAâ€¦EXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives â€” fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÃ¢â‚¬Â¦EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives Ã¢â‚¬â€ fix the fixture instead.
 
 ## Do not
 
@@ -159,5 +159,8 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CDK MSSQL_* wiring: fromSecretCompleteArn via -c mssqlSecretArn (complete ARN needs 6-char suffix); wire SERVER/USER/PASSWORD from JSON + plain MSSQL_DATABASE per env; local workers + maintainer + onboarding only; prefer in-process app.synth() for pins when mssql asset staging exceeds npm spawnSync timeouts.
 - a-search FR-139: ci.yml on push/PR main with setup-node 20, npm ci, npm test, npm run synth; pin fr139 needles; release-gap CI Yes
 - GitHub Actions on Linux: quoted node --test tests/**/*.test.js is a literal path -> use scripts/run-tests.js walker + --test-concurrency=1; fleet-only validate-vision-pack.py paths break CI until vendored
-- FR-139 Ubuntu CI: after POSIX run-tests + concurrency + vendored validate-vision-pack + FR-051b newUserId, remaining reds are stale hostile/harvest pins and release-gap drift -> file suite-debt FR; do not merge while Actions red
+- FR-139 Ubuntu CI: after POSIX run-tests.js + --test-concurrency=1 + vendored validate-vision-pack+setup-python + FR-051b newUserId, remaining reds are stale hostile/harvest pins and release-gap drift -> file suite-debt FR; one tip pass must retarget ALL cascading fr058b no-rateLimit pins to __no_such_source__ and ASCII-normalize release-gap/data-model when mrb989/mrb888 pin mojibake; never merge while Actions red
 - FR-142 SQS DLQ: sibling {queueName}-dlq (14d retention) + deadLetterQueue:{queue,maxReceiveCount:3} on primary; pin RedrivePolicy via in-process app.synth (not npm spawn) for all live/sandbox enabled sources; alarms stay FR-143
+- FR-143: prefer lambda logGroup: new logs.LogGroup({retention:ONE_MONTH}) over deprecated logRetention (Custom::LogRetention); DLQ alarms need FR-142 sibling queues; ApproximateNumberOfMessagesVisible >= 1 -> SnsAction on placeholder topic
+- When a harvest tip folds/expands an existing contiguous lesson bullet, refresh every hostile pin that asserts the old string in the same MRB tip; keep-both release-gap CloudWatch Yes + CI Yes when FR-143 meets FR-139 on main
+

@@ -1,0 +1,8 @@
+fr	title	goal
+FR-225	Docs lock shared OAuth registry and email magic OTP	Document shared merchant/partner/club login: pluggable OAuth requiring email|phone|contact, plus email magic link/OTP; no passwords in Phase 5.
+FR-226	Auth provider registry pluggable contact claims	Implement provider registry so adding an OAuth provider is config + adapter; each provider must expose email OR phone OR contact.
+FR-227	OAuth shortlist adapter scaffolds X GitHub Facebook Google Instagram	Scaffold adapters for X, GitHub, Facebook, Google, Instagram behind registry; stay-dark until credentials exist.
+FR-228	Email magic link or OTP login path	Enter email only: send magic link or OTP; verified email starts session and maps to identity code.
+FR-229	Shared login entry for merchant partner club roles	One login stack serves merchant wizard, partner registration, and club entry; role attached after identity.
+FR-230	HTML mocks shared login OAuth and email OTP	Add docs/mocks/components-piece-auth/{home,empty,error}.html and Screens rows.
+FR-231	Reject OAuth login when no email phone or contact	Fail closed when provider profile lacks email, phone, and contact; show error; do not mint identity.

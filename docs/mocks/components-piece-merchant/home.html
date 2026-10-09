@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search merchant signup wizard - provider + Stripe</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .step { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .ok { color: #0a7; font-weight: 600; }
+    label { display: block; margin: 0.35rem 0; }
+    .meta { color: #556; font-size: 0.9rem; }
+    code { background: #f4f6f8; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <h1>Merchant signup wizard</h1>
+  <p class="meta">Wireframe MW1 - Shopify / Wix / Woo connect + monthly Stripe gate.</p>
+
+  <div class="step">
+    <h2>1. Catalogue provider</h2>
+    <label><input type="radio" name="provider" checked /> Shopify</label>
+    <label><input type="radio" name="provider" /> Wix</label>
+    <label><input type="radio" name="provider" /> WooCommerce</label>
+  </div>
+
+  <div class="step">
+    <h2>2. Shop connection</h2>
+    <p class="ok">Connected via logged-in Shopify session</p>
+    <p>Shop: <code>example-shop.myshopify.com</code></p>
+    <p class="meta">If not logged in, platform login is prompted before details return.</p>
+  </div>
+
+  <div class="step">
+    <h2>3. Stripe monthly subscription</h2>
+    <p class="ok">Customer created - subscription active - first payment confirmed</p>
+    <p class="meta">Signup cannot finish until payment confirmation. Monthly merchants do not pay commission.</p>
+  </div>
+
+  <p class="ok">Signup complete</p>
+</body>
+</html>

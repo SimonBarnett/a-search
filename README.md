@@ -1,5 +1,7 @@
 # a-search
 
+[![ci](https://github.com/SimonBarnett/a-search/actions/workflows/ci.yml/badge.svg)](https://github.com/SimonBarnett/a-search/actions/workflows/ci.yml)
+
 JWT-authenticated search entry for Club Madeira affiliate / local parts
 discovery. One `POST /search` accepts the job (**HTTP 200**) and fans out
 offline work to per-provider SQS queues. Local parts live in MSSQL; a
@@ -28,6 +30,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Phase-3 enable one provider](docs/phase3-enable-provider.md) (FR-126 -- ritual template; does not enable anyone)
 - [Deploy playbook](docs/deploy.md) (FR-140 -- bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone)
 - [AWS installable v0.1 DoD](docs/release-installable.md) (FR-128 -- CI, cdk deploy, secrets, S3, smoke, VERSION; stay-dark OOS)
+- [Release checklist](docs/release-checklist.md) (FR-145 -- `VERSION` / tag `v0.1.0` pre-tag gates; Plan/UAT cuts the GitHub Release)
 - [Add a source](docs/add-source.md) (checklist -- registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Shared layer](docs/shared-layer.md) (`shared/` -> `/opt/nodejs/a-search`)

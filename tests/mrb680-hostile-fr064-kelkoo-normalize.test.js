@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * MRB #680 hostile: FR-064 kelkoo normalize stay-dark + schema pins.
@@ -33,13 +33,24 @@ describe('MRB #680 hostile FR-064 kelkoo normalize', () => {
     const mod = require(normalizePath);
     assert.equal(typeof mod.normalizeKelkooOffer, 'function');
     assert.equal(typeof mod.normalizeSearchResponse, 'function');
-    const products = mod.normalizeSearchResponse({
-      offers: [
-        { offerId: 'a', title: 'A', landingPageUrl: 'https://x.test/a' },
-        { offerId: '', title: 'skip' },
-        null,
-      ],
-    });
+    const track = {
+      userId: 'U-KK',
+      env: 'sandbox',
+      envVars: {
+        A_SEARCH_ENV: 'sandbox',
+        KELKOO_PUBLISHER_ID: 'pub-test',
+      },
+    };
+    const products = mod.normalizeSearchResponse(
+      {
+        offers: [
+          { offerId: 'a', title: 'A', landingPageUrl: 'https://x.test/a' },
+          { offerId: '', title: 'skip' },
+          null,
+        ],
+      },
+      track,
+    );
     assert.equal(products.length, 1);
     assert.equal(products[0].id, 'a');
     assert.equal(products[0].source, 'kelkoo');
@@ -49,7 +60,15 @@ describe('MRB #680 hostile FR-064 kelkoo normalize', () => {
     const { normalizeSearchResponse } = require(normalizePath);
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-    const products = normalizeSearchResponse(fixture);
+    const track = {
+      userId: 'U-KK',
+      env: 'sandbox',
+      envVars: {
+        A_SEARCH_ENV: 'sandbox',
+        KELKOO_PUBLISHER_ID: 'pub-test',
+      },
+    };
+    const products = normalizeSearchResponse(fixture, track);
     assert.equal(products[0].description, 'Fixture Merchant A');
     for (const p of products) assertProductSchema(p);
 
