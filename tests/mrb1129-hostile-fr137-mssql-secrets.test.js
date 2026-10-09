@@ -37,11 +37,12 @@ describe('MRB #1129 hostile FR-137 MSSQL secrets', () => {
       text,
       /isLocalProviderFolder[\s\S]{0,120}?wireMssqlSecretEnv\(\s*worker/,
     );
-    // Contiguous FR-137 window must stay intact (no mid-bullet splice).
-    const i = text.indexOf('FR-137:');
-    assert.ok(i >= 0);
-    const window = text.slice(i, i + 280);
+    // Contiguous FR-137 stack wiring window (constructor), not the helper JSDoc alone.
+    const i = text.indexOf('FR-137: MSSQL_* from Secrets Manager');
+    assert.ok(i >= 0, 'missing FR-137 constructor wiring comment');
+    const window = text.slice(i, i + 360);
     assert.match(window, /mssqlSecretArn/);
+    assert.match(window, /fromSecretCompleteArn/);
     assert.match(window, /SERVER/);
     assert.match(window, /PASSWORD/);
     assert.doesNotMatch(window, /\u2014/);
