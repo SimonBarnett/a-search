@@ -155,3 +155,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 ## Harvested lessons (intake)
 
 - When adding a sibling EventBridge rule that older FR pins explicitly forbade (fr056c/mrb501 no ImpactOnboardingLiveSchedule), flip those absence asserts to presence or FR-N ownership comments in the same product PR as the new rule; put release-gap refresh on docs/mrb-N (context: FR-133/#1109 + docs/mrb #1115; twin tip #1116 folded)
+- When two open harvest-lesson tips share the same EventBridge sibling absence-pin playbook, merge the earlier tip (fold later twin docs/mrb-N clause), close the later tip as Duplicate of #N / fixed by PR #M, and put the hostile skill phrase pin on docs/mrb-N from the new main tip.
