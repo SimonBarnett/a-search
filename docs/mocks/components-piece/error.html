@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search ComponentsPiece — error / signup gate</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #222; background: #f7f7f7; }
+    .host-nav { background: #333; color: #fff; padding: 0.75rem 1.25rem; }
+    .host-article { max-width: 52rem; margin: 1.5rem auto; padding: 0 1rem; }
+    .a-search-widget { margin: 1.25rem 0; padding: 1rem; border: 1px solid currentColor; }
+    .a-search-widget[data-state="error"] .err { font-weight: 600; }
+    .a-search-widget[data-state="signup"] .signup { margin-top: 0.5rem; }
+    .wire-note { font-size: 0.8rem; color: #556; margin-top: 2rem; }
+    code { background: #eee; padding: 0.1rem 0.3rem; }
+    ul { line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="host-nav">Example host shop</div>
+  <article class="host-article">
+    <h1>Error and signup states</h1>
+
+    <h2>Parts API failure</h2>
+    <div class="a-search-widget" data-mode="horizontal" data-state="error">
+      <div class="err">Deals unavailable right now.</div>
+      <div class="detail">Parts request failed (network or 5xx). Retry later.</div>
+    </div>
+
+    <h2>Click gate — unapproved, no DNS TXT</h2>
+    <div class="a-search-widget" data-mode="horizontal" data-state="signup">
+      <div class="part">
+        <div class="title">Trail Boot Pro</div>
+        <div class="meta">£89.00 · Merchant A</div>
+        <button type="button" data-action="go">View deal</button>
+      </div>
+      <div class="signup">
+        After click: <code>GET /go</code> returned signup URL only.
+        Affiliate destination was not returned. Open signup in a new page.
+      </div>
+    </div>
+
+    <p class="wire-note">
+      Wireframe W3:
+    </p>
+    <ul class="wire-note">
+      <li>Parts 5xx / network → soft error in widget; no crash.</li>
+      <li>Unapproved + no TXT → <code>{ url: signup }</code>; never affiliate target.</li>
+      <li>Unapproved + TXT OK → approve row, then destination (see go pin).</li>
+    </ul>
+  </article>
+</body>
+</html>

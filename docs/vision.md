@@ -185,9 +185,12 @@ LOCKED
 
 | id | file | state |
 |----|------|-------|
-| M1 | docs/mocks/home.html | primary — JWT accept + fan-out + env |
-| M2 | docs/mocks/empty.html | empty — no providers enabled for env |
-| M3 | docs/mocks/error.html | error — 401 JWT / 400 validation |
+| M1 | docs/mocks/home.html | primary - JWT accept + fan-out + env |
+| M2 | docs/mocks/empty.html | empty - no providers enabled for env |
+| M3 | docs/mocks/error.html | error - 401 JWT / 400 validation |
+| W1 | docs/mocks/components-piece/home.html | ComponentsPiece - parts strip (horizontal) |
+| W2 | docs/mocks/components-piece/empty.html | ComponentsPiece - empty live.json |
+| W3 | docs/mocks/components-piece/error.html | ComponentsPiece - Parts error / signup gate |
 
 ## LOCKED
 
