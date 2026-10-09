@@ -27,7 +27,7 @@ Sandbox may skip or soften external side effects (no production affiliate
 writes, capped rate limits) but **must** still accept search with 200,
 enqueue, and write results under the sandbox rclone path so callers can UAT.
 
-## Results storage + rclone (LOCKED)
+## Results storage + rclone (LOCKED -- FR-124)
 
 Object store remains an **S3 bucket**, but the **MSSQL host** exposes it as a
 **mapped drive via rclone** on that same server. Search/result consumers and
@@ -37,28 +37,34 @@ use the S3 API with the same bucket/key layout.
 **Ops mount guide:** [rclone-results.md](rclone-results.md) (`S3_RESULTS_BUCKET`,
 `A_SEARCH_RCLONE_ROOT`, path examples).
 
+### FR-124 LOCKED defaults (verified 2026-10-09)
+
+| Knob | LOCKED default |
+|------|----------------|
+| Drive letter | **`X:`** on the SQL host (**ops may remap**) |
+| `A_SEARCH_RCLONE_ROOT` | `X:\<S3_RESULTS_BUCKET>` (bucket folder under the account-level mount) |
+| Bucket scheme | **One dedicated results bucket** with `live/` + `sandbox/` key prefixes |
+| Rejected as default | Two buckets (`...-live` / `...-sandbox`); reusing legacy `madeira-results-bucket` root (no env prefix) |
+
 Logical key (LOCKED -- includes env prefix):
 
 ```
 {env}/{source}/{userId}/{catalogId}/{searchId}.json
 ```
 
-On the SQL server (examples -- drive letters UNKNOWN until deploy):
+On the SQL server (LOCKED example letter `X:`):
 
 ```
-live:     S:\a-search\live\{source}\{userId}\{catalogId}\{searchId}.json
-sandbox:  S:\a-search\sandbox\{source}\{userId}\{catalogId}\{searchId}.json
+live:     X:\<S3_RESULTS_BUCKET>\live\{source}\{userId}\{catalogId}\{searchId}.json
+sandbox:  X:\<S3_RESULTS_BUCKET>\sandbox\{source}\{userId}\{catalogId}\{searchId}.json
 ```
 
-Equivalent S3:
+Equivalent S3 (prefix-under-one-bucket):
 
 ```
 s3://{S3_RESULTS_BUCKET}/live/{source}/{userId}/{catalogId}/{searchId}.json
 s3://{S3_RESULTS_BUCKET}/sandbox/{source}/{userId}/{catalogId}/{searchId}.json
 ```
-
-(or separate buckets `...-live` / `...-sandbox` -- choose one scheme in IaC;
-prefix-under-one-bucket is the default LOCKED layout above).
 
 Maintainer staging CSVs may also land under
 `{env}/_staging/{source}/{feedKey}/` on the same mount/bucket family.
