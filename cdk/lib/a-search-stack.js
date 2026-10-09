@@ -20,6 +20,10 @@ const {
   stageProviderWorkerLambdaAsset,
   workerHandlerPath,
 } = require('../../scripts/stage-provider-worker-lambda-asset');
+const {
+  stageMaintainerLambdaAsset,
+  maintainerHandlerPath,
+} = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
  * Title-case construct id fragment from source id (amazon â†’ Amazon).
@@ -195,13 +199,13 @@ class ASearchStack extends cdk.Stack {
     });
 
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
-    const maintainerCode = lambda.Code.fromAsset(
-      path.join(__dirname, '..', '..', 'maintainer', 'src'),
-    );
+    // FR-131: stage maintainer/src + shared/ so ../../shared/intake/reportException resolves
+    const maintainerAssetDir = stageMaintainerLambdaAsset(repoRoot);
+    const maintainerCode = lambda.Code.fromAsset(maintainerAssetDir);
     const maintainerLive = new lambda.Function(this, 'MaintainerLiveFunction', {
       functionName: 'a-search-maintainer-live',
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'schedule.handler',
+      handler: maintainerHandlerPath(),
       code: maintainerCode,
       timeout: cdk.Duration.minutes(5),
       environment: {
@@ -215,7 +219,7 @@ class ASearchStack extends cdk.Stack {
       {
         functionName: 'a-search-maintainer-sandbox',
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'schedule.handler',
+        handler: maintainerHandlerPath(),
         code: maintainerCode,
         timeout: cdk.Duration.minutes(5),
         environment: {
