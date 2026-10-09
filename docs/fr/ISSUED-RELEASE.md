@@ -1,0 +1,29 @@
+# Phase-3 AWS installable FRs (FR-128..150)
+
+| Code | Issue | Title |
+|------|------:|-------|
+| FR-128 | [#964](https://github.com/SimonBarnett/a-search/issues/964) | FR-128: Define AWS installable v0.1 release DoD + docs/release-installable.md |
+| FR-129 | [#965](https://github.com/SimonBarnett/a-search/issues/965) | FR-129: CDK: create S3 results bucket + outputs (no IAM yet) |
+| FR-130 | [#966](https://github.com/SimonBarnett/a-search/issues/966) | FR-130: Wire S3_RESULTS_BUCKET env + PutObject/GetObject grants on entry/workers/maintainer/onboarding |
+| FR-131 | [#967](https://github.com/SimonBarnett/a-search/issues/967) | FR-131: Stage maintainer Lambda asset to include shared/ (fix broken relative requires) |
+| FR-132 | [#968](https://github.com/SimonBarnett/a-search/issues/968) | FR-132: Stage awin/impact onboarding Lambda assets to include shared/ |
+| FR-133 | [#969](https://github.com/SimonBarnett/a-search/issues/969) | FR-133: CDK: EventBridge daily rule for impact onboarding live (missing sibling) |
+| FR-134 | [#970](https://github.com/SimonBarnett/a-search/issues/970) | FR-134: Bundle @aws-sdk/client-s3 (and smithy) into provider worker Lambda assets |
+| FR-135 | [#971](https://github.com/SimonBarnett/a-search/issues/971) | FR-135: Bundle mssql driver into local-provider worker + maintainer assets |
+| FR-136 | [#972](https://github.com/SimonBarnett/a-search/issues/972) | FR-136: CDK Secrets Manager wiring for entry JWT_* (from secret ARN context) |
+| FR-137 | [#973](https://github.com/SimonBarnett/a-search/issues/973) | FR-137: CDK Secrets Manager wiring for MSSQL_* on maintainer + local workers + onboarding |
+| FR-138 | [#974](https://github.com/SimonBarnett/a-search/issues/974) | FR-138: CDK Secrets Manager wiring for enabled provider credentials (amazon ebay rakuten cj awin impact) |
+| FR-139 | [#975](https://github.com/SimonBarnett/a-search/issues/975) | FR-139: GitHub Actions CI: Node 20 npm test + npm run synth |
+| FR-140 | [#976](https://github.com/SimonBarnett/a-search/issues/976) | FR-140: docs/deploy.md installable playbook (bootstrap, secrets, cdk deploy, smoke) |
+| FR-141 | [#977](https://github.com/SimonBarnett/a-search/issues/977) | FR-141: npm run deploy script + cdk context account/region knobs |
+| FR-142 | [#978](https://github.com/SimonBarnett/a-search/issues/978) | FR-142: SQS dead-letter queues for each enabled worker queue |
+| FR-143 | [#979](https://github.com/SimonBarnett/a-search/issues/979) | FR-143: CloudWatch log retention + DLQ depth alarm for entry/workers |
+| FR-144 | [#980](https://github.com/SimonBarnett/a-search/issues/980) | FR-144: Post-deploy smoke script: JWT fixture -> POST /search + GET /selftest |
+| FR-145 | [#981](https://github.com/SimonBarnett/a-search/issues/981) | FR-145: VERSION file + docs/release-checklist.md for first installable tag |
+| FR-146 | [#982](https://github.com/SimonBarnett/a-search/issues/982) | FR-146: Ops runbook: create sandbox DB + apply maintainer/sql DDL to live and sandbox |
+| FR-147 | [#983](https://github.com/SimonBarnett/a-search/issues/983) | FR-147: Ops runbook: rclone mount on SQL host for results tree |
+| FR-148 | [#984](https://github.com/SimonBarnett/a-search/issues/984) | FR-148: Entry Lambda env matrix: multi-env accept (stop implying sandbox-only process) |
+| FR-149 | [#985](https://github.com/SimonBarnett/a-search/issues/985) | FR-149: CDK/docs: VPC or explicit no-VPC egress pattern for MSSQL (links FR-122) |
+| FR-150 | [#986](https://github.com/SimonBarnett/a-search/issues/986) | FR-150: docs/secrets-matrix.md: which Lambda needs which secret keys |
+
+Unlock FRs: #950-#956. Umbrella: [feature-request-phase3-aws-installable-2026-10-09.md](../feature-request-phase3-aws-installable-2026-10-09.md)
