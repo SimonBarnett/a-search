@@ -39,6 +39,7 @@ deploy smoke path - **without committing secrets**.
 ## Related runbooks (filled by later FRs)
 
 - Deploy playbook: `docs/deploy.md` (FR-140)
+- Release checklist / VERSION: `docs/release-checklist.md` + root `VERSION` (FR-145)
 - Secrets matrix: `docs/secrets-matrix.md` (FR-150)
 - Sandbox DB + DDL: ops FRs after FR-121
 - rclone SQL-host mount: `docs/rclone-results.md` (FR-124)
