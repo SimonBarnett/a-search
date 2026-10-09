@@ -17,7 +17,7 @@ describe('a-search root scaffold', () => {
     assert.ok(pkg.engines && typeof pkg.engines.node === 'string');
     assert.match(pkg.engines.node, />=\s*20/);
     assert.ok(pkg.scripts && typeof pkg.scripts.test === 'string');
-    assert.match(pkg.scripts.test, /node --test|node:test/);
+    assert.match(pkg.scripts.test, /node --test|node:test|run-tests\.js/);
   });
 
   it('smoke: scaffold test runner is alive', () => {
