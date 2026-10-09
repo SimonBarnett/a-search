@@ -118,6 +118,32 @@ never in git.
 | `MSSQL_ENCRYPT` | default `true` (read by `mssqlConfigFromEnv`) |
 | `MSSQL_TRUST_SERVER_CERTIFICATE` | default `true` on lab boxes |
 
+### CDK Secrets Manager (FR-137)
+
+`cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
+provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
+via Secrets Manager — never plaintext passwords in git or synth snapshots.
+
+| Deploy context | Meaning |
+|----------------|---------|
+| `-c mssqlSecretArn=arn:aws:secretsmanager:...` | Existing secret ARN (required for real deploy; synth uses a `000000000000` placeholder ARN) |
+| `-c mssqlLiveDatabase=madeiradb` | Optional; default `madeiradb` |
+| `-c mssqlSandboxDatabase=<name>` | Optional; default `<sandbox-mssql-database>` (FR-121 placeholder) |
+
+Secret **string JSON** keys (create in AWS / ops; never commit values):
+
+| JSON key | Lambda env |
+|----------|------------|
+| `SERVER` | `MSSQL_SERVER` |
+| `USER` | `MSSQL_USER` |
+| `PASSWORD` | `MSSQL_PASSWORD` |
+| (optional) `TRUSTED_CONNECTION` / `DOMAIN` | wire later if needed; stack sets `MSSQL_ENCRYPT=true` and `MSSQL_TRUST_SERVER_CERTIFICATE=true` as plain defaults |
+
+`MSSQL_DATABASE` is **plain** env (not from the secret) so live vs sandbox can
+point at different DB names on the same instance. Live amazon/ebay/… workers
+do **not** receive MSSQL env (no SQL). Helper: `wireMssqlSecretEnv` +
+`grantRead` on the secret.
+
 Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
