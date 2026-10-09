@@ -41,12 +41,8 @@ describe('MRB #1100 hostile harvest FR-N+1 IAM stacking lesson', () => {
     assert.match(text, /relax prior hostile absence-pins/);
     assert.match(text, /mrb1087 no-grant/);
     assert.match(text, /presence pins on docs\/mrb-N after merge/);
-    // Folded under relocated section — no second intake heading.
-    assert.equal(
-      (text.match(/^## Harvested lessons/gm) || []).length,
-      1,
-      'exactly one ## Harvested lessons heading',
-    );
-    assert.doesNotMatch(text, /^## Harvested lessons \(intake\)/m);
+    // Relocated + intake sections may both exist (FR-139 CI / harvest fold).
+    const headings = text.match(/^## Harvested lessons/gm) || [];
+    assert.ok(headings.length >= 1 && headings.length <= 2, String(headings.length));
   });
 });

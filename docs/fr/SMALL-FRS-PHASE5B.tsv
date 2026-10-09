@@ -1,0 +1,12 @@
+fr	title	goal
+FR-214	Docs lock merchant wizard partner pages Stripe rules	Document merchant signup wizard, partner/club widget-copy pages, Stripe subscription gate, monthly-partner/merchant no-commission, and optional payout Connect in docs without implementing billing.
+FR-215	Merchant signup wizard select catalogue provider	Wizard UI step lists Shopify, Wix, WooCommerce; selection is required before connect.
+FR-216	Merchant shop connection via platform logged-in session	After provider select, use logged-in session on that platform to return shop connection details; prompt login if not signed in.
+FR-217	Merchant Stripe Customer subscription first payment gate	Signup cannot complete until Stripe Customer exists, monthly subscription started, and first payment confirmed.
+FR-218	Partner registration sends DNS partner code plus instructions	Partner registration widget/flow issues partner code for DNS and sends/shows instructions pointing at smartcatalogue.uk.
+FR-219	Widget copy page on smartcatalogue.uk mode plus embed	Page on smartcatalogue.uk: select horizontal/vertical/fullscreen and copy embed snippet with no hardcoded host.
+FR-220	Same widget copy page on clubmadeira.uk for clubs	clubmadeira.uk serves the same mode-select + copy-embed page for clubs.
+FR-221	Embed snippet self-configures from placement host	Copied widget code does not embed host; at runtime widget reads location.host + URI.
+FR-222	Partner and club Stripe payouts optional until payout	Partners/clubs can register and run without Stripe payout account; Connect/payout setup only when they request payout.
+FR-223	Monthly-paying partners do not pay commission	Billing rule: partner on monthly plan is not charged commission; document and pin.
+FR-224	HTML mocks merchant wizard and partner copy pages	Add docs/mocks/components-piece-merchant and components-piece-partner home/empty/error HTML; Screens rows.
