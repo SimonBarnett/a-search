@@ -5,6 +5,7 @@
  * ../../../../shared/* (assertEnv, writeResults, intake/reportException).
  * FR-134: also bundle @aws-sdk/client-s3 (+ @smithy) so writeResults PutObject
  * works without a Lambda layer (mirror scripts/stage-entry-lambda-asset.js).
+ * FR-135: local providers also stage mssql (+ transitive) for queryParts.
  *
  * CDK previously used Code.fromAsset(<provider>/src) with handler worker.handler.
  * That zip has no shared/ tree, so relative requires break in Lambda.
@@ -13,12 +14,17 @@
  *   <src.folder>/src/**     e.g. providers/live/amazon/src/worker.js
  *   shared/**               including shared/intake/reportException.js
  *   node_modules/@aws-sdk/** (+ @smithy + small transitives when present)
+ *   node_modules/mssql/**   (providers/local/* only)
  *
  * Handler string: <src.folder>/src/worker.handler (posix).
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  stageMssqlNodeModules,
+  isLocalProviderFolder,
+} = require('./stage-mssql-node-modules');
 
 /**
  * @param {{ id: string, folder: string }} src registry source
@@ -90,6 +96,12 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
     }
   }
 
+  // FR-135: local providers require('mssql') from queryParts — stage driver + deps.
+  let mssqlPackages = [];
+  if (isLocalProviderFolder(folderPosix)) {
+    mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
+  }
+
   fs.writeFileSync(
     path.join(outDir, '.a-search-worker-asset.json'),
     JSON.stringify(
@@ -102,6 +114,8 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
         shared: true,
         awsSdkS3,
         reportException: 'shared/intake/reportException.js',
+        mssql: mssqlPackages.length > 0,
+        mssqlPackages,
       },
       null,
       2,
