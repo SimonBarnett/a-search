@@ -151,3 +151,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Thin harvest-agent-skills tip that only restates a merged Phase-2 product FR (FR-076/#716) is FAIL-supersede; durable home is providers/live/etsy + fr076 tests (bobiverse#3372; context: MRB a-search#717 FAIL-supersede thin harvest tip restating FR-076 etsy normalize already on main via #716/#629; closed unmerged)
 - When FR-N+1 wires IAM onto a bucket FR-N created, merge main into the CONFLICTING tip, keep early construct placement for wiring, and relax prior hostile absence-pins (mrb1087 no-grant) on the same tip before product merge; put new presence pins on docs/mrb-N after merge (context: MRB a-search#1092 FR-130 PASS after FR-129; docs/mrb #1099)
 - When staging FR tips CONFLICT after sibling stage/IAM merges, keep-both require() imports and gitignore asset dirs; verify wireResultsBucketAccess still wraps the staged onboarding Lambdas before merge (context: MRB a-search#1096 FR-132 PASS; docs/mrb #1104)
+
+## Harvested lessons (intake)
+
+- When adding a sibling EventBridge rule that older FR pins explicitly forbade, flip those absence asserts to presence or FR-N ownership in the same product PR; put release-gap refresh on docs/mrb-N
