@@ -84,7 +84,7 @@ npm install
 npm run synth
 ```
 
-`npm run synth` must exit 0. Deploy is optional (`npx cdk deploy ...`).
+`npm run synth` must exit 0. Deploy: `npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2` (FR-141; see [cdk/README.md](cdk/README.md)).
 
 ## Feature requests
 
