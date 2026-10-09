@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search ComponentsPiece — parts loaded</title>
+  <style>
+    /* Host page theme (widget inherits; layout-only below) */
+    body { font-family: Georgia, "Times New Roman", serif; margin: 0; color: #1a1a1a; background: #faf8f5; }
+    .host-nav { background: #2c4a3e; color: #fff; padding: 0.75rem 1.25rem; font-family: system-ui, sans-serif; }
+    .host-article { max-width: 52rem; margin: 1.5rem auto; padding: 0 1rem; }
+    .host-article h1 { font-size: 1.75rem; }
+    .host-article p { line-height: 1.55; }
+
+    /* Widget layout only — no competing theme colors/fonts */
+    .a-search-widget[data-mode="horizontal"] {
+      display: flex; flex-direction: row; gap: 0.75rem; overflow-x: auto;
+      margin: 1.25rem 0; padding: 0.5rem 0;
+    }
+    .a-search-widget .part {
+      flex: 0 0 11rem; border: 1px solid currentColor; border-radius: 4px;
+      padding: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;
+    }
+    .a-search-widget .part img { width: 100%; height: 6rem; object-fit: cover; background: #ddd; }
+    .a-search-widget .part .title { font-size: 0.9rem; }
+    .a-search-widget .part .meta { font-size: 0.8rem; opacity: 0.85; }
+    .a-search-widget .part button {
+      margin-top: auto; padding: 0.35rem 0.5rem; cursor: pointer;
+      font: inherit; background: transparent; border: 1px solid currentColor;
+    }
+    .wire-note { font-family: system-ui, sans-serif; font-size: 0.8rem; color: #556; margin-top: 2rem; }
+    code { background: #eee; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <div class="host-nav">Example host shop — theme owned by host</div>
+  <article class="host-article">
+    <h1>Hiking boots guide</h1>
+    <p>Host content. Widget below captures <code>location.host</code> + path, then pages Parts API.</p>
+
+    <div class="a-search-widget" data-mode="horizontal" data-state="ok"
+         data-host="shop.example" data-uri="/guides/hiking-boots">
+      <div class="part" data-part="P1001">
+        <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='96'%3E%3Crect fill='%23ccc' width='160' height='96'/%3E%3C/svg%3E" />
+        <div class="title">Trail Boot Pro</div>
+        <div class="meta">£89.00 · Merchant A</div>
+        <button type="button" data-action="go">View deal</button>
+      </div>
+      <div class="part" data-part="P1002">
+        <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='96'%3E%3Crect fill='%23bbb' width='160' height='96'/%3E%3C/svg%3E" />
+        <div class="title">Light Walker</div>
+        <div class="meta">£64.50 · Merchant B</div>
+        <button type="button" data-action="go">View deal</button>
+      </div>
+      <div class="part" data-part="P1003">
+        <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='96'%3E%3Crect fill='%23aaa' width='160' height='96'/%3E%3C/svg%3E" />
+        <div class="title">Ridge Mid GTX</div>
+        <div class="meta">£120.00 · Merchant C</div>
+        <button type="button" data-action="go">View deal</button>
+      </div>
+    </div>
+    <p class="wire-note">
+      Wireframe W1: horizontal mode, parts from
+      <code>GET /parts?host=shop.example&amp;uri=/guides/hiking-boots&amp;offset=0&amp;n=3</code>.
+      Click calls <code>GET /go?host&amp;uri&amp;part</code> — no affiliate URL in markup.
+      Modes <code>vertical</code> / <code>fullscreen</code> are layout attributes only.
+    </p>
+  </article>
+</body>
+</html>
