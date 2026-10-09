@@ -1,14 +1,14 @@
-# Feature request: a-search Phase 3 — unlock deploy unknowns + parked drains
+﻿# Feature request: a-search Phase 3 â€” unlock deploy unknowns + parked drains
 
-**Repo:** SimonBarnett/a-search (existing — do **not** `gh repo create`)  
+**Repo:** SimonBarnett/a-search (existing â€” do **not** `gh repo create`)  
 **Date:** 2026-10-09  
 **Plan:** `bob/plan/work/plan-20261009-065037`  
 **Compared to:** `origin/main` @ `0342707` (detached worktree)
 
 ## Context
 
-Phase-2 stay-dark provider work (#614–#665) is **CLOSED** on main. Open issue count is **0**.  
-Vision Success S1–S20 how-measured paths are present. Remaining gaps are **ops locks**, **parked drains**, and **per-account enable** — not stub rewrites.
+Phase-2 stay-dark provider work (#614â€“#665) is **CLOSED** on main. Open issue count is **0**.  
+Vision Success S1â€“S20 how-measured paths are present. Remaining gaps are **ops locks**, **parked drains**, and **per-account enable** â€” not stub rewrites.
 
 ## Ultimate objective (this wave)
 
@@ -16,14 +16,14 @@ Operators can run sandbox searches against a decided MSSQL isolation model, with
 
 ## Shape
 
-**service** (unchanged — reuse repo shape).
+**service** (unchanged â€” reuse repo shape).
 
 ## Success (wave)
 
 | id | metric | target | how measured | fail-when |
 |----|--------|--------|--------------|-----------|
-| P3-S1 | Sandbox MSSQL decided | One of: separate DB / schema / read-only live is LOCKED in `docs/environments.md` + pin test | `tests/fr121-sandbox-mssql-decision.test.js` (draft) | Sandbox still UNKNOWN with no chosen option |
-| P3-S2 | AWS→IONOS path documented | Network path + least-privilege login knobs LOCKED or explicit UNKNOWN with owner | `docs/environments.md` needles + pin | Invented hostnames/secrets in git |
+| P3-S1 | Sandbox MSSQL decided | **LOCKED:** separate database on the same instance (live=`madeiradb`) in `docs/environments.md` + pin test | `tests/fr121-sandbox-mssql-decision.test.js` (draft) | Sandbox still UNKNOWN with no chosen option |
+| P3-S2 | AWSâ†’IONOS path documented | Network path + least-privilege login knobs LOCKED or explicit UNKNOWN with owner | `docs/environments.md` needles + pin | Invented hostnames/secrets in git |
 | P3-S3 | JWT deploy knobs | `JWT_ISSUER` / `JWT_AUDIENCE` / JWKS-or-secret documented as LOCKED placeholders + how to set at deploy | `docs/endpoint-search.md` + pin | Hardcoded production issuer secrets in repo |
 | P3-S4 | rclone + S3 scheme | Drive letter/mount unit + one-bucket-vs-two decided (or LOCKED default restated with IaC pointer) | `docs/rclone-results.md` / environments + pin | Conflicting bucket schemes in IaC vs docs |
 | P3-S5 | Awin live onboarding drain | Live path no longer empty; fixture-backed HTTP drain with exit when `remaining=0` | `tests/fr12x-awin-onboarding-live-drain.test.js` | Live path still no-op comment only |
@@ -41,7 +41,7 @@ Operators can run sandbox searches against a decided MSSQL isolation model, with
 | Code | Goal (one line) |
 |------|-----------------|
 | FR-121 | Lock sandbox MSSQL isolation decision in docs + pin |
-| FR-122 | Document AWS→IONOS SQL network path decision surface |
+| FR-122 | Document AWSâ†’IONOS SQL network path decision surface |
 | FR-123 | Lock JWT issuer/audience/JWKS deploy documentation |
 | FR-124 | Lock rclone mount letter + S3 bucket scheme |
 | FR-125 | Awin onboarding live HTTP drain (fixture-backed) |
