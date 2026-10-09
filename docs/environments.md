@@ -90,9 +90,6 @@ Today there is **no** `a_search_sandbox` database and no sandbox schema.
 `Env` (`live` / `sandbox`) exists only in a-search's own DDL (`CK_Parts_Env`,
 etc.). No madeiradb business table has an env column.
 
-**Network path (AWS Lambda/Fargate -> IONOS):** **UNKNOWN** until ops confirm
-fixed egress IP / firewall allowlist / VPN.
-
 **Least-privilege login (spec):** the SQL login used by a-search workers and
 maintainer SHOULD have **SELECT** on the tables a-search reads (for example
 `dbo.Parts` and feed-key / pending-onboard tables named in provider docs).
@@ -116,6 +113,43 @@ never in git.
 Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
+
+## Network path (FR-122)
+
+AWS Lambda/Fargate (and other off-box workers) reach `WIN-MPRE8VI4U6U` /
+`madeiradb` only through an ops-chosen path. This section is the **decision
+surface** (LOCKED options). The **Chosen option** stays **PENDING** until
+ops confirms one; do not invent host firewall rules, private IPs, or VPN
+secrets as code in git.
+
+| Option id | Name | Meaning |
+|-----------|------|---------|
+| A | Fixed egress allowlist | AWS NAT / static egress IPs allowed through the IONOS host or edge firewall to SQL TCP (usually 1433). Ops owns the allowlist outside this repo. |
+| B | VPN | Site-to-site or client VPN so workers land on a path that can reach the SQL host. Tunnel config lives in ops/IaC secrets, never in product git. |
+| C | On-box only | No off-box SQL from AWS. Workers that need MSSQL run on the SQL host (or a peered box already allowed). Lambda stays S3/SQS-only for those paths. |
+
+**Chosen option:** **PENDING** (still UNKNOWN which of A/B/C ops will lock).
+Until then, treat off-box MSSQL connects as may-fail: local selftest probes
+map connect failures to `mssql_unreachable` / `mssql_auth_failed`
+(`shared/mssql/classifyConnectError.js`).
+
+**Ops checklist** (no ports opened by this FR):
+
+1. Pick exactly one of A / B / C and record it here as LOCKED (replace PENDING).
+2. If A: publish the egress CIDR/IP set in the ops runbook; open SQL TCP only
+   for that set on the IONOS edge/host firewall.
+3. If B: stand up the VPN; confirm name resolution for
+   `MSSQL_SERVER` / `WIN-MPRE8VI4U6U` from the worker side.
+4. If C: document which processes on the box run MSSQL readers; keep AWS
+   workers off direct SQL.
+5. Confirm least-privilege SQL login (see **MSSQL target** above) from the
+   chosen path.
+6. Smoke: sandbox selftest shows `ok` or a classified error -- never a hang.
+7. **Never** commit firewall rule dumps, private IPs, VPN PSKs, or SQL
+   passwords into git. Placeholders stay in `.env.example` only.
+
+Related: [rclone-results.md](rclone-results.md) (SQL-host mount),
+[endpoint-selftest.md](endpoint-selftest.md) (`mssql_unreachable`).
 
 ## Registry
 

@@ -57,7 +57,10 @@ Values stay out of git.
 | `userId` | — | — | **Ignored as authority** (see Auth) |
 
 Environment isolation: `docs/environments.md`. Live and sandbox selftests
-never share queues, SQL targets, or secrets.
+never share queues, SQL targets, or secrets. Local MSSQL probes that cannot
+reach `madeiradb` report `mssql_unreachable` (or `mssql_auth_failed`); the
+AWS -> IONOS path decision surface is **Network path (FR-122)** in
+`docs/environments.md` (ops checklist — this FR does not open firewall ports).
 
 `sources` may not turn on a disabled registry entry.
 
