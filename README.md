@@ -29,6 +29,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Phase-2 providers](docs/phase2-providers.md) (FR-061 -- stay-dark until credentials)
 - [Phase-3 enable one provider](docs/phase3-enable-provider.md) (FR-126 -- ritual template; does not enable anyone)
 - [Deploy playbook](docs/deploy.md) (FR-140 -- bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone)
+- [Secrets matrix](docs/secrets-matrix.md) (FR-150 -- which Lambda needs which secret keys; no values)
 - [AWS installable v0.1 DoD](docs/release-installable.md) (FR-128 -- CI, cdk deploy, secrets, S3, smoke, VERSION; stay-dark OOS)
 - [Add a source](docs/add-source.md) (checklist -- registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)

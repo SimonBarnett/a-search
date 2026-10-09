@@ -44,6 +44,7 @@ An **installable release** means:
 | JWT_* entry Secrets Manager (FR-136) | **Yes** (FR-136) | No |
 | MSSQL_* Secrets Manager (FR-137) | **Yes** (FR-137 #973) - maintainer + local workers + onboarding | No |
 | provider secrets in CDK (FR-138) | **Yes** (FR-138 #974) - per-source Secrets Manager on enabled workers + awin/impact onboarding; stay-dark omitted | No |
+| secrets-matrix.md (which Lambda / keys) | **Yes** - `docs/secrets-matrix.md` + README pointer (FR-150 #986); no values | Yes |
 | Worker zip includes `@aws-sdk/client-s3` + `mssql` | **Yes** - `@aws-sdk/client-s3` + `@smithy` (FR-134); `mssql` staged for `providers/local/*` + maintainer (FR-135 #971 / #1113) | No |
 | Maintainer zip includes `shared/` + `mssql` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131 shared + FR-135 mssql) | No |
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
