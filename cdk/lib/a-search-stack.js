@@ -20,6 +20,10 @@ const {
   stageProviderWorkerLambdaAsset,
   workerHandlerPath,
 } = require('../../scripts/stage-provider-worker-lambda-asset');
+const {
+  stageOnboardingLambdaAsset,
+  onboardingHandlerPath,
+} = require('../../scripts/stage-onboarding-lambda-asset');
 
 /**
  * Title-case construct id fragment from source id (amazon â†’ Amazon).
@@ -241,25 +245,19 @@ class ASearchStack extends cdk.Stack {
     });
 
     // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
+    // FR-132: stage onboarding/src + shared/ (handler path under staged root).
+    const awinOnboardingFolder = 'providers/local/awin/onboarding';
     const awinOnboardingCode = lambda.Code.fromAsset(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        'providers',
-        'local',
-        'awin',
-        'onboarding',
-        'src',
-      ),
+      stageOnboardingLambdaAsset(repoRoot, awinOnboardingFolder),
     );
+    const awinOnboardingHandler = onboardingHandlerPath(awinOnboardingFolder);
     const awinOnboardingLive = new lambda.Function(
       this,
       'AwinOnboardingLiveFunction',
       {
         functionName: 'a-search-awin-onboarding-live',
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler.handler',
+        handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
         environment: {
@@ -273,7 +271,7 @@ class ASearchStack extends cdk.Stack {
       {
         functionName: 'a-search-awin-onboarding-sandbox',
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler.handler',
+        handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
         environment: {
@@ -283,25 +281,19 @@ class ASearchStack extends cdk.Stack {
     );
 
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
+    // FR-132: staged asset includes shared/identity for relative requires.
+    const impactOnboardingFolder = 'providers/local/impact/onboarding';
     const impactOnboardingCode = lambda.Code.fromAsset(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        'providers',
-        'local',
-        'impact',
-        'onboarding',
-        'src',
-      ),
+      stageOnboardingLambdaAsset(repoRoot, impactOnboardingFolder),
     );
+    const impactOnboardingHandler = onboardingHandlerPath(impactOnboardingFolder);
     const impactOnboardingSandbox = new lambda.Function(
       this,
       'ImpactOnboardingSandboxFunction',
       {
         functionName: 'a-search-impact-onboarding-sandbox',
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler.handler',
+        handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
         environment: {
@@ -312,13 +304,14 @@ class ASearchStack extends cdk.Stack {
 
 
     // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
+    // FR-132: same staged impact asset as sandbox.
     const impactOnboardingLive = new lambda.Function(
       this,
       'ImpactOnboardingLiveFunction',
       {
         functionName: 'a-search-impact-onboarding-live',
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler.handler',
+        handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
         environment: {
