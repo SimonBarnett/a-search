@@ -20,9 +20,11 @@ describe('FR-056f CDK onboarding schedules', () => {
     assert.match(text, /AwinOnboardingLiveSchedule/);
     assert.match(text, /AwinOnboardingSandboxSchedule/);
     assert.match(text, /ImpactOnboardingSandboxSchedule/);
+    assert.match(text, /ImpactOnboardingLiveSchedule/);
     assert.match(text, /ruleName:\s*'a-search-awin-onboarding-live'/);
     assert.match(text, /ruleName:\s*'a-search-awin-onboarding-sandbox'/);
     assert.match(text, /ruleName:\s*'a-search-impact-onboarding-sandbox'/);
+    assert.match(text, /ruleName:\s*'a-search-impact-onboarding-live'/);
     assert.match(text, /Schedule\.rate\(cdk\.Duration\.days\(1\)\)/);
     assert.match(text, /targets:\s*\[\s*new targets\.LambdaFunction\(awinOnboardingLive\)/);
     assert.match(
@@ -32,6 +34,10 @@ describe('FR-056f CDK onboarding schedules', () => {
     assert.match(
       text,
       /targets:\s*\[\s*new targets\.LambdaFunction\(impactOnboardingSandbox\)/,
+    );
+    assert.match(
+      text,
+      /targets:\s*\[\s*new targets\.LambdaFunction\(impactOnboardingLive\)/,
     );
   });
 
@@ -59,6 +65,10 @@ describe('FR-056f CDK onboarding schedules', () => {
       names.includes('a-search-impact-onboarding-sandbox'),
       'missing EventBridge rule a-search-impact-onboarding-sandbox',
     );
+    assert.ok(
+      names.includes('a-search-impact-onboarding-live'),
+      'missing EventBridge rule a-search-impact-onboarding-live',
+    );
     // Fail-when: only maintainer schedules exist
     const onboardingRules = rules.filter(
       (res) =>
@@ -67,8 +77,8 @@ describe('FR-056f CDK onboarding schedules', () => {
         res.Properties.Name.includes('onboarding'),
     );
     assert.ok(
-      onboardingRules.length >= 3,
-      `expected >=3 onboarding rules, got ${onboardingRules.length}`,
+      onboardingRules.length >= 4,
+      `expected >=4 onboarding rules, got ${onboardingRules.length}`,
     );
   });
 });

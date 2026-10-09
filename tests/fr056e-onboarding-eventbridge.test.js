@@ -21,9 +21,11 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
     assert.match(text, /AwinOnboardingLiveSchedule/);
     assert.match(text, /AwinOnboardingSandboxSchedule/);
     assert.match(text, /ImpactOnboardingSandboxSchedule/);
+    assert.match(text, /ImpactOnboardingLiveSchedule/);
     assert.match(text, /ruleName:\s*'a-search-awin-onboarding-live'/);
     assert.match(text, /ruleName:\s*'a-search-awin-onboarding-sandbox'/);
     assert.match(text, /ruleName:\s*'a-search-impact-onboarding-sandbox'/);
+    assert.match(text, /ruleName:\s*'a-search-impact-onboarding-live'/);
     assert.match(text, /Schedule\.rate\(\s*cdk\.Duration\.days\(\s*1\s*\)\s*\)/);
     assert.match(
       text,
@@ -45,6 +47,7 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
     assert.match(readme, /a-search-awin-onboarding-live/);
     assert.match(readme, /a-search-awin-onboarding-sandbox/);
     assert.match(readme, /a-search-impact-onboarding-sandbox/);
+    assert.match(readme, /a-search-impact-onboarding-live/);
     assert.match(readme, /FR-056e/);
     assert.match(readme, /daily|Duration\.days|once per day/i);
   });
@@ -63,15 +66,19 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
     const awinRule = byName('a-search-awin-onboarding-live');
     const awinSbRule = byName('a-search-awin-onboarding-sandbox');
     const impactRule = byName('a-search-impact-onboarding-sandbox');
+    const impactLiveRule = byName('a-search-impact-onboarding-live');
     assert.ok(awinRule, 'template must include rule a-search-awin-onboarding-live');
     assert.ok(awinSbRule, 'template must include rule a-search-awin-onboarding-sandbox');
     assert.ok(impactRule, 'template must include rule a-search-impact-onboarding-sandbox');
+    assert.ok(impactLiveRule, 'template must include rule a-search-impact-onboarding-live');
     const awinTargets = JSON.stringify(awinRule.Properties.Targets || []);
     const awinSbTargets = JSON.stringify(awinSbRule.Properties.Targets || []);
     const impactTargets = JSON.stringify(impactRule.Properties.Targets || []);
+    const impactLiveTargets = JSON.stringify(impactLiveRule.Properties.Targets || []);
     assert.match(awinTargets, /AwinOnboardingLive|awin-onboarding-live/i);
     assert.match(awinSbTargets, /AwinOnboardingSandbox|awin-onboarding-sandbox/i);
     assert.match(impactTargets, /ImpactOnboardingSandbox|impact-onboarding-sandbox/i);
+    assert.match(impactLiveTargets, /ImpactOnboardingLive|impact-onboarding-live/i);
     assert.match(
       String(awinRule.Properties.ScheduleExpression || ''),
       /rate\s*\(\s*1\s+day\s*\)/i,
