@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search ComponentsPiece — empty live.json</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #222; background: #f7f7f7; }
+    .host-nav { background: #333; color: #fff; padding: 0.75rem 1.25rem; }
+    .host-article { max-width: 52rem; margin: 1.5rem auto; padding: 0 1rem; }
+    .a-search-widget[data-mode="horizontal"] {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 6rem; margin: 1.25rem 0; border: 1px dashed currentColor;
+      padding: 1rem; opacity: 0.85;
+    }
+    .a-search-widget .empty-msg { font-size: 0.95rem; text-align: center; }
+    .wire-note { font-size: 0.8rem; color: #556; margin-top: 2rem; }
+    code { background: #eee; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <div class="host-nav">Example host shop</div>
+  <article class="host-article">
+    <h1>New page — first sight</h1>
+    <p>Host exists (or was just created). Agent has not filled parts yet.</p>
+
+    <div class="a-search-widget" data-mode="horizontal" data-state="empty"
+         data-host="shop.example" data-uri="/new-landing">
+      <div class="empty-msg">No deals for this page yet. Check back soon.</div>
+    </div>
+    <p class="wire-note">
+      Wireframe W2: <code>GET /parts</code> returned
+      <code>{ customerNumber, parts: [], nextOffset: null }</code> after bootstrap
+      (Customers row + empty <code>live.json</code>). Widget still mounts; no error chrome.
+    </p>
+  </article>
+</body>
+</html>

@@ -1,0 +1,19 @@
+﻿fr	title	goal
+FR-195	Docs lock ComponentsPiece architecture + contracts	Park architecture, storage layout, and minimal contracts in docs/ without implementing APIs.
+FR-196	Customers DB row host customerNumber approved	Persist host -> customerNumber with approved flag and DNS-approval cache fields.
+FR-197	S3 customer tree bootstrap empty live.json	On first sight create x:/{customerNumber}/ tree with site placeholders and empty live.json for uri-slug.
+FR-198	Parts API GET /parts offset limit page	GET /parts?host&uri&offset&n returns customerNumber, parts slice from live.json, nextOffset.
+FR-199	Click API GET /go approved path	Approved host GET /go?host&uri&part returns affiliate destination from live.json.
+FR-200	Click API DNS TXT gate signup and approval cache	Unapproved: TXT present marks approved and returns destination; TXT absent returns signup URL only; cache so DNS not hit every click.
+FR-201	Widget JS capture host uri page Parts API	Ship embeddable widget that captures location.host + pathname (relevant search), pages Parts API, supports horizontal|vertical|fullscreen layout attribute.
+FR-202	Widget inherit host CSS no competing theme	Widget CSS is layout-only; no brand color/font theme that fights the host.
+FR-203	Widget click via /go never embed affiliate URL	View deal triggers GET /go and opens returned url; part cards do not contain affiliate hrefs.
+FR-204	Agent site pass site.md and seed top10.json	First agent pass on customer without site.md writes affiliate skillbook into site.md and seeds top10.json.
+FR-205	Agent URI context.md and searches.json	Per URI folder maintain context.md and a small searches.json aimed at cheapest relevant queries.
+FR-206	Agent ingest in.json into live.json then delete	Read normalised in.json, append relevant parts to live.json, delete consumed in.json. Agent is only writer of live.json.
+FR-207	Agent prune dead links and roll top10.json	Drop outdated/broken links from live.json; promote best deals into top10.json.
+FR-208	CDK API Gateway routes for /parts and /go	Expose GET /parts and GET /go on the HTTP API with IAM/lambda wiring; synth clean.
+FR-209	Park ComponentsPiece HTML mocks and vision Screens rows	Add docs/mocks/components-piece/{home,empty,error}.html and Screens rows; keep gateway mocks.
+FR-210	Skillbook folder for components-piece agent CWD	Add AGENTS.md + .grok/skills/a-search-components-piece/SKILL.md so an agent can maintain widget/API/agent tree in isolation.
+FR-211	uri-slug stable encoding helper	Stable uri-slug from path (+ query when intent-changing) with tests for collisions and reserved chars.
+FR-212	JSON contract fixtures in.json live.json searches.json	Checked-in fixtures + schema pins for in/live/searches item shapes used by agent and Parts API.
