@@ -42,7 +42,7 @@ An **installable release** means:
 | S3 results bucket in CDK | **Yes** (FR-129 `ResultsBucket`) | No |
 | `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **Yes** (FR-130 `wireResultsBucketAccess`) | No |
 | JWT_* / MSSQL_* / provider secrets in CDK | **No** | **Yes** |
-| Worker zip includes `@aws-sdk/client-s3` + `mssql` | **No** (entry stages SDK; workers do not) | **Yes** |
+| Worker zip includes `@aws-sdk/client-s3` + `mssql` | **Partial** — `@aws-sdk/client-s3` + `@smithy` staged (FR-134); `mssql` still **No** (FR-135 #971) | Partial (`mssql`) |
 | Maintainer zip includes `shared/` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131) | No (mssql package staging = FR-135 #971) |
 | Onboarding zip includes `shared/` | **No** (requires shared/identity) | **Yes** |
 | SQS DLQ | **No** | Yes (ops safety) |
