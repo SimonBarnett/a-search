@@ -43,9 +43,11 @@ Content-Type: application/json
 | Missing / invalid / expired JWT | **401** `{ "ok": false, "error": "unauthorized" }` |
 | Missing `userId` claim | **401** `{ "ok": false, "error": "missing_user_id_claim" }` |
 
-Issuer / JWKS / audience: same `entry/.env` keys as search
-(`JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_JWKS_URL` or shared secret) — values
-UNKNOWN until deploy.
+Issuer / JWKS / audience: same LOCKED `entry/.env` keys as search
+(`JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_JWKS_URL` or `JWT_SECRET` /
+`JWT_HS256_SECRET`). Deploy procedure and fail-closed rules:
+[endpoint-search.md](endpoint-search.md) **JWT deploy config (FR-123)**.
+Values stay out of git.
 
 ### Query / body filters
 
