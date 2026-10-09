@@ -10,10 +10,14 @@ const {
   createMemoryPendingQueue,
 } = require('../providers/local/impact/onboarding/src/run');
 
+/** FR-051c emitSignupRow requires user_id (GenerateUniqueUserId). */
+const newUserId = () => 'ABCD1234';
+
 describe('FR-051b impact pending-queue drain', () => {
   it('empty queue → remaining 0, processed 0, signups []', async () => {
     const q = createMemoryPendingQueue([]);
     const out = await runOnce({
+      newUserId,
       envVars: { A_SEARCH_ENV: 'sandbox' },
       ...q,
     });
@@ -34,6 +38,7 @@ describe('FR-051b impact pending-queue drain', () => {
       },
     ]);
     const out = await runOnce({
+      newUserId,
       envVars: { A_SEARCH_ENV: 'sandbox' },
       ...q,
     });
@@ -62,6 +67,7 @@ describe('FR-051b impact pending-queue drain', () => {
       },
     ]);
     const deps = {
+      newUserId,
       envVars: { A_SEARCH_ENV: 'live' },
       batchSize: 1,
       ...q,
@@ -90,6 +96,7 @@ describe('FR-051b impact pending-queue drain', () => {
       },
     ]);
     const out = await runOnce({
+      newUserId,
       envVars: { A_SEARCH_ENV: 'sandbox' },
       ...q,
     });
@@ -102,6 +109,7 @@ describe('FR-051b impact pending-queue drain', () => {
   it('injectable listPending / markProcessed / countRemaining used', async () => {
     const calls = { list: 0, mark: 0, count: 0 };
     const out = await runOnce({
+      newUserId,
       envVars: { A_SEARCH_ENV: 'sandbox' },
       listPending: async () => {
         calls.list += 1;
