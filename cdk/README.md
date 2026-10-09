@@ -65,6 +65,24 @@ Run `npm run stage-entry` (also hooked from `npm run synth`) to write gitignored
 `loadRegistry.js`, `queueName.js`, and `resolveQueueUrl.js`. Handler:
 `entry/src/index.handler`. No secrets in the asset.
 
+## MSSQL Secrets Manager (FR-137)
+
+Maintainer, `providers/local/*` workers, and awin/impact onboarding Lambdas
+receive `MSSQL_*` from Secrets Manager:
+
+```bash
+npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
+  -c mssqlSecretArn=arn:aws:secretsmanager:eu-west-2:ACCOUNT:secret:NAME \
+  -c mssqlSandboxDatabase=YOUR_SANDBOX_DB
+```
+
+Secret string must be JSON with `SERVER`, `USER`, `PASSWORD`.
+`MSSQL_DATABASE` is set in CDK (live default `madeiradb`; sandbox from
+`mssqlSandboxDatabase` / default `<sandbox-mssql-database>`).
+Without `mssqlSecretArn`, synth uses a non-production placeholder ARN
+(`000000000000`) so pins stay green. Never put real passwords in git.
+See `docs/environments.md` (FR-137).
+
 ## Synth (required check)
 
 From the **repo root** (Node >=20):

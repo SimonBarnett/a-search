@@ -41,14 +41,16 @@ An **installable release** means:
 | CDK awin/impact onboarding Lambdas | Yes (EventBridge live impact rule **Yes** â€” FR-133) | Partial â€” onboarding zip `shared/` still broken (FR-132 landed shared staging; verify asset) |
 | S3 results bucket in CDK | **Yes** (FR-129 `ResultsBucket`) | No |
 | `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **Yes** (FR-130 `wireResultsBucketAccess`) | No |
-| JWT_* entry Secrets Manager (FR-136) | **Yes** (FR-136) | No (MSSQL FR-137 / provider FR-138 still open) |
+| JWT_* entry Secrets Manager (FR-136) | **Yes** (FR-136) | No |
+| MSSQL_* Secrets Manager (FR-137) | **Yes** (FR-137 #973) - maintainer + local workers + onboarding | No |
+| provider secrets in CDK (FR-138) | **No** | Partial (FR-138 open) |
 | Worker zip includes `@aws-sdk/client-s3` + `mssql` | **Yes** - `@aws-sdk/client-s3` + `@smithy` (FR-134); `mssql` staged for `providers/local/*` + maintainer (FR-135 #971 / #1113) | No |
 | Maintainer zip includes `shared/` + `mssql` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131 shared + FR-135 mssql) | No |
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
 | SQS DLQ | **No** | Yes (ops safety) |
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
 | `.github/workflows` CI | **No** | **Yes** (vision S4) |
-| `docs/deploy.md` / install playbook | **No** | **Yes** |
+| `docs/deploy.md` / install playbook | **Yes** (FR-136 `docs/deploy.md`) | Partial (expand install playbook) |
 | `npm run deploy` / account-region context | Partial (README only) | Yes |
 | Post-deploy smoke | **No** | Yes |
 | VERSION + release checklist | **No** | Yes |

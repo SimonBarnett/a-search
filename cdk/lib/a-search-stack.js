@@ -127,6 +127,53 @@ function wireResultsBucketAccess(fn, bucket) {
   bucket.grantReadWrite(fn);
 }
 
+const MSSQL_LIVE_DATABASE = 'madeiradb';
+const MSSQL_SANDBOX_DATABASE_DEFAULT = '<sandbox-mssql-database>';
+/** Synth/deploy placeholder when -c mssqlSecretArn is omitted (never a real account). */
+const MSSQL_SECRET_ARN_PLACEHOLDER =
+  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-fr137-AbCdEf';
+
+/**
+ * @param {string} [folder] registry src.folder
+ * @returns {boolean}
+ */
+function isLocalProviderFolder(folder) {
+  return String(folder || '')
+    .replace(/\\/g, '/')
+    .startsWith('providers/local/');
+}
+
+/**
+ * FR-137: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
+ * Secret string JSON keys: SERVER, USER, PASSWORD (optional TRUSTED_CONNECTION / DOMAIN).
+ * DATABASE is env-specific plain text (live madeiradb / sandbox placeholder from context).
+ * @param {lambda.Function} fn
+ * @param {secretsmanager.ISecret} secret
+ * @param {{ database: string }} opts
+ */
+function wireMssqlSecretEnv(fn, secret, opts) {
+  const database = opts && opts.database;
+  if (!database) {
+    throw new Error('wireMssqlSecretEnv: opts.database required');
+  }
+  fn.addEnvironment(
+    'MSSQL_SERVER',
+    secret.secretValueFromJson('SERVER').unsafeUnwrap(),
+  );
+  fn.addEnvironment(
+    'MSSQL_USER',
+    secret.secretValueFromJson('USER').unsafeUnwrap(),
+  );
+  fn.addEnvironment(
+    'MSSQL_PASSWORD',
+    secret.secretValueFromJson('PASSWORD').unsafeUnwrap(),
+  );
+  fn.addEnvironment('MSSQL_DATABASE', database);
+  fn.addEnvironment('MSSQL_ENCRYPT', 'true');
+  fn.addEnvironment('MSSQL_TRUST_SERVER_CERTIFICATE', 'true');
+  secret.grantRead(fn);
+}
+
 /**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
@@ -166,6 +213,21 @@ class ASearchStack extends cdk.Stack {
       autoDeleteObjects: false,
     });
 
+
+    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlSecretArn=...).
+    // JSON keys SERVER/USER/PASSWORD; DATABASE is plain per env (FR-121 sandbox name).
+    const mssqlSecretArn =
+      this.node.tryGetContext('mssqlSecretArn') || MSSQL_SECRET_ARN_PLACEHOLDER;
+    const mssqlSecret = secretsmanager.Secret.fromSecretCompleteArn(
+      this,
+      'MssqlConnSecret',
+      mssqlSecretArn,
+    );
+    const mssqlLiveDatabase =
+      this.node.tryGetContext('mssqlLiveDatabase') || MSSQL_LIVE_DATABASE;
+    const mssqlSandboxDatabase =
+      this.node.tryGetContext('mssqlSandboxDatabase') ||
+      MSSQL_SANDBOX_DATABASE_DEFAULT;
     // FR-037: staged asset includes entry/src + providers/* (not entry/src alone)
     const repoRoot = path.join(__dirname, '..', '..');
     const entryAssetDir = stageEntryLambdaAsset(repoRoot);
@@ -222,6 +284,12 @@ class ASearchStack extends cdk.Stack {
           },
         );
         wireResultsBucketAccess(worker, resultsBucket);
+        if (isLocalProviderFolder(src.folder)) {
+          wireMssqlSecretEnv(worker, mssqlSecret, {
+            database:
+              env === 'live' ? mssqlLiveDatabase : mssqlSandboxDatabase,
+          });
+        }
         const sqsOpts = { batchSize: 1 };
         const maxConcurrency = sqsMaxConcurrencyForSource(src);
         if (maxConcurrency != null) {
@@ -287,6 +355,9 @@ class ASearchStack extends cdk.Stack {
       },
     });
     wireResultsBucketAccess(maintainerLive, resultsBucket);
+    wireMssqlSecretEnv(maintainerLive, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
     const maintainerSandbox = new lambda.Function(
       this,
       'MaintainerSandboxFunction',
@@ -303,6 +374,9 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(maintainerSandbox, resultsBucket);
+    wireMssqlSecretEnv(maintainerSandbox, mssqlSecret, {
+      database: mssqlSandboxDatabase,
+    });
 
     // Default proposal: every 15 minutes (MAINTAINER_INTERVAL_MINUTES)
     const schedule = events.Schedule.rate(cdk.Duration.minutes(15));
@@ -341,6 +415,9 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingLive, resultsBucket);
+    wireMssqlSecretEnv(awinOnboardingLive, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
     const awinOnboardingSandbox = new lambda.Function(
       this,
       'AwinOnboardingSandboxFunction',
@@ -356,6 +433,9 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingSandbox, resultsBucket);
+    wireMssqlSecretEnv(awinOnboardingSandbox, mssqlSecret, {
+      database: mssqlSandboxDatabase,
+    });
 
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
     // FR-132: staged asset includes shared/identity for relative requires.
@@ -379,6 +459,9 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingSandbox, resultsBucket);
+    wireMssqlSecretEnv(impactOnboardingSandbox, mssqlSecret, {
+      database: mssqlSandboxDatabase,
+    });
 
 
     // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
@@ -398,6 +481,9 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingLive, resultsBucket);
+    wireMssqlSecretEnv(impactOnboardingLive, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
 
     // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
@@ -473,6 +559,11 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ImpactOnboardingLiveFunctionName', {
       value: impactOnboardingLive.functionName,
     });
+    new cdk.CfnOutput(this, 'MssqlSecretArn', {
+      value: mssqlSecret.secretArn,
+      description:
+        'FR-137 Secrets Manager ARN used for MSSQL_* (override with -c mssqlSecretArn)',
+    });
     new cdk.CfnOutput(this, 'AwinOnboardingLiveRuleName', {
       value: awinOnboardingLiveRule.ruleName,
     });
@@ -493,4 +584,9 @@ module.exports = {
   queueUrlEnvKey,
   pascalSource,
   wireResultsBucketAccess,
+  wireMssqlSecretEnv,
+  isLocalProviderFolder,
+  MSSQL_LIVE_DATABASE,
+  MSSQL_SANDBOX_DATABASE_DEFAULT,
+  MSSQL_SECRET_ARN_PLACEHOLDER,
 };
