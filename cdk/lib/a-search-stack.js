@@ -377,9 +377,18 @@ class ASearchStack extends cdk.Stack {
       for (const env of envs) {
         const qName = queueName(src.id, env);
         const envPascal = env === 'live' ? 'Live' : 'Sandbox';
+        // FR-142: sibling DLQ + redrive so poison messages leave the worker queue
+        const dlq = new sqs.Queue(this, `${pascal}${envPascal}DeadLetterQueue`, {
+          queueName: `${qName}-dlq`,
+          retentionPeriod: cdk.Duration.days(14),
+        });
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
           visibilityTimeout: cdk.Duration.seconds(60),
+          deadLetterQueue: {
+            queue: dlq,
+            maxReceiveCount: 3,
+          },
         });
 
         const urlKey = queueUrlEnvKey(src.queueEnv, env);
@@ -423,6 +432,10 @@ class ASearchStack extends cdk.Stack {
 
         new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
           value: queue.queueUrl,
+        });
+        new cdk.CfnOutput(this, `${pascal}${envPascal}DeadLetterQueueUrl`, {
+          value: dlq.queueUrl,
+          description: `FR-142 DLQ for ${qName}`,
         });
         new cdk.CfnOutput(this, `${pascal}${envPascal}WorkerFunctionName`, {
           value: worker.functionName,
