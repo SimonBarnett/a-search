@@ -1,5 +1,7 @@
 # a-search
 
+[![ci](https://github.com/SimonBarnett/a-search/actions/workflows/ci.yml/badge.svg)](https://github.com/SimonBarnett/a-search/actions/workflows/ci.yml)
+
 JWT-authenticated search entry for Club Madeira affiliate / local parts
 discovery. One `POST /search` accepts the job (**HTTP 200**) and fans out
 offline work to per-provider SQS queues. Local parts live in MSSQL; a

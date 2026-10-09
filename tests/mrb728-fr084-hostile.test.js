@@ -85,16 +85,22 @@ describe('MRB-728 FR-084 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example is admitad not partnerize/webgains/tradedoubler', () => {
+  it('fr058b no-rateLimit example is __no_such_source__ (locals all have rateLimit)', () => {
+    // FR-112+ gave every Phase-2 local rateLimit; fr058b uses an unknown id.
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('admitad'\)/);
-    assert.ok(!/rateLimit\('partnerize'\)\s*,\s*undefined/.test(src));
-    assert.ok(!/rateLimit\('webgains'\)\s*,\s*undefined/.test(src));
-    assert.equal(rateLimit('admitad'), undefined);
+    assert.match(src, /rateLimit\('__no_such_source__'\)/);
+    assert.ok(!/assert\.equal\(rateLimit\('admitad'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('partnerize'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('webgains'\),\s*undefined\)/.test(src));
+    assert.deepEqual(rateLimit('admitad'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
     assert.ok(rateLimit('tradedoubler'));
+    assert.equal(rateLimit('__no_such_source__'), undefined);
   });
 
   it('.env.example keeps FR-085 feed keys and FR-084 API token empty', () => {

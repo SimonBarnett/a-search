@@ -79,13 +79,14 @@ describe('MRB-752 FR-087 hostile', () => {
     assert.equal(r.source, 'webgains');
   });
 
-  it('fr058b no-rateLimit example is admitad not webgains', () => {
+  it('fr058b no-rateLimit example is __no_such_source__ not webgains', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /admitad/);
+    assert.match(src, /rateLimit\('__no_such_source__'\)/);
     assert.doesNotMatch(src, /rateLimit\(['\"]webgains['\"]\)\s*===?\s*undefined/);
+    assert.ok(!/assert\.equal\(rateLimit\('admitad'\),\s*undefined\)/.test(src));
   });
 
   it('skill Selftest + pacing (FR-087) + stay-dark', () => {
