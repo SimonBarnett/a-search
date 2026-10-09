@@ -2,7 +2,7 @@
 
 /**
  * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006) +
- * performance stub (FR-053b) + selftest stub (FR-059b).
+ * performance stub (FR-053b) + selftest (FR-059b + FR-152 orchestrator).
  * JWT verify (FR-004) + body validation + registry-backed SQS fan-out (injectable sendMessage).
  * Never trusts a request-body user id.
  */
@@ -16,15 +16,23 @@ const {
   queryParams,
 } = require('./performance');
 const {
-  emptySelftestPayload,
+  buildSelftestPayload,
   resolveSelftestInput,
 } = require('./selftest');
+const { createRegistrySelftestProbe } = require('./selftestProbes');
 const { aggregateClicksVisits } = require('./performanceClicksVisits');
 const { aggregateSales } = require('./performanceSales');
 const { aggregateTop } = require('./performanceTop');
 const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
+const {
+  runSelftestOrchestrator: defaultRunSelftestOrchestrator,
+} = require('../../shared/selftest/orchestrator');
+const {
+  reportSelftestFailures: defaultReportSelftestFailures,
+} = require('../../shared/selftest/reportSelftestFailure');
+const { enabled: registryEnabled } = require('../../providers/loadRegistry');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -333,13 +341,26 @@ async function handlePerformance(event, deps = {}) {
 }
 
 /**
- * FR-059b selftest stub — JWT + env; empty providers (real probes OOS).
+ * FR-059b auth + FR-152 orchestrator: probe enabled registry sources.
  * @param {object} event
  * @param {object} deps
  */
 async function handleSelftest(event, deps = {}) {
   const env = deps.env || process.env;
   const verify = deps.verifyAuthorization || verifyAuthorization;
+  const runOrch =
+    deps.runSelftestOrchestrator || defaultRunSelftestOrchestrator;
+  const listEnabled = deps.listEnabled || registryEnabled;
+  const reportFailures =
+    deps.reportSelftestFailures || defaultReportSelftestFailures;
+  const probe =
+    deps.probe ||
+    createRegistrySelftestProbe({
+      env,
+      loadRegistry: deps.loadRegistry,
+      requireProbe: deps.requireProbe,
+      probeDeps: deps.probeDeps,
+    });
 
   const authHeader =
     headerGet(event && event.headers, 'authorization') ||
@@ -387,7 +408,48 @@ async function handleSelftest(event, deps = {}) {
     });
   }
 
-  const payload = emptySelftestPayload(userId, { env: resolved.value.env });
+  const selftestEnv = resolved.value.env;
+  let orch;
+  try {
+    orch = await runOrch({
+      env: selftestEnv,
+      sources: resolved.value.sources,
+      probe,
+      listEnabled,
+    });
+  } catch (err) {
+    const report = deps.reportException || defaultReportException;
+    await report({
+      err,
+      route: SELFTEST_ROUTE,
+      fetch: deps.fetch,
+    }).catch(() => {});
+    return jsonResponse(500, {
+      ok: false,
+      error: 'selftest_runner_failed',
+    });
+  }
+
+  let intakeFiled = [];
+  try {
+    const filed = await reportFailures({
+      providers: orch.providers,
+      env: selftestEnv,
+      fetch: deps.fetch,
+      intakeUrl: deps.intakeUrl,
+      reportSelftestFailure: deps.reportSelftestFailure,
+    });
+    intakeFiled = filed && filed.intakeFiled ? filed.intakeFiled : [];
+  } catch {
+    intakeFiled = [];
+  }
+
+  const payload = buildSelftestPayload(userId, {
+    env: orch.env,
+    providers: orch.providers,
+    failed: orch.failed,
+    intakeFiled,
+  });
   return jsonResponse(200, payload);
 }
 

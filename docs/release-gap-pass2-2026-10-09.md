@@ -9,7 +9,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | Gap | FR | Issue |
 |-----|----|------:|
 | jose missing for JWT JWKS | FR-151 | #994 (**Yes** - jose dep + stage-entry; pin fr151) |
-| /selftest still empty providers[] | FR-152 | #995 |
+| /selftest still empty providers[] | **Yes** (FR-152) | #995 |
 | No API CORS | FR-153 | #996 |
 | S3 SSE + BlockPublicAccess | FR-154 | #997 |
 | Cost tags | FR-155 | #998 |
