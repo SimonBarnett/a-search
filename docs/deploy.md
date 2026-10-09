@@ -184,4 +184,4 @@ provider credentials - never a real password, API token, or JWT string.
 - Production deploy from a PR / CI approval gate (separate FR)
 - CI auto-smoke against production without approval
 - Enabling stay-dark providers
-- Creating sandbox DB DDL on IONOS (ops runbook after FR-121)
+- Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL

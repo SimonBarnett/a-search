@@ -54,7 +54,7 @@ An **installable release** means:
 | `npm run deploy` / account-region context | **Yes** - `npm run deploy` + `-c account`/`region` via `resolve-deploy-env` (FR-141 #977); no account IDs in source | **Yes** |
 | Post-deploy smoke | **Yes** (FR-144 #980 - `scripts/smoke-deploy.js` + mocked pin) | Yes |
 | VERSION + release checklist | **Yes** (FR-145 #981 - `VERSION` 0.1.0 + `docs/release-checklist.md`) | Yes |
-| Sandbox DB create + DDL apply runbook | UNKNOWN/ops | Yes (after #950) |
+| Sandbox DB create + DDL apply runbook | **Yes** (FR-146 #982 - `docs/sql/apply-ddl-runbook.md`; recommended DB `a_search_sandbox`) | Yes (after #950) |
 | rclone SQL-host runbook | Partial (`rclone-results.md`) | Yes (after #953) |
 | VPC / egress to IONOS | UNKNOWN | Yes (after #951) |
 | Stay-dark provider enable | Explicitly deferred | No for v0.1 |
