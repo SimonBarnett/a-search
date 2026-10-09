@@ -16,6 +16,7 @@ const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
+const { resolveCorsOrigins } = require('./resolve-cors-origins');
 
 /** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
@@ -496,12 +497,30 @@ class ASearchStack extends cdk.Stack {
       }
     }
 
-    // FR-035: HTTP API POST /search â†’ entry (JWT still verified in Lambda)
-    const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', {
+    // FR-035: HTTP API POST /search -> entry (JWT still verified in Lambda)
+    // FR-153: CORS allowlist from -c corsOrigins (default localhost-only; never *)
+    const corsOrigins = resolveCorsOrigins({
+      corsOrigins: this.node.tryGetContext('corsOrigins'),
+    });
+    /** @type {apigwv2.HttpApiProps} */
+    const httpApiProps = {
       apiName: 'a-search',
       description:
-        'a-search POST /search + GET|POST /selftest + /account/performance → entry Lambda',
-    });
+        'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+    };
+    if (corsOrigins.length > 0) {
+      httpApiProps.corsPreflight = {
+        allowOrigins: corsOrigins,
+        allowMethods: [
+          apigwv2.CorsHttpMethod.GET,
+          apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.OPTIONS,
+        ],
+        allowHeaders: ['Authorization', 'Content-Type', 'Accept'],
+        maxAge: cdk.Duration.days(1),
+      };
+    }
+    const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', httpApiProps);
     httpApi.addRoutes({
       path: '/search',
       methods: [apigwv2.HttpMethod.POST],

@@ -124,6 +124,20 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### CORS allowlist (FR-153)
+
+HttpApi CORS covers `/search`, `/selftest`, and `/account/performance`. Pass an
+explicit origin allowlist (comma-separated). Synth default is localhost-only;
+empty `-c corsOrigins=` means deny (no origins). **Never** use public wildcard
+`*` (rejected at synth).
+
+```bash
+  -c corsOrigins=https://club.example,https://www.club.example
+```
+
+Browser callers (Club Madeira) need their site origin(s) listed. JWT stays in
+the `Authorization` header (allowed by the CORS preflight).
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
