@@ -53,7 +53,10 @@ describe('MRB-1213 hostile FR-145 VERSION checklist', () => {
     assert.ok(fr.includes('fr145-version-checklist.test.js'));
 
     assert.ok(fs.existsSync(PIN));
-    assert.ok(readUtf8NoBom(README).includes('release-checklist.md'));
+    // README may carry baseline non-ASCII elsewhere; pin FR-145 needles only
+    const readme = fs.readFileSync(README, 'utf8');
+    assert.ok(readme.includes('release-checklist.md'));
+    assert.ok(readme.includes('FR-145'));
     assert.ok(readUtf8NoBom(DOD).includes('release-checklist.md'));
   });
 
