@@ -1,12 +1,14 @@
-﻿# a-search IaC (FR-023)
+# a-search IaC (FR-023)
 
 AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 ## What is included
 
 - FR-149: explicit **no-VPC** (default Lambda egress; no ec2.Vpc/NAT/SG). MSSQL path = ops fixed-egress allowlist (FR-122 option A) in `docs/deploy.md`
-- `ASearchStack` Ã¢â‚¬â€ Node 20 entry Lambda (`entry/src` Ã¢â€ â€™ `index.handler`)
-- HTTP API Gateway (FR-035): `POST /search` Ã¢â€ â€™ entry Lambda; output `SearchApiUrl`
+
+- `ASearchStack` - Node 20 entry Lambda (`entry/src` -> `index.handler`)
+- FR-148: entry omits process `A_SEARCH_ENV` (accept stamps env from body.sandbox; workers stay pinned)
+- HTTP API Gateway (FR-035): `POST /search` -> entry Lambda; output `SearchApiUrl`
 - FR-036: live + sandbox SQS queues and SQS-triggered worker Lambdas for every
   registry source with `enabled.live` or `enabled.sandbox` (amazon, ebay,
   rakuten, cj, awin, impact). Names: `a-search-{id}-{env}`; workers
@@ -40,7 +42,10 @@ Disabled shortlist providers are not synthesised until enabled.
 
 - FR-142: each enabled worker queue has a sibling DLQ `{queueName}-dlq` with
   `deadLetterQueue.maxReceiveCount=3` (14-day retention). Outputs
-  `{Pascal}{Live|Sandbox}DeadLetterQueueUrl`. Alarms are FR-143.
+  `{Pascal}{Live|Sandbox}DeadLetterQueueUrl`.
+- FR-143: explicit `logs.LogGroup` retention ONE_MONTH (30d) on every Lambda;
+  placeholder SNS `a-search-ops-alarms`; per-DLQ depth alarm
+  (`ApproximateNumberOfMessagesVisible >= 1`) with SnsAction. Output `OpsAlarmTopicArn`.
 
 ### Queue URL env convention (FR-034)
 

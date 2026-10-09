@@ -43,7 +43,109 @@ Sandbox swaps the first segment to `sandbox/` (separate tree - never mix).
 Maintainer staging CSVs may land under
 `{env}/_staging/{source}/{feedKey}/` on the same mount/bucket family.
 
-## Ops checklist
+## Installable mount runbook (FR-147)
+
+Step-by-step for the SQL host after `cdk deploy` (stack output
+`ResultsBucketName` / `S3_RESULTS_BUCKET`). Placeholders only - **never**
+commit AWS access keys into git. Installing rclone/WinFsp from this repo's
+CI is **out of scope**.
+
+### Placeholders
+
+| Placeholder | Meaning |
+|-------------|---------|
+| `<S3_RESULTS_BUCKET>` | Dedicated a-search results bucket (stack output `ResultsBucketName`) |
+| `<rclone-remote>` | rclone remote name on the SQL host (example: `aws`) |
+| Drive letter | LOCKED default **`X:`** (ops may remap; then use that letter everywhere below) |
+
+### 1. Prerequisites
+
+1. Prefer a **dedicated** results bucket (or `a-search/` prefix) - not the legacy `madeira-results-bucket` root.
+2. On the SQL host: install **rclone** + **WinFsp** (or keep existing Madeira mount tooling).
+3. AWS credentials for the remote live in the host rclone config / IAM role - not in this repository.
+
+### 2. Configure the rclone remote
+
+If an account-level remote already exists, reuse it. Otherwise create one
+(ops machine; values out of band):
+
+```text
+rclone config
+# New remote -> name <rclone-remote> -> Amazon S3 -> region of the results bucket
+```
+
+Verify the bucket is visible (no secrets in the command line beyond the remote name):
+
+```text
+rclone lsd <rclone-remote>:
+rclone lsd <rclone-remote>:<S3_RESULTS_BUCKET>
+```
+
+Expect `live` and `sandbox` prefixes under the bucket after the first worker
+writes (empty bucket before smoke is OK).
+
+### 3. Mount at X: (or remapped letter)
+
+Account-level remote: mount the **account root** so `X:` lists buckets, then
+point `A_SEARCH_RCLONE_ROOT` at the **bucket folder**.
+
+Example (interactive / service wrapper - adjust to the host's existing Madeira pattern):
+
+```text
+rclone mount <rclone-remote>: X: --vfs-cache-mode writes
+```
+
+Confirm:
+
+```text
+dir X:\
+dir X:\<S3_RESULTS_BUCKET>
+```
+
+### 4. Set A_SEARCH_RCLONE_ROOT
+
+Machine / service environment on the SQL host:
+
+```text
+A_SEARCH_RCLONE_ROOT=X:\<S3_RESULTS_BUCKET>
+```
+
+Live root: `%A_SEARCH_RCLONE_ROOT%\live\`  
+Sandbox root: `%A_SEARCH_RCLONE_ROOT%\sandbox\`
+
+### 5. Persist across reboot
+
+Ensure rclone **starts after reboot** (Windows service, NSSM, or scheduled
+task at startup). A plain interactive `rclone mount` process alone will not
+survive logoff/reboot.
+
+### 6. Verify path after smoke
+
+After post-deploy smoke (`npm run smoke-deploy` / FR-144) or a sandbox
+`POST /search` accept:
+
+1. Note `searchId`, JWT `userId`, `catalogId`, source id, and `env` (`sandbox` recommended first).
+2. Confirm the object under S3 and on the mount:
+
+```text
+dir %A_SEARCH_RCLONE_ROOT%\sandbox\<source>\<userId>\<catalogId>\
+```
+
+Expected file:
+
+```text
+{A_SEARCH_RCLONE_ROOT}\{env}\{source}\{userId}\{catalogId}\{searchId}.json
+```
+
+3. Agents: see `.grok/skills/a-search-endpoint/SKILL.md` (poll after HTTP 200).
+
+### 7. Fail-closed checks
+
+- `A_SEARCH_RCLONE_ROOT` includes the bucket folder (not bare `X:\`).
+- Live and sandbox trees stay under separate first-segment prefixes.
+- No AWS secret material in git, README samples, or scheduled-task command lines committed here.
+
+## Ops checklist (summary)
 
 1. Prefer a **dedicated** results bucket (or `a-search/` prefix) - not the legacy `madeira-results-bucket` root.
 2. Install/keep rclone + WinFsp on the SQL host; remote can be account-level.
@@ -57,6 +159,7 @@ Maintainer staging CSVs may land under
 
 ## Related
 
+- `docs/deploy.md` section 8 - install playbook pointer (FR-140 / FR-147)
 - `docs/environments.md` - live/sandbox isolation; **Results storage + rclone (FR-124)**; **Network path (FR-122)**
 - `docs/endpoint-search.md` - accept contract
 - `shared/resultsPath.js` - `resultsKey` / `resultsRclonePath` / `resultsS3Uri`
