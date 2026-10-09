@@ -52,7 +52,7 @@ An **installable release** means:
 | `.github/workflows` CI | **No** | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** - bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone (FR-140 #976; keeps FR-136 JWT section) | **Yes** |
 | `npm run deploy` / account-region context | **Yes** - `npm run deploy` + `-c account`/`region` via `resolve-deploy-env` (FR-141 #977); no account IDs in source | **Yes** |
-| Post-deploy smoke | **No** | Yes |
+| Post-deploy smoke | **Yes** (FR-144 #980 - `scripts/smoke-deploy.js` + mocked pin) | Yes |
 | VERSION + release checklist | **No** | Yes |
 | Sandbox DB create + DDL apply runbook | UNKNOWN/ops | Yes (after #950) |
 | rclone SQL-host runbook | Partial (`rclone-results.md`) | Yes (after #953) |
