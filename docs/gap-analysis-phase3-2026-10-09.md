@@ -14,7 +14,7 @@ Method: `git fetch` + detached worktree `plan/work/plan-20261009-065037/repo` fr
 | Schema/docs FR-113..FR-120 | **CLOSED** (merged product + docs/mrb) |
 | Vision Success S1-S20 how-measured core tests | **All present** (344 `*.test.js` on main) |
 | Shape | **service** LOCKED |
-| Open PRs (hygiene) | Draft harvest leftovers `#613`, `#726` (FR-127); park PR #958; FR-122 tip #960 |
+| Open PRs (hygiene) | Draft harvest `#613`/`#726` **CLOSED superseded** (FR-127 / #956); other open tips tracked separately |
 
 Phase 0 / 1 / 1b / **2 (stay-dark providers)** pin evidence is on main.  
 Next work is **Phase 3: unlock deploy unknowns + parked drains + per-account enable**.
@@ -70,7 +70,7 @@ These need human decisions or account details; they are **not** re-opens of Phas
 6. **Awin onboarding live HTTP drain** — replace empty live path with fixture-backed client (sandbox path may already exist).
 7. **Per-provider enable FRs** — one small FR per source when credentials arrive (flip `enabled` + pin test; never bulk-enable).
 8. **Amazon Creators API follow-up** — still parked from Phase-2 umbrella (PA-API path remains).
-9. **Draft harvest PR hygiene** — close or revive open drafts `#613`, `#726`.
+9. **Draft harvest PR hygiene** — **done (FR-127):** `#613` and `#726` CLOSED superseded (covering FR-061 / PR #725).
 
 ## Out of this Plan seat (unless operator asks)
 
