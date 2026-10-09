@@ -40,13 +40,20 @@ Phase-2 docs work.
 
 ## When to enable
 
-1. Credentials and programme/merchant access exist for that id.
+Follow the Phase-3 one-provider ritual in
+[`docs/phase3-enable-provider.md`](phase3-enable-provider.md) (FR-126):
+
+1. Credentials and programme/merchant access exist for that id (secret store,
+   not git).
 2. Fixture-backed client + worker path pass `node --test` without live calls.
-3. Operator sets `enabled.live` / `enabled.sandbox` in `providers/registry.json`
-   (per env). Code must never auto-enable on deploy.
+3. Selftest green for that id (local ids: DDL + Parts + least-privilege first).
+4. Operator sets `enabled.live` / `enabled.sandbox` in `providers/registry.json`
+   for **that id only**. Code must never auto-enable on deploy.
+5. Enable FR pin asserts other Phase-2 stub ids stay dark.
 
 ## Related
 
+- Enable ritual template: `docs/phase3-enable-provider.md` (FR-126)
 - Shortlist + defaults: `docs/provider-shortlist.md`
 - Add a source checklist: `docs/add-source.md`
 - Registry loader: `providers/loadRegistry.js` → `enabled(env)`

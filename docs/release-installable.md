@@ -29,7 +29,8 @@ deploy smoke path - **without committing secrets**.
 ## Explicitly out of scope for v0.1
 
 - Enabling stay-dark Phase-2 providers (FR-126 one-provider ritual /
-  [`docs/phase2-providers.md`](phase2-providers.md); enable template lands with #955)
+  [`docs/phase3-enable-provider.md`](phase3-enable-provider.md) /
+  [`docs/phase2-providers.md`](phase2-providers.md))
 - Amazon Creators API
 - Cutover off legacy madeira-sqs-affiliate account IDs
 - Grok relevance ranking
