@@ -87,15 +87,20 @@ describe('MRB-789 FR-090 hostile', () => {
     assert.ok(!skill.includes('\ufffd'));
   });
 
-  it('fr058b no-rateLimit example is flexoffers not tradedoubler/admitad', () => {
+  it('fr058b no-rateLimit example is __no_such_source__ not tradedoubler/admitad/flexoffers', () => {
     const src = fs.readFileSync(
       path.join(root, 'tests', 'fr058b-registry-rate-limit.test.js'),
       'utf8',
     );
-    assert.match(src, /rateLimit\('flexoffers'\)/);
-    assert.ok(!/rateLimit\('tradedoubler'\)\s*,\s*undefined/.test(src));
-    assert.ok(!/rateLimit\('admitad'\)\s*,\s*undefined/.test(src));
-    assert.equal(rateLimit('flexoffers'), undefined);
+    assert.match(src, /rateLimit\('__no_such_source__'\)/);
+    assert.ok(!/assert\.equal\(rateLimit\('tradedoubler'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('admitad'\),\s*undefined\)/.test(src));
+    assert.ok(!/assert\.equal\(rateLimit\('flexoffers'\),\s*undefined\)/.test(src));
+    assert.deepEqual(rateLimit('flexoffers'), {
+      maxConcurrency: 1,
+      minIntervalMs: 250,
+    });
+    assert.equal(rateLimit('__no_such_source__'), undefined);
   });
 
   it('.env.example keep-both FR-091 feed keys and FR-090 API token empty', () => {

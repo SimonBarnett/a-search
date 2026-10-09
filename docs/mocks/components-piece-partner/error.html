@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Partner / club - errors</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; color: #122; }
+    .err { border: 1px solid #a33; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Partner / club errors</h1>
+  <p class="meta">Wireframe PW3</p>
+  <div class="err">
+    <strong>Partner code not issued</strong>
+    <p>Registration failed; DNS partner code was not sent.</p>
+  </div>
+  <div class="err">
+    <strong>Payout not configured</strong>
+    <p>Payout requested but Stripe payout account is missing. Setup is optional until payout is requested - show setup path, do not block registration.</p>
+  </div>
+  <div class="err">
+    <strong>Commission</strong>
+    <p>Monthly-paying partners must not be charged commission on this path.</p>
+  </div>
+</body>
+</html>
