@@ -124,6 +124,22 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### Cost tags (FR-155)
+
+All taggable stack resources get cost allocation tags:
+
+| Tag | Value |
+|-----|--------|
+| `Project` | `a-search` (fixed) |
+| `Env` | from `-c stage=` (preferred), else `-c env=` / `-c costEnv=`; default `default` when unset |
+
+```bash
+  -c stage=prod
+```
+
+Use the same `stage` key FR-156 will use for name suffixes. AWS Organizations tag
+policies are out of scope.
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
