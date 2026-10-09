@@ -38,7 +38,10 @@ describe('MRB-921 FR-119 hostile', () => {
     assert.match(text, /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN)/i);
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SIMPLE/);
-    assert.match(text, /no[\s\S]{0,40}a_search_sandbox/i);
+    // FR #1280 / FR-146: recommended name OK when Treat-as-missing (not a deny-only pin).
+    assert.match(text, /Recommended[\s\S]{0,120}a_search_sandbox/i);
+    assert.match(text, /Treat as missing|do not invent credentials/i);
+    assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
     assert.match(text, /MSSQL_SERVER/);
     assert.match(text, /<ionos-sql-host>/);
   });
