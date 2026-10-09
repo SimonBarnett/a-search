@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -8,16 +8,23 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 
 describe('MRB #32 hostile: FR-001 root scaffold', () => {
-  it('package.json contract and quoted Windows test glob', () => {
+  it('package.json contract and POSIX-safe run-tests entry', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
     assert.equal(pkg.name, 'a-search');
     assert.equal(pkg.private, true);
     assert.match(pkg.engines.node, />=\s*20/);
-    assert.match(pkg.scripts.test, /node --test/);
+    assert.match(pkg.scripts.test, /run-tests\.js/);
     assert.ok(
-      pkg.scripts.test.includes('"tests/**/*.test.js"') ||
-        pkg.scripts.test.includes("'tests/**/*.test.js'"),
-      'npm test must quote the glob for Windows Node 22'
+      fs.existsSync(path.join(root, 'scripts', 'run-tests.js')),
+      'scripts/run-tests.js must exist for cross-platform npm test',
+    );
+    const runner = fs.readFileSync(path.join(root, 'scripts', 'run-tests.js'), 'utf8');
+    assert.match(runner, /readdirSync/);
+    assert.match(runner, /--test/);
+    assert.doesNotMatch(
+      pkg.scripts.test,
+      /node --test\s+"tests\/\*\*\/\*\.test\.js"/,
+      'quoted tests/**/*.test.js is a literal path on Linux GitHub Actions',
     );
   });
 
