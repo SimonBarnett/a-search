@@ -11,6 +11,10 @@ and the separate sandbox database on the same instance (FR-121 LOCKED).
 Do **not** use one shared DB with `Env` alone for live/sandbox isolation.
 Rows still carry `Env` (`live`|`sandbox`) inside each DB for a-search DDL checks.
 
+**Ops runbook (FR-146):** create the sandbox DB (recommended name
+`a_search_sandbox`) and apply these scripts to both databases —
+[`docs/sql/apply-ddl-runbook.md`](../../docs/sql/apply-ddl-runbook.md).
+
 ## Migrate-once
 
 ```text
