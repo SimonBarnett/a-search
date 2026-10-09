@@ -25,6 +25,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Parts maintainer](docs/parts-maintainer.md)
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Phase-2 providers](docs/phase2-providers.md) (FR-061 -- stay-dark until credentials)
+- [AWS installable v0.1 DoD](docs/release-installable.md) (FR-128 -- CI, cdk deploy, secrets, S3, smoke, VERSION; stay-dark OOS)
 - [Add a source](docs/add-source.md) (checklist -- registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
 - [Shared layer](docs/shared-layer.md) (`shared/` -> `/opt/nodejs/a-search`)

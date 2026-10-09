@@ -18,6 +18,8 @@ Goal: **installable AWS product** — `cdk deploy` brings up entry + enabled wor
 
 ## Release definition (LOCKED for this wave)
 
+Canonical DoD doc: [`docs/release-installable.md`](release-installable.md) (FR-128).
+
 An **installable release** means:
 
 1. `npm test` and `npm run synth` pass on Node 20 in CI  
