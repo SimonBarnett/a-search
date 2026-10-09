@@ -93,9 +93,9 @@ on the same instance** (`WIN-MPRE8VI4U6U`).
 |------|--------|
 | Chosen option | **(1) separate database on the same instance** |
 | Live DB | `madeiradb` |
-| Sandbox DB | Separate user database on the same SQL Server; **name** is set at deploy via `MSSQL_DATABASE` (placeholder `<sandbox-mssql-database>`). There is **no** `a_search_sandbox` name committed as real -- do not invent credentials or treat a missing DB as already created. |
+| Sandbox DB | Separate user database on the same SQL Server; **name** is set at deploy via `MSSQL_DATABASE`. **Recommended** name (FR-146): `a_search_sandbox` (operator may override). Treat as missing until ops follows [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) -- do not invent credentials. |
 | Rejected | **(2)** schema inside `madeiradb`; **(3)** sandbox reads live read-only |
-| Ops (OOS for this FR) | Create the sandbox DB with **`RECOVERY SIMPLE`** (instance `model` is FULL -- default would grow the log). Apply `maintainer/sql` DDL to **both** live and sandbox DBs. Extend nightly backup/stats jobs for the sandbox DB, or document it as rebuildable with no backup. |
+| Ops | Create the sandbox DB with **`RECOVERY SIMPLE`** (instance `model` is FULL -- default would grow the log). Apply `maintainer/sql` DDL to **both** live and sandbox DBs per [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146). Extend nightly backup/stats jobs for the sandbox DB, or document it as rebuildable with no backup. |
 | Fail-closed | Sandbox workers/maintainer must point `MSSQL_DATABASE` at the sandbox DB -- never write sandbox traffic into `madeiradb`. Rows in a-search DDL still use `Env='sandbox'` inside that DB (`CK_*_Env`). |
 
 **Least-privilege login (spec):** the SQL login used by a-search workers and
@@ -122,7 +122,7 @@ never in git.
 
 `cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
 provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
-via Secrets Manager — never plaintext passwords in git or synth snapshots.
+via Secrets Manager - never plaintext passwords in git or synth snapshots.
 
 | Deploy context | Meaning |
 |----------------|---------|
@@ -148,7 +148,7 @@ Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
 
-### CDK Secrets Manager — provider credentials (FR-138)
+### CDK Secrets Manager - provider credentials (FR-138)
 
 Enabled provider workers (amazon, ebay, rakuten, cj, awin, impact) and
 awin/impact onboarding receive marketplace credential env from **per-source**

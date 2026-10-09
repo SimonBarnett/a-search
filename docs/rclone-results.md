@@ -46,7 +46,7 @@ Maintainer staging CSVs may land under
 ## Installable mount runbook (FR-147)
 
 Step-by-step for the SQL host after `cdk deploy` (stack output
-`ResultsBucketName` / `S3_RESULTS_BUCKET`). Placeholders only — **never**
+`ResultsBucketName` / `S3_RESULTS_BUCKET`). Placeholders only - **never**
 commit AWS access keys into git. Installing rclone/WinFsp from this repo's
 CI is **out of scope**.
 
@@ -60,9 +60,9 @@ CI is **out of scope**.
 
 ### 1. Prerequisites
 
-1. Prefer a **dedicated** results bucket (or `a-search/` prefix) — not the legacy `madeira-results-bucket` root.
+1. Prefer a **dedicated** results bucket (or `a-search/` prefix) - not the legacy `madeira-results-bucket` root.
 2. On the SQL host: install **rclone** + **WinFsp** (or keep existing Madeira mount tooling).
-3. AWS credentials for the remote live in the host rclone config / IAM role — not in this repository.
+3. AWS credentials for the remote live in the host rclone config / IAM role - not in this repository.
 
 ### 2. Configure the rclone remote
 
@@ -89,7 +89,7 @@ writes (empty bucket before smoke is OK).
 Account-level remote: mount the **account root** so `X:` lists buckets, then
 point `A_SEARCH_RCLONE_ROOT` at the **bucket folder**.
 
-Example (interactive / service wrapper — adjust to the host's existing Madeira pattern):
+Example (interactive / service wrapper - adjust to the host's existing Madeira pattern):
 
 ```text
 rclone mount <rclone-remote>: X: --vfs-cache-mode writes
@@ -159,7 +159,7 @@ Expected file:
 
 ## Related
 
-- `docs/deploy.md` section 8 — install playbook pointer (FR-140 / FR-147)
+- `docs/deploy.md` section 8 - install playbook pointer (FR-140 / FR-147)
 - `docs/environments.md` - live/sandbox isolation; **Results storage + rclone (FR-124)**; **Network path (FR-122)**
 - `docs/endpoint-search.md` - accept contract
 - `shared/resultsPath.js` - `resultsKey` / `resultsRclonePath` / `resultsS3Uri`
