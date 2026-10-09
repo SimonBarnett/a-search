@@ -25,7 +25,7 @@ function walkEnvExamples(dir) {
 }
 
 describe('FR-119 docs/environments.md MSSQL target', () => {
-  it('names WIN-MPRE8VI4U6U / madeiradb for live and sandbox UNKNOWN', () => {
+  it('names WIN-MPRE8VI4U6U / madeiradb for live; sandbox LOCKED separate DB (FR-121)', () => {
     const text = fs.readFileSync(
       path.join(root, 'docs', 'environments.md'),
       'utf8',
@@ -33,7 +33,9 @@ describe('FR-119 docs/environments.md MSSQL target', () => {
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /madeiradb/);
     assert.match(text, /## MSSQL target \(FR-119\)/);
-    assert.match(text, /Sandbox[\s\S]{0,400}UNKNOWN/i);
+    // FR-121 locked sandbox = separate database on the same instance.
+    assert.match(text, /FR-121/);
+    assert.match(text, /separate database on the same instance/i);
     // FR-122 expanded the bare UNKNOWN one-liner into a decision surface;
     // chosen option may still be PENDING/UNKNOWN until ops locks A/B/C.
     assert.match(text, /## Network path \(FR-122\)/);
