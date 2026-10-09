@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book — FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book â€” FAIL-supersede).
 
-Branch `harvest/…` or `fix/…` -> PR to `main`.
+Branch `harvest/â€¦` or `fix/â€¦` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) — **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) â€” **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll → fetch → upsert → delete (not
+   `schedule.handler`** must orchestrate roll â†’ fetch â†’ upsert â†’ delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill — already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill â€” already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA…EXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives — fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAâ€¦EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives â€” fix the fixture instead.
 
 ## Do not
 
@@ -154,4 +154,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 
 ## Harvested lessons (intake)
 
-- Stage mssql only for providers/local/* workers + maintainer (shared stageMssqlNodeModules walks package.json deps); keep maintainer marker fr:131 and add mssql:true so fr131 pins stay green
+- When adding a sibling EventBridge rule that older FR pins explicitly forbade (fr056c/mrb501 no ImpactOnboardingLiveSchedule), flip those absence asserts to presence or FR-N ownership comments in the same product PR as the new rule; put release-gap refresh on docs/mrb-N (context: FR-133/#1109 + docs/mrb #1115; twin tip #1116 folded)
+- Stage mssql only for providers/local/* workers + maintainer (shared stageMssqlNodeModules walks package.json deps); keep maintainer marker fr:131 and add mssql:true so fr131 pins stay green. When the tip CONFLICTS with FR-134 worker S3 SDK staging, keep-both SDK copy + local-only stageMssqlNodeModules and both marker fields before product merge; refresh release-gap mssql rows on docs/mrb-N (context: FR-135/#1113 + docs/mrb #1121; twin tip #1122 folded)
+
