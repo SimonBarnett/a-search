@@ -30,7 +30,12 @@ describe('FR-049c awin onboarding scaffold', () => {
 
   it('runOnce returns remaining shape', async () => {
     const { runOnce } = require('../providers/local/awin/onboarding/src/run');
-    const out = await runOnce({});
+    // Sandbox default loads fixtures and needs injectable newUserId (FR-114 / FR-125).
+    const out = await runOnce({
+      sandbox: true,
+      sandboxProgrammes: [{ id: '1', name: 'Scaffold Co' }],
+      newUserId: () => 'SCAFFOLD',
+    });
     assert.equal(typeof out.processed, 'number');
     assert.equal(typeof out.remaining, 'number');
     assert.ok(Array.isArray(out.signups));

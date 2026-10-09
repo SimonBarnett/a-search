@@ -36,13 +36,18 @@ here. a-search mirrors the clubscan intent (joined programmes → merchant user
 - `src/run.js` exports `runOnce(deps) -> { processed, remaining, signups[] }`
 - Signup fields: `source`, `env`, `merchantId`, `merchantName`, `signedUpAt`, `status`
 - Sandbox (`A_SEARCH_ENV=sandbox`): fixture programmes only — never live Awin HTTP
-- Live join sync uses `fetchJoinedProgrammes` / `createMerchantUser` / `emitSignupRow`
+- Live (`A_SEARCH_ENV=live`): `fetchJoinedProgrammes` via injectable `httpGet`
+  → `createMerchantUser` → `emitSignupRow` (FR-125). Missing `httpGet` fails closed
+  (no silent empty drain). Optional `deps.batchSize` leaves `remaining > 0` until
+  the shared drain loop finishes. Pin: `tests/fr125-awin-onboarding-live-drain.test.js`
+  + `tests/fixtures/awin-joined-programmes.json`.
 
 ## Drain playbook (until remaining=0)
 
 1. Load this skill and `AGENTS.md` in this CWD.
 2. Ensure `.env` from `.env.example` (no secrets committed).
 3. Invoke `runOnce(deps)` (or the schedule entry that calls it).
+   Live deps must include `httpGet` (and Awin creds in env).
 4. Inspect `{ processed, remaining, signups[] }`.
 5. **Loop** while `remaining > 0`: call `runOnce` again (same deps/state).
    Prefer `shared/onboarding/drain.js` when present on the branch; otherwise
@@ -51,19 +56,20 @@ here. a-search mirrors the clubscan intent (joined programmes → merchant user
 7. Persist/report `signups[]` for the daily onboarding report; do not log tokens.
 
 Empty drain (`remaining: 0`, no new signups) is success when the queue is clear
-or live join is not yet wired for this env.
+(second tick after a finished live or sandbox drain).
 
 ## Modules (this CWD)
 
 | File | Role |
 |------|------|
-| `src/run.js` | `runOnce` — sandbox fixture drain / live stub |
+| `src/run.js` | `runOnce` — sandbox fixture drain / live HTTP drain (FR-125) |
 | `src/fetchJoinedProgrammes.js` | Awin joined programmes (FR-050a) |
 | `src/createMerchantUser.js` | Idempotent merchant user by email (FR-050b) |
 | `src/emitSignupRow.js` | Daily-report signup row (FR-050c) |
 
 ## Status
 
-FR-049c scaffold + FR-050a–d helpers/sandbox landed. This skillbook pin
-(FR-050e) documents clubscan URL + drain-until-remaining=0 playbook only.
-Code changes are out of scope for FR-050e.
+FR-049c scaffold + FR-050a–e helpers/sandbox + **FR-125 live HTTP drain**
+(fixture-backed, injectable `httpGet`, `remaining=0` exit). MSSQL
+UserApiKeys / MerchantProducts wiring and dual-writer cutover with legacy
+clubscan remain later FRs (see operator notes on #954).

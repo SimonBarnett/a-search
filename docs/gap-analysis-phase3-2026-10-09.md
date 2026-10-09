@@ -56,7 +56,7 @@ Stay-dark rule from FR-061 / `docs/phase2-providers.md` remains LOCKED until an 
 | S6 sandbox SQL isolation | **Partial** — queues/paths isolated in code; **sandbox MSSQL target still UNKNOWN** (`docs/environments.md`) |
 | S7 maintainer cadence defaults | Proposal only (UNKNOWN in vision) |
 | S8–S10 skillbooks / harvest | Present |
-| S13 awin onboarding live HTTP drain | **Parked** — `providers/local/awin/onboarding/src/run.js` still comments empty live drain |
+| S13 awin onboarding live HTTP drain | **FR-125** — live HTTP drain via injectable `httpGet` + fixture pin `tests/fr125-awin-onboarding-live-drain.test.js` (issue #954) |
 
 ## Operator-facing gaps (Phase 3 candidates)
 
