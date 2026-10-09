@@ -17,16 +17,13 @@
  *   shared/**              intake/reportException + selftest/ + rest
  *
  * No .env / secrets. Optional: copies @aws-sdk/client-sqs from repo
- * node_modules when present (enqueue dep). Optional mssql for local probes.
+ * node_modules when present (enqueue dep).
+ * Local MSSQL driver is NOT staged here (keeps synth under the 180s
+ * runCdkSynth pin); local probes fail closed if mssql is missing at runtime.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
-const {
-  stageMssqlNodeModules,
-  isLocalProviderFolder,
-} = require('./stage-mssql-node-modules');
-
 const PROVIDER_FILES = [
   'registry.json',
   'loadRegistry.js',
@@ -91,7 +88,6 @@ function stageEntryLambdaAsset(repoRoot, opts) {
   const selftestSources = enabledSelftestSources(root);
   /** @type {string[]} */
   const stagedProbeIds = [];
-  let needsMssql = false;
   for (const src of selftestSources) {
     const folderPosix = String(src.folder).replace(/\\/g, '/');
     const providerSrc = path.join(root, ...folderPosix.split('/'), 'src');
@@ -116,9 +112,6 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     }
 
     stagedProbeIds.push(String(src.id));
-    if (isLocalProviderFolder(folderPosix)) {
-      needsMssql = true;
-    }
   }
 
   // Enqueue uses @aws-sdk/client-sqs — include from root install when available.
@@ -142,12 +135,6 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     }
   }
 
-  // Local selftest probes need mssql when present (soft — same class as aws-sdk).
-  let mssqlPackages = [];
-  if (needsMssql && fs.existsSync(path.join(root, 'node_modules', 'mssql'))) {
-    mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
-  }
-
   // Marker for tests / operators
   fs.writeFileSync(
     path.join(outDir, '.a-search-entry-asset.json'),
@@ -160,8 +147,6 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         shared: true,
         fr415: 'shared/intake/reportException',
         selftestProbes: stagedProbeIds,
-        mssql: mssqlPackages.length > 0,
-        mssqlPackages,
       },
       null,
       2,
