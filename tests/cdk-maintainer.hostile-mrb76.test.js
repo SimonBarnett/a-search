@@ -19,7 +19,7 @@ describe('MRB #76 hostile: FR-024 maintainer schedules', () => {
     assert.match(text, /A_SEARCH_ENV:\s*'live'/);
     assert.match(text, /A_SEARCH_ENV:\s*'sandbox'/);
     assert.match(text, /Duration\.minutes\(15\)/);
-    assert.match(text, /schedule\.handler/);
+    assert.match(text, /maintainerHandlerPath\s*\(/);
     assert.ok(
       fs.existsSync(path.join(root, 'maintainer', 'src', 'schedule.js')),
       'maintainer/src/schedule.js',
