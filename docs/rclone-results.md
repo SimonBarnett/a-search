@@ -48,6 +48,6 @@ Maintainer staging CSVs may land under
 
 ## Related
 
-- `docs/environments.md` — live/sandbox isolation
+- `docs/environments.md` — live/sandbox isolation; **Network path (FR-122)** for AWS -> IONOS SQL reachability (egress allowlist / VPN / on-box only)
 - `docs/endpoint-search.md` — accept contract
 - `shared/resultsPath.js` — `resultsKey` / `resultsRclonePath` / `resultsS3Uri`

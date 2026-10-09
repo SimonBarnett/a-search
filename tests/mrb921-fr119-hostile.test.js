@@ -32,7 +32,9 @@ describe('MRB-921 FR-119 hostile', () => {
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /madeiradb/);
     assert.match(text, /Sandbox[\s\S]{0,400}UNKNOWN/i);
-    assert.match(text, /Network path[\s\S]{0,200}UNKNOWN/i);
+    // FR-122: decision surface; chosen option may still be PENDING/UNKNOWN.
+    assert.match(text, /## Network path \(FR-122\)/);
+    assert.match(text, /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN)/i);
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SIMPLE/);
     assert.match(text, /no[\s\S]{0,40}a_search_sandbox/i);
