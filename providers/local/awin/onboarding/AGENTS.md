@@ -14,9 +14,9 @@
 > Never park a-search product lessons under bobiverse `harvest/SKILL.md`.
 
 You are in the **Awin local onboarding** CWD. This folder owns the scheduled
-drain runner stub (`src/run.js` → `runOnce`) that will process Awin join /
-signup work until `remaining===0`. Live Awin API join logic is **out of
-scope** here (FR-050).
+drain runner (`src/run.js` → `runOnce`) that processes Awin join / signup
+work until `remaining===0`. Sandbox uses fixtures only; live uses injectable
+HTTP (`fetchJoinedProgrammes`) per FR-125.
 
 ## Read first
 
@@ -26,6 +26,8 @@ scope** here (FR-050).
 
 ## Shape
 
-- `src/run.js` — `runOnce(deps)` stub returning `{ processed, remaining, signups }`
+- `src/run.js` — `runOnce(deps)` returning `{ processed, remaining, signups }`
+  (sandbox fixture drain; live HTTP drain with `deps.httpGet`)
 - `.env.example` — onboarding-only placeholders (no secrets committed)
 - Drain helper: `shared/onboarding/drain.js` (on main)
+- Pin: `tests/fr125-awin-onboarding-live-drain.test.js`

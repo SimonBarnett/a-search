@@ -26,7 +26,7 @@ Operators can run sandbox searches against a decided MSSQL isolation model, with
 | P3-S2 | AWS->IONOS path documented | Network path + least-privilege login knobs LOCKED or explicit UNKNOWN with owner | `docs/environments.md` needles + pin | Invented hostnames/secrets in git |
 | P3-S3 | JWT deploy knobs | `JWT_ISSUER` / `JWT_AUDIENCE` / JWKS-or-secret documented as LOCKED placeholders + how to set at deploy | `docs/endpoint-search.md` + pin | Hardcoded production issuer secrets in repo |
 | P3-S4 | rclone + S3 scheme | Drive letter/mount unit + one-bucket-vs-two decided (or LOCKED default restated with IaC pointer) | `docs/rclone-results.md` / environments + pin | Conflicting bucket schemes in IaC vs docs |
-| P3-S5 | Awin live onboarding drain | Live path no longer empty; fixture-backed HTTP drain with exit when `remaining=0` | `tests/fr12x-awin-onboarding-live-drain.test.js` | Live path still no-op comment only |
+| P3-S5 | Awin live onboarding drain | Live path no longer empty; fixture-backed HTTP drain with exit when `remaining=0` | `tests/fr125-awin-onboarding-live-drain.test.js` | Live path still no-op comment only |
 | P3-S6 | Enable path | Template + first enable FR pattern: one provider, flip `enabled`, pin stay-others-dark | `docs/phase3-enable-provider.md` + one enable FR | Bulk enabling all Phase-2 ids in one PR |
 
 ## Out of scope (this umbrella)
