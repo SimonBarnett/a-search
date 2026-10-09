@@ -160,3 +160,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR-139: ci.yml on push/PR main with setup-node 20, npm ci, npm test, npm run synth; pin fr139 needles; release-gap CI Yes
 - GitHub Actions on Linux: quoted node --test tests/**/*.test.js is a literal path -> use scripts/run-tests.js walker + --test-concurrency=1; fleet-only validate-vision-pack.py paths break CI until vendored
 - FR-139 Ubuntu CI: after POSIX run-tests + concurrency + vendored validate-vision-pack + FR-051b newUserId, remaining reds are stale hostile/harvest pins and release-gap drift -> file suite-debt FR; do not merge while Actions red
+- FR-139 Ubuntu CI: after POSIX run-tests + concurrency + vendored validate-vision-pack + FR-051b, remaining reds are suite-debt -> file FR (#1179); do not merge while Actions red; ASCII-normalize intake em-dash on tip
