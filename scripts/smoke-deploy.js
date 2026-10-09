@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * FR-144: post-deploy smoke — fixture JWT -> POST /search (200 accept) +
+ * FR-144: post-deploy smoke - fixture JWT -> POST /search (200 accept) +
  * GET /selftest (JSON shape). No live provider credentials required for the
  * accept / shape checks (provider probe failures are reported, not fatal).
  *
@@ -71,7 +71,7 @@ function assertSearchAccept(body) {
 }
 
 /**
- * Selftest shape per docs/endpoint-selftest.md — runner may list failed
+ * Selftest shape per docs/endpoint-selftest.md - runner may list failed
  * providers; we only require the table shape (no live creds).
  * @param {unknown} body
  */

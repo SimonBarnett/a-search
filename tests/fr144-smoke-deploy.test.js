@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-144: post-deploy smoke script — mocked fetch pins (no live network).
+ * FR-144: post-deploy smoke script - mocked fetch pins (no live network).
  */
 
 const { describe, it } = require('node:test');
@@ -13,7 +13,7 @@ const { spawnSync } = require('node:child_process');
 const root = path.join(__dirname, '..');
 const scriptPath = path.join(root, 'scripts', 'smoke-deploy.js');
 
-/** Fixture token — FAKE_ parts only (never a realistic JWT literal). */
+/** Fixture token - FAKE_ parts only (never a realistic JWT literal). */
 const FAKE_JWT = ['FAKE', 'smoke', 'token'].join('.');
 
 function mockFetchSequence(handlers) {
