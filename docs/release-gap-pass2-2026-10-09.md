@@ -14,7 +14,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | S3 SSE + BlockPublicAccess | FR-154 | #997 |
 | Cost tags | FR-155 | #998 |
 | Stack stage suffix | FR-156 | #999 |
-| API access logs + throttle | FR-157 | #1000 |
+| API access logs + throttle | FR-157 | #1000 (**Yes** - HttpStage access logs + rate/burst context) |
 | Intake egress UNKNOWN | FR-158 | #1001 |
 | shared files[] missing identity/ | FR-159 | #1002 |
 | Performance still injectable stub | FR-160 | #1003 |

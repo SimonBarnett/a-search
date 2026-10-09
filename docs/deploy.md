@@ -124,6 +124,23 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### API access logs + throttle (FR-157)
+
+HTTP API `$default` stage writes access logs to a dedicated CloudWatch LogGroup
+(30-day retention) and applies conservative default-route throttling so burst
+abuse does not melt worker queues. Override via context:
+
+| Context | Default | Meaning |
+|---------|---------|---------|
+| `apiThrottleRate` | `20` | Steady-state requests/sec |
+| `apiThrottleBurst` | `40` | Short burst ceiling |
+
+```bash
+  -c apiThrottleRate=50 -c apiThrottleBurst=100
+```
+
+WAF WebACL is out of scope for this FR.
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
