@@ -163,4 +163,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-142 SQS DLQ: sibling {queueName}-dlq (14d retention) + deadLetterQueue:{queue,maxReceiveCount:3} on primary; pin RedrivePolicy via in-process app.synth (not npm spawn) for all live/sandbox enabled sources; alarms stay FR-143
 - FR-143: prefer lambda logGroup: new logs.LogGroup({retention:ONE_MONTH}) over deprecated logRetention (Custom::LogRetention); DLQ alarms need FR-142 sibling queues; ApproximateNumberOfMessagesVisible >= 1 -> SnsAction on placeholder topic
 - When a harvest tip folds/expands an existing contiguous lesson bullet, refresh every hostile pin that asserts the old string in the same MRB tip; keep-both release-gap CloudWatch Yes + CI Yes when FR-143 meets FR-139 on main
-
+- FR-144 smoke: export runSmoke({fetchImpl,baseUrl,jwt}); assert /search accepted+searchId and /selftest ok+providers[].id/ok; fixture JWT via A_SEARCH_SMOKE_JWT never printed; provider probe fails not fatal
