@@ -48,7 +48,7 @@ An **installable release** means:
 | Maintainer zip includes `shared/` + `mssql` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131 shared + FR-135 mssql) | No |
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
 | SQS DLQ | **Yes** (FR-142 #978 - DLQ + maxReceiveCount 3 per enabled worker queue) | Yes (ops safety) |
-| CloudWatch retention / alarms | **No** | Yes (ops safety) |
+| CloudWatch retention / alarms | **Yes** (FR-143 #979 - 30d LogGroup + DLQ depth alarms to placeholder SNS) | Yes (ops safety) |
 | `.github/workflows` CI | **No** | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** - bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone (FR-140 #976; keeps FR-136 JWT section) | **Yes** |
 | `npm run deploy` / account-region context | **Yes** - `npm run deploy` + `-c account`/`region` via `resolve-deploy-env` (FR-141 #977); no account IDs in source | **Yes** |
