@@ -164,3 +164,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-143: prefer lambda logGroup: new logs.LogGroup({retention:ONE_MONTH}) over deprecated logRetention (Custom::LogRetention); DLQ alarms need FR-142 sibling queues; ApproximateNumberOfMessagesVisible >= 1 -> SnsAction on placeholder topic
 - When a harvest tip folds/expands an existing contiguous lesson bullet, refresh every hostile pin that asserts the old string in the same MRB tip; keep-both release-gap CloudWatch Yes + CI Yes when FR-143 meets FR-139 on main
 - MRB docs/mrb after product CI land: verify Actions run green claim, merge origin/main into behind docs tip before gh pr merge, pin ci.yml Node20+setup-python+npm ci/test/synth+180m; self-MRB clear when seat marker differs (marchhare-42664 vs 960).
+- a-search FR-156: -c stage=dev suffixes physical names + stack id ASearchStack-dev; empty stage keeps a-search-entry / ASearchStack; ResultsBucket auto-named per stack
