@@ -17,3 +17,4 @@ FR-209	#1197	Park ComponentsPiece HTML mocks and vision Screens rows	https://git
 FR-210	#1198	Skillbook folder for components-piece agent CWD	https://github.com/SimonBarnett/a-search/issues/1198
 FR-211	#1199	uri-slug stable encoding helper	https://github.com/SimonBarnett/a-search/issues/1199
 FR-212	#1200	JSON contract fixtures in.json live.json searches.json	https://github.com/SimonBarnett/a-search/issues/1200
+FR-213	#1204	Click commission attribution uses cached partnerId	https://github.com/SimonBarnett/a-search/issues/1204

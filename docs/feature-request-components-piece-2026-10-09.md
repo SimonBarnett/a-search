@@ -35,8 +35,8 @@ LOCKED
 | CP1 | Parts page for known host | `GET /parts?host&uri&offset&n` returns 200 with `customerNumber`, `parts[]`, `nextOffset` from `live.json` slice | `tests/components-piece-parts.test.js` fixture tree | 5xx, missing customerNumber, or wrong slice length |
 | CP2 | First-sight bootstrap | Unknown host inserts Customers row, creates S3 customer tree + empty `live.json`, returns empty parts page | same pin: first call creates; second call reuses customerNumber | No DB row, no S3 folder, or new number every call |
 | CP3 | Click approved | Approved host `GET /go?host&uri&part` returns `{ url }` affiliate target from `live.json` without embedding that URL in the widget HTML | `tests/components-piece-go.test.js` | Affiliate URL in widget markup, or 200 with empty url |
-| CP4 | Click unapproved + TXT | Unapproved host: DNS TXT present -> mark approved + return destination; TXT absent -> signup URL only (never affiliate target) | go pin with stub DNS | Affiliate URL leaked when TXT missing |
-| CP5 | DNS cache | After approval, subsequent clicks do not call DNS again (row `approved` / cached flag) | go pin asserts stub DNS call count == 1 across 2 clicks | DNS on every click after approve |
+| CP4 | Click unapproved + Club TXT | Unapproved host: Club DNS TXT (club id) required to approve + return destination; Club absent -> signup URL only. Partner TXT optional (partnerId for agency commission); Partner alone never unlocks destinations | go pin with stub dual DNS | Affiliate URL when Club TXT missing, or Partner-only unlocks |
+| CP5 | DNS cache | After Club approval (and optional Partner read), subsequent clicks do not re-query DNS (approved + clubId + optional partnerId cached) | go pin asserts Club DNS call count == 1 across 2 clicks | DNS on every click after approve |
 | CP6 | Widget modes | Widget reads host+URI, pages Parts API, renders `horizontal` / `vertical` / `fullscreen` from layout attribute only | `tests/components-piece-widget.test.js` + mocks | Mode changes theme CSS, or wrong host/uri captured |
 | CP7 | Host CSS inherit | Widget sets no competing theme; host page styles drive appearance | pin: widget stylesheet has no color/font theme rules (layout only) | Hard-coded brand theme in widget CSS |
 | CP8 | Agent site pass | Missing `site.md` -> agent writes affiliate skillbook + seeds `top10.json` | `tests/components-piece-agent-site.test.js` | Agent skips site.md or writes secrets |
@@ -51,10 +51,10 @@ Host page
                       |                              +--> S3 x:/{customerNumber}/...
                       |
                  --GET /go?host&uri&part--------> [Click API] --> DB approved?
-                                                      | yes -> live.json target
-                                                      | no  -> DNS TXT
-                                                      |        yes -> approve + target
-                                                      |        no  -> signup URL only
+                                                      | yes -> live.json target (+ partnerId if cached)
+                                                      | no  -> DNS: Club TXT (required) + Partner TXT (optional)
+                                                      |        Club yes -> approve, store clubId, optional partnerId, target
+                                                      |        Club no  -> signup URL only (Partner alone never unlocks)
 
 Agent (offline)
   reads/writes S3 customer tree; consumes normalised in.json;
@@ -91,6 +91,7 @@ image, affiliate target, freshness, plus partNumber, score, expiresAt when live.
 
 - Widget never embeds affiliate destination URLs; clicks always go through `/go`.
 - Unapproved hosts never receive affiliate destinations.
+- Dual DNS TXT (LOCKED): Club TXT is required (club id; self-serve or agency). Partner TXT is optional (partner id so a digital agency that set up the host can claim commission). Partner TXT alone never unlocks destinations.
 - Parts/Click are **host-keyed public APIs** (not JWT `POST /search`). Do not
   conflate with S5 JWT search accept.
 - No secrets in `site.md`, skillbooks, mocks, or git.
@@ -129,17 +130,30 @@ GitHub issue per FR after approval; park with Refs not Closes.
 
 ## UNKNOWN
 
-- Exact DNS TXT name/value format and signup page URL
+- Exact public DNS TXT record names (values carry clubId / optional partnerId); signup page URL
 - Whether Parts/Click share entry Lambda or a new `components/` (or `widget/`) folder
 - Mapping of logical `x:` customer tree onto the existing results bucket vs a
   dedicated prefix/bucket (rclone letter may differ from search results mount)
 - Customers table physical name / schema in MSSQL vs a small DynamoDB table
 - Rate limits / abuse controls on public `/parts` and `/go`
 
+
+
+## Amendment 2026-10-09 - Dual DNS TXT
+
+LOCKED clarification from Plan seat:
+
+- There are two DNS TXT concepts: Club and Partner.
+- There MUST be a club id (operator may have set Club TXT themselves).
+- There MAY be a partner key (digital agency adds Partner TXT with their partner id to claim commission).
+- Club TXT gates approval; Partner TXT attributes commission only.
+
+Related: FR-196 (#1184), FR-200 (#1188), FR-213 (new).
+
 ## Issued (Refs)
 
 Implementation issues (leave open; docs park PR uses Refs not Closes):
 
-- Refs #1183 #1184 #1185 #1186 #1187 #1188 #1189 #1190 #1191 #1192 #1193 #1194 #1195 #1196 #1197 #1198 #1199 #1200
+- Refs #1183 #1184 #1185 #1186 #1187 #1188 #1189 #1190 #1191 #1192 #1193 #1194 #1195 #1196 #1197 #1198 #1199 #1200 #1204
 - Index: docs/fr/ISSUED-PHASE5.tsv
 - Plan session: plan-20261009-175258
