@@ -208,8 +208,7 @@ LOCKED
 ## UNKNOWN
 
 - JWT issuer / audience / JWKS / secret **values** (deploy-time) — **key names LOCKED (FR-123)** in [endpoint-search.md](endpoint-search.md); optional JWT `env` claim still UNKNOWN
-- Exact rclone drive letter and mount unit name on the SQL host
-- One S3 bucket with `live/`/`sandbox/` prefixes vs two buckets
+- rclone drive letter / S3 bucket scheme — **LOCKED (FR-124)**: default `X:` (ops may remap); one dedicated results bucket with `live/`/`sandbox/` prefixes; see [rclone-results.md](rclone-results.md)
 - Exact MSSQL table names (`Parts`, `PartFeedKeys`, `PartsStaging`, `ImpactPendingOnboard`) — **resolved (FR-120)**: a-search **owns** these tables (option a); ops apply `maintainer/sql` migrations to `madeiradb`. Local Awin/Impact workers SELECT `dbo.Parts` (not `dbo.MerchantProducts`). Live inventory remains [data-model.md](data-model.md) (FR-113).
 - AWS Lambda/Fargate -> IONOS SQL **chosen** path (A fixed egress / B VPN / C on-box) — **decision surface LOCKED (FR-122)** in [environments.md](environments.md); choice still PENDING
 - Maintainer cadence defaults (`MAINTAINER_TOP`, interval) beyond proposals
