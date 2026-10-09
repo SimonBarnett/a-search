@@ -38,7 +38,7 @@ An **installable release** means:
 | CDK entry + API GW `/search` `/selftest` `/account/performance` | Yes | No |
 | CDK queues/workers for enabled sources | Yes | No |
 | CDK maintainer schedules | Yes | No (FR-131 stages `maintainer/src` + `shared/`) |
-| CDK awin/impact onboarding Lambdas | Yes | Partial — asset broken; impact **live** EventBridge rule **missing** |
+| CDK awin/impact onboarding Lambdas | Yes (EventBridge live impact rule **Yes** — FR-133) | Partial — onboarding zip `shared/` still broken (FR-132 landed shared staging; verify asset) |
 | S3 results bucket in CDK | **Yes** (FR-129 `ResultsBucket`) | No |
 | `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **Yes** (FR-130 `wireResultsBucketAccess`) | No |
 | JWT_* / MSSQL_* / provider secrets in CDK | **No** | **Yes** |
