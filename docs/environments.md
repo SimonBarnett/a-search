@@ -10,8 +10,8 @@ which environment it is in and must not cross-write.
 |-----------|------|
 | Request body `sandbox: true\|false` | Optional hint; default `false` -> live |
 | JWT claim (optional) | If present, `env` / `sandbox` claim may force sandbox; UNKNOWN until issuer confirms |
-| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task -- **authoritative for workers/maintainer** |
-| Entry behaviour | Accepted job stamps `env` on SQS messages; workers refuse messages whose `env` ≠ process env |
+| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task -- **authoritative for workers/maintainer** (entry omits this; FR-148) |
+| Entry behaviour (FR-148) | Entry CDK **omits** `A_SEARCH_ENV` (env-agnostic accept). Accept stamps `env` on SQS from body `sandbox` (default live). Workers refuse messages whose `env` != their process env |
 
 ## Isolation (must not leak)
 
@@ -122,7 +122,7 @@ never in git.
 
 `cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
 provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
-via Secrets Manager — never plaintext passwords in git or synth snapshots.
+via Secrets Manager - never plaintext passwords in git or synth snapshots.
 
 | Deploy context | Meaning |
 |----------------|---------|
@@ -140,7 +140,7 @@ Secret **string JSON** keys (create in AWS / ops; never commit values):
 | (optional) `TRUSTED_CONNECTION` / `DOMAIN` | wire later if needed; stack sets `MSSQL_ENCRYPT=true` and `MSSQL_TRUST_SERVER_CERTIFICATE=true` as plain defaults |
 
 `MSSQL_DATABASE` is **plain** env (not from the secret) so live vs sandbox can
-point at different DB names on the same instance. Live amazon/ebay/… workers
+point at different DB names on the same instance. Live amazon/ebay/... workers
 do **not** receive MSSQL env (no SQL). Helper: `wireMssqlSecretEnv` +
 `grantRead` on the secret.
 
@@ -148,7 +148,7 @@ Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
 
-### CDK Secrets Manager — provider credentials (FR-138)
+### CDK Secrets Manager - provider credentials (FR-138)
 
 Enabled provider workers (amazon, ebay, rakuten, cj, awin, impact) and
 awin/impact onboarding receive marketplace credential env from **per-source**
@@ -156,7 +156,7 @@ Secrets Manager JSON secrets. Stay-dark providers are omitted (no grant).
 
 | Deploy context | Meaning |
 |----------------|---------|
-| `-c amazonProviderSecretArn=arn:...` | Override ARN for amazon (same pattern: `ebayProviderSecretArn`, …) |
+| `-c amazonProviderSecretArn=arn:...` | Override ARN for amazon (same pattern: `ebayProviderSecretArn`, ...) |
 | (omit) | Synth uses `000000000000` placeholder `a-search/provider/<id>-AbCdEf` |
 
 JSON keys match that provider's `.env.example` credential names (e.g.
