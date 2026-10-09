@@ -4,6 +4,7 @@ const path = require('node:path');
 const cdk = require('aws-cdk-lib');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
+const s3 = require('aws-cdk-lib/aws-s3');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
@@ -355,6 +356,26 @@ class ASearchStack extends cdk.Stack {
         targets: [new targets.LambdaFunction(impactOnboardingSandbox)],
       },
     );
+
+    // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
+    // Auto-named - do not invent production account IDs or hard-code bucket names.
+    // IAM / results-bucket env wiring is FR-130. SSE defaults deepen in FR-154.
+    const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      autoDeleteObjects: false,
+    });
+    new cdk.CfnOutput(this, 'ResultsBucketName', {
+      value: resultsBucket.bucketName,
+      description:
+        'Dedicated a-search results bucket (FR-124 one-bucket; live/ + sandbox/ prefixes)',
+    });
+    new cdk.CfnOutput(this, 'ResultsBucketArn', {
+      value: resultsBucket.bucketArn,
+      description: 'ARN of the a-search results bucket (IAM wiring = FR-130)',
+    });
 
     new cdk.CfnOutput(this, 'EntryFunctionName', { value: entry.functionName });
     new cdk.CfnOutput(this, 'SearchApiUrl', {
