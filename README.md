@@ -61,7 +61,7 @@ npm install
 npm test
 ```
 
-`npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
+`npm test` runs `node scripts/run-tests.js`, which walks `tests/**/*.test.js` and invokes `node --test` (quoted globs break Linux CI).
 
 After Phase 1b vision edits (Success S10â€“S16), confirm the pack still validates:
 

@@ -175,6 +175,102 @@ function wireMssqlSecretEnv(fn, secret, opts) {
 }
 
 /**
+ * FR-138: credential env keys from each enabled provider `.env.example`
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* — those are wired elsewhere).
+ * Stay-dark sources are omitted until an enable-provider FR adds them here.
+ */
+const PROVIDER_CREDENTIAL_KEYS = {
+  amazon: ['AMAZON_ACCESS_KEY', 'AMAZON_SECRET_KEY', 'AMAZON_PARTNER_TAG'],
+  ebay: [
+    'EBAY_CLIENT_ID',
+    'EBAY_CLIENT_SECRET',
+    'EBAY_REFRESH_TOKEN',
+    'EBAY_CAMPAIGN_ID',
+  ],
+  rakuten: [
+    'RAKUTEN_APPLICATION_KEY',
+    'RAKUTEN_AFFILIATE_ID',
+    'RAKUTEN_SITE_ID',
+  ],
+  cj: ['CJ_API_TOKEN', 'CJ_COMPANY_ID', 'CJ_WEBSITE_ID'],
+  awin: ['AWIN_API_TOKEN', 'AWIN_PUBLISHER_ID'],
+  impact: [
+    'IMPACT_CAMPAIGN_ID',
+    'IMPACT_ACCOUNT_SID',
+    'IMPACT_AUTH_TOKEN',
+  ],
+};
+
+/** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
+const PROVIDER_PLAIN_DEFAULTS = {
+  amazon: {
+    AMAZON_HOST: 'webservices.amazon.co.uk',
+    AMAZON_REGION: 'eu-west-1',
+  },
+  ebay: {
+    EBAY_MARKETPLACE_ID: 'EBAY_GB',
+  },
+  rakuten: {
+    RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+  },
+  cj: {
+    CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+};
+
+/**
+ * @param {string} sourceId
+ * @returns {string}
+ */
+function providerSecretContextKey(sourceId) {
+  return `${sourceId}ProviderSecretArn`;
+}
+
+/**
+ * Synth/deploy placeholder ARN (never a real account). Complete ARN includes
+ * the 6-char random suffix required by fromSecretCompleteArn.
+ * @param {string} sourceId
+ * @returns {string}
+ */
+function providerSecretArnPlaceholder(sourceId) {
+  return `arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/provider/${sourceId}-AbCdEf`;
+}
+
+/**
+ * FR-138: wire provider credential keys from a per-source Secrets Manager JSON
+ * onto the worker/onboarding Lambda. One grantRead per function.
+ * @param {lambda.Function} fn
+ * @param {secretsmanager.ISecret} secret
+ * @param {string[]} keys
+ */
+function wireProviderSecretEnv(fn, secret, keys) {
+  if (!keys || !keys.length) {
+    throw new Error('wireProviderSecretEnv: keys required');
+  }
+  for (const key of keys) {
+    fn.addEnvironment(key, secret.secretValueFromJson(key).unsafeUnwrap());
+  }
+  secret.grantRead(fn);
+}
+
+/**
+ * @param {lambda.Function} fn
+ * @param {string} sourceId
+ * @param {'live'|'sandbox'} [env]
+ */
+function applyProviderPlainDefaults(fn, sourceId, env) {
+  const defaults = PROVIDER_PLAIN_DEFAULTS[sourceId];
+  if (defaults) {
+    for (const [k, v] of Object.entries(defaults)) {
+      fn.addEnvironment(k, v);
+    }
+  }
+  if (sourceId === 'ebay' && env) {
+    fn.addEnvironment('EBAY_ENV', env === 'live' ? 'production' : 'sandbox');
+  }
+}
+
+/**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
@@ -228,6 +324,27 @@ class ASearchStack extends cdk.Stack {
     const mssqlSandboxDatabase =
       this.node.tryGetContext('mssqlSandboxDatabase') ||
       MSSQL_SANDBOX_DATABASE_DEFAULT;
+
+    // FR-138: per-enabled-source provider credential secrets (context override
+    // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
+    // enabledSources, so they get no secret constructs or grants.
+    /** @type {Record<string, secretsmanager.ISecret>} */
+    const providerSecrets = {};
+    const resolveProviderSecret = (sourceId) => {
+      if (!providerSecrets[sourceId]) {
+        const arn =
+          this.node.tryGetContext(providerSecretContextKey(sourceId)) ||
+          providerSecretArnPlaceholder(sourceId);
+        providerSecrets[sourceId] =
+          secretsmanager.Secret.fromSecretCompleteArn(
+            this,
+            `${pascalSource(sourceId)}ProviderSecret`,
+            arn,
+          );
+      }
+      return providerSecrets[sourceId];
+    };
+
     // FR-037: staged asset includes entry/src + providers/* (not entry/src alone)
     const repoRoot = path.join(__dirname, '..', '..');
     const entryAssetDir = stageEntryLambdaAsset(repoRoot);
@@ -289,6 +406,13 @@ class ASearchStack extends cdk.Stack {
             database:
               env === 'live' ? mssqlLiveDatabase : mssqlSandboxDatabase,
           });
+        }
+        // FR-138: provider credentials from per-source Secrets Manager JSON
+        const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
+        if (providerKeys) {
+          const providerSecret = resolveProviderSecret(src.id);
+          wireProviderSecretEnv(worker, providerSecret, providerKeys);
+          applyProviderPlainDefaults(worker, src.id, env);
         }
         const sqsOpts = { batchSize: 1 };
         const maxConcurrency = sqsMaxConcurrencyForSource(src);
@@ -418,6 +542,11 @@ class ASearchStack extends cdk.Stack {
     wireMssqlSecretEnv(awinOnboardingLive, mssqlSecret, {
       database: mssqlLiveDatabase,
     });
+    wireProviderSecretEnv(
+      awinOnboardingLive,
+      resolveProviderSecret('awin'),
+      PROVIDER_CREDENTIAL_KEYS.awin,
+    );
     const awinOnboardingSandbox = new lambda.Function(
       this,
       'AwinOnboardingSandboxFunction',
@@ -436,6 +565,11 @@ class ASearchStack extends cdk.Stack {
     wireMssqlSecretEnv(awinOnboardingSandbox, mssqlSecret, {
       database: mssqlSandboxDatabase,
     });
+    wireProviderSecretEnv(
+      awinOnboardingSandbox,
+      resolveProviderSecret('awin'),
+      PROVIDER_CREDENTIAL_KEYS.awin,
+    );
 
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
     // FR-132: staged asset includes shared/identity for relative requires.
@@ -462,7 +596,11 @@ class ASearchStack extends cdk.Stack {
     wireMssqlSecretEnv(impactOnboardingSandbox, mssqlSecret, {
       database: mssqlSandboxDatabase,
     });
-
+    wireProviderSecretEnv(
+      impactOnboardingSandbox,
+      resolveProviderSecret('impact'),
+      PROVIDER_CREDENTIAL_KEYS.impact,
+    );
 
     // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules → FR-056e.
     // FR-132: same staged impact asset as sandbox.
@@ -484,6 +622,11 @@ class ASearchStack extends cdk.Stack {
     wireMssqlSecretEnv(impactOnboardingLive, mssqlSecret, {
       database: mssqlLiveDatabase,
     });
+    wireProviderSecretEnv(
+      impactOnboardingLive,
+      resolveProviderSecret('impact'),
+      PROVIDER_CREDENTIAL_KEYS.impact,
+    );
 
     // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
@@ -564,6 +707,12 @@ class ASearchStack extends cdk.Stack {
       description:
         'FR-137 Secrets Manager ARN used for MSSQL_* (override with -c mssqlSecretArn)',
     });
+    for (const sourceId of Object.keys(providerSecrets)) {
+      new cdk.CfnOutput(this, `${pascalSource(sourceId)}ProviderSecretArn`, {
+        value: providerSecrets[sourceId].secretArn,
+        description: `FR-138 provider credentials for ${sourceId} (override with -c ${providerSecretContextKey(sourceId)})`,
+      });
+    }
     new cdk.CfnOutput(this, 'AwinOnboardingLiveRuleName', {
       value: awinOnboardingLiveRule.ruleName,
     });
@@ -585,7 +734,13 @@ module.exports = {
   pascalSource,
   wireResultsBucketAccess,
   wireMssqlSecretEnv,
+  wireProviderSecretEnv,
+  applyProviderPlainDefaults,
+  providerSecretContextKey,
+  providerSecretArnPlaceholder,
   isLocalProviderFolder,
+  PROVIDER_CREDENTIAL_KEYS,
+  PROVIDER_PLAIN_DEFAULTS,
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,

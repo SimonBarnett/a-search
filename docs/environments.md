@@ -148,6 +148,21 @@ Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
 
+### CDK Secrets Manager — provider credentials (FR-138)
+
+Enabled provider workers (amazon, ebay, rakuten, cj, awin, impact) and
+awin/impact onboarding receive marketplace credential env from **per-source**
+Secrets Manager JSON secrets. Stay-dark providers are omitted (no grant).
+
+| Deploy context | Meaning |
+|----------------|---------|
+| `-c amazonProviderSecretArn=arn:...` | Override ARN for amazon (same pattern: `ebayProviderSecretArn`, …) |
+| (omit) | Synth uses `000000000000` placeholder `a-search/provider/<id>-AbCdEf` |
+
+JSON keys match that provider's `.env.example` credential names (e.g.
+`AMAZON_ACCESS_KEY`, `EBAY_CLIENT_SECRET`, `AWIN_API_TOKEN`). See
+[secrets-matrix.md](secrets-matrix.md). Helper: `wireProviderSecretEnv`.
+
 ## Network path (FR-122)
 
 AWS Lambda/Fargate (and other off-box workers) reach `WIN-MPRE8VI4U6U` /
