@@ -166,7 +166,11 @@ Do **not** wire this against production from CI without an explicit approval gat
 
 On the MSSQL host, mount the results bucket and set
 `A_SEARCH_RCLONE_ROOT` to the bucket folder (LOCKED example letter **`X:`** -
-ops may remap). Full procedure: [rclone-results.md](rclone-results.md).
+ops may remap).
+
+Step-by-step installable mount runbook (remote, mount, live/sandbox roots,
+verify path, reboot persistence): [rclone-results.md](rclone-results.md)
+**Installable mount runbook (FR-147)**. FR-124 scheme locks stay in that doc.
 
 Workers already have `S3_RESULTS_BUCKET` + IAM from the stack (FR-130).
 
