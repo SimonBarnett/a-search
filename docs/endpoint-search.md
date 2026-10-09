@@ -1,4 +1,4 @@
-# Endpoint: accept search (LOCKED shape)
+﻿# Endpoint: accept search (LOCKED shape)
 
 Processing is offline. This call validates JWT + body, assigns `searchId`,
 and enqueues one SQS message per **enabled** registry source. The **user
@@ -178,8 +178,7 @@ to rename).
 
 ### Deploy procedure
 
-1. Copy `entry/.env.example` -> `entry/.env` (or inject the same keys into the
-   entry Lambda / task environment from the deploy secret store).
+1. Prefer CDK Secrets Manager wiring ([deploy.md](deploy.md) **Entry JWT_* via Secrets Manager (FR-136)**; context `jwtSecretArn` or stack-created `EntryJwtSecret`). For local labs, copy `entry/.env.example` -> `entry/.env` with placeholders only.
 2. Set `JWT_ISSUER` / `JWT_AUDIENCE` to the live login issuer values.
 3. Prefer `JWT_JWKS_URL` for production; use `JWT_SECRET` only for fixtures /
    HS256 lab deploys.

@@ -5,6 +5,7 @@ const cdk = require('aws-cdk-lib');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const s3 = require('aws-cdk-lib/aws-s3');
+const secretsmanager = require('aws-cdk-lib/aws-secretsmanager');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
@@ -83,6 +84,44 @@ function sqsMaxConcurrencyForSource(src) {
  * @param {lambda.Function} fn
  * @param {s3.IBucket} bucket
  */
+
+/**
+ * FR-136: resolve entry JWT secret from CDK context `jwtSecretArn`, else create
+ * an empty Secrets Manager secret for ops to fill (JSON keys JWT_ISSUER,
+ * JWT_AUDIENCE, JWT_JWKS_URL, JWT_SECRET). Never put plaintext JWT values in git.
+ * @param {Construct} scope
+ * @param {cdk.Stack} stack
+ * @returns {secretsmanager.ISecret}
+ */
+function resolveEntryJwtSecret(scope, stack) {
+  const arn = stack.node.tryGetContext('jwtSecretArn');
+  if (typeof arn === 'string' && /^arn:aws:secretsmanager:/i.test(arn.trim())) {
+    return secretsmanager.Secret.fromSecretCompleteArn(
+      scope,
+      'EntryJwtSecret',
+      arn.trim(),
+    );
+  }
+  return new secretsmanager.Secret(scope, 'EntryJwtSecret', {
+    description:
+      'a-search entry JWT_* JSON (FR-136). Keys: JWT_ISSUER, JWT_AUDIENCE, JWT_JWKS_URL, JWT_SECRET (optional JWT_HS256_SECRET). Values are deploy-time only.',
+  });
+}
+
+/**
+ * FR-136: wire JWT_* env from Secrets Manager JSON fields + grant read.
+ * CloudFormation dynamic refs — no secret strings in the synth snapshot.
+ * @param {lambda.Function} fn
+ * @param {secretsmanager.ISecret} secret
+ */
+function wireEntryJwtSecrets(fn, secret) {
+  const keys = ['JWT_ISSUER', 'JWT_AUDIENCE', 'JWT_JWKS_URL', 'JWT_SECRET'];
+  for (const k of keys) {
+    fn.addEnvironment(k, secret.secretValueFromJson(k).unsafeUnwrap());
+  }
+  secret.grantRead(fn);
+}
+
 function wireResultsBucketAccess(fn, bucket) {
   fn.addEnvironment('S3_RESULTS_BUCKET', bucket.bucketName);
   bucket.grantReadWrite(fn);
@@ -139,6 +178,13 @@ class ASearchStack extends cdk.Stack {
       environment: entryEnv,
     });
     wireResultsBucketAccess(entry, resultsBucket);
+    // FR-136: JWT_* from Secrets Manager (context jwtSecretArn or created secret)
+    const entryJwtSecret = resolveEntryJwtSecret(this, this);
+    wireEntryJwtSecrets(entry, entryJwtSecret);
+    new cdk.CfnOutput(this, 'EntryJwtSecretArn', {
+      value: entryJwtSecret.secretArn,
+      description: 'Secrets Manager ARN for entry JWT_* JSON (FR-136)',
+    });
 
     // FR-036: queues + workers for every enabled shortlist source Ã— env
     for (const src of enabledSources) {
