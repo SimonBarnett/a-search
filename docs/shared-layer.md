@@ -65,3 +65,8 @@ Worker and entry packaging should include `shared/` via Lambda layer
 `/opt/nodejs/a-search` **or** asset/bundling that copies `shared/` into the
 deployable. Automating layer publish is out of scope for FR-047e; see
 `cdk/README.md`.
+
+Maintainer Lambdas (FR-131) use `scripts/stage-maintainer-lambda-asset.js`
+(`maintainer/src/**` + `shared/**`) so `schedule.js` can
+`require('../../shared/intake/reportException')` in the zip. Handler:
+`maintainer/src/schedule.handler`.
