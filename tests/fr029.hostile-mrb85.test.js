@@ -25,7 +25,7 @@ describe('MRB #85 hostile: FR-029 rclone-results docs', () => {
       'utf8',
     );
     const src = fs.readFileSync(
-      path.join(root, 'worker', 'lib', 'resultsPath.js'),
+      path.join(root, 'shared', 'resultsPath.js'),
       'utf8',
     );
     assert.match(doc, keyRe);

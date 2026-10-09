@@ -35,7 +35,7 @@ if (files.length < 1) {
 let failed = 0;
 for (let i = 0; i < files.length; i += BATCH) {
   const chunk = files.slice(i, i + BATCH);
-  const result = spawnSync(process.execPath, ['--test', ...chunk], {
+  const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', ...chunk], {
     stdio: 'inherit',
     cwd: root,
     env: process.env,
