@@ -124,6 +124,25 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### Parallel stage install (FR-156)
+
+Optional `-c stage=` suffixes physical names (functions, queues, DLQs, alarms,
+rules, API name, SNS topic) and the CloudFormation stack id so a second install
+can sit beside production:
+
+| Context | Stack id | Example function |
+|---------|----------|------------------|
+| (unset / empty) | `ASearchStack` | `a-search-entry` |
+| `-c stage=dev` | `ASearchStack-dev` | `a-search-entry-dev` |
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
+```
+
+ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
+is out of scope. Same `stage` key is used for FR-155 cost `Env` tags when that
+FR is on main.
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:

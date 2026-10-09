@@ -6,14 +6,14 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 
 ## New gaps found
 
-| Gap | FR | Issue |
-|-----|----|------:|
-| jose missing for JWT JWKS | FR-151 | #994 |
-| /selftest still empty providers[] | FR-152 | #995 |
-| No API CORS | FR-153 | #996 |
-| S3 SSE + BlockPublicAccess | FR-154 | #997 |
-| Cost tags | FR-155 | #998 |
-| Stack stage suffix | FR-156 | #999 |
+| Gap | FR | Issue | Status |
+|-----|----|------:|--------|
+| jose missing for JWT JWKS | FR-151 | #994 | |
+| /selftest still empty providers[] | FR-152 | #995 | |
+| No API CORS | FR-153 | #996 | |
+| S3 SSE + BlockPublicAccess | FR-154 | #997 | |
+| Cost tags | FR-155 | #998 | |
+| Stack stage suffix | FR-156 | #999 | **Yes** (-c stage= suffixes names + ASearchStack-id) |
 | API access logs + throttle | FR-157 | #1000 |
 | Intake egress UNKNOWN | FR-158 | #1001 |
 | shared files[] missing identity/ | FR-159 | #1002 |
