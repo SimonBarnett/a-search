@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search merchant signup - errors</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    .err { border: 1px solid #a33; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .meta { color: #556; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Merchant signup errors</h1>
+  <p class="meta">Wireframe MW3</p>
+  <div class="err">
+    <strong>Shop session missing</strong>
+    <p>Platform login required. Connection details were not returned.</p>
+  </div>
+  <div class="err">
+    <strong>Stripe payment not confirmed</strong>
+    <p>Customer or subscription created, but first payment is not confirmed. Signup stays incomplete.</p>
+  </div>
+  <div class="err">
+    <strong>Commission rule</strong>
+    <p>Monthly subscription merchants are not charged commission. Do not show a commission charge on this path.</p>
+  </div>
+</body>
+</html>

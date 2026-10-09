@@ -103,6 +103,12 @@ image, affiliate target, freshness, plus partNumber, score, expiresAt when live.
 | W1 | docs/mocks/components-piece/home.html | parts strip with N cards (horizontal) |
 | W2 | docs/mocks/components-piece/empty.html | known host, empty live.json |
 | W3 | docs/mocks/components-piece/error.html | API/DNS/signup gate failure states |
+| MW1 | docs/mocks/components-piece-merchant/home.html | Merchant wizard - provider + Stripe confirmed |
+| MW2 | docs/mocks/components-piece-merchant/empty.html | Merchant wizard - not connected |
+| MW3 | docs/mocks/components-piece-merchant/error.html | Merchant wizard - session/payment errors |
+| PW1 | docs/mocks/components-piece-partner/home.html | Partner/club register + copy widget |
+| PW2 | docs/mocks/components-piece-partner/empty.html | Partner/club before registration |
+| PW3 | docs/mocks/components-piece-partner/error.html | Partner/club errors / payout setup |
 
 ## Gap vs origin/main @ 065e457 (docs park branch)
 
@@ -121,6 +127,66 @@ image, affiliate target, freshness, plus partNumber, score, expiresAt when live.
 See `docs/fr/FR-195.md` - `FR-212.md` and `SMALL-FRS.tsv`. Anti-omnibus: one
 GitHub issue per FR after approval; park with Refs not Closes.
 
+
+
+## Amendment 2026-10-09b - Merchant wizard, partner/club pages, Stripe
+
+LOCKED from Plan seat (a-search same repo):
+
+### Merchants (Shopify / Wix / WooCommerce)
+
+- Signup **wizard**: merchant selects catalogue provider (Shopify, Wix, Woo).
+- Wizard uses the merchant's **logged-in session** on that platform to return
+  shop connection details (prompt login if not already signed in).
+- Merchant **subscriptions** are paid **monthly via Stripe**.
+- Signup **cannot complete** until Stripe **Customer + subscription + first
+  payment confirmation** succeed.
+- Merchants on monthly subscription **do not pay commission** (subscription
+  replaces commission charges).
+
+### Partner registration + widget copy pages
+
+- **Partner registration widget** issues / sends the partner their **partner
+  code for DNS**, with instructions hosted on **smartcatalogue.uk**.
+- A page lets them pick **horizontal / vertical / fullscreen** and **copy
+  widget embed code** to paste into their site.
+- The **same page also exists on clubmadeira.uk** (clubs).
+- **Anyone** can copy the widget code; the widget **self-configures from
+  where it is placed** (host + URI), not from hardcoded host in the snippet.
+
+### Payouts (Stripe)
+
+- Partner and club **payouts** use Stripe.
+- Partners/clubs are **not** required to have a Stripe payout account until
+  they want to be paid out.
+- **Partners who pay monthly do not pay commission** (monthly partner plan;
+  commission obligation does not apply to those partners).
+
+### Shape note
+
+Primary remains **service**. Wizard + partner/club copy pages are **delivery
+websites** shipped in a-search and served / linked from smartcatalogue.uk and
+clubmadeira.uk.
+
+### New Success rows (additive)
+
+| id | metric | target | how measured | fail-when |
+|----|--------|--------|--------------|-----------|
+| CP10 | Merchant wizard provider pick | Wizard offers Shopify, Wix, Woo; selected provider drives OAuth/session connect | `tests/components-piece-merchant-wizard.test.js` + mocks | Missing provider or connect ignores selection |
+| CP11 | Shop connection via session | Logged-in platform session returns shop connection details; prompts login when absent | merchant connect pin with fixture session | Completes without shop details |
+| CP12 | Merchant Stripe gate | Signup finishes only after Stripe Customer + subscription + first payment confirmed | stripe stub pin | Finish without payment confirmation |
+| CP13 | No merchant commission on sub | Monthly-subscribed merchant is not charged commission fees | billing pin / docs rule | Commission charged on top of active monthly sub |
+| CP14 | Partner code delivery | Partner registration sends partner DNS code + smartcatalogue.uk instructions | partner-register pin | Code missing or instructions URL wrong |
+| CP15 | Widget copy page | Page on smartcatalogue.uk and clubmadeira.uk: mode select + copy embed; snippet has no hardcoded host | mocks + pin | Hardcoded host in snippet, or page missing on either site |
+| CP16 | Self-configuring widget | Embed uses placement `location.host` + URI only | widget pin | Snippet requires manual host field |
+| CP17 | Payout Stripe optional | Partner/club can operate without payout Stripe until payout requested | docs + pin | Forced Connect at partner register |
+| CP18 | Monthly partner no commission | Partner on monthly plan is not charged commission | billing pin / docs rule | Commission charged to monthly-paying partner |
+
+### New small FRs
+
+FR-214..FR-224 (see `docs/fr/`). File after approve.
+
+
 ## Out of scope
 
 - Changing JWT `POST /search` fan-out or provider registry enablement
@@ -129,6 +195,11 @@ GitHub issue per FR after approval; park with Refs not Closes.
 - Omnibus single issue for the whole Phase 5 backlog
 
 ## UNKNOWN
+
+- Merchant Stripe Price/Product ids (deploy-time); Connect account type for payouts
+- Exact OAuth app ids for Shopify / Wix / Woo (deploy-time)
+- Whether smartcatalogue.uk / clubmadeira.uk are reverse-proxy or static publish of a-search pages
+- Merchant Stripe secret keys in Secrets Manager naming (no values in git)
 
 - Exact public DNS TXT record names (values carry clubId / optional partnerId); signup page URL
 - Whether Parts/Click share entry Lambda or a new `components/` (or `widget/`) folder
@@ -157,3 +228,7 @@ Implementation issues (leave open; docs park PR uses Refs not Closes):
 - Refs #1183 #1184 #1185 #1186 #1187 #1188 #1189 #1190 #1191 #1192 #1193 #1194 #1195 #1196 #1197 #1198 #1199 #1200 #1204
 - Index: docs/fr/ISSUED-PHASE5.tsv
 - Plan session: plan-20261009-175258
+## Issued Phase 5b (Refs)
+
+- Refs #1219 #1220 #1221 #1222 #1223 #1224 #1225 #1226 #1227 #1228 #1229
+- Index: docs/fr/ISSUED-PHASE5B.tsv

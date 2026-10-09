@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Partner / club - register + copy widget</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; color: #122; }
+    .card { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .ok { color: #0a7; font-weight: 600; }
+    pre { background: #f4f6f8; padding: 1rem; overflow: auto; }
+    .meta { color: #556; font-size: 0.9rem; }
+    label { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Partner registration + widget copy</h1>
+  <p class="meta">Wireframe PW1 - also served on smartcatalogue.uk and clubmadeira.uk</p>
+
+  <div class="card">
+    <h2>Your partner DNS code</h2>
+    <p class="ok"><code>AB12CD34</code></p>
+    <p>Add the Partner TXT with this code. Club TXT (club id) is still required on the host for approval.</p>
+    <p class="meta">Instructions: smartcatalogue.uk (partners) / clubmadeira.uk (clubs)</p>
+  </div>
+
+  <div class="card">
+    <h2>Widget layout</h2>
+    <label><input type="radio" name="mode" checked /> horizontal</label>
+    <label><input type="radio" name="mode" /> vertical</label>
+    <label><input type="radio" name="mode" /> fullscreen</label>
+  </div>
+
+  <div class="card">
+    <h2>Copy embed code</h2>
+    <p class="meta">Anyone may copy. Snippet has no host - widget self-configures from placement.</p>
+    <pre>&lt;script src="https://cdn.example/a-search-widget.js"
+  data-mode="horizontal"&gt;&lt;/script&gt;</pre>
+    <button type="button">Copy</button>
+  </div>
+
+  <div class="card">
+    <h2>Payouts</h2>
+    <p>Stripe payout account is optional until you want to be paid out.</p>
+    <p class="meta">Monthly-paying partners do not pay commission.</p>
+  </div>
+</body>
+</html>
