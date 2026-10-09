@@ -16,6 +16,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { stageMssqlNodeModules } = require('./stage-mssql-node-modules');
 
 /**
  * @returns {string} posix handler
@@ -51,10 +52,9 @@ function stageMaintainerLambdaAsset(repoRoot, opts) {
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
 
-  // mssql/SDK packaging: not required for current maintainer/src (no mssql
-  // require). When a later FR adds a hot-path mssql require, stage those
-  // packages here (mirror entry's @aws-sdk copy). Skipping keeps synth under
-  // the FR-129 runCdkSynth 180s budget.
+  // FR-135: stage mssql (+ transitive) for maintainer deploy readiness / future
+  // hot-path requires (roll injects MSSQL reader today; zip must ship the driver).
+  const mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
 
   fs.writeFileSync(
     path.join(outDir, '.a-search-maintainer-asset.json'),
@@ -64,6 +64,8 @@ function stageMaintainerLambdaAsset(repoRoot, opts) {
         handler: maintainerHandlerPath(),
         shared: true,
         reportException: 'shared/intake/reportException.js',
+        mssql: true,
+        mssqlPackages,
       },
       null,
       2,
@@ -87,6 +89,7 @@ function requiredMaintainerAssetPaths() {
     'maintainer/src/delete.js',
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
+    'node_modules/mssql/package.json',
   ];
 }
 

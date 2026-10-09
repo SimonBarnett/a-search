@@ -16,6 +16,10 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  stageMssqlNodeModules,
+  isLocalProviderFolder,
+} = require('./stage-mssql-node-modules');
 
 /**
  * @param {{ id: string, folder: string }} src registry source
@@ -62,6 +66,12 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
 
+  // FR-135: local providers require('mssql') from queryParts — stage driver + deps.
+  let mssqlPackages = [];
+  if (isLocalProviderFolder(folderPosix)) {
+    mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
+  }
+
   fs.writeFileSync(
     path.join(outDir, '.a-search-worker-asset.json'),
     JSON.stringify(
@@ -72,6 +82,8 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
         handler: workerHandlerPath(src),
         shared: true,
         reportException: 'shared/intake/reportException.js',
+        mssql: mssqlPackages.length > 0,
+        mssqlPackages,
       },
       null,
       2,
