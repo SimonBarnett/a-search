@@ -12,6 +12,7 @@ Thumbs.db
 
 # CDK
 cdk.out/
+cdk.out-*/
 cdk.context.json
 
 
