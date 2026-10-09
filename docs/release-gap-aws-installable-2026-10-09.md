@@ -55,7 +55,7 @@ An **installable release** means:
 | Post-deploy smoke | **No** | Yes |
 | VERSION + release checklist | **No** | Yes |
 | Sandbox DB create + DDL apply runbook | UNKNOWN/ops | Yes (after #950) |
-| rclone SQL-host runbook | Partial (`rclone-results.md`) | Yes (after #953) |
+| rclone SQL-host runbook | **Yes** (FR-147 #983 - step-by-step mount in `docs/rclone-results.md`) | Yes (after #953) |
 | VPC / egress to IONOS | UNKNOWN | Yes (after #951) |
 | Stay-dark provider enable | Explicitly deferred | No for v0.1 |
 
