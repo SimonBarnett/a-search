@@ -1,11 +1,11 @@
-# a-search IaC (FR-023)
+﻿# a-search IaC (FR-023)
 
 AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 ## What is included
 
-- `ASearchStack` â€” Node 20 entry Lambda (`entry/src` â†’ `index.handler`)
-- HTTP API Gateway (FR-035): `POST /search` â†’ entry Lambda; output `SearchApiUrl`
+- `ASearchStack` Ã¢â‚¬â€ Node 20 entry Lambda (`entry/src` Ã¢â€ â€™ `index.handler`)
+- HTTP API Gateway (FR-035): `POST /search` Ã¢â€ â€™ entry Lambda; output `SearchApiUrl`
 - FR-036: live + sandbox SQS queues and SQS-triggered worker Lambdas for every
   registry source with `enabled.live` or `enabled.sandbox` (amazon, ebay,
   rakuten, cj, awin, impact). Names: `a-search-{id}-{env}`; workers
@@ -13,8 +13,8 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Entry env receives `SQS_<SOURCE>_LIVE_URL` / `SQS_<SOURCE>_SANDBOX_URL` for
   each enabled source (FR-034 resolveQueueUrl) and SendMessage grants.
 - Maintainer EventBridge schedules (FR-024), every 15 minutes:
-  - `a-search-maintainer-live` â†’ Lambda with `A_SEARCH_ENV=live`
-  - `a-search-maintainer-sandbox` â†’ Lambda with `A_SEARCH_ENV=sandbox`
+  - `a-search-maintainer-live` Ã¢â€ â€™ Lambda with `A_SEARCH_ENV=live`
+  - `a-search-maintainer-sandbox` Ã¢â€ â€™ Lambda with `A_SEARCH_ENV=sandbox`
 - FR-056a: Awin onboarding live Lambda `a-search-awin-onboarding-live`
   (`A_SEARCH_ENV=live`, handler `handler.handler` from
   `providers/local/awin/onboarding/src`).
@@ -53,7 +53,7 @@ the `*_LIVE_URL` / `*_SANDBOX_URL` pair without the resolver.
 
 Shared code lives in repo `shared/` (`@a-search/shared`). Prefer a Lambda
 layer at `/opt/nodejs/a-search` or bundle `shared/` into each function
-asset — never duplicate helpers under `providers/*/src`. Layout:
+asset â€” never duplicate helpers under `providers/*/src`. Layout:
 [`docs/shared-layer.md`](../docs/shared-layer.md). Layer publish automation
 is out of scope for FR-047e.
 
@@ -140,3 +140,8 @@ On marchhare the default PATH may resolve Node 8 first (`Cannot find module 'nod
 
 - Prefer `D:\Tools\node\node.exe` (or `D:\tools\node`) on PATH, or set `A_SEARCH_NODE_BIN`.
 - Test helper `tests/helpers/runCdkSynth.js` prepends that Node directory to PATH for every `npm run synth` spawn.
+
+## Entry JWT secrets (FR-136)
+
+Entry Lambda JWT_* env vars come from Secrets Manager JSON (context -c jwtSecretArn=... or stack-created EntryJwtSecret). See [docs/deploy.md](../docs/deploy.md). Never put real JWT values in git.
+
