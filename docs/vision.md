@@ -197,6 +197,9 @@ LOCKED
 | PW1 | docs/mocks/components-piece-partner/home.html | Partner/club register + copy widget |
 | PW2 | docs/mocks/components-piece-partner/empty.html | Partner/club before registration |
 | PW3 | docs/mocks/components-piece-partner/error.html | Partner/club errors / payout setup |
+| AL1 | docs/mocks/components-piece-auth/home.html | Shared login - OAuth + email OTP |
+| AL2 | docs/mocks/components-piece-auth/empty.html | Shared login - signed out |
+| AL3 | docs/mocks/components-piece-auth/error.html | Shared login - no contact / OTP error |
 
 ## LOCKED
 
