@@ -33,12 +33,14 @@ describe('MRB #677 hostile FR-063 kelkoo search', () => {
     assert.match(blob, /example\.test/);
   });
 
-  it('worker remains stub (out of scope) while search exists', () => {
+  it('worker is wired (run/handler) while search exists; stay-dark via registry pins elsewhere', () => {
+    // FR-065+ landed a real worker; pin wiring instead of stub text.
     const worker = fs.readFileSync(
       path.join(root, 'providers/live/kelkoo/src/worker.js'),
       'utf8',
     );
-    assert.match(worker, /stub|not.?wired|not implemented/i);
+    assert.match(worker, /async function run\s*\(/);
+    assert.match(worker, /async function handler\s*\(/);
     assert.ok(
       fs.existsSync(path.join(root, 'providers/live/kelkoo/src/search.js')),
     );

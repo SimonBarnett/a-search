@@ -146,11 +146,11 @@ describe('MRB #1094 hostile FR-131 stage maintainer asset', () => {
     );
     assert.match(
       gap,
-      /Maintainer zip includes `shared\/`\s*\|\s*\*\*Yes\*\*.*FR-131/i,
+      /Maintainer zip includes `shared\/`[^|\n]*\|\s*\*\*Yes\*\*[^\n]*FR-131/i,
     );
     assert.doesNotMatch(
       gap,
-      /Maintainer zip includes `shared\/`\s*\|\s*\*\*No\*\*/,
+      /Maintainer zip includes `shared\/`[^|\n]*\|\s*\*\*No\*\*/,
     );
     assert.match(gap, /stage-maintainer-lambda-asset|FR-131/);
   });
