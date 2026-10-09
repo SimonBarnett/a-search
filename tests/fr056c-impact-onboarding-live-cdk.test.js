@@ -2,7 +2,7 @@
 
 /**
  * FR-056c: CDK a-search-impact-onboarding-live with A_SEARCH_ENV=live.
- * Schedules are out of scope (FR-056e).
+ * Function only here; EventBridge live rule is FR-133 (extends FR-056e).
  */
 
 const { describe, it } = require('node:test');
@@ -15,7 +15,7 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 describe('FR-056c CDK impact onboarding Lambda live', () => {
-  it('stack declares ImpactOnboardingLive with A_SEARCH_ENV live (no schedule rule)', () => {
+  it('stack declares ImpactOnboardingLive with A_SEARCH_ENV live', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /ImpactOnboardingLiveFunction/);
     assert.match(text, /a-search-impact-onboarding-live/);
@@ -27,8 +27,7 @@ describe('FR-056c CDK impact onboarding Lambda live', () => {
     const liveBlock = text.slice(start, end + 2);
     assert.match(liveBlock, /A_SEARCH_ENV:\s*'live'/);
     assert.doesNotMatch(liveBlock, /events\.Rule|Schedule\.rate|Schedule\.cron/);
-    // FR-056c out of scope: no dedicated live Impact EventBridge rule id/name.
-    assert.doesNotMatch(text, /ImpactOnboardingLiveSchedule|a-search-impact-onboarding-live-rule/);
+    // FR-133 owns ImpactOnboardingLiveSchedule (asserted in fr133 tests).
     assert.match(text, /ImpactOnboardingLiveFunctionName/);
   });
 

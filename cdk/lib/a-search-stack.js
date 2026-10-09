@@ -382,6 +382,17 @@ class ASearchStack extends cdk.Stack {
         targets: [new targets.LambdaFunction(impactOnboardingSandbox)],
       },
     );
+    // FR-133: Impact onboarding live daily rule (sibling of sandbox; mirrors awin live).
+    const impactOnboardingLiveRule = new events.Rule(
+      this,
+      'ImpactOnboardingLiveSchedule',
+      {
+        ruleName: 'a-search-impact-onboarding-live',
+        description: 'Daily drain for Impact onboarding A_SEARCH_ENV=live',
+        schedule: onboardingSchedule,
+        targets: [new targets.LambdaFunction(impactOnboardingLive)],
+      },
+    );
 
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
@@ -424,6 +435,9 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ImpactOnboardingSandboxRuleName', {
       value: impactOnboardingSandboxRule.ruleName,
+    });
+    new cdk.CfnOutput(this, 'ImpactOnboardingLiveRuleName', {
+      value: impactOnboardingLiveRule.ruleName,
     });
   }
 }
