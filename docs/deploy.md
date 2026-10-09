@@ -96,7 +96,17 @@ when present; otherwise [cdk/README.md](../cdk/README.md).
 
 ## 5. cdk deploy
 
-From repo root (after secrets ARNs are ready):
+Prefer the FR-141 wrapper (requires account context; never commit account IDs):
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
+```
+
+`npm run deploy` sets `-c requireDeployEnv=true` so a missing account exits with
+`FR-141: missing deploy account...`. Aliases: `deployAccount` / `deployRegion`.
+Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`.
+
+Or call CDK directly from repo root (after secrets ARNs are ready):
 
 ```bash
 npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
@@ -162,7 +172,6 @@ provider credentials - never a real password, API token, or JWT string.
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
-- `npm run deploy` wrapper + account/region knobs (**FR-141**)
 - Automated smoke script (**FR-144**)
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS (ops runbook after FR-121)
