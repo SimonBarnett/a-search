@@ -50,7 +50,7 @@ An **installable release** means:
 | SQS DLQ | **No** | Yes (ops safety) |
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
 | `.github/workflows` CI | **No** | **Yes** (vision S4) |
-| `docs/deploy.md` / install playbook | **Yes** (FR-136 `docs/deploy.md`) | Partial (expand install playbook) |
+| `docs/deploy.md` / install playbook | **Yes** — bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone (FR-140 #976; keeps FR-136 JWT section) | **Yes** |
 | `npm run deploy` / account-region context | Partial (README only) | Yes |
 | Post-deploy smoke | **No** | Yes |
 | VERSION + release checklist | **No** | Yes |
