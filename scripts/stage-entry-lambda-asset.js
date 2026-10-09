@@ -15,6 +15,7 @@
  *
  * No .env / secrets. Optional: copies @aws-sdk/client-sqs from repo
  * node_modules when present (enqueue dep).
+ * FR-151: copies node_modules/jose for JWT_JWKS_URL (createRemoteJWKSet).
  */
 
 const fs = require('node:fs');
@@ -82,6 +83,17 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     }
   }
 
+  // FR-151: JWT_JWKS_URL path in entry/src/auth/jwt.js requires jose at runtime.
+  const joseSrc = path.join(root, 'node_modules', 'jose');
+  if (!fs.existsSync(joseSrc)) {
+    throw new Error(
+      'stage-entry-lambda-asset: missing node_modules/jose (npm install; FR-151)',
+    );
+  }
+  fs.cpSync(joseSrc, path.join(outDir, 'node_modules', 'jose'), {
+    recursive: true,
+  });
+
   // Marker for tests / operators
   fs.writeFileSync(
     path.join(outDir, '.a-search-entry-asset.json'),
@@ -92,6 +104,7 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         providers: PROVIDER_FILES,
         shared: true,
         fr415: 'shared/intake/reportException',
+        fr151: 'node_modules/jose',
       },
       null,
       2,
@@ -116,6 +129,7 @@ function requiredEntryAssetPaths() {
     'providers/resolveQueueUrl.js',
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
+    'node_modules/jose/package.json',
   ];
 }
 
