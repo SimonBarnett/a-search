@@ -26,6 +26,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Phase-2 providers](docs/phase2-providers.md) (FR-061 -- stay-dark until credentials)
 - [Phase-3 enable one provider](docs/phase3-enable-provider.md) (FR-126 -- ritual template; does not enable anyone)
+- [Deploy playbook](docs/deploy.md) (FR-140 -- bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone)
 - [AWS installable v0.1 DoD](docs/release-installable.md) (FR-128 -- CI, cdk deploy, secrets, S3, smoke, VERSION; stay-dark OOS)
 - [Add a source](docs/add-source.md) (checklist -- registry `enabled`, no `entry/` core edits)
 - [Skillbook layout](docs/skillbook-layout.md)
@@ -60,7 +61,7 @@ npm install
 npm test
 ```
 
-`npm test` runs the Node built-in test runner (`node --test`) over `tests/**/*.test.js`.
+`npm test` runs `node scripts/run-tests.js`, which walks `tests/**/*.test.js` and invokes `node --test` (quoted globs break Linux CI).
 
 After Phase 1b vision edits (Success S10â€“S16), confirm the pack still validates:
 
