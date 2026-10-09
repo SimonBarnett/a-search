@@ -56,7 +56,7 @@ An **installable release** means:
 | VERSION + release checklist | **Yes** (FR-145 #981 - `VERSION` 0.1.0 + `docs/release-checklist.md`) | Yes |
 | Sandbox DB create + DDL apply runbook | **Yes** (FR-146 #982 - `docs/sql/apply-ddl-runbook.md`; recommended DB `a_search_sandbox`) | Yes (after #950) |
 | rclone SQL-host runbook | **Yes** (FR-147 #983 - step-by-step mount in `docs/rclone-results.md`) | Yes (after #953) |
-| VPC / egress to IONOS | UNKNOWN | Yes (after #951) |
+| VPC / egress to IONOS | **Yes** - explicit no-VPC CDK + deploy.md fixed-egress allowlist steps (FR-149 #985; FR-122 surface) | **Yes** |
 | Stay-dark provider enable | Explicitly deferred | No for v0.1 |
 
 ## Small FR backlog (this wave)

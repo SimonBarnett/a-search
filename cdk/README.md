@@ -1,8 +1,10 @@
-﻿# a-search IaC (FR-023)
+# a-search IaC (FR-023)
 
 AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 ## What is included
+
+- FR-149: explicit **no-VPC** (default Lambda egress; no ec2.Vpc/NAT/SG). MSSQL path = ops fixed-egress allowlist (FR-122 option A) in `docs/deploy.md`
 
 - `ASearchStack` - Node 20 entry Lambda (`entry/src` -> `index.handler`)
 - FR-148: entry omits process `A_SEARCH_ENV` (accept stamps env from body.sandbox; workers stay pinned)
