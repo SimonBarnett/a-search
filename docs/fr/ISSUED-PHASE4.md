@@ -22,7 +22,7 @@
 | FR-183 | [#1030](https://github.com/SimonBarnett/a-search/issues/1030) | FR-183: Wire amazon worker to Creators when flag set |
 | FR-184 | [#1031](https://github.com/SimonBarnett/a-search/issues/1031) | FR-184: Amazon Creators selftestProbe path |
 | FR-185 | [#1032](https://github.com/SimonBarnett/a-search/issues/1032) | FR-185: Creators tracked-link / Associates tagging parity with PA-API |
-| FR-186 | [#1033](https://github.com/SimonBarnett/a-search/issues/1033) | FR-186: WAF: docs decision â€” WAFv2 on HTTP API |
+| FR-186 | [#1033](https://github.com/SimonBarnett/a-search/issues/1033) | FR-186: WAF: docs decision -- WAFv2 on HTTP API |
 | FR-187 | [#1034](https://github.com/SimonBarnett/a-search/issues/1034) | FR-187: CDK: WAFv2 WebACL with AWS managed rule groups |
 | FR-188 | [#1035](https://github.com/SimonBarnett/a-search/issues/1035) | FR-188: Associate WAFv2 WebACL to a-search HTTP API stage |
 | FR-189 | [#1036](https://github.com/SimonBarnett/a-search/issues/1036) | FR-189: WAF logging to CloudWatch (optional enable) |
