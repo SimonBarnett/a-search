@@ -41,7 +41,7 @@ An **installable release** means:
 | CDK awin/impact onboarding Lambdas | Yes (EventBridge live impact rule **Yes** — FR-133) | Partial — onboarding zip `shared/` still broken (FR-132 landed shared staging; verify asset) |
 | S3 results bucket in CDK | **Yes** (FR-129 `ResultsBucket`) | No |
 | `S3_RESULTS_BUCKET` + IAM PutObject/GetObject | **Yes** (FR-130 `wireResultsBucketAccess`) | No |
-| JWT_* / MSSQL_* / provider secrets in CDK | **Partial** - MSSQL_* via Secrets Manager on maintainer + local workers + onboarding (FR-137 #973); JWT_* still **No** (FR-136 #972); provider creds **No** (FR-138) | Partial (JWT + provider) |
+| JWT_* / MSSQL_* / provider secrets in CDK | **Partial** - MSSQL_* via Secrets Manager on maintainer + local workers + onboarding (FR-137 #973); provider creds via per-source Secrets Manager on enabled workers + awin/impact onboarding (FR-138 #974); JWT_* still **No** (FR-136 #972) | Partial (JWT) |
 | Worker zip includes `@aws-sdk/client-s3` + `mssql` | **Yes** - `@aws-sdk/client-s3` + `@smithy` (FR-134); `mssql` staged for `providers/local/*` + maintainer (FR-135 #971 / #1113) | No |
 | Maintainer zip includes `shared/` + `mssql` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131 shared + FR-135 mssql) | No |
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
