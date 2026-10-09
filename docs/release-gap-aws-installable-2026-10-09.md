@@ -47,7 +47,7 @@ An **installable release** means:
 | Worker zip includes `@aws-sdk/client-s3` + `mssql` | **Yes** - `@aws-sdk/client-s3` + `@smithy` (FR-134); `mssql` staged for `providers/local/*` + maintainer (FR-135 #971 / #1113) | No |
 | Maintainer zip includes `shared/` + `mssql` | **Yes** (`scripts/stage-maintainer-lambda-asset.js`; FR-131 shared + FR-135 mssql) | No |
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
-| SQS DLQ | **No** | Yes (ops safety) |
+| SQS DLQ | **Yes** (FR-142 #978 - DLQ + maxReceiveCount 3 per enabled worker queue) | Yes (ops safety) |
 | CloudWatch retention / alarms | **No** | Yes (ops safety) |
 | `.github/workflows` CI | **Yes** — `.github/workflows/ci.yml` Node 20 `npm ci` + `npm test` + `npm run synth` on PR/push main (FR-139 #975) | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** — bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone (FR-140 #976; keeps FR-136 JWT section) | **Yes** |
