@@ -55,8 +55,8 @@ Scripts (order matters; each is idempotent):
 3. `maintainer/sql/003_PartsStaging.sql`
 
 `004_MergeParts.sql` / `005_DeleteMissingParts.sql` are runtime merge helpers
-documented under maintainer SQL — apply only if ops runbooks for those
-objects require them; FR-120 migrate-once core is 001–003.
+documented under maintainer SQL - apply only if ops runbooks for those
+objects require them; FR-120 migrate-once core is 001-003.
 
 ```text
 sqlcmd -S <mssql-host> -d madeiradb -E -i maintainer/sql/001_PartFeedKeys.sql
@@ -74,7 +74,7 @@ sqlcmd -S <mssql-host> -d a_search_sandbox -E -i maintainer/sql/003_PartsStaging
 
 Scripts under `docs/sql/` are **not** the Parts pipeline. Example:
 
-- `docs/sql/001_ImpactPendingOnboard.sql` — Impact pending-onboard queue (FR-051a)
+- `docs/sql/001_ImpactPendingOnboard.sql` - Impact pending-onboard queue (FR-051a)
 
 Apply to `madeiradb` (and sandbox only if sandbox Impact drain is required):
 

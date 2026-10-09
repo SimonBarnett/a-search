@@ -2,7 +2,7 @@
 
 **FR-120:** these objects are **a-search-owned**. They do not exist on
 live `madeiradb` until ops apply the scripts below. Local search workers
-(`providers/local/awin|impact`) SELECT `dbo.Parts` — they do **not** read
+(`providers/local/awin|impact`) SELECT `dbo.Parts` - they do **not** read
 `dbo.MerchantProducts`. a-search **runtime never runs these scripts**
 (no DDL from Lambda).
 
@@ -12,7 +12,7 @@ Do **not** use one shared DB with `Env` alone for live/sandbox isolation.
 Rows still carry `Env` (`live`|`sandbox`) inside each DB for a-search DDL checks.
 
 **Ops runbook (FR-146):** create the sandbox DB (recommended name
-`a_search_sandbox`) and apply these scripts to both databases —
+`a_search_sandbox`) and apply these scripts to both databases -
 [`docs/sql/apply-ddl-runbook.md`](../../docs/sql/apply-ddl-runbook.md).
 
 ## Migrate-once
@@ -24,7 +24,7 @@ sqlcmd -S <server> -d <database> -E -i 003_PartsStaging.sql
 ```
 
 Each script uses `IF NOT EXISTS` / `IF OBJECT_ID(...) IS NULL` so re-runs
-are safe (no drop). Do **not** auto-run from Lambda on every tick —
+are safe (no drop). Do **not** auto-run from Lambda on every tick -
 ops apply these at deploy.
 
 ## Objects

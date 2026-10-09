@@ -122,7 +122,7 @@ never in git.
 
 `cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
 provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
-via Secrets Manager — never plaintext passwords in git or synth snapshots.
+via Secrets Manager - never plaintext passwords in git or synth snapshots.
 
 | Deploy context | Meaning |
 |----------------|---------|
@@ -148,7 +148,7 @@ Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
 
-### CDK Secrets Manager — provider credentials (FR-138)
+### CDK Secrets Manager - provider credentials (FR-138)
 
 Enabled provider workers (amazon, ebay, rakuten, cj, awin, impact) and
 awin/impact onboarding receive marketplace credential env from **per-source**

@@ -1,6 +1,6 @@
 {
   "name": "a-search",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "JWT search entry: fan-out to per-provider SQS + MSSQL local parts maintainer",
   "engines": {
@@ -11,6 +11,7 @@
     "validate:vision": "node --test tests/fr055j-validate-vision-pack.test.js",
     "synth": "npm run stage-entry && npx --no-install cdk synth --app \"node cdk/bin/a-search.js\" --quiet",
     "deploy": "npm run stage-entry && npx --no-install cdk deploy --app \"node cdk/bin/a-search.js\" ASearchStack -c requireDeployEnv=true",
+    "smoke-deploy": "node scripts/smoke-deploy.js",
     "stage-entry": "node scripts/stage-entry-lambda-asset.js",
     "stage-maintainer": "node scripts/stage-maintainer-lambda-asset.js"
   },

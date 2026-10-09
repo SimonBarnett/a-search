@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-146: ops runbook — create sandbox DB + apply maintainer/sql DDL.
+ * FR-146: ops runbook - create sandbox DB + apply maintainer/sql DDL.
  */
 
 const { describe, it } = require('node:test');
