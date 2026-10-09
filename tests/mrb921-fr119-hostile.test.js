@@ -26,12 +26,13 @@ function walkEnvExamples(dir) {
 }
 
 describe('MRB-921 FR-119 hostile', () => {
-  it('environments.md: live madeiradb host, sandbox/network UNKNOWN, least-privilege, SIMPLE', () => {
+  it('environments.md: live madeiradb host, sandbox FR-121 separate DB, network PENDING, least-privilege, SIMPLE', () => {
     const text = fs.readFileSync(path.join(root, 'docs', 'environments.md'), 'utf8');
     assert.match(text, /## MSSQL target \(FR-119\)/);
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /madeiradb/);
-    assert.match(text, /Sandbox[\s\S]{0,400}UNKNOWN/i);
+    assert.match(text, /FR-121/);
+    assert.match(text, /separate database on the same instance/i);
     // FR-122: decision surface; chosen option may still be PENDING/UNKNOWN.
     assert.match(text, /## Network path \(FR-122\)/);
     assert.match(text, /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN)/i);

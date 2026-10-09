@@ -18,7 +18,7 @@ which environment it is in and must not cross-write.
 | Resource | live | sandbox |
 |----------|------|---------|
 | SQS queues | `...-live-...` per source | `...-sandbox-...` per source |
-| MSSQL | `madeiradb` on `WIN-MPRE8VI4U6U` (see below) | UNKNOWN (no separate sandbox DB/schema yet) |
+| MSSQL | `madeiradb` on `WIN-MPRE8VI4U6U` (see below) | **Separate database** on the same instance (FR-121 LOCKED; name via deploy `MSSQL_DATABASE`) |
 | Results path (rclone mount) | live mapped root | sandbox mapped root |
 | Provider `.env` | live credentials / secrets | sandbox or shared-read-only test credentials |
 | S3 bucket prefix or bucket | live | sandbox |
@@ -77,24 +77,26 @@ Maintainer staging CSVs may also land under
 | Knob | Value |
 |------|-------|
 | Host | `WIN-MPRE8VI4U6U` (IONOS Windows; SQL Server 2022 Standard; mixed-mode auth; TCP on all interfaces) |
-| Database | `madeiradb` -- the **only** user database on the instance |
+| Database | `madeiradb` (live). Sandbox uses a **separate** database on this instance (FR-121). |
 | Auth on the box | Windows integrated (`sqlcmd -E`) works locally |
 | Auth from AWS | SQL login or domain account over NTLM, read from a secret store. A Lambda outside the domain cannot use integrated auth. |
-| Recovery | SIMPLE. Nightly full backup only (`Madeira_Nightly_Maintenance` at 02:00). Point-in-time restore is not possible. |
+| Recovery | SIMPLE. Nightly full backup only (`Madeira_Nightly_Maintenance` at 02:00) covers **`madeiradb`**. Point-in-time restore is not possible. |
 
 There is no RDS endpoint in this repo and nothing to "switch off RDS" -- the
-target was undefined until FR-119. Repo placeholders must not invent a
-non-existent database name.
+live target was undefined until FR-119. Repo placeholders must not invent
+credentials or treat a not-yet-created sandbox DB name as already live.
 
-**Sandbox** (`A_SEARCH_ENV=sandbox`): **UNKNOWN** until Simon decides among:
+**Sandbox** (`A_SEARCH_ENV=sandbox`): **LOCKED (FR-121)** -- **separate database
+on the same instance** (`WIN-MPRE8VI4U6U`).
 
-1. a separate database on the same instance,
-2. a schema inside `madeiradb`, or
-3. sandbox reads live read-only.
-
-Today there is **no** `a_search_sandbox` database and no sandbox schema.
-`Env` (`live` / `sandbox`) exists only in a-search's own DDL (`CK_Parts_Env`,
-etc.). No madeiradb business table has an env column.
+| Rule | Detail |
+|------|--------|
+| Chosen option | **(1) separate database on the same instance** |
+| Live DB | `madeiradb` |
+| Sandbox DB | Separate user database on the same SQL Server; **name** is set at deploy via `MSSQL_DATABASE` (placeholder `<sandbox-mssql-database>`). There is **no** `a_search_sandbox` name committed as real -- do not invent credentials or treat a missing DB as already created. |
+| Rejected | **(2)** schema inside `madeiradb`; **(3)** sandbox reads live read-only |
+| Ops (OOS for this FR) | Create the sandbox DB with **`RECOVERY SIMPLE`** (instance `model` is FULL -- default would grow the log). Apply `maintainer/sql` DDL to **both** live and sandbox DBs. Extend nightly backup/stats jobs for the sandbox DB, or document it as rebuildable with no backup. |
+| Fail-closed | Sandbox workers/maintainer must point `MSSQL_DATABASE` at the sandbox DB -- never write sandbox traffic into `madeiradb`. Rows in a-search DDL still use `Env='sandbox'` inside that DB (`CK_*_Env`). |
 
 **Least-privilege login (spec):** the SQL login used by a-search workers and
 maintainer SHOULD have **SELECT** on the tables a-search reads (for example
@@ -109,7 +111,7 @@ never in git.
 | Key | Meaning |
 |-----|---------|
 | `MSSQL_SERVER` | Placeholder `<ionos-sql-host>`; deploy maps to `WIN-MPRE8VI4U6U` or a DNS alias |
-| `MSSQL_DATABASE` | `madeiradb` |
+| `MSSQL_DATABASE` | Live examples use `madeiradb`. Sandbox deploys set this to the separate sandbox DB name (`<sandbox-mssql-database>`) |
 | `MSSQL_USER` / `MSSQL_PASSWORD` | SQL login when not using trusted connection |
 | `MSSQL_TRUSTED_CONNECTION` | `true` for integrated / NTLM (on-box or domain) |
 | `MSSQL_DOMAIN` | optional NTLM domain |

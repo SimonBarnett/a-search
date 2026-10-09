@@ -2,7 +2,7 @@
 
 /**
  * MRB #958 hostile pins: Phase-3 park mirrors (Refs #950-#956) + FR-121 LOCKED decision.
- * Does not close implementation issues; environments.md sandbox may still say UNKNOWN until FR-121 lands.
+ * Park mirrors only; FR-121 implement PR locks environments.md sandbox to separate DB.
  */
 
 const { describe, it } = require('node:test');
