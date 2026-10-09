@@ -23,8 +23,9 @@ Content-Type: application/json
 | Missing / invalid / expired JWT | **401** `{ "accepted": false, "error": "unauthorized" }` -- no enqueue |
 | Missing `userId` claim | **401** `{ "accepted": false, "error": "missing_user_id_claim" }` |
 
-Issuer / JWKS URL / audience: configure via `entry/.env` (`JWT_ISSUER`,
-`JWT_AUDIENCE`, `JWT_JWKS_URL` or shared secret) -- values UNKNOWN until deploy.
+See **JWT deploy config (FR-123)** below for LOCKED env key names, fail-closed
+behaviour, and the deploy procedure. Real issuer/JWKS/secret **values** stay
+out of git.
 
 ### Body
 
@@ -155,6 +156,42 @@ clobbering each other.
 ```
 
 No SQS fan-out on 4xx/401.
+
+## JWT deploy config (FR-123)
+
+**LOCKED:** env **key names** and fail-closed verify behaviour. Real issuer /
+JWKS / secret **values** are deploy-time only -- never commit them to git.
+
+| Key | Required | Meaning |
+|-----|----------|---------|
+| `JWT_ISSUER` | yes | Expected `iss` claim (login issuer URL). Entry refuses tokens whose `iss` differs. |
+| `JWT_AUDIENCE` | yes | Expected `aud` claim (product default placeholder `a-search`). |
+| `JWT_JWKS_URL` | one of JWKS or secret | HTTPS JWKS endpoint for asymmetric verify (`entry/src/auth/jwt.js`). |
+| `JWT_SECRET` | one of JWKS or secret | HS256 shared secret (fixtures / labs). Alias: `JWT_HS256_SECRET`. |
+
+At least one of `JWT_JWKS_URL` or `JWT_SECRET` / `JWT_HS256_SECRET` must be
+set with `JWT_ISSUER` + `JWT_AUDIENCE`. Missing required keys -> verify fails
+**fail-closed** as **401** `unauthorized` (no enqueue). Same for bad
+signature, issuer/audience mismatch, expired token, or missing `userId`
+claim (`missing_user_id_claim`). Claim name stays **`userId`** (out of scope
+to rename).
+
+### Deploy procedure
+
+1. Copy `entry/.env.example` -> `entry/.env` (or inject the same keys into the
+   entry Lambda / task environment from the deploy secret store).
+2. Set `JWT_ISSUER` / `JWT_AUDIENCE` to the live login issuer values.
+3. Prefer `JWT_JWKS_URL` for production; use `JWT_SECRET` only for fixtures /
+   HS256 lab deploys.
+4. Confirm `POST /search` with a real Bearer token returns 200 accept (or a
+   documented 4xx) -- never a hang or open accept without JWT.
+5. **Never** put real issuer secrets, JWKS private keys, or `JWT_SECRET`
+   values into git, PR bodies, or harvest filings. Placeholders in
+   `.env.example` use `*.example.invalid` only.
+
+Shared by `/search`, `/selftest`, and `/account/performance` (same entry
+auth module). Pin suite: `tests/auth-jwt.test.js` + this FR's
+`tests/fr123-jwt-deploy-docs.test.js`.
 
 ## Example (curl)
 
