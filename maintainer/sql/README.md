@@ -6,8 +6,10 @@ live `madeiradb` until ops apply the scripts below. Local search workers
 `dbo.MerchantProducts`. a-search **runtime never runs these scripts**
 (no DDL from Lambda).
 
-Idempotent T-SQL for MSSQL. Apply **once per database** (live DB and
-sandbox DB separately, or one DB with `Env` discriminating rows).
+Idempotent T-SQL for MSSQL. Apply **once per database**: live `madeiradb`
+and the separate sandbox database on the same instance (FR-121 LOCKED).
+Do **not** use one shared DB with `Env` alone for live/sandbox isolation.
+Rows still carry `Env` (`live`|`sandbox`) inside each DB for a-search DDL checks.
 
 ## Migrate-once
 
