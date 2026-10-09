@@ -3,7 +3,8 @@
 **Repo:** SimonBarnett/a-search  
 **Date:** 2026-10-09  
 **Baseline:** origin/main @ 0342707  
-**Companion:** `RELEASE-GAP-AWS-INSTALLABLE.md` (plan folder / docs park)
+**Companion:** `RELEASE-GAP-AWS-INSTALLABLE.md` (plan folder / docs park)  
+**DoD (FR-128):** [`docs/release-installable.md`](release-installable.md)
 
 ## Ultimate objective
 
