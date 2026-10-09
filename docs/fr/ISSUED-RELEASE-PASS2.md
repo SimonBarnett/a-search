@@ -1,0 +1,19 @@
+# Phase-3 gap pass 2 (FR-151..165)
+
+| Code | Issue | Title |
+|------|------:|-------|
+| FR-151 | [#994](https://github.com/SimonBarnett/a-search/issues/994) | FR-151: Add jose dependency + stage into entry asset for JWT_JWKS_URL |
+| FR-152 | [#995](https://github.com/SimonBarnett/a-search/issues/995) | FR-152: Wire entry /selftest to orchestrator + enabled provider probes (not empty providers[]) |
+| FR-153 | [#996](https://github.com/SimonBarnett/a-search/issues/996) | FR-153: API Gateway CORS allowlist (configurable origins) |
+| FR-154 | [#997](https://github.com/SimonBarnett/a-search/issues/997) | FR-154: S3 results bucket security defaults (SSE + BlockPublicAccess) |
+| FR-155 | [#998](https://github.com/SimonBarnett/a-search/issues/998) | FR-155: CDK cost allocation tags on stack resources |
+| FR-156 | [#999](https://github.com/SimonBarnett/a-search/issues/999) | FR-156: Stack stage/suffix parameter for parallel AWS deploys |
+| FR-157 | [#1000](https://github.com/SimonBarnett/a-search/issues/1000) | FR-157: API Gateway access logging + basic throttle settings |
+| FR-158 | [#1001](https://github.com/SimonBarnett/a-search/issues/1001) | FR-158: Document Lambda intake egress to irc.ntsa.uk (measure + fail-soft) |
+| FR-159 | [#1002](https://github.com/SimonBarnett/a-search/issues/1002) | FR-159: shared/package.json files[] must include identity/ (runtime dir) |
+| FR-160 | [#1003](https://github.com/SimonBarnett/a-search/issues/1003) | FR-160: Wire /account/performance read path to S3 mapping store (close injectable-only stub) |
+| FR-161 | [#1004](https://github.com/SimonBarnett/a-search/issues/1004) | FR-161: a-search-endpoint skill: deploy URL + smoke pointers |
+| FR-162 | [#1005](https://github.com/SimonBarnett/a-search/issues/1005) | FR-162: Encrypt SQS worker queues (SQS-managed SSE) |
+| FR-163 | [#1006](https://github.com/SimonBarnett/a-search/issues/1006) | FR-163: docs/destroy-rollback.md for cdk destroy / safe teardown |
+| FR-164 | [#1007](https://github.com/SimonBarnett/a-search/issues/1007) | FR-164: SQS visibilityTimeout must exceed worker Lambda timeout |
+| FR-165 | [#1008](https://github.com/SimonBarnett/a-search/issues/1008) | FR-165: Entry Lambda memorySize floor for JWT + fan-out (document + set) |
