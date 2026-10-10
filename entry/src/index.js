@@ -24,6 +24,9 @@ const { aggregateClicksVisits } = require('./performanceClicksVisits');
 const { aggregateSales } = require('./performanceSales');
 const { aggregateTop } = require('./performanceTop');
 const {
+  resolvePerformanceListDeps,
+} = require('./performanceS3Read');
+const {
   reportException: defaultReportException,
 } = require('../../shared/intake/reportException');
 const {
@@ -276,7 +279,11 @@ async function handlePerformance(event, deps = {}) {
   const range = resolved.value;
   const payload = emptyPerformancePayload(userId, range);
 
-  // FR-053c: fill clicks/visits from injectable read model.
+  // FR-160: when list*/events are not injected and S3_RESULTS_BUCKET is set,
+  // default to shared mapping store + documented stats key.
+  const lists = resolvePerformanceListDeps(deps, env);
+
+  // FR-053c: fill clicks/visits from injectable read model (or FR-160 S3).
   const aggregateCv =
     typeof deps.aggregateClicksVisits === 'function'
       ? deps.aggregateClicksVisits
@@ -286,8 +293,8 @@ async function handlePerformance(event, deps = {}) {
     env: range.env,
     from: range.from,
     to: range.to,
-    events: deps.clickVisitEvents,
-    listEvents: deps.listClickVisitEvents,
+    events: lists.clickVisitEvents,
+    listEvents: lists.listClickVisitEvents,
   });
   payload.clicks = Number(stats && stats.clicks) || 0;
   payload.visits = Number(stats && stats.visits) || 0;
@@ -303,8 +310,8 @@ async function handlePerformance(event, deps = {}) {
     env: range.env,
     from: range.from,
     to: range.to,
-    events: deps.saleEvents,
-    listEvents: deps.listSaleEvents,
+    events: lists.saleEvents,
+    listEvents: lists.listSaleEvents,
   });
   if (saleStats && saleStats.sales) {
     payload.sales = {
@@ -327,8 +334,8 @@ async function handlePerformance(event, deps = {}) {
     from: range.from,
     to: range.to,
     limit: deps.topLimit,
-    events: deps.topEvents,
-    listEvents: deps.listTopEvents,
+    events: lists.topEvents,
+    listEvents: lists.listTopEvents,
   });
   payload.topLinks = Array.isArray(topStats && topStats.topLinks)
     ? topStats.topLinks
