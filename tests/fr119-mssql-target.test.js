@@ -56,17 +56,22 @@ describe('FR-119 docs/environments.md MSSQL target', () => {
     for (const ent of fs.readdirSync(docsDir, { withFileTypes: true })) {
       if (!ent.isFile() || !ent.name.endsWith('.md')) continue;
       const text = fs.readFileSync(path.join(docsDir, ent.name), 'utf8');
+      // FR #1280 / FR-146: environments.md may Recommend `a_search_sandbox` as
+      // Treat-as-missing until ops apply-ddl; never an assigned live DB.
       if (ent.name === 'environments.md') {
-        // may mention the name only to deny it exists
-        assert.match(text, /no[\s\S]{0,40}a_search_sandbox/i);
+        assert.match(text, /Recommended[\s\S]{0,120}a_search_sandbox/i);
+        assert.match(text, /Treat as missing|do not invent credentials/i);
         assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
         continue;
       }
-      assert.doesNotMatch(
+      if (!/a_search_sandbox/.test(text)) continue;
+      // Other top-level docs may cite the FR-146 recommended name only.
+      assert.match(
         text,
-        /a_search_sandbox/,
-        `docs/${ent.name} still names a_search_sandbox`,
+        /FR-146|recommended DB|Recommended/i,
+        `docs/${ent.name} names a_search_sandbox without FR-146 recommended context`,
       );
+      assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
     }
     for (const envPath of walkEnvExamples(root)) {
       const text = fs.readFileSync(envPath, 'utf8');

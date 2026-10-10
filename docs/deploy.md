@@ -124,6 +124,20 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### CORS allowlist (FR-153)
+
+HttpApi CORS covers `/search`, `/selftest`, and `/account/performance`. Pass an
+explicit origin allowlist (comma-separated). Synth default is localhost-only;
+empty `-c corsOrigins=` means deny (no origins). **Never** use public wildcard
+`*` (rejected at synth).
+
+```bash
+  -c corsOrigins=https://club.example,https://www.club.example
+```
+
+Browser callers (Club Madeira) need their site origin(s) listed. JWT stays in
+the `Authorization` header (allowed by the CORS preflight).
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
@@ -183,9 +197,40 @@ npm run synth
 Template must show Secrets Manager dynamic references for JWT_* / MSSQL_* /
 provider credentials - never a real password, API token, or JWT string.
 
+## 9. MSSQL network path - no-VPC + fixed egress (FR-149)
+
+`ASearchStack` is **explicit no-VPC**: Lambdas use default AWS networking.
+There are no `ec2.Vpc`, NAT gateway, or Security Group constructs in this
+product stack. Cross-link: [environments.md](environments.md) **Network path
+(FR-122)** (options A / B / C; Chosen may stay PENDING).
+
+**When ops selects FR-122 option A (fixed egress allowlist)** - the installable
+path for off-box MSSQL from AWS workers/maintainer/onboarding:
+
+1. Confirm which Lambdas need MSSQL (maintainer, local/onboarding workers with
+   `MSSQL_*` - not live marketplace amazon/ebay workers that stay SQL-free).
+2. In the deploy account/region, identify the **egress IP set** AWS will present
+   to the public internet (typically NAT Gateway Elastic IPs if you later add a
+   VPC, or the documented regional Lambda egress behaviour for default
+   networking). Record that set in the **ops** runbook only - **never** commit
+   real CIDRs or private IPs into this repo.
+3. On the IONOS edge or `WIN-MPRE8VI4U6U` host firewall, allow **SQL TCP**
+   (usually **1433**) from that egress set only (least privilege). Opening the
+   firewall is **ops** - out of scope for this repo (FR-149 / FR-122).
+4. Confirm `MSSQL_SERVER` / Secrets Manager MSSQL secret resolve from a worker
+   and sandbox selftest returns `ok` or a classified `mssql_*` error (never a
+   hang). See [endpoint-selftest.md](endpoint-selftest.md).
+5. If ops instead locks **B (VPN)** or **C (on-box only)**, follow the FR-122
+   checklist in environments.md; do not invent VPC/VPN IaC in product git under
+   this FR.
+
+**Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
+FR-122 Chosen option.
+
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
 - CI auto-smoke against production without approval
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
+- Opening IONOS firewall ports (ops; FR-149 / FR-122)

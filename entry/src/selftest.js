@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * Provider selftest stub helpers (FR-059b).
- * Empty providers[] until real probes (later FR-059 slices).
+ * Provider selftest helpers (FR-059b + FR-152 orchestrator wire).
+ * emptySelftestPayload kept for unit fixtures; production path builds
+ * payloads from runSelftestOrchestrator via buildSelftestPayload.
  */
 
 const { queryParams } = require('./performance');
@@ -19,6 +20,43 @@ function emptySelftestPayload(userId, opts) {
     providers: [],
     failed: [],
     intakeFiled: [],
+  };
+}
+
+/**
+ * Map orchestrator rows (source) to HTTP docs shape (id).
+ *
+ * @param {string} userId
+ * @param {{
+ *   env: string,
+ *   providers: Array<{ ok: boolean, source: string, latencyMs?: number, error?: string }>,
+ *   failed: string[],
+ *   intakeFiled?: string[],
+ * }} orch
+ */
+function buildSelftestPayload(userId, orch) {
+  const providers = (orch.providers || []).map((row) => {
+    /** @type {{ id: string, ok: boolean, error?: string }} */
+    const out = {
+      id: String(row.source),
+      ok: row.ok === true,
+    };
+    if (!out.ok && row.error) {
+      out.error = String(row.error);
+    } else if (row.error) {
+      out.error = String(row.error);
+    }
+    return out;
+  });
+  return {
+    ok: true,
+    userId: String(userId),
+    env: orch.env,
+    providers,
+    failed: Array.isArray(orch.failed) ? orch.failed.map(String) : [],
+    intakeFiled: Array.isArray(orch.intakeFiled)
+      ? orch.intakeFiled.map(String)
+      : [],
   };
 }
 
@@ -52,6 +90,7 @@ function resolveSelftestInput(query = {}, body = {}) {
 
 module.exports = {
   emptySelftestPayload,
+  buildSelftestPayload,
   resolveSelftestInput,
   queryParams,
 };

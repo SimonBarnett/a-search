@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-154: ResultsBucket security defaults — BlockPublicAccess, SSE-S3,
+ * FR-154: ResultsBucket security defaults  -  BlockPublicAccess, SSE-S3,
  * enforceSSL, BucketOwnerEnforced (no public ACL). Cross-links FR-129/130.
  * Customer-managed KMS is out of scope.
  */
