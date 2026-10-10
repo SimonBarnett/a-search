@@ -38,7 +38,10 @@ describe('FR-056b CDK awin onboarding Lambda sandbox', () => {
     assert.match(text, /a-search-awin-onboarding-sandbox/);
     assert.match(text, /AwinOnboardingSandbox/);
     assert.match(text, /awin[\s',"]+onboarding/s);
-    const idx = text.indexOf("functionName: 'a-search-awin-onboarding-sandbox'");
+    // FR-156: physical names go through stagedName(...); empty stage keeps base.
+    const idx = text.indexOf(
+      "functionName: stagedName('a-search-awin-onboarding-sandbox')",
+    );
     assert.ok(idx > 0, 'functionName missing');
     const window = text.slice(idx, idx + 350);
     assert.match(window, /A_SEARCH_ENV:\s*'sandbox'/);
