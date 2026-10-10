@@ -443,13 +443,16 @@ class ASearchStack extends cdk.Stack {
         const qName = stagedName(queueName(src.id, env));
         const envPascal = env === 'live' ? 'Live' : 'Sandbox';
         // FR-142: sibling DLQ + redrive so poison messages leave the worker queue
+        // FR-162: SQS-managed SSE on primary + DLQ (no CMK per queue)
         const dlq = new sqs.Queue(this, `${pascal}${envPascal}DeadLetterQueue`, {
           queueName: `${qName}-dlq`,
           retentionPeriod: cdk.Duration.days(14),
+          encryption: sqs.QueueEncryption.SQS_MANAGED,
         });
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
           visibilityTimeout: cdk.Duration.seconds(60),
+          encryption: sqs.QueueEncryption.SQS_MANAGED,
           deadLetterQueue: {
             queue: dlq,
             maxReceiveCount: 3,
