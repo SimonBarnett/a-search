@@ -26,7 +26,7 @@ Examples:
 | `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
+| `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (enabled FR-171; onboarding skill retained) |
 
 Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
 **separate** from the maintain skillbook `a-search-<id>` (see
@@ -81,7 +81,7 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `skimlinks`, `aliexpress`, `etsy`, `bol`
+`kelkoo`, `skimlinks`, `aliexpress`, `etsy` (bol enabled by FR-171)
 
 Do not invent live credential steps or flip registry enabled from these stubs.
 See `docs/phase2-providers.md` stay-dark rule.

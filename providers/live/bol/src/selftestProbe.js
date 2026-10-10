@@ -3,7 +3,7 @@
 /**
  * FR-082: Bol selftest probe — credential check + recorded fixture path
  * (or injectable HTTP) proving catalog search client wiring works.
- * Stay-dark: registry enabled stays false.
+ * Registry enabled true (FR-171).
  */
 
 const fs = require('node:fs');

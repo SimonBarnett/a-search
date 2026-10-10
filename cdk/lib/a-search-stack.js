@@ -226,6 +226,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
+  // FR-171: bol enabled -> FR-138 secret wiring
+  bol: ['BOL_API_KEY'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -242,6 +244,9 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+  bol: {
+    BOL_TRACKING_ID: 'a-search',
   },
 };
 

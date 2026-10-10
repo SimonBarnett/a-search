@@ -20,7 +20,6 @@ const PHASE2_STUB_IDS = [
   'skimlinks',
   'aliexpress',
   'etsy',
-  'bol',
   'partnerize',
   'webgains',
   'tradedoubler',

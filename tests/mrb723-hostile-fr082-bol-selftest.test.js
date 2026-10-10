@@ -44,8 +44,8 @@ describe('mrb723 hostile FR-082 bol selftest', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
     assert.equal(bol.rateLimit.maxConcurrency, 1);
     assert.equal(bol.rateLimit.minIntervalMs, 250);
   });

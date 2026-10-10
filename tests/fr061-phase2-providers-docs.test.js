@@ -14,13 +14,12 @@ const root = path.join(__dirname, '..');
 const doc = path.join(root, 'docs', 'phase2-providers.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Providers still stubbed / awaiting account details (stay dark). */
+/** Providers still stubbed / awaiting account details (bol enabled by FR-171). */
 const PHASE2_STUB_IDS = [
   'kelkoo',
   'skimlinks',
   'aliexpress',
   'etsy',
-  'bol',
   'partnerize',
   'webgains',
   'tradedoubler',

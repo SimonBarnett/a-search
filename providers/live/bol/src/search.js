@@ -2,7 +2,7 @@
 
 /**
  * Bol.com catalog/search client (FR-079).
- * HTTP injectable for recorded fixtures. Stay-dark: do not enable registry.
+ * HTTP injectable for recorded fixtures. Registry enabled true (FR-171).
  * normalize / worker wiring are out of scope for this FR.
  *
  * Shape mirrors other Phase-2 live stubs: GET search with API key header,

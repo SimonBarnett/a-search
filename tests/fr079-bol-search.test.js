@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR-079: bol search.js client + recorded fixtures (stay-dark).
- * No live network; registry enabled stays false.
+ * FR-079: bol search.js client + recorded fixtures (enabled FR-171).
+ * No live network; registry enabled true (FR-171).
  */
 
 const { describe, it } = require('node:test');
@@ -105,13 +105,13 @@ describe('FR-079 bol search client', () => {
     );
   });
 
-  it('registry keeps bol enabled.live and enabled.sandbox false', () => {
+  it('registry keeps bol enabled.live and enabled.sandbox true (FR-171)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
     assert.ok(bol, 'registry missing bol');
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
   });
 });
