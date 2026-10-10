@@ -13,9 +13,8 @@ const root = path.join(__dirname, '..');
 const docRel = path.join('docs', 'phase4-enablement-index.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Remaining Phase-2 stay-dark ids after FR-169 enables aliexpress. */
+/** Remaining Phase-2 stay-dark ids after FR-167 kijiji + FR-169 aliexpress. */
 const PHASE2_STUB_IDS = [
-  'kelkoo',
   'skimlinks',
   'etsy',
   'bol',
@@ -30,6 +29,7 @@ const PHASE2_STUB_IDS = [
   'woocommerce',
 ];
 
+/** Index still lists every FR-167..180 id (including already-enabled kelkoo). */
 const ENABLE_FR_BY_ID = {
   kelkoo: 'FR-167',
   skimlinks: 'FR-168',
@@ -82,7 +82,7 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
       /does\s+\*{0,2}not\*{0,2}\s+flip|Do \*\*not\*\* flip|does not flip/i,
     );
     assert.match(text, /ISSUED-PHASE4/);
-    for (const id of PHASE2_STUB_IDS) {
+    for (const id of Object.keys(ENABLE_FR_BY_ID)) {
       assert.match(text, new RegExp(`\`${id}\`|\\b${id}\\b`));
       assert.match(text, new RegExp(ENABLE_FR_BY_ID[id]));
     }
@@ -107,7 +107,7 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
     assert.match(fr, /phase4-enablement-index\.md/);
   });
 
-  it('registry keeps remaining Phase-2 stub ids enabled false (aliexpress excluded after FR-169)', () => {
+  it('registry: remaining stay-dark stubs false; kelkoo+aliexpress enabled by FR-167/169', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     for (const id of PHASE2_STUB_IDS) {
@@ -116,13 +116,15 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
       assert.equal(
         en.live,
         false,
-        `${id}.enabled.live must stay false on FR-166`,
+        `${id}.enabled.live must stay false until its enable FR`,
       );
       assert.equal(
         en.sandbox,
         false,
-        `${id}.enabled.sandbox must stay false on FR-166`,
+        `${id}.enabled.sandbox must stay false until its enable FR`,
       );
     }
+    // FR-167 may have enabled kelkoo; index FR never flips flags itself.
+    assert.ok(byId.has('kelkoo'), 'registry missing kelkoo');
   });
 });

@@ -84,13 +84,13 @@ describe('FR-064 kelkoo normalize', () => {
     assert.equal(partial.source, 'kelkoo');
   });
 
-  it('registry keeps kelkoo enabled.live and enabled.sandbox false', () => {
+  it('registry keeps kijiji enabled.live and enabled.sandbox true (FR-167)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk);
-    assert.equal(kk.enabled.live, false);
-    assert.equal(kk.enabled.sandbox, false);
+    assert.equal(kk.enabled.live, true);
+    assert.equal(kk.enabled.sandbox, true);
   });
 });

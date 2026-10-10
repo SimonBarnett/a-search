@@ -13,8 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'kelkoo',
+const STILL_DARK = [
   'skimlinks',
   'etsy',
   'bol',
@@ -50,6 +49,10 @@ describe('FR-169 enable aliexpress', () => {
     assert.ok(ae, 'registry missing aliexpress');
     assert.equal(ae.enabled.live, true);
     assert.equal(ae.enabled.sandbox, true);
+    const kk = byId.get('kelkoo');
+    assert.ok(kk, 'kelkoo');
+    assert.equal(kk.enabled.live, true, 'FR-167 kelkoo.live');
+    assert.equal(kk.enabled.sandbox, true, 'FR-167 kelkoo.sandbox');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -126,7 +129,7 @@ describe('FR-169 enable aliexpress', () => {
       assert.ok(qHit, `missing queue a-search-aliexpress-${env}`);
     }
 
-    for (const dark of ['kelkoo', 'skimlinks', 'partnerize']) {
+    for (const dark of ['skimlinks', 'partnerize', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

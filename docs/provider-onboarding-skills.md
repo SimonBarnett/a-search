@@ -81,7 +81,7 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `skimlinks`, `etsy`, `bol` (aliexpress enabled by FR-169)
+`skimlinks`, `etsy`, `bol` (kelkoo enabled by FR-167; aliexpress enabled by FR-169)
 
 Do not invent live credential steps or flip registry enabled from these stubs.
 See `docs/phase2-providers.md` stay-dark rule.

@@ -12,7 +12,7 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 
-const LIVE_STUB_IDS = ['kelkoo', 'skimlinks', 'etsy', 'bol']; // aliexpress enabled FR-169
+const LIVE_STUB_IDS = ['skimlinks', 'etsy', 'bol']; // kelkoo FR-167 + aliexpress FR-169 enabled
 
 function onboardingSkillPath(id) {
   return path.join(
