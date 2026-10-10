@@ -76,7 +76,8 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     const alarms = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::CloudWatch::Alarm',
     );
-    assert.equal(alarms.length, 12, `expected 12 DLQ depth alarms, got ${alarms.length}`);
+    // FR-169 enables aliexpress (+2 env-pairs) → 14 DLQ alarms.
+    assert.equal(alarms.length, 14, `expected 14 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {

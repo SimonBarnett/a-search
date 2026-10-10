@@ -74,10 +74,10 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
+    // Remaining Phase-2 stay-dark after FR-169 enabled aliexpress.
     for (const id of [
       'kelkoo',
       'skimlinks',
-      'aliexpress',
       'etsy',
       'bol',
       'partnerize',
@@ -94,5 +94,6 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
     }
     assert.equal(byId.amazon.enabled.live, true);
+    assert.equal(byId.aliexpress.enabled.live, true, 'FR-169 enables aliexpress');
   });
 });

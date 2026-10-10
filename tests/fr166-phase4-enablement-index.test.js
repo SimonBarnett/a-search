@@ -13,11 +13,10 @@ const root = path.join(__dirname, '..');
 const docRel = path.join('docs', 'phase4-enablement-index.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Phase-2 stay-dark ids (must remain false on this PR). */
+/** Remaining Phase-2 stay-dark ids after FR-169 enables aliexpress. */
 const PHASE2_STUB_IDS = [
   'kelkoo',
   'skimlinks',
-  'aliexpress',
   'etsy',
   'bol',
   'partnerize',
@@ -108,7 +107,7 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
     assert.match(fr, /phase4-enablement-index\.md/);
   });
 
-  it('registry keeps all Phase-2 stub ids enabled false (no enable in FR-166)', () => {
+  it('registry keeps remaining Phase-2 stub ids enabled false (aliexpress excluded after FR-169)', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     for (const id of PHASE2_STUB_IDS) {

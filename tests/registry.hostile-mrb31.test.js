@@ -33,6 +33,15 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     const live = [...enabled('live')].sort();
     const sandbox = [...enabled('sandbox')].sort();
     assert.deepEqual(live, sandbox);
-    assert.deepEqual(live, ['amazon', 'awin', 'cj', 'ebay', 'impact', 'rakuten']);
+    // FR-169 adds aliexpress to the default-on set (both envs).
+    assert.deepEqual(live, [
+      'aliexpress',
+      'amazon',
+      'awin',
+      'cj',
+      'ebay',
+      'impact',
+      'rakuten',
+    ]);
   });
 });
