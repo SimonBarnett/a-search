@@ -70,7 +70,7 @@ describe('FR-060b provider onboarding skillbooks', () => {
   });
 
   // FR-062: disabled live stubs still require onboarding books (stay-dark).
-  const LIVE_STUB_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+  const LIVE_STUB_IDS = ['skimlinks', 'aliexpress', 'etsy', 'bol'];
 
   it('FR-062: each disabled live stub has onboarding SKILL.md', () => {
     const { sources } = loadRegistry();

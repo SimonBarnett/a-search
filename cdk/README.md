@@ -95,7 +95,7 @@ See `docs/environments.md` (FR-137).
 
 ## Provider credentials Secrets Manager (FR-138)
 
-Each **enabled** provider worker (amazon, ebay, rakuten, cj, awin, impact)
+Each **enabled** provider worker (amazon, ebay, rakuten, cj, awin, impact, kijiji)
 reads credential keys from a **per-source** Secrets Manager JSON secret.
 Awin/impact onboarding share the same source secret. Stay-dark providers
 get no secret construct and no IAM grant.
@@ -108,6 +108,7 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
   -c cjProviderSecretArn=arn:... \
   -c awinProviderSecretArn=arn:... \
   -c impactProviderSecretArn=arn:...
+  -c kelkooProviderSecretArn=arn:...
 ```
 
 JSON keys match that provider's `.env.example` credential names

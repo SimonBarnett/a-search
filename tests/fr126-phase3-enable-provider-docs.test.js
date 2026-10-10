@@ -16,7 +16,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Phase-2 stay-dark ids (must remain false on this PR). */
 const PHASE2_STUB_IDS = [
-  'kelkoo',
   'skimlinks',
   'aliexpress',
   'etsy',

@@ -220,6 +220,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
+  // FR-167: enable kelkoo (Secrets Manager JSON keys)
+  kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -236,6 +238,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+  // FR-167
+  kelkoo: {
+    KELKOO_COUNTRY: 'uk',
   },
 };
 

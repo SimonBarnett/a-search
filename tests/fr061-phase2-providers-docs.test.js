@@ -16,7 +16,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Providers still stubbed / awaiting account details (stay dark). */
 const PHASE2_STUB_IDS = [
-  'kelkoo',
   'skimlinks',
   'aliexpress',
   'etsy',

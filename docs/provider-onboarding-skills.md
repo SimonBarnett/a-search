@@ -22,7 +22,7 @@ Examples:
 | `amazon` | `providers/live/amazon/.grok/skills/a-search-amazon-onboarding/SKILL.md` |
 | `awin` | `providers/local/awin/.grok/skills/a-search-awin-onboarding/SKILL.md` |
 | `cj` | `providers/live/cj/.grok/skills/a-search-cj-onboarding/SKILL.md` |
-| `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
+| `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-167 enabled) |
 | `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
@@ -81,7 +81,7 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `skimlinks`, `aliexpress`, `etsy`, `bol`
+`skimlinks`, `aliexpress`, `etsy`, `bol`
 
 Do not invent live credential steps or flip registry enabled from these stubs.
 See `docs/phase2-providers.md` stay-dark rule.

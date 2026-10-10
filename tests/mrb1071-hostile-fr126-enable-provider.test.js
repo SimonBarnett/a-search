@@ -17,7 +17,6 @@ const productTest = path.join(
 );
 
 const PHASE2_STUB_IDS = [
-  'kelkoo',
   'skimlinks',
   'aliexpress',
   'etsy',

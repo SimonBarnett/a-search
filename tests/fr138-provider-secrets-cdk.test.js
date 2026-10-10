@@ -12,8 +12,8 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
-const STAY_DARK_SAMPLE = ['kelkoo', 'skimlinks', 'partnerize', 'webgains'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo'];
+const STAY_DARK_SAMPLE = ['skimlinks', 'partnerize', 'webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -124,6 +124,12 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'IMPACT_CAMPAIGN_ID',
       'impact-sandbox',
     );
+    assertSecretRef(
+      envOf('a-search-kelkoo-worker-live'),
+      'KELKOO_API_KEY',
+      'kelkoo-live',
+    );
+    assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
     assertSecretRef(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
