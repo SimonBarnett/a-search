@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-072: aliexpress normalize.js -> shared product schema (stay-dark).
+ * FR-072: aliexpress normalize.js -> shared product schema (enabled FR-169).
  */
 
 const { describe, it } = require('node:test');
@@ -97,13 +97,13 @@ describe('FR-072 aliexpress normalize', () => {
     assert.equal(partial.source, 'aliexpress');
   });
 
-  it('registry keeps aliexpress enabled.live and enabled.sandbox false', () => {
+  it('registry keeps aliexpress enabled.live and enabled.sandbox true (FR-169)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.ok(ae);
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
   });
 });

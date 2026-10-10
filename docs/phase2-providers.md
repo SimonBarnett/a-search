@@ -19,7 +19,6 @@ exist. Completing a client + fixtures does **not** enable the source.
 |----|------|--------|
 | `kelkoo` | live | `providers/live/kelkoo` |
 | `skimlinks` | live | `providers/live/skimlinks` |
-| `aliexpress` | live | `providers/live/aliexpress` |
 | `etsy` | live | `providers/live/etsy` |
 | `bol` | live | `providers/live/bol` |
 | `partnerize` | local | `providers/local/partnerize` |
@@ -35,7 +34,8 @@ exist. Completing a client + fixtures does **not** enable the source.
 ## Already enabled (out of Phase-2 stay-dark)
 
 `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact` ship with
-`enabled.live/sandbox=true` from Phase 1. Do not flip them false as part of
+`enabled.live/sandbox=true` from Phase 1. **`aliexpress`** was enabled by
+FR-169 (#1016) for both envs. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
 ## When to enable
