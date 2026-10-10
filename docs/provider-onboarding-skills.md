@@ -24,7 +24,7 @@ Examples:
 | `cj` | `providers/live/cj/.grok/skills/a-search-cj-onboarding/SKILL.md` |
 | `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
+| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (enabled FR-169; onboarding skill retained) |
 | `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 
@@ -81,7 +81,7 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `aliexpress`, `etsy`, `bol`
+`kelkoo`, `etsy`, `bol` (skimlinks FR-168 + aliexpress FR-169 enabled; skills remain)
 
 `skimlinks` keeps its onboarding skill after FR-168 enable (credentials +
 selftest still documented there). See `docs/phase2-providers.md` stay-dark rule

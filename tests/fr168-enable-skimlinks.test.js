@@ -13,9 +13,9 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
+// Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
 const STILL_DARK = [
   'kelkoo',
-  'aliexpress',
   'etsy',
   'bol',
   'partnerize',
@@ -127,7 +127,8 @@ describe('FR-168 enable skimlinks', () => {
       assert.ok(qHit, `missing queue a-search-skimlinks-${env}`);
     }
 
-    for (const dark of ['kelkoo', 'aliexpress', 'partnerize']) {
+    // aliexpress is enabled on main (FR-169); assert remaining stay-dark have no workers.
+    for (const dark of ['kelkoo', 'etsy', 'partnerize']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
@@ -136,5 +137,12 @@ describe('FR-168 enable skimlinks', () => {
       );
       assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
     }
+    const ae = fns.find(
+      (res) =>
+        res.Properties &&
+        typeof res.Properties.FunctionName === 'string' &&
+        res.Properties.FunctionName.includes('-aliexpress-worker-'),
+    );
+    assert.ok(ae, 'FR-169 aliexpress worker must remain after fold');
   });
 });

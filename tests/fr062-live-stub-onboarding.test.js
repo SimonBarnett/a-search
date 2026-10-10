@@ -12,8 +12,8 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 
-/** Live stubs still stay-dark (skimlinks enabled by FR-168 - keep onboarding skill separately). */
-const LIVE_STUB_IDS = ['kelkoo', 'aliexpress', 'etsy', 'bol'];
+/** Live stubs still stay-dark (skimlinks FR-168 + aliexpress FR-169 enabled). */
+const LIVE_STUB_IDS = ['kelkoo', 'etsy', 'bol'];
 
 function onboardingSkillPath(id) {
   return path.join(
@@ -64,7 +64,7 @@ describe('FR-062 live stub onboarding skillbooks', () => {
     }
   });
 
-  it('docs/provider-onboarding-skills.md lists remaining live stub ids', () => {
+  it('docs/provider-onboarding-skills.md lists the remaining live stub ids', () => {
     const doc = fs.readFileSync(
       path.join(root, 'docs', 'provider-onboarding-skills.md'),
       'utf8',

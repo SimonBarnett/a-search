@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Enabled sources include FR-168 skimlinks; other Phase-2 stubs stay dark.
+ * Enabled sources include FR-168 skimlinks + FR-169 aliexpress; other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -20,8 +20,9 @@ const ENABLED_IDS = [
   'awin',
   'impact',
   'skimlinks',
+  'aliexpress',
 ];
-const STAY_DARK_SAMPLE = ['kelkoo', 'partnerize', 'webgains', 'aliexpress'];
+const STAY_DARK_SAMPLE = ['kelkoo', 'partnerize', 'webgains', 'etsy'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -54,6 +55,7 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /IMPACT_CAMPAIGN_ID/);
     assert.match(text, /SKIMLINKS_API_KEY/);
     assert.match(text, /SKIMLINKS_PUBLISHER_ID/);
+    assert.match(text, /ALIEXPRESS_API_KEY/);
     // Stay-dark ids must not appear in PROVIDER_CREDENTIAL_KEYS block
     for (const dark of STAY_DARK_SAMPLE) {
       assert.doesNotMatch(
@@ -157,6 +159,21 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.equal(
       envOf('a-search-skimlinks-worker-live').SKIMLINKS_COUNTRY,
       'uk',
+    );
+
+    assertSecretRef(
+      envOf('a-search-aliexpress-worker-live'),
+      'ALIEXPRESS_API_KEY',
+      'aliexpress-live',
+    );
+    assertSecretRef(
+      envOf('a-search-aliexpress-worker-sandbox'),
+      'ALIEXPRESS_API_KEY',
+      'aliexpress-sandbox',
+    );
+    assert.equal(
+      envOf('a-search-aliexpress-worker-live').ALIEXPRESS_TRACKING_ID,
+      'a-search',
     );
 
     // Stay-dark: no worker Lambdas

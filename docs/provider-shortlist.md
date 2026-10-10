@@ -36,7 +36,7 @@ they do not unlock a silent client swap.
 | `admitad` | local | false | Broad geo | Quality varies by market |
 | `kelkoo` | live | false | Shopping/offer search | Price-comparison shape; different result schema |
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
-| `aliexpress` | live | false | Volume/price | Compliance heavier for club catalogues |
+| `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
 | `etsy` | live | false | Handmade/niche | Open API v3; smaller club overlap |
 | `bol` | live | false | NL/BE marketplace | Enable only for Benelux launch |
 | `flexoffers` | local | false | US mid-tail feeds | After Impact |
@@ -68,7 +68,7 @@ flip only that id, pin others stay dark) - see
     { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
     { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_KELKOO_URL" },
     { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
-    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ALIEXPRESS_URL" },
+    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ALIEXPRESS_URL" },
     { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ETSY_URL" },
     { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },

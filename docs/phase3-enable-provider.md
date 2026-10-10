@@ -30,7 +30,8 @@ the enable FR's tests.
    `tests/fr061-phase2-providers-docs.test.js` / `tests/fr126-phase3-enable-provider-docs.test.js`
    (drop the id being enabled).
 6. **Open one enable FR per id** (Phase-4 wave: #1011 index + #1013-#1027).
-   Do not combine multiple ids in one enable PR.
+   Do not combine multiple ids in one enable PR. Index + credential-gate
+   checklist: [phase4-enablement-index.md](phase4-enablement-index.md) (**FR-166**).
 
 ## Extra gates for **local** providers (`kind: local`)
 
@@ -53,7 +54,8 @@ land - enable only when ingest + selftest are ready.
 ## Already enabled (do not flip false here)
 
 Phase-1 ids stay on: `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact`
-(`enabled.live/sandbox=true`). **`skimlinks`** enabled by FR-168 (#1015).
+(`enabled.live/sandbox=true`). **`skimlinks`** enabled by FR-168 (#1015);
+**`aliexpress`** enabled by FR-169 (#1016).
 This template is for remaining stay-dark -> enable moves.
 
 ## Phase-2 stay-dark ids (template pin)
@@ -61,7 +63,6 @@ This template is for remaining stay-dark -> enable moves.
 | id | kind |
 |----|------|
 | `kelkoo` | live |
-| `aliexpress` | live |
 | `etsy` | live |
 | `bol` | live |
 | `partnerize` | local |
@@ -77,6 +78,7 @@ This template is for remaining stay-dark -> enable moves.
 ## Related
 
 - Stay-dark rule: [`docs/phase2-providers.md`](phase2-providers.md) (FR-061)
+- Phase-4 index: [`docs/phase4-enablement-index.md`](phase4-enablement-index.md) (FR-166)
 - Shortlist defaults: [`docs/provider-shortlist.md`](provider-shortlist.md)
 - Add-source checklist: [`docs/add-source.md`](add-source.md)
 - Selftest: [`docs/endpoint-selftest.md`](endpoint-selftest.md)

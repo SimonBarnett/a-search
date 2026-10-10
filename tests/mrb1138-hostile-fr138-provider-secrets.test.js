@@ -27,8 +27,9 @@ const ENABLED = [
   'awin',
   'impact',
   'skimlinks',
+  'aliexpress',
 ];
-const STAY_DARK = ['kelkoo', 'partnerize', 'webgains', 'aliexpress'];
+const STAY_DARK = ['kelkoo', 'partnerize', 'webgains', 'etsy'];
 
 describe('MRB #1138 hostile FR-138 provider secrets', () => {
   it('product test uses in-process synth + stay-dark omission', () => {

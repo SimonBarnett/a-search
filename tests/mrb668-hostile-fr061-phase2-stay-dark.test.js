@@ -46,12 +46,11 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     assert.match(shortlist, /stay-dark/i);
   });
 
-  it('exactly 14 Phase-2 stub ids stay dark in registry', () => {
+  it('exactly 12 Phase-2 stub ids stay dark in registry (skimlinks FR-168 + aliexpress FR-169)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
+    const { sources } = loadRegistry();
     const stubs = [
       'kelkoo',
-      'skimlinks',
-      'aliexpress',
       'etsy',
       'bol',
       'partnerize',
@@ -64,8 +63,7 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
       'wix',
       'woocommerce',
     ];
-    assert.equal(stubs.length, 14);
-    const { sources } = loadRegistry();
+    assert.equal(stubs.length, 12);
     for (const id of stubs) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);

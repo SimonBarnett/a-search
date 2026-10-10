@@ -10,7 +10,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+/** Remaining FR-062 live stubs (aliexpress enabled by FR-169 / #1016). */
+const IDS = ['kelkoo', 'etsy', 'bol'];
 
 function readNoBom(rel) {
   const p = path.join(root, rel);
@@ -43,7 +44,7 @@ describe('MRB #673 hostile FR-062 live stub onboarding', () => {
     });
   }
 
-  it('registry keeps five live stubs disabled', () => {
+  it('registry keeps remaining live stubs disabled', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     for (const id of IDS) {

@@ -18,7 +18,6 @@ exist. Completing a client + fixtures does **not** enable the source.
 | id | kind | folder |
 |----|------|--------|
 | `kelkoo` | live | `providers/live/kelkoo` |
-| `aliexpress` | live | `providers/live/aliexpress` |
 | `etsy` | live | `providers/live/etsy` |
 | `bol` | live | `providers/live/bol` |
 | `partnerize` | local | `providers/local/partnerize` |
@@ -35,7 +34,7 @@ exist. Completing a client + fixtures does **not** enable the source.
 
 `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact` ship with
 `enabled.live/sandbox=true` from Phase 1. **`skimlinks`** was enabled by
-FR-168 (#1015) for both envs. Do not flip enabled ids false as part of
+FR-168 (#1015) and **`aliexpress`** by FR-169 (#1016) for both envs. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
 ## When to enable
