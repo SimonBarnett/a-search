@@ -151,8 +151,26 @@ All taggable stack resources get cost allocation tags:
   -c stage=prod
 ```
 
-Use the same `stage` key FR-156 will use for name suffixes. AWS Organizations tag
+Use the same `stage` key as FR-156 name suffixes. AWS Organizations tag
 policies are out of scope.
+
+### Parallel stage install (FR-156)
+
+Optional `-c stage=` suffixes physical names (functions, queues, DLQs, alarms,
+rules, API name, SNS topic) and the CloudFormation stack id so a second install
+can sit beside production:
+
+| Context | Stack id | Example function |
+|---------|----------|------------------|
+| (unset / empty) | `ASearchStack` | `a-search-entry` |
+| `-c stage=dev` | `ASearchStack-dev` | `a-search-entry-dev` |
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
+```
+
+ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
+is out of scope. Same `stage` key feeds FR-155 cost `Env` tags.
 
 ## 6. Read stack outputs
 
