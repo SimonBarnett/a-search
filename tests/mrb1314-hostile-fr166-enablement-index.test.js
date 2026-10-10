@@ -13,8 +13,9 @@ const fr = path.join(root, 'docs', 'fr', 'FR-166.md');
 const pin = path.join(root, 'tests', 'fr166-phase4-enablement-index.test.js');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
+/** Remaining stay-dark after FR-167 (kelkoo enabled separately). */
 const PHASE2_STUB_IDS = [
-  'kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol', 'partnerize', 'webgains',
+  'skimlinks', 'aliexpress', 'etsy', 'bol', 'partnerize', 'webgains',
   'tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce',
 ];
 
@@ -34,7 +35,7 @@ describe('MRB-1314 hostile FR-166 phase4 enablement index', () => {
     assert.ok(fs.existsSync(pin), 'missing tests/fr166-phase4-enablement-index.test.js');
   });
 
-  it('registry Phase-2 stubs remain enabled false', () => {
+  it('registry remaining Phase-2 stubs stay enabled false (kelkoo excluded after FR-167)', () => {
     const reg = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const rows = Array.isArray(reg) ? reg : reg.providers || reg.sources || [];
     const byId = new Map(rows.map((r) => [r.id, r]));
