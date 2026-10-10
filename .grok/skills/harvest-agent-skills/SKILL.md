@@ -165,3 +165,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a harvest tip folds/expands an existing contiguous lesson bullet, refresh every hostile pin that asserts the old string in the same MRB tip; keep-both release-gap CloudWatch Yes + CI Yes when FR-143 meets FR-139 on main
 - MRB docs/mrb after product CI land: verify Actions run green claim, merge origin/main into behind docs tip before gh pr merge, pin ci.yml Node20+setup-python+npm ci/test/synth+180m; self-MRB clear when seat marker differs (marchhare-42664 vs 960).
 - When shared/ gains a runtime dir, list it in shared/package.json files[] and pin all runtime dirs so pack cannot drop modules (FR-159 / #1002).
+- FR-157 HttpApi access logs: createDefaultStage false + HttpStage $default with LogGroupLogDestination CLF and resolveApiThrottle context apiThrottleRate/Burst (defaults 20/40); after FR-151 jose must be in node_modules before in-process synth pins
