@@ -22,7 +22,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | SQS SSE | FR-162 | #1005 |
 | Destroy/rollback docs | FR-163 | #1006 |
 | visibilityTimeout <= worker timeout | FR-164 | #1007 |
-| Explicit Lambda memorySize | FR-165 | #1008 |
+| Explicit Lambda memorySize | FR-165 | #1008 (**Yes** - entry 256 / workers 256|512; pin fr165) |
 
 ## Explicitly still OOS for v0.1
 

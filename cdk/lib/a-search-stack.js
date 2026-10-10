@@ -22,6 +22,16 @@ const { resolveCorsOrigins } = require('./resolve-cors-origins');
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
 
 /**
+ * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
+ * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
+ * maintainer, onboarding: 512MB.
+ */
+const ENTRY_LAMBDA_MEMORY_MB = 256;
+const WORKER_LAMBDA_MEMORY_MB = 256;
+const WORKER_MSSQL_LAMBDA_MEMORY_MB = 512;
+const HEAVY_LAMBDA_MEMORY_MB = 512;
+
+/**
  * FR-143: dedicated LogGroup with 30-day retention (prefer over deprecated logRetention).
  * @param {Construct} scope
  * @param {string} id
@@ -379,6 +389,7 @@ class ASearchStack extends cdk.Stack {
       handler: 'entry/src/index.handler',
       code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
+      memorySize: ENTRY_LAMBDA_MEMORY_MB,
       environment: entryEnv,
       logGroup: lambdaLogGroup(this, 'EntryFunctionLogGroup'),
     });
@@ -431,6 +442,9 @@ class ASearchStack extends cdk.Stack {
         entry.addEnvironment(urlKey, queue.queueUrl);
         queue.grantSendMessages(entry);
 
+        const workerMemoryMb = isLocalProviderFolder(src.folder)
+          ? WORKER_MSSQL_LAMBDA_MEMORY_MB
+          : WORKER_LAMBDA_MEMORY_MB;
         const worker = new lambda.Function(
           this,
           `${pascal}${envPascal}WorkerFunction`,
@@ -440,6 +454,7 @@ class ASearchStack extends cdk.Stack {
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(60),
+            memorySize: workerMemoryMb,
             environment: {
               A_SEARCH_ENV: env,
             },
@@ -562,6 +577,7 @@ class ASearchStack extends cdk.Stack {
       handler: maintainerHandlerPath(),
       code: maintainerCode,
       timeout: cdk.Duration.minutes(5),
+      memorySize: HEAVY_LAMBDA_MEMORY_MB,
       environment: {
         A_SEARCH_ENV: 'live',
         MAINTAINER_TOP: '10',
@@ -581,6 +597,7 @@ class ASearchStack extends cdk.Stack {
         handler: maintainerHandlerPath(),
         code: maintainerCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
           MAINTAINER_TOP: '10',
@@ -624,6 +641,7 @@ class ASearchStack extends cdk.Stack {
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'live',
         },
@@ -648,6 +666,7 @@ class ASearchStack extends cdk.Stack {
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
@@ -680,6 +699,7 @@ class ASearchStack extends cdk.Stack {
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
@@ -707,6 +727,7 @@ class ASearchStack extends cdk.Stack {
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'live',
         },
@@ -839,4 +860,8 @@ module.exports = {
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
+  ENTRY_LAMBDA_MEMORY_MB,
+  WORKER_LAMBDA_MEMORY_MB,
+  WORKER_MSSQL_LAMBDA_MEMORY_MB,
+  HEAVY_LAMBDA_MEMORY_MB,
 };

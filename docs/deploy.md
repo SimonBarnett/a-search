@@ -197,6 +197,21 @@ npm run synth
 Template must show Secrets Manager dynamic references for JWT_* / MSSQL_* /
 provider credentials - never a real password, API token, or JWT string.
 
+## Lambda memorySize floors (FR-165)
+
+Default Lambda memory (128MB) is too small for cold JWKS (`jose`) + AWS SDK
+loads on entry fan-out. The stack sets explicit `memorySize` (not provisioned
+concurrency - OOS):
+
+| Function class | memorySize | Constant |
+|----------------|------------|----------|
+| Entry (`a-search-entry`) | **256** MB | `ENTRY_LAMBDA_MEMORY_MB` |
+| Marketplace workers (amazon/ebay/...) | **256** MB | `WORKER_LAMBDA_MEMORY_MB` |
+| Local/MSSQL workers (awin/impact/...) | **512** MB | `WORKER_MSSQL_LAMBDA_MEMORY_MB` |
+| Maintainer + onboarding | **512** MB | `HEAVY_LAMBDA_MEMORY_MB` |
+
+Pin: `tests/fr165-lambda-memory-size.test.js`. See `cdk/lib/a-search-stack.js`.
+
 ## 9. MSSQL network path - no-VPC + fixed egress (FR-149)
 
 `ASearchStack` is **explicit no-VPC**: Lambdas use default AWS networking.
