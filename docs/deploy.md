@@ -124,6 +124,71 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
 Approve IAM/security-group changes when the CLI prompts. Stay-dark Phase-2
 providers remain disabled in the registry - this playbook does not enable them.
 
+### CORS allowlist (FR-153)
+
+HttpApi CORS covers `/search`, `/selftest`, and `/account/performance`. Pass an
+explicit origin allowlist (comma-separated). Synth default is localhost-only;
+empty `-c corsOrigins=` means deny (no origins). **Never** use public wildcard
+`*` (rejected at synth).
+
+```bash
+  -c corsOrigins=https://club.example,https://www.club.example
+```
+
+Browser callers (Club Madeira) need their site origin(s) listed. JWT stays in
+the `Authorization` header (allowed by the CORS preflight).
+
+### Cost tags (FR-155)
+
+All taggable stack resources get cost allocation tags:
+
+| Tag | Value |
+|-----|--------|
+| `Project` | `a-search` (fixed) |
+| `Env` | from `-c stage=` (preferred), else `-c env=` / `-c costEnv=`; default `default` when unset |
+
+```bash
+  -c stage=prod
+```
+
+Use the same `stage` key as FR-156 name suffixes. AWS Organizations tag
+policies are out of scope.
+
+### Parallel stage install (FR-156)
+
+Optional `-c stage=` suffixes physical names (functions, queues, DLQs, alarms,
+rules, API name, SNS topic) and the CloudFormation stack id so a second install
+can sit beside production:
+
+| Context | Stack id | Example function |
+|---------|----------|------------------|
+| (unset / empty) | `ASearchStack` | `a-search-entry` |
+| `-c stage=dev` | `ASearchStack-dev` | `a-search-entry-dev` |
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
+```
+
+ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
+is out of scope. Same `stage` key feeds FR-155 cost `Env` tags.
+
+### API access logs + throttle (FR-157)
+
+HTTP API `$default` stage writes access logs to a dedicated CloudWatch LogGroup
+(30-day retention) and applies conservative default-route throttling so burst
+abuse does not melt worker queues. Override via context:
+
+| Context | Default | Meaning |
+|---------|---------|---------|
+| `apiThrottleRate` | `20` | Steady-state requests/sec |
+| `apiThrottleBurst` | `40` | Short burst ceiling |
+
+```bash
+  -c apiThrottleRate=50 -c apiThrottleBurst=100
+```
+
+WAF WebACL is out of scope for this FR.
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
@@ -160,6 +225,11 @@ The script asserts:
 
 Optional manual follow-up: confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
 
+**Intake egress smoke (FR-158):** from the same account/region, measure
+`POST https://irc.ntsa.uk/bob/v1/intake` (or `A_SEARCH_INTAKE_URL` if set) returns
+success; if blocked, expect CloudWatch `intake_egress_blocked` on the next fatal
+path - see [intake-on-exception.md](intake-on-exception.md) and section FR-158 below.
+
 Do **not** wire this against production from CI without an explicit approval gate.
 
 ## 8. Point rclone (SQL host)
@@ -182,6 +252,21 @@ npm run synth
 
 Template must show Secrets Manager dynamic references for JWT_* / MSSQL_* /
 provider credentials - never a real password, API token, or JWT string.
+
+## Lambda memorySize floors (FR-165)
+
+Default Lambda memory (128MB) is too small for cold JWKS (`jose`) + AWS SDK
+loads on entry fan-out. The stack sets explicit `memorySize` (not provisioned
+concurrency - OOS):
+
+| Function class | memorySize | Constant |
+|----------------|------------|----------|
+| Entry (`a-search-entry`) | **256** MB | `ENTRY_LAMBDA_MEMORY_MB` |
+| Marketplace workers (amazon/ebay/...) | **256** MB | `WORKER_LAMBDA_MEMORY_MB` |
+| Local/MSSQL workers (awin/impact/...) | **512** MB | `WORKER_MSSQL_LAMBDA_MEMORY_MB` |
+| Maintainer + onboarding | **512** MB | `HEAVY_LAMBDA_MEMORY_MB` |
+
+Pin: `tests/fr165-lambda-memory-size.test.js`. See `cdk/lib/a-search-stack.js`.
 
 ## 9. MSSQL network path - no-VPC + fixed egress (FR-149)
 
@@ -213,7 +298,26 @@ path for off-box MSSQL from AWS workers/maintainer/onboarding:
 **Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
 FR-122 Chosen option.
 
-## 10. Destroy / rollback (FR-163)
+## 10. Lambda intake egress - measure + fail-soft (FR-158)
+
+Same **no-VPC** networking as FR-149: Lambdas use default AWS egress for HTTPS
+to `irc.ntsa.uk` (bobiverse intake). Cross-link:
+[intake-on-exception.md](intake-on-exception.md) **Lambda egress to intake (FR-158)**.
+
+1. **Measure** from a one-shot Lambda (or bastion) in the deploy account/region:
+   `POST https://irc.ntsa.uk/bob/v1/intake` with a `do-not-file:` / probe title and
+   confirm HTTP 202 (or documented success). Record pass/fail in the **ops**
+   runbook only - never commit real egress CIDRs or private IPs here.
+2. **Env override:** set Lambda env `A_SEARCH_INTAKE_URL` (preferred) or
+   `BOB_INTAKE_URL` only when ops redirects intake; unset keeps the default URL.
+   Implemented in `shared/intake/reportException.js` (`resolveIntakeUrl`).
+3. **Fail-soft:** when `fetch` throws (DNS/timeout/TLS), `reportException`
+   returns `{ ok: false, egressBlocked: true, code: 'intake_egress_blocked' }` and
+   logs structured JSON to CloudWatch - not a silent swallow. Callers still
+   return HTTP 500 / rethrow the original fatal.
+4. Private intake proxy is **out of scope** for this FR.
+
+## 11. Destroy / rollback (FR-163)
 
 Teardown order, what `cdk destroy` deletes vs retains (results bucket
 `RemovalPolicy.RETAIN`, SQL data, Secrets Manager), and redeploy notes:

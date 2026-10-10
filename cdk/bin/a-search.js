@@ -4,6 +4,7 @@
 const cdk = require('aws-cdk-lib');
 const { ASearchStack } = require('../lib/a-search-stack');
 const { resolveDeployEnv } = require('../lib/resolve-deploy-env');
+const { resolveStackId } = require('../lib/resolve-stage-suffix');
 
 const app = new cdk.App();
 
@@ -23,7 +24,12 @@ try {
   process.exit(1);
 }
 
-new ASearchStack(app, 'ASearchStack', {
+// FR-156: ASearchStack or ASearchStack-<stage> for parallel installs
+const stackId = resolveStackId({
+  stage: app.node.tryGetContext('stage'),
+});
+
+new ASearchStack(app, stackId, {
   env: {
     account: deployEnv.account,
     region: deployEnv.region,
