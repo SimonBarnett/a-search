@@ -5,8 +5,34 @@ Second HTTP API (alongside `POST /search`) so an agent can query
 this doc locks auth, fields, and env.
 
 Read model sources (when wired): MSSQL transaction/click tables and/or the
-local↔S3 mapping service (FR-054). Empty accounts return **200** with zeros /
-empty arrays — not 404.
+local<->S3 mapping service (FR-054). Empty accounts return **200** with zeros /
+empty arrays - not 404.
+
+## Read model (FR-160)
+
+When injectable event lists are not supplied, and `S3_RESULTS_BUCKET` is set,
+the entry handler defaults to the shared S3 mapping store plus a documented
+stats object:
+
+| Kind | Key / prefix | Module |
+|------|--------------|--------|
+| Mapping rows | `{env}/_mapping/{userId}/` | `shared/mapping/s3Store.js` (`createS3MappingStore` / `listMappingsByUserId`) |
+| Stats events | `{env}/_stats/{userId}/events.json` | `entry/src/performanceS3Read.js` |
+
+Stats JSON body (any array may be omitted or empty):
+
+```json
+{
+  "clickVisitEvents": [],
+  "saleEvents": [],
+  "topEvents": []
+}
+```
+
+Event shapes match the FR-053c/d/e aggregators. Missing stats object -> empty
+arrays (200 with zeros), not 500. Explicit `deps.listClickVisitEvents` /
+`listSaleEvents` / `listTopEvents` / in-memory `*Events` arrays still win for
+tests. Pin: `tests/fr160-performance-s3-mapping.test.js`.
 
 ## Request
 
@@ -33,13 +59,13 @@ Content-Type: application/json
 }
 ```
 
-### Auth (LOCKED — same rules as search)
+### Auth (LOCKED - same rules as search)
 
 | Rule | Detail |
 |------|--------|
 | Scheme | `Authorization: Bearer <jwt>` from the login issuer |
 | User id | Taken **only** from JWT claim **`userId`** (string) |
-| Body / query `userId` | **Not accepted** as authority. If present and differs from JWT `userId` → **401/403**. Prefer omitting it |
+| Body / query `userId` | **Not accepted** as authority. If present and differs from JWT `userId` -> **401/403**. Prefer omitting it |
 | Missing / invalid / expired JWT | **401** `{ "ok": false, "error": "unauthorized" }` |
 | Missing `userId` claim | **401** `{ "ok": false, "error": "missing_user_id_claim" }` |
 
@@ -55,9 +81,9 @@ Values stay out of git.
 |-------|----------|------|---------|
 | `from` | no | string (`yyyy-MM-dd`) | Inclusive start (UTC calendar day) |
 | `to` | no | string (`yyyy-MM-dd`) | Inclusive end (UTC calendar day) |
-| `sandbox` | no | boolean | `true` → **sandbox** env; `false`/omit → **live** |
+| `sandbox` | no | boolean | `true` -> **sandbox** env; `false`/omit -> **live** |
 | `currency` | no | string | Optional filter (e.g. `GBP`) |
-| `userId` | — | — | **Ignored as authority** (see Auth) |
+| `userId` | - | - | **Ignored as authority** (see Auth) |
 
 Default date range when omitted: last **7** UTC days ending today (implementation
 may document exact window in FR-053c+).
@@ -110,8 +136,8 @@ Content-Type: application/json
 | `sales.commission` | number | Commission amounts |
 | `sales.currency` | string | Primary currency when single-currency |
 | `currencies` | array | Optional per-currency `{ currency, amount, commission, count }` |
-| `topLinks` | array | Optional `{ linkId, clicks, sales, … }` |
-| `topMerchants` | array | Optional `{ merchantId, merchantName, clicks, sales, … }` |
+| `topLinks` | array | Optional `{ linkId, clicks, sales, ... }` |
+| `topMerchants` | array | Optional `{ merchantId, merchantName, clicks, sales, ... }` |
 
 **Sales must appear in the schema** (zeros when none). Do not omit the
 `sales` object.
@@ -122,7 +148,7 @@ Content-Type: application/json
 |------|--------|--------------|
 | No / bad JWT | **401** | `{ "ok": false, "error": "unauthorized" }` |
 | Missing `userId` claim | **401** | `{ "ok": false, "error": "missing_user_id_claim" }` |
-| Body `userId` ≠ JWT | **401** or **403** | `{ "ok": false, "error": "user_id_mismatch" }` |
+| Body `userId` != JWT | **401** or **403** | `{ "ok": false, "error": "user_id_mismatch" }` |
 | Bad `from`/`to` | **400** | `{ "ok": false, "error": "invalid_date_range" }` |
 
 ## Agent skill
@@ -135,5 +161,6 @@ Search accept path remains `docs/endpoint-search.md`.
 - Parent: `docs/fr/FR-053.md`
 - Phase-1b Q6: `docs/feature-request-phase1b-2026-10-07.md`
 - Mapping store (read model): `docs/s3-mapping.md` (FR-054a+)
+- FR-160 S3 default path: `entry/src/performanceS3Read.js`
 - Mock UI: `docs/mocks/performance.html` (key),
   `docs/mocks/performance-empty.html`, `docs/mocks/performance-error.html`
