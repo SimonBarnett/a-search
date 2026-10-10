@@ -325,11 +325,15 @@ class ASearchStack extends cdk.Stack {
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
-    // FR-130 wires env + IAM below. SSE defaults deepen in FR-154.
+    // FR-130 wires env + IAM below.
+    // FR-154: deepen security defaults — SSE-S3, BlockPublicAccess ALL,
+    // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
     const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      publicReadAccess: false,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       autoDeleteObjects: false,
     });
