@@ -12,7 +12,8 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 
-const LIVE_STUB_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+/** Live stubs still stay-dark (skimlinks enabled by FR-168 - keep onboarding skill separately). */
+const LIVE_STUB_IDS = ['kelkoo', 'aliexpress', 'etsy', 'bol'];
 
 function onboardingSkillPath(id) {
   return path.join(
@@ -51,7 +52,7 @@ describe('FR-062 live stub onboarding skillbooks', () => {
     }
   });
 
-  it('registry keeps the five live stubs enabled false for both envs', () => {
+  it('registry keeps remaining live stubs enabled false for both envs', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
@@ -63,7 +64,7 @@ describe('FR-062 live stub onboarding skillbooks', () => {
     }
   });
 
-  it('docs/provider-onboarding-skills.md lists the five live stub ids', () => {
+  it('docs/provider-onboarding-skills.md lists remaining live stub ids', () => {
     const doc = fs.readFileSync(
       path.join(root, 'docs', 'provider-onboarding-skills.md'),
       'utf8',
@@ -72,5 +73,7 @@ describe('FR-062 live stub onboarding skillbooks', () => {
     for (const id of LIVE_STUB_IDS) {
       assert.match(doc, new RegExp(`\\b${id}\\b`), id);
     }
+    // skimlinks onboarding skill remains even after FR-168 enable
+    assert.match(doc, /\bskimlinks\b/);
   });
 });

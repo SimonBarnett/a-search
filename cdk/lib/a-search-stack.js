@@ -221,6 +221,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
+  // FR-168: skimlinks enabled -> FR-138 secret wiring
+  skimlinks: ['SKIMLINKS_API_KEY', 'SKIMLINKS_PUBLISHER_ID'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -237,6 +239,9 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+  skimlinks: {
+    SKIMLINKS_COUNTRY: 'uk',
   },
 };
 

@@ -1,6 +1,6 @@
-'use strict';
+﻿'use strict';
 
-/** MRB #701 hostile: FR-070 skimlinks selftest + rateLimit stay-dark. */
+/** MRB #701 hostile: FR-070 skimlinks selftest + rateLimit (enabled FR-168). */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -18,16 +18,16 @@ describe('MRB #701 hostile FR-070 skimlinks selftest', () => {
     assert.match(src, /assertSkimlinksCreds/);
     assert.match(src, /searchSkimlinks|fixtureLooksOk/);
     assert.match(src, /skimlinksProductAPI/);
-    assert.match(src, /Stay-dark|stay-dark|enabled stays false/i);
+    assert.match(src, /FR-070|FR-168|assertSkimlinksCreds/);
   });
 
-  it('registry rateLimit positive; stay-dark', () => {
+  it('registry rateLimit positive; enabled true (FR-168)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const sl = registry.sources.find((s) => s.id === 'skimlinks');
-    assert.equal(sl.enabled.live, false);
-    assert.equal(sl.enabled.sandbox, false);
+    assert.equal(sl.enabled.live, true);
+    assert.equal(sl.enabled.sandbox, true);
     assert.ok(sl.rateLimit.maxConcurrency >= 1);
     assert.ok(sl.rateLimit.minIntervalMs >= 0);
   });

@@ -15,9 +15,9 @@ const doc = path.join(root, 'docs', 'phase2-providers.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Providers still stubbed / awaiting account details (stay dark). */
+/** Stay-dark stubs (skimlinks enabled by FR-168 / #1015 - dropped here). */
 const PHASE2_STUB_IDS = [
   'kelkoo',
-  'skimlinks',
   'aliexpress',
   'etsy',
   'bol',

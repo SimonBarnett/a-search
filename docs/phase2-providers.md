@@ -7,7 +7,7 @@ exist. Fan-out must not enqueue a Phase-2 id on default live or sandbox until
 an operator flips the flag after credentials land.
 
 Phase 2 turns FR-022 / FR-607 stubs into real clients (mirror amazon / ebay /
-cj / awin under `providers/`). Unit tests use recorded fixtures only — no live
+cj / awin under `providers/`). Unit tests use recorded fixtures only - no live
 network. Never commit secrets; `.env.example` placeholders only.
 
 ## Phase-2 stub ids (stay dark)
@@ -18,7 +18,6 @@ exist. Completing a client + fixtures does **not** enable the source.
 | id | kind | folder |
 |----|------|--------|
 | `kelkoo` | live | `providers/live/kelkoo` |
-| `skimlinks` | live | `providers/live/skimlinks` |
 | `aliexpress` | live | `providers/live/aliexpress` |
 | `etsy` | live | `providers/live/etsy` |
 | `bol` | live | `providers/live/bol` |
@@ -35,7 +34,8 @@ exist. Completing a client + fixtures does **not** enable the source.
 ## Already enabled (out of Phase-2 stay-dark)
 
 `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact` ship with
-`enabled.live/sandbox=true` from Phase 1. Do not flip them false as part of
+`enabled.live/sandbox=true` from Phase 1. **`skimlinks`** was enabled by
+FR-168 (#1015) for both envs. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
 ## When to enable
@@ -56,4 +56,4 @@ Follow the Phase-3 one-provider ritual in
 - Enable ritual template: `docs/phase3-enable-provider.md` (FR-126)
 - Shortlist + defaults: `docs/provider-shortlist.md`
 - Add a source checklist: `docs/add-source.md`
-- Registry loader: `providers/loadRegistry.js` → `enabled(env)`
+- Registry loader: `providers/loadRegistry.js` -> `enabled(env)`
