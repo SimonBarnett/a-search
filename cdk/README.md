@@ -47,6 +47,9 @@ Disabled shortlist providers are not synthesised until enabled.
 - FR-143: explicit `logs.LogGroup` retention ONE_MONTH (30d) on every Lambda;
   placeholder SNS `a-search-ops-alarms`; per-DLQ depth alarm
   (`ApproximateNumberOfMessagesVisible >= 1`) with SnsAction. Output `OpsAlarmTopicArn`.
+- FR-165: explicit `memorySize` floors - entry 256MB, marketplace workers 256MB,
+  local/MSSQL workers + maintainer + onboarding 512MB (default 128MB OOMs on
+  cold JWKS/SDK). Provisioned concurrency OOS.
 
 ### Queue URL env convention (FR-034)
 
