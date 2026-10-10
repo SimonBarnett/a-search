@@ -19,7 +19,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | shared files[] missing identity/ | FR-159 | #1002 |
 | Performance still injectable stub | FR-160 | #1003 |
 | Endpoint skill deploy pointers | FR-161 | #1004 |
-| SQS SSE | FR-162 | #1005 |
+| SQS SSE | FR-162 | #1005 (**Yes** - QueueEncryption.SQS_MANAGED on queues+DLQs; pin fr162) |
 | Destroy/rollback docs | FR-163 | #1006 |
 | visibilityTimeout <= worker timeout | FR-164 | #1007 |
 | Explicit Lambda memorySize | FR-165 | #1008 |
