@@ -168,3 +168,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When performance list* deps are unset and S3_RESULTS_BUCKET is set, wire createPerformanceS3Deps (mapping store + documented stats key); missing stats => zeros not 500 (FR-160 / #1003).
 - When shared/ gains a runtime dir, list it in shared/package.json files[] and pin all runtime dirs so pack cannot drop modules (FR-159 / #1002).
 - FR-157 HttpApi access logs: createDefaultStage false + HttpStage $default with LogGroupLogDestination CLF and resolveApiThrottle context apiThrottleRate/Burst (defaults 20/40); after FR-151 jose must be in node_modules before in-process synth pins
+- a-search MRB behind-main CONFLICTING: merge origin/main keep-both release-gap; product first then docs/mrb-N hostile pins from new main tip; twin tip FAIL-supersede
