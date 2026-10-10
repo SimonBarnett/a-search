@@ -22,10 +22,11 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
     assert.match(text, /AwinOnboardingSandboxSchedule/);
     assert.match(text, /ImpactOnboardingSandboxSchedule/);
     assert.match(text, /ImpactOnboardingLiveSchedule/);
-    assert.match(text, /ruleName:\s*'a-search-awin-onboarding-live'/);
-    assert.match(text, /ruleName:\s*'a-search-awin-onboarding-sandbox'/);
-    assert.match(text, /ruleName:\s*'a-search-impact-onboarding-sandbox'/);
-    assert.match(text, /ruleName:\s*'a-search-impact-onboarding-live'/);
+    // FR-156: rule names go through stagedName(...); empty stage keeps base.
+    assert.match(text, /ruleName:\s*stagedName\('a-search-awin-onboarding-live'\)/);
+    assert.match(text, /ruleName:\s*stagedName\('a-search-awin-onboarding-sandbox'\)/);
+    assert.match(text, /ruleName:\s*stagedName\('a-search-impact-onboarding-sandbox'\)/);
+    assert.match(text, /ruleName:\s*stagedName\('a-search-impact-onboarding-live'\)/);
     assert.match(text, /Schedule\.rate\(\s*cdk\.Duration\.days\(\s*1\s*\)\s*\)/);
     assert.match(
       text,
