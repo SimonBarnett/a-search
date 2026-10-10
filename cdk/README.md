@@ -43,6 +43,8 @@ Disabled shortlist providers are not synthesised until enabled.
 - FR-142: each enabled worker queue has a sibling DLQ `{queueName}-dlq` with
   `deadLetterQueue.maxReceiveCount=3` (14-day retention). Outputs
   `{Pascal}{Live|Sandbox}DeadLetterQueueUrl`.
+- FR-164: worker queue `visibilityTimeout` is 6x worker Lambda timeout (60s
+  timeout -> 360s visibility) so SQS does not redeliver while the function runs.
 - FR-143: explicit `logs.LogGroup` retention ONE_MONTH (30d) on every Lambda;
   placeholder SNS `a-search-ops-alarms`; per-DLQ depth alarm
   (`ApproximateNumberOfMessagesVisible >= 1`) with SnsAction. Output `OpsAlarmTopicArn`.

@@ -22,6 +22,13 @@ const { resolveCorsOrigins } = require('./resolve-cors-origins');
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
 
 /**
+ * FR-164: worker Lambda timeout (seconds). Queue visibility must be strictly
+ * greater; AWS guidance for SQS->Lambda is at least 6x the function timeout.
+ */
+const WORKER_LAMBDA_TIMEOUT_SEC = 60;
+const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
+
+/**
  * FR-143: dedicated LogGroup with 30-day retention (prefer over deprecated logRetention).
  * @param {Construct} scope
  * @param {string} id
@@ -418,9 +425,12 @@ class ASearchStack extends cdk.Stack {
           queueName: `${qName}-dlq`,
           retentionPeriod: cdk.Duration.days(14),
         });
+        // FR-164: visibilityTimeout > worker Lambda timeout (6x buffer)
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
-          visibilityTimeout: cdk.Duration.seconds(60),
+          visibilityTimeout: cdk.Duration.seconds(
+            WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
+          ),
           deadLetterQueue: {
             queue: dlq,
             maxReceiveCount: 3,
@@ -439,7 +449,7 @@ class ASearchStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
-            timeout: cdk.Duration.seconds(60),
+            timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
             environment: {
               A_SEARCH_ENV: env,
             },
@@ -839,4 +849,6 @@ module.exports = {
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
+  WORKER_LAMBDA_TIMEOUT_SEC,
+  WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
 };
