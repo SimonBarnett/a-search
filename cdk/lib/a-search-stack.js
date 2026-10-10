@@ -17,6 +17,7 @@ const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const { Construct } = require('constructs');
 const { resolveCorsOrigins } = require('./resolve-cors-origins');
+const { resolveCostTags } = require('./resolve-cost-tags');
 
 /** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
@@ -308,6 +309,16 @@ class ASearchStack extends cdk.Stack {
    */
   constructor(scope, id, props) {
     super(scope, id, props);
+
+    // FR-155: cost allocation tags on all taggable stack resources.
+    // Env from -c stage= / -c env= (default "default"); Project always a-search.
+    const costTags = resolveCostTags({
+      stage: this.node.tryGetContext('stage'),
+      env: this.node.tryGetContext('env'),
+      costEnv: this.node.tryGetContext('costEnv'),
+    });
+    cdk.Tags.of(this).add('Project', costTags.Project);
+    cdk.Tags.of(this).add('Env', costTags.Env);
 
     // FR-149: no VPC/NAT/SecurityGroup constructs - default Lambda egress.
     const { sources } = loadRegistry();

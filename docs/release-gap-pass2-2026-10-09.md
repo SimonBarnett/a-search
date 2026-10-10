@@ -12,7 +12,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | /selftest still empty providers[] | **Yes** (FR-152) | #995 |
 | No API CORS | FR-153 | #996 (**Yes** - corsOrigins; localhost default; no *; pin fr153) |
 | S3 SSE + BlockPublicAccess | FR-154 | #997 (**Yes** - SSE-S3 + BPA + BucketOwnerEnforced + enforceSSL; pin fr154) |
-| Cost tags | FR-155 | #998 |
+| Cost tags | FR-155 | #998 (**Yes** - Project=a-search + Env from -c stage; pin fr155) |
 | Stack stage suffix | FR-156 | #999 |
 | API access logs + throttle | FR-157 | #1000 |
 | Intake egress UNKNOWN | FR-158 | #1001 |
