@@ -12,6 +12,7 @@
     "assertEnv.js",
     "resultsPath.js",
     "writeResults.js",
+    "identity/",
     "intake/",
     "onboarding/",
     "links/",
