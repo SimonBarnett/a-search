@@ -296,6 +296,9 @@ function applyProviderPlainDefaults(fn, sourceId, env) {
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
  * Queue names match providers/queueName.js: a-search-{source}-{env}.
+ *
+ * FR-149: explicit no-VPC - Lambdas use default AWS networking (no ec2.Vpc / NAT / SG in this stack).
+ * MSSQL reachability is ops fixed-egress allowlist (FR-122 option A) documented in docs/deploy.md.
  */
 class ASearchStack extends cdk.Stack {
   /**
@@ -306,6 +309,7 @@ class ASearchStack extends cdk.Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
+    // FR-149: no VPC/NAT/SecurityGroup constructs - default Lambda egress.
     const { sources } = loadRegistry();
     const enabledSources = sources.filter(
       (s) =>
@@ -314,10 +318,10 @@ class ASearchStack extends cdk.Stack {
         (s.enabled.live === true || s.enabled.sandbox === true),
     );
 
+    // FR-148: entry is env-agnostic for accept - do not pin A_SEARCH_ENV.
+    // Job env comes from body.sandbox (default live); workers/maintainer stay pinned.
     /** @type {Record<string, string>} */
-    const entryEnv = {
-      A_SEARCH_ENV: 'sandbox',
-    };
+    const entryEnv = {};
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.

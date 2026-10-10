@@ -1,6 +1,6 @@
 {
   "name": "a-search",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "JWT search entry: fan-out to per-provider SQS + MSSQL local parts maintainer",
   "engines": {
@@ -19,6 +19,7 @@
     "@a-search/shared": "file:shared",
     "@aws-sdk/client-s3": "^3.1147.0",
     "@aws-sdk/client-sqs": "^3.758.0",
+    "jose": "^5.10.0",
     "mssql": "^11.0.2"
   },
   "devDependencies": {

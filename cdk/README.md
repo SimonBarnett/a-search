@@ -1,11 +1,14 @@
-﻿# a-search IaC (FR-023)
+# a-search IaC (FR-023)
 
 AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 
 ## What is included
 
-- `ASearchStack` Ã¢â‚¬â€ Node 20 entry Lambda (`entry/src` Ã¢â€ â€™ `index.handler`)
-- HTTP API Gateway (FR-035): `POST /search` Ã¢â€ â€™ entry Lambda; output `SearchApiUrl`
+- FR-149: explicit **no-VPC** (default Lambda egress; no ec2.Vpc/NAT/SG). MSSQL path = ops fixed-egress allowlist (FR-122 option A) in `docs/deploy.md`
+
+- `ASearchStack` - Node 20 entry Lambda (`entry/src` -> `index.handler`)
+- FR-148: entry omits process `A_SEARCH_ENV` (accept stamps env from body.sandbox; workers stay pinned)
+- HTTP API Gateway (FR-035): `POST /search` -> entry Lambda; output `SearchApiUrl`
 - FR-036: live + sandbox SQS queues and SQS-triggered worker Lambdas for every
   registry source with `enabled.live` or `enabled.sandbox` (amazon, ebay,
   rakuten, cj, awin, impact). Names: `a-search-{id}-{env}`; workers

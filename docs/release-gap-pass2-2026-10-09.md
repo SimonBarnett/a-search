@@ -6,11 +6,11 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 
 ## New gaps found
 
-| Gap | FR | Issue | Status |
-|-----|----|------:|--------|
-| jose missing for JWT JWKS | FR-151 | #994 | |
-| /selftest still empty providers[] | FR-152 | #995 | |
-| No API CORS | FR-153 | #996 | **Yes** (corsOrigins; localhost default; no `*`) |
+| Gap | FR | Issue |
+|-----|----|------:|
+| jose missing for JWT JWKS | FR-151 | #994 (**Yes** - jose dep + stage-entry; pin fr151) |
+| /selftest still empty providers[] | **Yes** (FR-152) | #995 |
+| No API CORS | FR-153 | #996 (**Yes** - corsOrigins; localhost default; no `*`; pin fr153) |
 | S3 SSE + BlockPublicAccess | FR-154 | #997 |
 | Cost tags | FR-155 | #998 |
 | Stack stage suffix | FR-156 | #999 |

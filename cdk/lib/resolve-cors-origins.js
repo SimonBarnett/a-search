@@ -8,7 +8,7 @@
  *
  * Default when unset: http://localhost:3000 (synth / local fixtures).
  * Empty string: deny (no origins).
- * Bare '*' (or any list entry '*') is rejected — production wildcard is OOS.
+ * Bare '*' (or any list entry '*') is rejected - production wildcard is OOS.
  */
 
 /** @type {readonly string[]} */

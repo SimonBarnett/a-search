@@ -10,8 +10,8 @@ which environment it is in and must not cross-write.
 |-----------|------|
 | Request body `sandbox: true\|false` | Optional hint; default `false` -> live |
 | JWT claim (optional) | If present, `env` / `sandbox` claim may force sandbox; UNKNOWN until issuer confirms |
-| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task -- **authoritative for workers/maintainer** |
-| Entry behaviour | Accepted job stamps `env` on SQS messages; workers refuse messages whose `env` ≠ process env |
+| Process env `A_SEARCH_ENV` | `live` \| `sandbox` on each Lambda/task -- **authoritative for workers/maintainer** (entry omits this; FR-148) |
+| Entry behaviour (FR-148) | Entry CDK **omits** `A_SEARCH_ENV` (env-agnostic accept). Accept stamps `env` on SQS from body `sandbox` (default live). Workers refuse messages whose `env` != their process env |
 
 ## Isolation (must not leak)
 
@@ -93,9 +93,9 @@ on the same instance** (`WIN-MPRE8VI4U6U`).
 |------|--------|
 | Chosen option | **(1) separate database on the same instance** |
 | Live DB | `madeiradb` |
-| Sandbox DB | Separate user database on the same SQL Server; **name** is set at deploy via `MSSQL_DATABASE` (placeholder `<sandbox-mssql-database>`). There is **no** `a_search_sandbox` name committed as real -- do not invent credentials or treat a missing DB as already created. |
+| Sandbox DB | Separate user database on the same SQL Server; **name** is set at deploy via `MSSQL_DATABASE`. **Recommended** name (FR-146): `a_search_sandbox` (operator may override). Treat as missing until ops follows [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) -- do not invent credentials. |
 | Rejected | **(2)** schema inside `madeiradb`; **(3)** sandbox reads live read-only |
-| Ops (OOS for this FR) | Create the sandbox DB with **`RECOVERY SIMPLE`** (instance `model` is FULL -- default would grow the log). Apply `maintainer/sql` DDL to **both** live and sandbox DBs. Extend nightly backup/stats jobs for the sandbox DB, or document it as rebuildable with no backup. |
+| Ops | Create the sandbox DB with **`RECOVERY SIMPLE`** (instance `model` is FULL -- default would grow the log). Apply `maintainer/sql` DDL to **both** live and sandbox DBs per [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146). Extend nightly backup/stats jobs for the sandbox DB, or document it as rebuildable with no backup. |
 | Fail-closed | Sandbox workers/maintainer must point `MSSQL_DATABASE` at the sandbox DB -- never write sandbox traffic into `madeiradb`. Rows in a-search DDL still use `Env='sandbox'` inside that DB (`CK_*_Env`). |
 
 **Least-privilege login (spec):** the SQL login used by a-search workers and
@@ -122,7 +122,7 @@ never in git.
 
 `cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
 provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
-via Secrets Manager — never plaintext passwords in git or synth snapshots.
+via Secrets Manager - never plaintext passwords in git or synth snapshots.
 
 | Deploy context | Meaning |
 |----------------|---------|
@@ -140,7 +140,7 @@ Secret **string JSON** keys (create in AWS / ops; never commit values):
 | (optional) `TRUSTED_CONNECTION` / `DOMAIN` | wire later if needed; stack sets `MSSQL_ENCRYPT=true` and `MSSQL_TRUST_SERVER_CERTIFICATE=true` as plain defaults |
 
 `MSSQL_DATABASE` is **plain** env (not from the secret) so live vs sandbox can
-point at different DB names on the same instance. Live amazon/ebay/… workers
+point at different DB names on the same instance. Live amazon/ebay/... workers
 do **not** receive MSSQL env (no SQL). Helper: `wireMssqlSecretEnv` +
 `grantRead` on the secret.
 
@@ -148,7 +148,7 @@ Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
 fallback is not available (`shared/mssql/classifyConnectError.js`).
 
-### CDK Secrets Manager — provider credentials (FR-138)
+### CDK Secrets Manager - provider credentials (FR-138)
 
 Enabled provider workers (amazon, ebay, rakuten, cj, awin, impact) and
 awin/impact onboarding receive marketplace credential env from **per-source**
@@ -156,7 +156,7 @@ Secrets Manager JSON secrets. Stay-dark providers are omitted (no grant).
 
 | Deploy context | Meaning |
 |----------------|---------|
-| `-c amazonProviderSecretArn=arn:...` | Override ARN for amazon (same pattern: `ebayProviderSecretArn`, …) |
+| `-c amazonProviderSecretArn=arn:...` | Override ARN for amazon (same pattern: `ebayProviderSecretArn`, ...) |
 | (omit) | Synth uses `000000000000` placeholder `a-search/provider/<id>-AbCdEf` |
 
 JSON keys match that provider's `.env.example` credential names (e.g.
@@ -182,11 +182,16 @@ Until then, treat off-box MSSQL connects as may-fail: local selftest probes
 map connect failures to `mssql_unreachable` / `mssql_auth_failed`
 (`shared/mssql/classifyConnectError.js`).
 
+**Installable pattern (FR-149):** CDK is **explicit no-VPC** (default Lambda
+egress; no NAT/SG in `ASearchStack`). When ops selects **A**, follow the
+fixed-egress allowlist steps in [deploy.md](deploy.md) (FR-149 section). Do not
+invent private IPs in git. B/C stay valid FR-122 options without VPC IaC here.
+
 **Ops checklist** (no ports opened by this FR):
 
 1. Pick exactly one of A / B / C and record it here as LOCKED (replace PENDING).
-2. If A: publish the egress CIDR/IP set in the ops runbook; open SQL TCP only
-   for that set on the IONOS edge/host firewall.
+2. If A: publish the egress CIDR/IP set in the ops runbook (see deploy.md FR-149);
+   open SQL TCP only for that set on the IONOS edge/host firewall.
 3. If B: stand up the VPN; confirm name resolution for
    `MSSQL_SERVER` / `WIN-MPRE8VI4U6U` from the worker side.
 4. If C: document which processes on the box run MSSQL readers; keep AWS
