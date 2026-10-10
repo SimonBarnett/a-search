@@ -10,11 +10,11 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 |-----|----|------:|
 | jose missing for JWT JWKS | FR-151 | #994 (**Yes** - jose dep + stage-entry; pin fr151) |
 | /selftest still empty providers[] | **Yes** (FR-152) | #995 |
-| No API CORS | FR-153 | #996 |
-| S3 SSE + BlockPublicAccess | FR-154 | #997 |
-| Cost tags | FR-155 | #998 |
-| Stack stage suffix | FR-156 | #999 |
-| API access logs + throttle | FR-157 | #1000 |
+| No API CORS | FR-153 | #996 (**Yes** - corsOrigins; localhost default; no *; pin fr153) |
+| S3 SSE + BlockPublicAccess | FR-154 | #997 (**Yes** - SSE-S3 + BPA + BucketOwnerEnforced + enforceSSL; pin fr154) |
+| Cost tags | FR-155 | #998 (**Yes** - Project=a-search + Env from -c stage; pin fr155) |
+| Stack stage suffix | FR-156 | #999 (**Yes** - -c stage= suffixes names + ASearchStack-id; pin fr156) |
+| API access logs + throttle | FR-157 | #1000 (**Yes** - HttpStage access logs + rate/burst context) |
 | Intake egress UNKNOWN | FR-158 | #1001 |
 | shared files[] missing identity/ | FR-159 | #1002 |
 | Performance still injectable stub | FR-160 | #1003 |
