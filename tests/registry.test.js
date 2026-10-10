@@ -5,7 +5,16 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
-const DEFAULT_ON = ['amazon', 'ebay', 'awin', 'rakuten', 'cj', 'impact'];
+// FR-169 enables aliexpress live+sandbox; keep in DEFAULT_ON.
+const DEFAULT_ON = [
+  'amazon',
+  'ebay',
+  'awin',
+  'rakuten',
+  'cj',
+  'impact',
+  'aliexpress',
+];
 const DEFAULT_OFF = [
   'partnerize',
   'webgains',
@@ -13,7 +22,6 @@ const DEFAULT_OFF = [
   'admitad',
   'kelkoo',
   'skimlinks',
-  'aliexpress',
   'etsy',
   'bol',
   'flexoffers',

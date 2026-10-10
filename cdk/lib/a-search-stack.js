@@ -243,6 +243,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
+  // FR-169: aliexpress enabled -> FR-138 secret wiring
+  aliexpress: ['ALIEXPRESS_API_KEY'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -259,6 +261,9 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+  aliexpress: {
+    ALIEXPRESS_TRACKING_ID: 'a-search',
   },
 };
 

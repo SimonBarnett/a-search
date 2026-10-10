@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /**
  * FR-142: SQS DLQ + redrive on each enabled worker queue (live + sandbox).
@@ -94,8 +94,9 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       .filter(Boolean);
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    assert.equal(primaries.length, 12, `expected 12 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 12, `expected 12 DLQs, got ${dlqs.length}`);
+    // FR-169 enables aliexpress (+2 env-pairs) → 14 queues.
+    assert.equal(primaries.length, 14, `expected 14 primary queues, got ${primaries.length}`);
+    assert.equal(dlqs.length, 14, `expected 14 DLQs, got ${dlqs.length}`);
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {
