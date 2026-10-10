@@ -164,3 +164,12 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-143: prefer lambda logGroup: new logs.LogGroup({retention:ONE_MONTH}) over deprecated logRetention (Custom::LogRetention); DLQ alarms need FR-142 sibling queues; ApproximateNumberOfMessagesVisible >= 1 -> SnsAction on placeholder topic
 - When a harvest tip folds/expands an existing contiguous lesson bullet, refresh every hostile pin that asserts the old string in the same MRB tip; keep-both release-gap CloudWatch Yes + CI Yes when FR-143 meets FR-139 on main
 - MRB docs/mrb after product CI land: verify Actions run green claim, merge origin/main into behind docs tip before gh pr merge, pin ci.yml Node20+setup-python+npm ci/test/synth+180m; self-MRB clear when seat marker differs (marchhare-42664 vs 960).
+- Installable stacks need docs/destroy-rollback.md: what cdk destroy deletes vs RemovalPolicy.RETAIN bucket, retain SQL/secrets, ordered teardown; CI auto-destroy stays OOS (FR-163 / #1006).
+- Worker SQS queues and FR-142 DLQs need encryption: sqs.QueueEncryption.SQS_MANAGED (SSE-SQS); pin via synth SqsManagedSseEnabled; CMK per queue stays OOS (FR-162 / #1005).
+- When performance list* deps are unset and S3_RESULTS_BUCKET is set, wire createPerformanceS3Deps (mapping store + documented stats key); missing stats => zeros not 500 (FR-160 / #1003).
+- When shared/ gains a runtime dir, list it in shared/package.json files[] and pin all runtime dirs so pack cannot drop modules (FR-159 / #1002).
+- FR-157 HttpApi access logs: createDefaultStage false + HttpStage $default with LogGroupLogDestination CLF and resolveApiThrottle context apiThrottleRate/Burst (defaults 20/40); after FR-151 jose must be in node_modules before in-process synth pins
+- SQS->Lambda worker queues need visibilityTimeout > function timeout; LOCK 6x via shared WORKER_* constants and synth-pin every enabled queue (FR-164 / #1007).
+- Set explicit Lambda memorySize floors (entry 256, workers 256|512 for local/MSSQL) so cold JWKS/SDK do not OOM; document in deploy.md and synth-pin MemorySize (FR-165 / #1008).
+- Phase-4 enable FR: flip one registry id both envs, add PROVIDER_CREDENTIAL_KEYS + PLAIN_DEFAULTS, update stay-dark pins/docs that asserted that id false, pin frN with in-process synth for a-search-{id}-{live,sandbox}
+
