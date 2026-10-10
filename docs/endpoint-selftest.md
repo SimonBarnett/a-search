@@ -4,9 +4,9 @@ HTTP **selftest** so an agent or operator can ask which **enabled** providers
 are healthy for the requested **live|sandbox** env. Failures **file intake**
 to bobiverse with `repo=SimonBarnett/a-search`.
 
-Implementation is a later FR-059 slice; this doc locks auth, env, response
-shape, and the intake-on-fail rule. Do **not** treat this as a substitute for
-`POST /search` product fan-out.
+Auth, env, response shape, and intake-on-fail are locked here. Entry wires
+`shared/selftest/orchestrator` plus enabled `selftestProbe` modules (FR-152).
+Do **not** treat this as a substitute for `POST /search` product fan-out.
 
 ## Request
 
