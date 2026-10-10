@@ -75,7 +75,7 @@ const {
 } = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
- * Title-case construct id fragment from source id (amazon â†’ Amazon).
+ * Title-case construct id fragment from source id (amazon Ã¢â€ â€™ Amazon).
  * @param {string} id
  */
 function pascalSource(id) {
@@ -83,7 +83,7 @@ function pascalSource(id) {
 }
 
 /**
- * Registry queueEnv `SQS_AMAZON_URL` â†’ entry env keys SQS_AMAZON_LIVE_URL /
+ * Registry queueEnv `SQS_AMAZON_URL` Ã¢â€ â€™ entry env keys SQS_AMAZON_LIVE_URL /
  * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
  * @param {string} queueEnv
  * @param {'live'|'sandbox'} env
@@ -154,7 +154,7 @@ function resolveEntryJwtSecret(scope, stack) {
 
 /**
  * FR-136: wire JWT_* env from Secrets Manager JSON fields + grant read.
- * CloudFormation dynamic refs — no secret strings in the synth snapshot.
+ * CloudFormation dynamic refs â€” no secret strings in the synth snapshot.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
  */
@@ -220,7 +220,7 @@ function wireMssqlSecretEnv(fn, secret, opts) {
 
 /**
  * FR-138: credential env keys from each enabled provider `.env.example`
- * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* — those are wired elsewhere).
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* â€” those are wired elsewhere).
  * Stay-dark sources are omitted until an enable-provider FR adds them here.
  */
 const PROVIDER_CREDENTIAL_KEYS = {
@@ -245,6 +245,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
   ],
   // FR-167: enable kelkoo (Secrets Manager JSON keys)
   kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
+  // FR-169: aliexpress enabled -> FR-138 secret wiring
+  aliexpress: ['ALIEXPRESS_API_KEY'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -265,6 +267,9 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-167
   kelkoo: {
     KELKOO_COUNTRY: 'uk',
+  },
+  aliexpress: {
+    ALIEXPRESS_TRACKING_ID: 'a-search',
   },
 };
 
@@ -374,7 +379,7 @@ class ASearchStack extends cdk.Stack {
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
     // FR-130 wires env + IAM below.
-    // FR-154: deepen security defaults — SSE-S3, BlockPublicAccess ALL,
+    // FR-154: deepen security defaults â€” SSE-S3, BlockPublicAccess ALL,
     // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
     const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,

@@ -87,8 +87,8 @@
       "kind": "live",
       "folder": "providers/live/aliexpress",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_ALIEXPRESS_URL",
       "rateLimit": {

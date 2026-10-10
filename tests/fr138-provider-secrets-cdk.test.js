@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Only amazon/ebay/rakuten/cj/awin/impact; stay-dark sources omitted.
+ * Enabled sources include FR-167 kelkoo + FR-169 aliexpress; other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -12,7 +12,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress'];
 const STAY_DARK_SAMPLE = ['skimlinks', 'partnerize', 'webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {

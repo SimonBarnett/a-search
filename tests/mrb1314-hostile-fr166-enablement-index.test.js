@@ -13,9 +13,9 @@ const fr = path.join(root, 'docs', 'fr', 'FR-166.md');
 const pin = path.join(root, 'tests', 'fr166-phase4-enablement-index.test.js');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Remaining stay-dark after FR-167 (kelkoo enabled separately). */
+/** Remaining stay-dark after FR-167 kijiji + FR-169 aliexpress. */
 const PHASE2_STUB_IDS = [
-  'skimlinks', 'aliexpress', 'etsy', 'bol', 'partnerize', 'webgains',
+  'skimlinks', 'etsy', 'bol', 'partnerize', 'webgains',
   'tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce',
 ];
 

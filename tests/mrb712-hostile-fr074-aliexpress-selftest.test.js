@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Hostile MRB #712 / FR-074: aliexpress selftestProbe + rateLimit stay-dark.
+ * Hostile MRB #712 / FR-074: aliexpress selftestProbe + rateLimit enabled (FR-169).
  */
 
 const { describe, it } = require('node:test');
@@ -43,13 +43,13 @@ describe('mrb712 hostile FR-074 aliexpress selftest', () => {
     assert.equal(typeof probeAliexpressSelftest, 'function');
   });
 
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled false', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled true (FR-169)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
     assert.equal(ae.rateLimit.maxConcurrency, 1);
     assert.equal(ae.rateLimit.minIntervalMs, 250);
   });

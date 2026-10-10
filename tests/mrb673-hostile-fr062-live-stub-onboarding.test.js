@@ -10,10 +10,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-/** Live stub onboarding books (kelkoo enabled by FR-167; skill still required). */
+/** Live stub onboarding books (kelkoo FR-167 + aliexpress FR-169 enabled; skills still required). */
 const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
-/** Still-disabled live stubs after FR-167. */
-const STAY_DARK_IDS = ['skimlinks', 'aliexpress', 'etsy', 'bol'];
+/** Still-disabled live stubs after FR-167 + FR-169. */
+const STAY_DARK_IDS = ['skimlinks', 'etsy', 'bol'];
 
 function readNoBom(rel) {
   const p = path.join(root, rel);
@@ -46,7 +46,7 @@ describe('MRB #673 hostile FR-062 live stub onboarding', () => {
     });
   }
 
-  it('registry keeps remaining live stubs disabled (kelkoo enabled by FR-167)', () => {
+  it('registry keeps remaining live stubs disabled (kelkoo+aliexpress enabled)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     for (const id of STAY_DARK_IDS) {
