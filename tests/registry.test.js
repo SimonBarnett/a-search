@@ -5,13 +5,21 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
-const DEFAULT_ON = ['amazon', 'ebay', 'awin', 'rakuten', 'cj', 'impact'];
+// FR-167 enables kelkoo live+sandbox; keep in DEFAULT_ON.
+const DEFAULT_ON = [
+  'amazon',
+  'ebay',
+  'awin',
+  'rakuten',
+  'cj',
+  'impact',
+  'kelkoo',
+];
 const DEFAULT_OFF = [
   'partnerize',
   'webgains',
   'tradedoubler',
   'admitad',
-  'kelkoo',
   'skimlinks',
   'aliexpress',
   'etsy',

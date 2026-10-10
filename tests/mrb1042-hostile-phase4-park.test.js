@@ -74,8 +74,8 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
+    // Remaining Phase-2 stay-dark after FR-167 enabled kelkoo.
     for (const id of [
-      'kelkoo',
       'skimlinks',
       'aliexpress',
       'etsy',
@@ -94,5 +94,6 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
     }
     assert.equal(byId.amazon.enabled.live, true);
+    assert.equal(byId.kelkoo.enabled.live, true, 'FR-167 enables kelkoo');
   });
 });
