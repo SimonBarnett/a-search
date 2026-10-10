@@ -225,6 +225,11 @@ The script asserts:
 
 Optional manual follow-up: confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
 
+**Intake egress smoke (FR-158):** from the same account/region, measure
+`POST https://irc.ntsa.uk/bob/v1/intake` (or `A_SEARCH_INTAKE_URL` if set) returns
+success; if blocked, expect CloudWatch `intake_egress_blocked` on the next fatal
+path - see [intake-on-exception.md](intake-on-exception.md) and section FR-158 below.
+
 Do **not** wire this against production from CI without an explicit approval gate.
 
 ## 8. Point rclone (SQL host)
@@ -277,6 +282,25 @@ path for off-box MSSQL from AWS workers/maintainer/onboarding:
 
 **Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
 FR-122 Chosen option.
+
+## 10. Lambda intake egress - measure + fail-soft (FR-158)
+
+Same **no-VPC** networking as FR-149: Lambdas use default AWS egress for HTTPS
+to `irc.ntsa.uk` (bobiverse intake). Cross-link:
+[intake-on-exception.md](intake-on-exception.md) **Lambda egress to intake (FR-158)**.
+
+1. **Measure** from a one-shot Lambda (or bastion) in the deploy account/region:
+   `POST https://irc.ntsa.uk/bob/v1/intake` with a `do-not-file:` / probe title and
+   confirm HTTP 202 (or documented success). Record pass/fail in the **ops**
+   runbook only - never commit real egress CIDRs or private IPs here.
+2. **Env override:** set Lambda env `A_SEARCH_INTAKE_URL` (preferred) or
+   `BOB_INTAKE_URL` only when ops redirects intake; unset keeps the default URL.
+   Implemented in `shared/intake/reportException.js` (`resolveIntakeUrl`).
+3. **Fail-soft:** when `fetch` throws (DNS/timeout/TLS), `reportException`
+   returns `{ ok: false, egressBlocked: true, code: 'intake_egress_blocked' }` and
+   logs structured JSON to CloudWatch - not a silent swallow. Callers still
+   return HTTP 500 / rethrow the original fatal.
+4. Private intake proxy is **out of scope** for this FR.
 
 ## Out of scope for this playbook
 
