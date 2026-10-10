@@ -298,6 +298,7 @@ function applyProviderPlainDefaults(fn, sourceId, env) {
  *
  * FR-149: explicit no-VPC - Lambdas use default AWS networking (no ec2.Vpc / NAT / SG in this stack).
  * MSSQL reachability is ops fixed-egress allowlist (FR-122 option A) documented in docs/deploy.md.
+ * FR-158: same default egress for HTTPS intake (irc.ntsa.uk); measure + fail-soft in docs/intake-on-exception.md.
  */
 class ASearchStack extends cdk.Stack {
   /**
@@ -308,7 +309,8 @@ class ASearchStack extends cdk.Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
-    // FR-149: no VPC/NAT/SecurityGroup constructs - default Lambda egress.
+    // FR-149 / FR-158: no VPC/NAT/SecurityGroup constructs - default Lambda egress
+    // (MSSQL allowlist + HTTPS intake to irc.ntsa.uk).
     const { sources } = loadRegistry();
     const enabledSources = sources.filter(
       (s) =>
