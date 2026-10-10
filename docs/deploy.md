@@ -213,10 +213,18 @@ path for off-box MSSQL from AWS workers/maintainer/onboarding:
 **Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
 FR-122 Chosen option.
 
+## 10. Destroy / rollback (FR-163)
+
+Teardown order, what `cdk destroy` deletes vs retains (results bucket
+`RemovalPolicy.RETAIN`, SQL data, Secrets Manager), and redeploy notes:
+**[destroy-rollback.md](destroy-rollback.md)**. Automated destroy from CI is
+out of scope.
+
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
 - CI auto-smoke against production without approval
+- Automated `cdk destroy` from CI (see [destroy-rollback.md](destroy-rollback.md))
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
 - Opening IONOS firewall ports (ops; FR-149 / FR-122)
