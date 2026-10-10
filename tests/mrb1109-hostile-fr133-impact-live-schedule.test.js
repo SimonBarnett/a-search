@@ -38,7 +38,7 @@ describe('MRB #1109 hostile FR-133 impact onboarding live schedule', () => {
     assertNoBom(fr133Test);
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /ImpactOnboardingLiveSchedule/);
-    assert.match(text, /ruleName:\\s*stagedName\\('a-search-impact-onboarding-live'\\)/);
+    assert.match(text, /ruleName:\s*stagedName\('a-search-impact-onboarding-live'\)/);
     assert.match(
       text,
       /targets:\s*\[\s*new\s+targets\.LambdaFunction\(\s*impactOnboardingLive\s*\)/,
