@@ -19,7 +19,7 @@ const releaseGap = path.join(
   'release-gap-aws-installable-2026-10-09.md',
 );
 
-const ENABLED = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+const ENABLED = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'etsy'];
 const STAY_DARK = ['kelkoo', 'skimlinks', 'partnerize', 'webgains'];
 
 describe('MRB #1138 hostile FR-138 provider secrets', () => {

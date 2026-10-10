@@ -10,7 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'bol']; // etsy enabled FR-170
 
 function readNoBom(rel) {
   const p = path.join(root, rel);

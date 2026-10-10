@@ -101,8 +101,8 @@
       "kind": "live",
       "folder": "providers/live/etsy",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_ETSY_URL",
       "rateLimit": {
