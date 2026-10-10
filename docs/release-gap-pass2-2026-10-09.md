@@ -18,7 +18,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | Intake egress UNKNOWN | FR-158 | #1001 (**Yes** - measure + A_SEARCH_INTAKE_URL + fail-soft intake_egress_blocked) |
 | shared files[] missing identity/ | FR-159 | #1002 (**Yes** - identity/ in files; pin fr159) |
 | Performance still injectable stub | FR-160 | #1003 (**Yes** - S3 stats + mapping default; pin fr160) |
-| Endpoint skill deploy pointers | FR-161 | #1004 |
+| Endpoint skill deploy pointers | FR-161 | #1004 (**Yes** - skill SearchApiUrl + FR-144 smoke; pin fr161) |
 | SQS SSE | FR-162 | #1005 (**Yes** - QueueEncryption.SQS_MANAGED on queues+DLQs; pin fr162) |
 | Destroy/rollback docs | FR-163 | #1006 |
 | visibilityTimeout <= worker timeout | FR-164 | #1007 |
