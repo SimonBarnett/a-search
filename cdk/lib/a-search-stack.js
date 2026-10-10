@@ -28,6 +28,13 @@ const { resolveCostTags } = require('./resolve-cost-tags');
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
 
 /**
+ * FR-164: worker Lambda timeout (seconds). Queue visibility must be strictly
+ * greater; AWS guidance for SQS->Lambda is at least 6x the function timeout.
+ */
+const WORKER_LAMBDA_TIMEOUT_SEC = 60;
+const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
+
+/**
  * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
  * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
  * maintainer, onboarding: 512MB.
@@ -460,9 +467,12 @@ class ASearchStack extends cdk.Stack {
           retentionPeriod: cdk.Duration.days(14),
           encryption: sqs.QueueEncryption.SQS_MANAGED,
         });
+        // FR-164: visibilityTimeout > worker Lambda timeout (6x buffer)
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
-          visibilityTimeout: cdk.Duration.seconds(60),
+          visibilityTimeout: cdk.Duration.seconds(
+            WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
+          ),
           encryption: sqs.QueueEncryption.SQS_MANAGED,
           deadLetterQueue: {
             queue: dlq,
@@ -485,7 +495,7 @@ class ASearchStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
-            timeout: cdk.Duration.seconds(60),
+            timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
             memorySize: workerMemoryMb,
             environment: {
               A_SEARCH_ENV: env,
@@ -918,6 +928,8 @@ module.exports = {
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
+  WORKER_LAMBDA_TIMEOUT_SEC,
+  WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
   ENTRY_LAMBDA_MEMORY_MB,
   WORKER_LAMBDA_MEMORY_MB,
   WORKER_MSSQL_LAMBDA_MEMORY_MB,

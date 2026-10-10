@@ -16,8 +16,8 @@ AWS **CDK** skeleton for the entry Lambda and per-source SQS queues.
 - Entry env receives `SQS_<SOURCE>_LIVE_URL` / `SQS_<SOURCE>_SANDBOX_URL` for
   each enabled source (FR-034 resolveQueueUrl) and SendMessage grants.
 - Maintainer EventBridge schedules (FR-024), every 15 minutes:
-  - `a-search-maintainer-live` Ã¢â€ â€™ Lambda with `A_SEARCH_ENV=live`
-  - `a-search-maintainer-sandbox` Ã¢â€ â€™ Lambda with `A_SEARCH_ENV=sandbox`
+  - `a-search-maintainer-live` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Lambda with `A_SEARCH_ENV=live`
+  - `a-search-maintainer-sandbox` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Lambda with `A_SEARCH_ENV=sandbox`
 - FR-056a: Awin onboarding live Lambda `a-search-awin-onboarding-live`
   (`A_SEARCH_ENV=live`, handler `handler.handler` from
   `providers/local/awin/onboarding/src`).
@@ -44,6 +44,8 @@ Disabled shortlist providers are not synthesised until enabled.
   `deadLetterQueue.maxReceiveCount=3` (14-day retention). Outputs
   `{Pascal}{Live|Sandbox}DeadLetterQueueUrl`. FR-162: primary + DLQ use
   `QueueEncryption.SQS_MANAGED` (SSE-SQS; no CMK per queue).
+- FR-164: worker queue `visibilityTimeout` is 6x worker Lambda timeout (60s
+  timeout -> 360s visibility) so SQS does not redeliver while the function runs.
 - FR-143: explicit `logs.LogGroup` retention ONE_MONTH (30d) on every Lambda;
   placeholder SNS `a-search-ops-alarms`; per-DLQ depth alarm
   (`ApproximateNumberOfMessagesVisible >= 1`) with SnsAction. Output `OpsAlarmTopicArn`.
@@ -67,7 +69,7 @@ the `*_LIVE_URL` / `*_SANDBOX_URL` pair without the resolver.
 
 Shared code lives in repo `shared/` (`@a-search/shared`). Prefer a Lambda
 layer at `/opt/nodejs/a-search` or bundle `shared/` into each function
-asset â€” never duplicate helpers under `providers/*/src`. Layout:
+asset Ã¢â‚¬â€ never duplicate helpers under `providers/*/src`. Layout:
 [`docs/shared-layer.md`](../docs/shared-layer.md). Layer publish automation
 is out of scope for FR-047e.
 

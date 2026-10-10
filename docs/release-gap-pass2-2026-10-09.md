@@ -21,7 +21,7 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | Endpoint skill deploy pointers | FR-161 | #1004 (**Yes** - skill SearchApiUrl + FR-144 smoke; pin fr161) |
 | SQS SSE | FR-162 | #1005 (**Yes** - QueueEncryption.SQS_MANAGED on queues+DLQs; pin fr162) |
 | Destroy/rollback docs | FR-163 | #1006 (**Yes** - destroy-rollback.md + pointers; pin fr163) |
-| visibilityTimeout <= worker timeout | FR-164 | #1007 |
+| visibilityTimeout <= worker timeout | FR-164 | #1007 (**Yes** - visibility 6x timeout 360s; pin fr164) |
 | Explicit Lambda memorySize | FR-165 | #1008 (**Yes** - entry 256 / workers 256|512; pin fr165) |
 
 ## Explicitly still OOS for v0.1
