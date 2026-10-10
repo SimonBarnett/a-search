@@ -15,7 +15,9 @@ const sns = require('aws-cdk-lib/aws-sns');
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
+const apigw = require('aws-cdk-lib/aws-apigateway');
 const { Construct } = require('constructs');
+const { resolveApiThrottle } = require('./resolve-api-throttle');
 const {
   resolveStageSuffix,
   withStageSuffix,
@@ -526,9 +528,10 @@ class ASearchStack extends cdk.Stack {
       }
     }
 
-// FR-035: HTTP API POST /search -> entry (JWT still verified in Lambda)
+    // FR-035: HTTP API POST /search -> entry (JWT still verified in Lambda)
     // FR-153: CORS allowlist from -c corsOrigins (default localhost-only; never *)
     // FR-156: apiName gets optional stage suffix
+    // FR-157: createDefaultStage false so we own $default access logs + throttle
     const corsOrigins = resolveCorsOrigins({
       corsOrigins: this.node.tryGetContext('corsOrigins'),
     });
@@ -537,6 +540,7 @@ class ASearchStack extends cdk.Stack {
       apiName: stagedName('a-search'),
       description:
         'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+      createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
       httpApiProps.corsPreflight = {
@@ -576,6 +580,29 @@ class ASearchStack extends cdk.Stack {
         'EntrySelftestIntegration',
         entry,
       ),
+    });
+
+    // FR-157: access logs + conservative default-route throttle (context-overridable)
+    const apiAccessLogGroup = new logs.LogGroup(this, 'HttpApiAccessLogGroup', {
+      retention: LOG_RETENTION,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    const apiThrottle = resolveApiThrottle({
+      apiThrottleRate: this.node.tryGetContext('apiThrottleRate'),
+      apiThrottleBurst: this.node.tryGetContext('apiThrottleBurst'),
+    });
+    new apigwv2.HttpStage(this, 'HttpApiDefaultStage', {
+      httpApi,
+      stageName: '$default',
+      autoDeploy: true,
+      accessLogSettings: {
+        destination: new apigwv2.LogGroupLogDestination(apiAccessLogGroup),
+        format: apigw.AccessLogFormat.clf(),
+      },
+      throttle: {
+        rateLimit: apiThrottle.rateLimit,
+        burstLimit: apiThrottle.burstLimit,
+      },
     });
 
     // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target

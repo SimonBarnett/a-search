@@ -172,6 +172,23 @@ npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
 ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
 is out of scope. Same `stage` key feeds FR-155 cost `Env` tags.
 
+### API access logs + throttle (FR-157)
+
+HTTP API `$default` stage writes access logs to a dedicated CloudWatch LogGroup
+(30-day retention) and applies conservative default-route throttling so burst
+abuse does not melt worker queues. Override via context:
+
+| Context | Default | Meaning |
+|---------|---------|---------|
+| `apiThrottleRate` | `20` | Steady-state requests/sec |
+| `apiThrottleBurst` | `40` | Short burst ceiling |
+
+```bash
+  -c apiThrottleRate=50 -c apiThrottleBurst=100
+```
+
+WAF WebACL is out of scope for this FR.
+
 ## 6. Read stack outputs
 
 After deploy succeeds, note at least:
