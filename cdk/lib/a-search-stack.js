@@ -251,6 +251,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-177: enable avantlink -> FR-138 secret wiring
+  avantlink: [
+    'AVANTLINK_API_KEY',
+    'AVANTLINK_API_TOKEN',
+    'AVANTLINK_FEED_TOKEN',
+    'AVANTLINK_PUBLISHER_ID',
+    'AVANTLINK_AFFILIATE_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

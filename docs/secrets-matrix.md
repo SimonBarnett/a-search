@@ -78,11 +78,12 @@ Per-source Secrets Manager JSON. Override:
 | kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
 | skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
+| avantlink | worker | AVANTLINK_API_KEY, AVANTLINK_API_TOKEN, AVANTLINK_FEED_TOKEN, AVANTLINK_PUBLISHER_ID, AVANTLINK_AFFILIATE_ID | Secrets Manager JSON (`a-search/avantlink/{env}`) |
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
 bol, partnerize, webgains, tradedoubler,
-admitad, flexoffers, avantlink, shopify, wix, woocommerce.
+admitad, flexoffers, shopify, wix, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
 are plain CDK env - not Secrets Manager.

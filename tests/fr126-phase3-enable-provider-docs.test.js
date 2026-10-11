@@ -22,7 +22,6 @@ const PHASE2_STUB_IDS = [
   'tradedoubler',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',

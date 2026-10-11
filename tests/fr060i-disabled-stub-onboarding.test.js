@@ -17,7 +17,6 @@ const DISABLED_LOCAL = [
   'tradedoubler',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',

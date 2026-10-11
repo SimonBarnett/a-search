@@ -37,6 +37,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     assert.deepEqual(live, [
       'aliexpress',
       'amazon',
+      'avantlink',
       'awin',
       'cj',
       'ebay',
