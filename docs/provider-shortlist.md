@@ -24,7 +24,7 @@ they do not unlock a silent client swap.
 ## Amazon Creators coexistence (FR-181)
 
 Decision (LOCKED): Creators API runs **behind a feature flag** (default off).
-**PA-API SearchItems remains** the live production path for \mazon\.
+**PA-API SearchItems remains** the live production path for `amazon`.
 Creators does **not** replace PA-API. Sandbox may enable the flag for trials;
 live stays PA-API until a later enable FR. Implementation: **FR-182+**
 (client + fixtures, flagged off). See [docs/fr/FR-181.md](fr/FR-181.md).
