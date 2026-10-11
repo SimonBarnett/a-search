@@ -9,12 +9,13 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 
 describe('MRB #1327 hostile FR-169 aliexpress enable', () => {
-  it('registry: aliexpress both envs true; skimlinks stays dark', () => {
+  it('registry: aliexpress both envs true; skimlinks+kelkoo also enabled', () => {
     const registry = JSON.parse(fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('aliexpress').enabled.live, true);
     assert.equal(byId.get('aliexpress').enabled.sandbox, true);
-    assert.equal(byId.get('skimlinks').enabled.live, false);
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
+    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.aliexpress + tracking plain default', () => {
