@@ -12,7 +12,7 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/woocommerce`. Enabled: live=false, sandbox=false.
+Registry folder `providers/local/woocommerce`. Enabled: live=true, sandbox=true (FR-180 merchant; `class: merchant`).
 `rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-112).
 
 ## Catalogue client (FR-109)
@@ -35,7 +35,8 @@ SELECT dbo.Parts WHERE Source='woocommerce' (maintainer owns store sync / feeds)
 ## Worker + queryParts (FR-111)
 
 `src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
-Relative product Urls resolve against `WOOCOMMERCE_STORE_URL`; tracked links stamp `WOOCOMMERCE_AFFILIATE_ID` as `sid`.
+Relative product Urls resolve against `WOOCOMMERCE_STORE_URL` as plain absolute http(s) (merchant; no affiliate `sid`).
+Enabled both envs; no "not wired" stub on the happy path.
 Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/upsert (FR-110) are separate.
 
 ## Selftest + pacing (FR-112)
@@ -43,8 +44,8 @@ Pin: `tests/fr111-woocommerce-worker.test.js`. Catalogue (FR-109) and normalize/
 `src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
 `WOOCOMMERCE_CONSUMER_KEY` feed-ready; returns `{ ok, source, latencyMs, error? }`
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
-(stay-dark; do not flip `enabled`). Pin: `tests/fr112-woocommerce-selftest-probe.test.js`.
+(enabled FR-180). Pin: `tests/fr112-woocommerce-selftest-probe.test.js`.
 
 ## Env
 
-See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, `WOOCOMMERCE_AFFILIATE_ID`, optional `WOOCOMMERCE_API_PREFIX`). Queue env: `SQS_WOOCOMMERCE_URL`.
+See `.env.example` (`MSSQL_*`, `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, optional `WOOCOMMERCE_API_PREFIX`). Queue env: `SQS_WOOCOMMERCE_URL`. No `WOOCOMMERCE_AFFILIATE_ID`.

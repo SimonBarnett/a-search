@@ -22,7 +22,6 @@ const PHASE2_STUB_IDS = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 describe('MRB-1314 hostile FR-166 phase4 enablement index', () => {

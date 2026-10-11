@@ -23,7 +23,6 @@ const PHASE2_STUB_IDS = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 function utf8NoBom(rel) {

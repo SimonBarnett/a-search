@@ -23,7 +23,6 @@ const OTHER_STAY_DARK = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 function utf8NoBom(rel) {

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #874 hostile pins for FR-110 woocommerce normalize + Parts upsert (stay-dark).
+ * MRB #874 hostile pins for FR-110 woocommerce normalize + Parts upsert (enabled FR-180).
  */
 
 const { describe, it } = require('node:test');
@@ -29,14 +29,14 @@ const meta = {
 };
 
 describe('MRB-874 FR-110 hostile', () => {
-  it('registry woocommerce stay-dark both envs (CAST IRON)', () => {
+  it('registry woocommerce enabled both envs (FR-180) (CAST IRON)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('normalize fixture yields required Parts fields + ContentHash', () => {
@@ -115,7 +115,7 @@ describe('MRB-874 FR-110 hostile', () => {
     assert.match(skill, /normalize\.js/);
     assert.match(skill, /upsert\.js/);
     assert.match(skill, /catalog\.js/);
-    assert.match(skill, /stay dark|enabled.*false/i);
+    assert.match(skill, /FR-180|merchant|Enabled: live=true/i);
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
     const worker = fs.readFileSync(

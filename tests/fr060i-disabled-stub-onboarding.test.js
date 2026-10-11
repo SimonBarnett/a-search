@@ -18,7 +18,6 @@ const DISABLED_LOCAL = [  'webgains',
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 function onboardingPath(id) {

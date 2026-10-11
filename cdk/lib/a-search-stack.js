@@ -260,6 +260,12 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
   ],
+  // FR-180: enable woocommerce (merchant) -> FR-138
+  woocommerce: [
+    'WOOCOMMERCE_STORE_URL',
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -295,6 +301,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
+  },
+  // FR-180
+  woocommerce: {
+    WOOCOMMERCE_API_PREFIX: '/wp-json/wc/v3',
   },
 };
 

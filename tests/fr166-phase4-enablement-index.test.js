@@ -22,7 +22,6 @@ const PHASE2_STUB_IDS = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 /** Index still lists every FR-167..180 id (including already-enabled kelkoo). */

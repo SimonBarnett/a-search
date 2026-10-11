@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-110 / #663: woocommerce normalize + Parts upsert contract (stay dark).
+ * FR-110 / #663: woocommerce normalize + Parts upsert contract (enabled FR-180).
  * No live network / no live SQL; injectable MERGE + recorded fixture.
  */
 
@@ -32,7 +32,7 @@ const meta = {
   env: 'sandbox',
 };
 
-describe('FR-110 woocommerce normalize + Parts upsert (stay dark)', () => {
+describe('FR-110 woocommerce normalize + Parts upsert (enabled FR-180)', () => {
   it('normalize fixture has required Parts fields', () => {
     assert.ok(fs.existsSync(DEFAULT_FIXTURE));
     const fixture = readDefaultFixture();
@@ -162,14 +162,14 @@ describe('FR-110 woocommerce normalize + Parts upsert (stay dark)', () => {
     assert.doesNotMatch(MERGE_SQL, /WHILE\s*@/i);
   });
 
-  it('registry woocommerce stays dark', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'woocommerce');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {

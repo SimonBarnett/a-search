@@ -19,6 +19,7 @@ const DEFAULT_ON = [
   'skimlinks',
   'bol',
   'partnerize',
+  'woocommerce',
 ];
 const DEFAULT_OFF = [
   'webgains',
@@ -28,7 +29,6 @@ const DEFAULT_OFF = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 describe('providers/loadRegistry', () => {

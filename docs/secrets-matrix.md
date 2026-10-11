@@ -81,9 +81,10 @@ Per-source Secrets Manager JSON. Override:
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
+| woocommerce | `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180 merchant); plain `WOOCOMMERCE_API_PREFIX` |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, wix, woocommerce.
+webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, wix.
 
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)

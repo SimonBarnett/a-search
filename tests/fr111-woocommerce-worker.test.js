@@ -1,6 +1,6 @@
 'use strict';
 
-/** FR-111: woocommerce MSSQL queryParts + writeResults (stay-dark). */
+//** FR-111: woocommerce MSSQL queryParts + writeResults (enabled FR-180). */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -39,7 +39,6 @@ const mssqlEnv = {
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
   WOOCOMMERCE_STORE_URL: 'https://madeira-demo.example.invalid/shop',
-  WOOCOMMERCE_AFFILIATE_ID: 'woo-aff-test',
 };
 
 function mockPool(recordset) {
@@ -116,7 +115,7 @@ describe('FR-111 woocommerce MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.example\.invalid/);
-    assert.match(String(out.products[0].url), /sid=woo-aff-test/);
+    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -159,7 +158,6 @@ describe('FR-111 woocommerce MSSQL queryParts + worker', () => {
           env: {
             A_SEARCH_ENV: 'sandbox',
             S3_RESULTS_BUCKET: 'b',
-            WOOCOMMERCE_AFFILIATE_ID: 'x',
             WOOCOMMERCE_STORE_URL: 'https://x.example.invalid/shop',
           },
           putObject: async () => {
@@ -228,14 +226,14 @@ describe('FR-111 woocommerce MSSQL queryParts + worker', () => {
     );
   });
 
-  it('registry woocommerce stays dark', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'woocommerce');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('searchTextFromMsg and mssqlConfigFromEnv helpers', () => {

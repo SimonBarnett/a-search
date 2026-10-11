@@ -23,7 +23,6 @@ const PHASE2_STUB_IDS = [
   'avantlink',
   'shopify',
   'wix',
-  'woocommerce',
 ];
 
 describe('FR-061 Phase-2 provider docs + stay-dark', () => {
