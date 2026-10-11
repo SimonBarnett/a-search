@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "asin": "B0CREATOR1",
+      "title": "Creators Fixture Wireless Headphones",
+      "detailPageUrl": "https://www.amazon.co.uk/dp/B0CREATOR1",
+      "imageUrl": "https://example.test/i/creators-headphones.jpg",
+      "price": 31.5,
+      "currency": "GBP"
+    },
+    {
+      "asin": "B0CREATOR2",
+      "title": "Creators Fixture USB-C Cable",
+      "detailPageUrl": "https://www.amazon.co.uk/dp/B0CREATOR2",
+      "price": 8.25,
+      "currency": "GBP"
+    }
+  ]
+}
