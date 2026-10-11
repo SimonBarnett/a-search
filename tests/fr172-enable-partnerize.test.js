@@ -15,7 +15,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',
@@ -127,7 +126,7 @@ describe('FR-172 enable partnerize', () => {
       assert.ok(qHit, `missing queue a-search-partnerize-${env}`);
     }
 
-    for (const dark of ['webgains', 'tradedoubler']) {
+    for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

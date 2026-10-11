@@ -21,15 +21,7 @@ const workerPath = path.join(
   'worker.js',
 );
 
-const STILL_DARK = [
-  'webgains',
-  'tradedoubler',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-];
+const STILL_DARK = ['webgains','admitad','flexoffers','avantlink','shopify','wix'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));

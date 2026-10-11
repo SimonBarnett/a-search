@@ -18,9 +18,7 @@ exist. Completing a client + fixtures does **not** enable the source.
 | id | kind | folder |
 |----|------|--------|
 | `bol` | live | `providers/live/bol` |
-| `partnerize` | local | `providers/local/partnerize` |
 | `webgains` | local | `providers/local/webgains` |
-| `tradedoubler` | local | `providers/local/tradedoubler` |
 | `admitad` | local | `providers/local/admitad` |
 | `flexoffers` | local | `providers/local/flexoffers` |
 | `avantlink` | local | `providers/local/avantlink` |
@@ -31,13 +29,11 @@ exist. Completing a client + fixtures does **not** enable the source.
 ## Already enabled (out of Phase-2 stay-dark)
 
 `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact` ship with
-`enabled.live/sandbox=true` from Phase 1. **`skimlinks`** was enabled by
-FR-168 (#1015) and **`aliexpress`** by FR-169 (#1016) for both envs. Do not flip enabled ids false as part of
+`enabled.live/sandbox=true` from Phase 1. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
-`kelkoo` was enabled for both envs by **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170** `etsy`, **FR-172** `partnerize` enabled (both envs).
-registry flip). Remaining rows in the stay-dark table above stay false until
-their own enable FR.
+Also enabled for both envs: **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170** `etsy`, **FR-172** `partnerize`, **FR-174** `tradedoubler`.
+Remaining rows in the stay-dark table above stay false until their own enable FR.
 
 ## When to enable
 

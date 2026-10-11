@@ -81,11 +81,11 @@ Per-source Secrets Manager JSON. Override:
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
-| woocommerce | `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180 merchant); plain `WOOCOMMERCE_API_PREFIX` |
+| woocommerce | `WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180 merchant); `WOOCOMMERCE_API_PREFIX` plain default |
+| tradedoubler | `TRADEDOUBLER_API_KEY`, `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_FEED_TOKEN`, `TRADEDOUBLER_AFFILIATE_ID`, `TRADEDOUBLER_PUBLISHER_ID` | `a-search-tradedoubler-worker-{live,sandbox}` (FR-174) |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, wix.
-
+webgains, admitad, flexoffers, avantlink, shopify, wix.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
 are plain CDK env - not Secrets Manager.
