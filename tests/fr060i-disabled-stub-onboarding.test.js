@@ -13,9 +13,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const DISABLED_LOCAL = [
   'partnerize',
-  'webgains',
-  'tradedoubler',
-  'admitad',
+  'webgains',  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

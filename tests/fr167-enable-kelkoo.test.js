@@ -18,9 +18,7 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const OTHER_STAY_DARK = [
   'bol',
   'partnerize',
-  'webgains',
-  'tradedoubler',
-  'admitad',
+  'webgains',  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

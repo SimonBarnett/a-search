@@ -20,9 +20,7 @@ const productTest = path.join(
 const PHASE2_STUB_IDS = [
   'bol',
   'partnerize',
-  'webgains',
-  'tradedoubler',
-  'admitad',
+  'webgains',  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

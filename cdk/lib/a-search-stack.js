@@ -251,6 +251,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-174: enable tradedoubler
+  tradedoubler: [
+    'TRADEDOUBLER_API_KEY',
+    'TRADEDOUBLER_API_TOKEN',
+    'TRADEDOUBLER_FEED_TOKEN',
+    'TRADEDOUBLER_AFFILIATE_ID',
+    'TRADEDOUBLER_PUBLISHER_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

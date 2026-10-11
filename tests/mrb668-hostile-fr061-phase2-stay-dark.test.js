@@ -52,9 +52,7 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     const stubs = [
       'bol',
       'partnerize',
-      'webgains',
-      'tradedoubler',
-      'admitad',
+      'webgains',      'admitad',
       'flexoffers',
       'avantlink',
       'shopify',

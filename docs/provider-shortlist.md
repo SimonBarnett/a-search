@@ -32,7 +32,7 @@ they do not unlock a silent client swap.
 | `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
 | `partnerize` | local | false | Travel/finance depth | Feed-heavy; enable when programmes joined |
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
-| `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
+| `tradedoubler` | local | true | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
@@ -75,7 +75,7 @@ flip only that id, pin others stay dark) - see
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
     { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_PARTNERIZE_URL" },
     { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
-    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
+    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },

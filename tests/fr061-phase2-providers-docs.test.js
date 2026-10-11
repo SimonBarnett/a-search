@@ -18,9 +18,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const PHASE2_STUB_IDS = [
   'bol',
   'partnerize',
-  'webgains',
-  'tradedoubler',
-  'admitad',
+  'webgains',  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',
