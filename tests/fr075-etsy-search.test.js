@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR-075: etsy search.js client + recorded fixtures (stay-dark).
- * No live network; registry enabled stays false.
+ * FR-075: etsy search.js client + recorded fixtures (enabled FR-170).
+ * No live network; registry enabled true (FR-170).
  */
 
 const { describe, it } = require('node:test');
@@ -105,13 +105,13 @@ describe('FR-075 etsy search client', () => {
     );
   });
 
-  it('registry keeps etsy enabled.live and enabled.sandbox false', () => {
+  it('registry keeps etsy enabled.live and enabled.sandbox true (FR-170)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
     assert.ok(et, 'registry missing etsy');
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
   });
 });

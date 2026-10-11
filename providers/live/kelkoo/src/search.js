@@ -2,7 +2,7 @@
 
 /**
  * Kelkoo Shopping API v2 offer search client (FR-063).
- * HTTP injectable for recorded fixtures. Stay-dark: do not enable registry.
+ * HTTP injectable for recorded fixtures. Enabled via FR-167; credentials from Secrets Manager (never commit secrets).
  * normalize / worker wiring are out of scope for this FR.
  */
 

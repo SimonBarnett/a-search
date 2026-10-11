@@ -79,14 +79,14 @@ describe('FR-066 kelkoo selftestProbe + rateLimit', () => {
     assert.equal(result.error, 'wrong_source');
   });
 
-  it('registry rateLimit.maxConcurrency is a positive integer; stay-dark', () => {
+  it('registry rateLimit.maxConcurrency is a positive integer; FR-167 enabled', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk, 'registry missing kelkoo');
-    assert.equal(kk.enabled.live, false);
-    assert.equal(kk.enabled.sandbox, false);
+    assert.equal(kk.enabled.live, true);
+    assert.equal(kk.enabled.sandbox, true);
     assert.ok(kk.rateLimit && typeof kk.rateLimit === 'object');
     assert.equal(typeof kk.rateLimit.maxConcurrency, 'number');
     assert.ok(kk.rateLimit.maxConcurrency >= 1);

@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Skimlinks live provider worker (FR-069).
+ * Skimlinks live provider worker (FR-069 / FR-168).
  * search → normalize → writeResults (injectable HTTP + putObject).
- * Stay-dark: registry enabled remains false until a later enable FR.
+ * Registry enabled true (FR-168).
  */
 
 const path = require('node:path');

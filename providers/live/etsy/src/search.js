@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Etsy Open API v3 listing search client (FR-075).
- * HTTP injectable for recorded fixtures. Stay-dark: do not enable registry.
- * normalize / worker wiring are out of scope for this FR.
+ * Etsy Open API v3 listing search client (FR-075 / FR-170).
+ * HTTP injectable for recorded fixtures. Registry enabled true (FR-170).
+ * normalize / worker wiring landed in later FRs.
  */
 
 class EtsyCredsError extends Error {

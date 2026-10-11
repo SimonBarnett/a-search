@@ -14,12 +14,8 @@ const root = path.join(__dirname, '..');
 const doc = path.join(root, 'docs', 'phase3-enable-provider.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Phase-2 stay-dark ids still false (aliexpress enabled by FR-169 / #1016). */
+/** Phase-2 stay-dark ids still false (kelkoo+skimlinks+aliexpress enabled). */
 const PHASE2_STUB_IDS = [
-  'kelkoo',
-  'skimlinks',
-
-  'etsy',
   'bol',
   'partnerize',
   'webgains',

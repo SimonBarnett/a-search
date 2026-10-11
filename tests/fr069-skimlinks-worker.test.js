@@ -1,7 +1,7 @@
-'use strict';
+﻿'use strict';
 
 /**
- * FR-069: skimlinks worker wires search → normalize → writeResults (stay-dark).
+ * FR-069 / FR-168: skimlinks worker wires search -> normalize -> writeResults (enabled).
  */
 
 const { describe, it } = require('node:test');
@@ -39,7 +39,7 @@ const credEnv = {
   S3_RESULTS_BUCKET: 'test-results',
 };
 
-describe('FR-069 skimlinks worker search→normalize→writeResults', () => {
+describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', () => {
   it('fixture path writes results via injected putObject; no stub message', async () => {
     const { run } = require('../providers/live/skimlinks/src/worker');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
@@ -132,14 +132,14 @@ describe('FR-069 skimlinks worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps skimlinks enabled false for both envs', () => {
+  it('registry keeps skimlinks enabled true for both envs (FR-168)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk);
-    assert.equal(sk.enabled.live, false);
-    assert.equal(sk.enabled.sandbox, false);
+    assert.equal(sk.enabled.live, true);
+    assert.equal(sk.enabled.sandbox, true);
   });
 
   it('worker source no longer contains not-wired stub message', () => {

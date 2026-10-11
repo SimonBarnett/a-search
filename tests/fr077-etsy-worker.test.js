@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-077: etsy worker wires search → normalize → writeResults (stay-dark).
+ * FR-077: etsy worker wires search → normalize → writeResults (enabled FR-170).
  */
 
 const { describe, it } = require('node:test');
@@ -101,14 +101,14 @@ describe('FR-077 etsy worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps etsy enabled false for both envs', () => {
+  it('registry keeps etsy enabled true for both envs (FR-170)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
     assert.ok(et);
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
   });
 
   it('worker source no longer contains not-wired stub message', () => {

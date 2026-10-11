@@ -3,7 +3,7 @@
 /**
  * FR-066: Kelkoo selftest probe — credential check + recorded fixture path
  * (or injectable HTTP) proving Shopping API client wiring works.
- * Stay-dark: registry enabled stays false.
+ * Enabled via FR-167; fixture selftest remains the offline pin.
  */
 
 const fs = require('node:fs');

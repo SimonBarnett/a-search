@@ -1,6 +1,6 @@
-'use strict';
+﻿'use strict';
 
-/** MRB #695 hostile: FR-069 skimlinks worker stay-dark + no stub. */
+/** MRB #695 hostile: FR-069 skimlinks worker enabled (FR-168) + no stub. */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -33,12 +33,12 @@ describe('MRB #695 hostile FR-069 skimlinks worker', () => {
     assert.doesNotMatch(src, /<<<<<<</);
   });
 
-  it('registry stays dark', () => {
+  it('registry enabled true (FR-168)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const sl = registry.sources.find((s) => s.id === 'skimlinks');
-    assert.equal(sl.enabled.live, false);
-    assert.equal(sl.enabled.sandbox, false);
+    assert.equal(sl.enabled.live, true);
+    assert.equal(sl.enabled.sandbox, true);
   });
 });

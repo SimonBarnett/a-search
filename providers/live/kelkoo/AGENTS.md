@@ -5,7 +5,7 @@ Provider CWD for registry id `kelkoo` (`kind: live`).
 ## Read first
 
 1. `.grok/skills/a-search-kelkoo/SKILL.md` (maintain)
-2. `.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (setup; stay-dark)
+2. `.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (setup; FR-167 enabled)
 3. `docs/endpoint-search.md`, `docs/environments.md`
 
 ## CAST IRON
