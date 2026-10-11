@@ -72,10 +72,8 @@ describe('MRB-989 Phase-3 AWS installable park hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
-    assert.equal(byId.tradedoubler.enabled.live, true); // FR-174
-    assert.equal(byId.partnerize.enabled.live, false);
-    assert.equal(byId.tradedoubler.enabled.live, false);
-    assert.equal(byId.partnerize.enabled.live, true); // FR-172
+    assert.equal(byId.tradedoubler.enabled.live, true); // FR-174 keep-both
+    assert.equal(byId.partnerize.enabled.live, true); // FR-172 keep-both
     assert.equal(byId.amazon.enabled.live, true);
   });
 });
