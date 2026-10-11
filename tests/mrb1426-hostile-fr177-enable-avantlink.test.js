@@ -20,10 +20,16 @@ test('mrb1426: avantlink enabled both envs; partnerize kept; floors 2*enabled', 
   const pz = byId.get('partnerize');
   assert.equal(pz.enabled.live, true);
   assert.equal(pz.enabled.sandbox, true);
+  const bol = byId.get('bol');
+  assert.equal(bol.enabled.live, true);
+  assert.equal(bol.enabled.sandbox, true);
   const enabled = reg.sources.filter((s) => s.enabled.live && s.enabled.sandbox).map((s) => s.id).sort();
   assert.ok(enabled.includes('avantlink'));
   assert.ok(enabled.includes('partnerize'));
-  assert.equal(enabled.length * 2, 24);
+  assert.ok(enabled.includes('bol'));
+  const stackKeys = fs.readFileSync(path.join(ROOT, 'cdk/lib/a-search-stack.js'), 'utf8');
+  assert.match(stackKeys, /\\bbol\\s*:\\s*\[/);
+  assert.equal(enabled.length * 2, 26);
 });
 
 test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS includes avantlink FR-138 names', () => {

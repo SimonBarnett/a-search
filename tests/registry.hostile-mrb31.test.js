@@ -39,6 +39,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
       'amazon',
       'avantlink',
       'awin',
+      'bol',
       'cj',
       'ebay',
       'etsy',

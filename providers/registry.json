@@ -115,8 +115,8 @@
       "kind": "live",
       "folder": "providers/live/bol",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_BOL_URL",
       "rateLimit": {
