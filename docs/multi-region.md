@@ -56,3 +56,6 @@ Do **not** enable Cross-Region Replication (CRR) for a-search results under acti
 | CRR | Not used (cost/complexity; dual-read ambiguity). Optional future FR only. |
 | SQL / rclone | IONOS SQL host and any rclone sync stay **primary-region oriented**; do not assume SQL multi-region. |
 
+### DNS failover (FR-193)
+
+See [multi-region-dns.md](multi-region-dns.md) for the Route53/external DNS cutover runbook (docs-first; no CDK DNS in FR-193).

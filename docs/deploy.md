@@ -346,5 +346,5 @@ npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-1 -c stage=standby -c 
 - \includeRegionInNames=true\ (or egionSuffix=euwest1\) appends a sanitized region token so function/queue names and the stack id differ across regions (e.g. \-search-entry-standby-euwest1\, stack \ASearchStack-standby-euwest1\).
 - Default deploy (no stage / no includeRegionInNames) keeps primary names unchanged.
 
-DNS / custom-domain failover is FR-193. S3 results are **region-local** per stack (FR-192 LOCKED; no CRR).
+DNS / custom-domain failover is FR-193 ([multi-region-dns.md](multi-region-dns.md)). S3 results are **region-local** per stack (FR-192 LOCKED; no CRR).
 
