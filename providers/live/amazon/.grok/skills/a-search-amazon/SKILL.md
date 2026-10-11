@@ -17,15 +17,21 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-You are working in **`providers/live/amazon/`** — offline worker for
+You are working in **`providers/live/amazon/`** - offline worker for
 registry id `amazon` (`kind: live`, default-on).
 
-## API choice (FR-045)
+## API choice (FR-045 + FR-181)
 
-LOCKED (Phase 1): Amazon live search uses PA-API SearchItems (shipped in
-FR-030). Associates Creators API is a **follow-up FR** when
-credentials/access are available; do not swap clients in this folder
-without that FR. See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md).
+LOCKED (Phase 1 / FR-045): Amazon live search uses PA-API SearchItems (shipped in
+FR-030).
+
+Decision (LOCKED) / FR-181 coexistence: Creators API runs **behind a feature flag**
+(default off). **PA-API SearchItems remains** the live production path. Creators
+does **not** replace PA-API. Implementation starts at **FR-182** (client + fixtures,
+flagged off). Do not swap clients in this folder without that FR path.
+
+See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
+[docs/fr/FR-181.md](../../../../../docs/fr/FR-181.md).
 
 ## Responsibilities
 
@@ -33,25 +39,25 @@ without that FR. See [docs/provider-shortlist.md](../../../../../docs/provider-s
 |------|----------------|
 | SQS consume for Amazon queue | `POST /search` / JWT |
 | Amazon PA-API SearchItems client | MSSQL parts maintainer |
-| Normalize → products[] | Other providers' credentials |
+| Normalize -> products[] | Other providers' credentials |
 | S3 results write at canonical key | Fan-out / registry edits |
 
 ## Worker (FR-030)
 
 `src/worker.js` exports `run(msg, deps?)`:
 
-1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
+1. `assertWorkerEnv` - `message.env` must equal `A_SEARCH_ENV`
 2. Require `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
 3. Signed PA-API `SearchItems` POST (`src/search.js`); injectable `httpRequest` for fixtures
-4. Normalize items (`src/normalize.js`) → `products[]`
-5. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
+4. Normalize items (`src/normalize.js`) -> `products[]`
+5. `writeResults` -> `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
 
 Message shape: `searchId`, `userId`, `env`, `q` / `searchterms`, `catalogId`,
 `category`, `subcategory`, `source`.
 
 ## SQS Lambda handler (FR-038)
 
-`src/handler.js` is the SQS entry: for each `event.Records[]`, `JSON.parse(body)` →
+`src/handler.js` is the SQS entry: for each `event.Records[]`, `JSON.parse(body)` ->
 `run(msg)`. Bad JSON or `run` errors **throw** so Lambda/SQS can retry.
 `assertWorkerEnv` inside `run` rejects wrong-env messages (`EnvIsolationError`).
 
@@ -72,7 +78,7 @@ Tests: `tests/amazon-handler.test.js`.
 | `S3_RESULTS_BUCKET` | results PutObject |
 | `A_SEARCH_ENV` | `live` \| `sandbox` |
 
-Missing Amazon creds → `AmazonCredsError` / `amazon_missing_credentials` with
+Missing Amazon creds -> `AmazonCredsError` / `amazon_missing_credentials` with
 the missing variable names (no HTTP call). Prefer **sandbox** host/tag for
 soak; never log secret values.
 
@@ -94,8 +100,8 @@ npm test
 ```
 
 - FR-016: `tests/amazon-scaffold.test.js`
-- FR-030: `tests/amazon-search.test.js` (fixture → S3 put; missing creds error)
-- FR-038: `tests/amazon-handler.test.js` (SQS record → run; bad JSON; wrong-env)
+- FR-030: `tests/amazon-search.test.js` (fixture -> S3 put; missing creds error)
+- FR-038: `tests/amazon-handler.test.js` (SQS record -> run; bad JSON; wrong-env)
 
 ## Result schema (FR-042)
 
