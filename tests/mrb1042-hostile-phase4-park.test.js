@@ -83,7 +83,6 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       'admitad',
       'flexoffers',
       'avantlink',
-      'shopify',
       'wix',
       'woocommerce',
     ]) {

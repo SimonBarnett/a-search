@@ -18,7 +18,6 @@ const DISABLED_LOCAL = [
   'admitad',
   'flexoffers',
   'avantlink',
-  'shopify',
   'wix',
   'woocommerce',
 ];

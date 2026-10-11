@@ -23,7 +23,6 @@ const PHASE2_STUB_IDS = [
   'admitad',
   'flexoffers',
   'avantlink',
-  'shopify',
   'wix',
   'woocommerce',
 ];

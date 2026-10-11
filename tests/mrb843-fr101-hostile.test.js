@@ -27,14 +27,14 @@ const {
 } = require('../providers/local/shopify/src/catalog.js');
 
 describe('MRB-843 FR-101 hostile', () => {
-  it('registry shopify stay-dark both envs (CAST IRON)', () => {
+  it('registry shopify enabled both envs (FR-178)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'shopify');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.equal(row.kind, 'local');
     assert.equal(row.queueEnv, 'SQS_SHOPIFY_URL');
   });

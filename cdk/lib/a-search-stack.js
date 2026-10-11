@@ -251,6 +251,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-178: enable shopify (merchant app + selftest fallback) -> FR-138
+  shopify: [
+    'SHOPIFY_API_KEY',
+    'SHOPIFY_API_SECRET_KEY',
+    'SHOPIFY_ACCESS_TOKEN',
+    'SHOPIFY_STORE_URL',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -282,6 +289,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   etsy: {
     ETSY_TRACKING_ID: 'a-search',
+  },
+  // FR-178 merchant selftest fallback API version
+  shopify: {
+    SHOPIFY_API_VERSION: '2024-10',
   },
 };
 

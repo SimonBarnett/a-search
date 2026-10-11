@@ -17,7 +17,7 @@ const {
 } = require('../providers/local/shopify/src/selftestProbe');
 
 describe('MRB-852 FR-104 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled (FR-178)', () => {
     assert.deepEqual(rateLimit('shopify'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
@@ -26,8 +26,8 @@ describe('MRB-852 FR-104 hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'shopify');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {
