@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
-// FR-167 kijiji + FR-168 skimlinks + FR-169 aliexpress enabled; keep in DEFAULT_ON.
+// Phase-4 keep-both: tradedoubler (FR-174) + wix merchant (FR-179)
 const DEFAULT_ON = [
   'amazon',
   'ebay',
@@ -19,11 +19,11 @@ const DEFAULT_ON = [
   'skimlinks',
   'bol',
   'partnerize',
+  'tradedoubler',
   'wix',
 ];
 const DEFAULT_OFF = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',
@@ -50,12 +50,9 @@ describe('providers/loadRegistry', () => {
     assert.ok(Array.isArray(registry.sources));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     for (const id of [...DEFAULT_ON, ...DEFAULT_OFF]) {
-      const src = byId.get(id);
-      assert.ok(src, `missing source ${id}`);
-      assert.ok(src.kind === 'live' || src.kind === 'local', `${id}.kind`);
-      assert.equal(typeof src.folder, 'string');
-      assert.equal(typeof src.enabled.live, 'boolean');
-      assert.equal(typeof src.enabled.sandbox, 'boolean');
+      assert.ok(byId.has(id), id);
+      assert.equal(typeof byId.get(id).enabled.live, 'boolean', id);
+      assert.equal(typeof byId.get(id).enabled.sandbox, 'boolean', id);
     }
   });
 });

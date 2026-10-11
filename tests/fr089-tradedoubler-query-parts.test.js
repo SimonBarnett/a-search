@@ -261,13 +261,13 @@ describe('FR-089 tradedoubler MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps tradedoubler enabled false both envs', () => {
+  it('registry keeps tradedoubler enabled true both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

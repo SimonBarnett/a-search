@@ -18,7 +18,6 @@ const STILL_DARK = [
 
   'bol',
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',

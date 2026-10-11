@@ -78,7 +78,6 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     for (const id of [
       'bol',
       'webgains',
-      'tradedoubler',
       'admitad',
       'flexoffers',
       'avantlink',

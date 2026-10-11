@@ -23,6 +23,14 @@ Default query param for the tenant is `userId` (overridable via
 `DEFAULT_ACCOUNT_QUERY_MAP` in the helper (callers may override
 `accountQueryMap`).
 
+
+## Amazon Creators parity (FR-185)
+
+Creators offer / detail URLs use the **same** `buildTrackedUrl` rules as PA-API
+via `providers/live/amazon/src/stampAmazonTrackedUrl.js`:
+JWT `userId` tenant + `AMAZON_PARTNER_TAG` -> `tag=`. Fail closed on empty
+userId or missing partner tag. Do not invent a second Creators-only tagging path.
+
 ## Amazon account env (this FR)
 
 | Env key | Query param (default) | Role |

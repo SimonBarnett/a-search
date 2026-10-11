@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'wix', 'src', 'worker.js');
 
-const STILL_DARK = ['webgains','tradedoubler','admitad','flexoffers','avantlink','shopify','woocommerce'];
+const STILL_DARK = ['webgains','admitad','flexoffers','avantlink','shopify','woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
