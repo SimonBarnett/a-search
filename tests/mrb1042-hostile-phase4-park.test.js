@@ -2,7 +2,7 @@
 
 /**
  * MRB #1042 hostile pins: Phase-4 park (enable/Creators/WAF/multi-region FR-166..194).
- * Refs #1011 #1013 #1015-#1041 — does not close implementation issues.
+ * Refs #1011 #1013 #1015-#1041 â€” does not close implementation issues.
  */
 
 const { describe, it } = require('node:test');
@@ -21,7 +21,7 @@ function read(rel) {
   );
   const text = buf.toString('utf8');
   assert.equal(
-    /â€|â€™|ï»¿|\uFFFD/.test(text),
+    /Ã¢â‚¬|Ã¢â‚¬â„¢|Ã¯Â»Â¿|\uFFFD/.test(text),
     false,
     `${rel} must not contain mojibake`,
   );
@@ -74,9 +74,8 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
-    // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
+    // Remaining Phase-2 stay-dark after FR-167..171 enables.
     for (const id of [
-      'bol',
       'partnerize',
       'webgains',
       'tradedoubler',
@@ -94,5 +93,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     assert.equal(byId.kelkoo.enabled.live, true, 'FR-167 enables kelkoo');
     assert.equal(byId.aliexpress.enabled.live, true, 'FR-169 enables aliexpress');
     assert.equal(byId.skimlinks.enabled.live, true, 'FR-168 enables skimlinks');
+    assert.equal(byId.etsy.enabled.live, true, 'FR-170 enables etsy');
+    assert.equal(byId.bol.enabled.live, true, 'FR-171 enables bol');
   });
 });
