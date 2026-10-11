@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-169 / #1016: enable aliexpress only; FR-138 secret wiring; others stay dark.
+ * FR-168 / #1015: enable skimlinks only; FR-138 secret wiring; others stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -13,6 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
+// Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
 const STILL_DARK = [
   'etsy',
   'bol',
@@ -40,18 +41,14 @@ function utf8NoBom(rel) {
   return text;
 }
 
-describe('FR-169 enable aliexpress', () => {
-  it('registry enables aliexpress both envs; siblings stay dark', () => {
+describe('FR-168 enable skimlinks', () => {
+  it('registry enables skimlinks both envs; siblings stay dark', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
-    const ae = byId.get('aliexpress');
-    assert.ok(ae, 'registry missing aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
-    const kk = byId.get('kelkoo');
-    assert.ok(kk, 'kelkoo');
-    assert.equal(kk.enabled.live, true, 'FR-167 kelkoo.live');
-    assert.equal(kk.enabled.sandbox, true, 'FR-167 kelkoo.sandbox');
+    const sk = byId.get('skimlinks');
+    assert.ok(sk, 'registry missing skimlinks');
+    assert.equal(sk.enabled.live, true);
+    assert.equal(sk.enabled.sandbox, true);
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -59,32 +56,33 @@ describe('FR-169 enable aliexpress', () => {
     }
   });
 
-  it('CDK PROVIDER_CREDENTIAL_KEYS maps aliexpress; FR-169 Decision LOCKED', () => {
+  it('CDK PROVIDER_CREDENTIAL_KEYS maps skimlinks; FR-168 Decision LOCKED', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     const keysBlock = text.match(
       /PROVIDER_CREDENTIAL_KEYS\s*=\s*\{[\s\S]*?\n\};/,
     );
     assert.ok(keysBlock);
-    assert.match(keysBlock[0], /\baliexpress\s*:/);
-    assert.match(keysBlock[0], /ALIEXPRESS_API_KEY/);
-    assert.match(text, /ALIEXPRESS_TRACKING_ID:\s*'a-search'/);
-    const fr = utf8NoBom('docs/fr/FR-169.md');
+    assert.match(keysBlock[0], /\bskimlinks\s*:/);
+    assert.match(keysBlock[0], /SKIMLINKS_API_KEY/);
+    assert.match(keysBlock[0], /SKIMLINKS_PUBLISHER_ID/);
+    assert.match(text, /SKIMLINKS_COUNTRY:\s*'uk'/);
+    const fr = utf8NoBom('docs/fr/FR-168.md');
     assert.match(fr, /Decision \(LOCKED\)/);
-    assert.match(fr, /aliexpress/);
-    assert.match(fr, /ALIEXPRESS_API_KEY/);
+    assert.match(fr, /skimlinks/);
+    assert.match(fr, /SKIMLINKS_API_KEY/);
     const matrix = utf8NoBom('docs/secrets-matrix.md');
-    assert.match(matrix, /aliexpress/i);
-    assert.match(matrix, /ALIEXPRESS_API_KEY/);
+    assert.match(matrix, /skimlinks/i);
+    assert.match(matrix, /SKIMLINKS_API_KEY/);
     assert.doesNotMatch(
       matrix,
-      /Stay-dark omitted[\s\S]*\baliexpress\b/i,
+      /Stay-dark omitted[\s\S]*\bskimlinks\b/i,
     );
   });
 
-  it('synth: aliexpress live+sandbox workers+queues; secret refs; dark ids absent', () => {
+  it('synth: skimlinks live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr169');
+    const outdir = path.join(root, 'cdk.out-fr168');
     fs.rmSync(outdir, { recursive: true, force: true });
     const app = new cdk.App({ outdir });
     new ASearchStack(app, 'ASearchStack');
@@ -109,25 +107,26 @@ describe('FR-169 enable aliexpress', () => {
     }
 
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-aliexpress-worker-${env}`);
-      assert.ok(envVars.ALIEXPRESS_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.ALIEXPRESS_API_KEY);
+      const envVars = envOf(`a-search-skimlinks-worker-${env}`);
+      assert.ok(envVars.SKIMLINKS_API_KEY, `missing API key ${env}`);
+      const keyVal = String(envVars.SKIMLINKS_API_KEY);
       assert.ok(
         keyVal.includes('resolve:secretsmanager') ||
           keyVal.includes('Secret') ||
-          typeof envVars.ALIEXPRESS_API_KEY === 'object',
-        `ALIEXPRESS_API_KEY must be Secrets Manager ref (${env})`,
+          typeof envVars.SKIMLINKS_API_KEY === 'object',
+        `SKIMLINKS_API_KEY must be Secrets Manager ref (${env})`,
       );
-      assert.equal(envVars.ALIEXPRESS_TRACKING_ID, 'a-search');
+      assert.equal(envVars.SKIMLINKS_COUNTRY, 'uk');
       const qHit = queues.find(
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-aliexpress-${env}`,
+          q.Properties.QueueName === `a-search-skimlinks-${env}`,
       );
-      assert.ok(qHit, `missing queue a-search-aliexpress-${env}`);
+      assert.ok(qHit, `missing queue a-search-skimlinks-${env}`);
     }
 
+    // aliexpress is enabled on main (FR-169); assert remaining stay-dark have no workers.
     for (const dark of ['partnerize', 'webgains', 'etsy']) {
       const hit = fns.find(
         (res) =>
@@ -137,5 +136,12 @@ describe('FR-169 enable aliexpress', () => {
       );
       assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
     }
+    const ae = fns.find(
+      (res) =>
+        res.Properties &&
+        typeof res.Properties.FunctionName === 'string' &&
+        res.Properties.FunctionName.includes('-aliexpress-worker-'),
+    );
+    assert.ok(ae, 'FR-169 aliexpress worker must remain after fold');
   });
 });

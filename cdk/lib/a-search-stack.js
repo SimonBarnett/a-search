@@ -245,6 +245,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
   ],
   // FR-167: enable kelkoo (Secrets Manager JSON keys)
   kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
+  // FR-168: skimlinks enabled -> FR-138 secret wiring
+  skimlinks: ['SKIMLINKS_API_KEY', 'SKIMLINKS_PUBLISHER_ID'],
   // FR-169: aliexpress enabled -> FR-138 secret wiring
   aliexpress: ['ALIEXPRESS_API_KEY'],
 };
@@ -268,6 +270,11 @@ const PROVIDER_PLAIN_DEFAULTS = {
   kelkoo: {
     KELKOO_COUNTRY: 'uk',
   },
+  // FR-168
+  skimlinks: {
+    SKIMLINKS_COUNTRY: 'uk',
+  },
+  // FR-169
   aliexpress: {
     ALIEXPRESS_TRACKING_ID: 'a-search',
   },

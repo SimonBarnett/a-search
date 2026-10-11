@@ -12,7 +12,8 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 
-const LIVE_STUB_IDS = ['skimlinks', 'etsy', 'bol']; // kelkoo FR-167 + aliexpress FR-169 enabled
+/** Live stubs still stay-dark (kelkoo FR-167 + skimlinks FR-168 + aliexpress FR-169 enabled). */
+const LIVE_STUB_IDS = ['etsy', 'bol'];
 
 function onboardingSkillPath(id) {
   return path.join(
@@ -72,5 +73,7 @@ describe('FR-062 live stub onboarding skillbooks', () => {
     for (const id of LIVE_STUB_IDS) {
       assert.match(doc, new RegExp(`\\b${id}\\b`), id);
     }
+    // skimlinks onboarding skill remains even after FR-168 enable
+    assert.match(doc, /\bskimlinks\b/);
   });
 });

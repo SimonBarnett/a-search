@@ -43,6 +43,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
       'impact',
       'kelkoo',
       'rakuten',
+      'skimlinks',
     ]);
   });
 });

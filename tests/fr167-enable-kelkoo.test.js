@@ -16,7 +16,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
 const OTHER_STAY_DARK = [
-  'skimlinks',
   'etsy',
   'bol',
   'partnerize',
@@ -53,6 +52,10 @@ describe('FR-167 enable provider kijiji', () => {
     assert.equal(kk.enabled.sandbox, true, 'kelkoo.sandbox');
     assert.equal(kk.kind, 'live');
     assert.equal(kk.queueEnv, 'SQS_KELKOO_URL');
+    for (const id of ['skimlinks', 'aliexpress']) {
+      assert.equal(byId.get(id).enabled.live, true, `${id}.live`);
+      assert.equal(byId.get(id).enabled.sandbox, true, `${id}.sandbox`);
+    }
     for (const id of OTHER_STAY_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -70,7 +73,7 @@ describe('FR-167 enable provider kijiji', () => {
     assert.match(keysBlock[0], /KELKOO_API_KEY/);
     assert.match(keysBlock[0], /KELKOO_PUBLISHER_ID/);
     assert.match(text, /PROVIDER_PLAIN_DEFAULTS[\s\S]*kelkoo[\s\S]*KELKOO_COUNTRY/);
-    for (const dark of ['skimlinks', 'partnerize', 'webgains']) {
+    for (const dark of ['partnerize', 'webgains', 'etsy']) {
       assert.doesNotMatch(
         keysBlock[0],
         new RegExp(`\\b${dark}\\b`),
@@ -127,7 +130,7 @@ describe('FR-167 enable provider kijiji', () => {
     }
 
     // Sibling stay-dark: no worker
-    for (const dark of ['skimlinks', 'partnerize']) {
+    for (const dark of ['partnerize', 'webgains', 'etsy']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
@@ -135,6 +138,15 @@ describe('FR-167 enable provider kijiji', () => {
           res.Properties.FunctionName.includes(`-${dark}-worker-`),
       );
       assert.equal(hit, undefined, `${dark} must stay without worker`);
+    }
+    for (const on of ['skimlinks', 'aliexpress']) {
+      const hit = fns.find(
+        (res) =>
+          res.Properties &&
+          typeof res.Properties.FunctionName === 'string' &&
+          res.Properties.FunctionName.includes(`-${on}-worker-`),
+      );
+      assert.ok(hit, `${on} worker must remain after concurrent enable fold`);
     }
   });
 

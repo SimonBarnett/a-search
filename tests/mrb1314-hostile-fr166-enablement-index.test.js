@@ -15,8 +15,17 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining stay-dark after FR-167 kijiji + FR-169 aliexpress. */
 const PHASE2_STUB_IDS = [
-  'skimlinks', 'etsy', 'bol', 'partnerize', 'webgains',
-  'tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce',
+  'etsy',
+  'bol',
+  'partnerize',
+  'webgains',
+  'tradedoubler',
+  'admitad',
+  'flexoffers',
+  'avantlink',
+  'shopify',
+  'wix',
+  'woocommerce',
 ];
 
 describe('MRB-1314 hostile FR-166 phase4 enablement index', () => {
