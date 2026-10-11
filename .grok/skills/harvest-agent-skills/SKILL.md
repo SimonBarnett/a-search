@@ -179,3 +179,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Harvest-lesson tips must append/fold one bullet on current main SKILL.md never rewrite/wipe the book; neutralize GitHub close keywords in session summaries so tips do not Closes product issues (MRB #1332 / #1338).
 - a-search behind-main FR-158 stack conflict: keep resolveStageSuffix+costTags then FR-149/FR-158 no-VPC egress comment; release-gap Yes for 153-157 + FR-158
 - Phase-4 enable FR: after enabling an id, retarget mrb668 Phase-2 stub count (and fr166 PHASE2_STUB_IDS) down by 1 and FR-142/143 floors to 2*enabled_count before CI; concurrent open enable tips stay dark until merged
+- Phase-4 enable MRB: when tip CONFLICTS after a sibling enable lands, one origin/main keep-both fold must retain both PROVIDER_CREDENTIAL_KEYS blocks (close each array with ],), retarget FR-142/143 floors to 2*enabled_count, and drop both ids from every stay-dark/PHASE2/sibling OTHER_STAY_DARK list before push
