@@ -11,8 +11,8 @@ provider credentials [FR-138](fr/FR-138.md); deploy steps [deploy.md](deploy.md)
 | Lambda | JWT_* | Provider JSON | MSSQL_* | S3_RESULTS_BUCKET |
 |--------|-------|---------------|---------|-------------------|
 | `a-search-entry` | Yes (FR-136) | No | No | Yes (plain name + IAM) |
-| `a-search-{cj}-worker-{live,sandbox}` | No | Yes (own source only) | No | Yes |
-| `a-search-{awin}-worker-{live,sandbox}` | No | Yes (own source) | Yes (FR-137) | Yes |
+| `a-search-{amazon,ebay,rakuten,cj}-worker-{live,sandbox}` | No | Yes (own source only) | No | Yes |
+| `a-search-{awin,impact}-worker-{live,sandbox}` | No | Yes (own source) | Yes (FR-137) | Yes |
 | `a-search-maintainer-{live,sandbox}` | No | No | Yes | Yes |
 | `a-search-awin-onboarding-{live,sandbox}` | No | Yes (awin) | Yes | Yes |
 | `a-search-impact-onboarding-{live,sandbox}` | No | Yes (impact) | Yes | Yes |
@@ -78,7 +78,7 @@ Per-source Secrets Manager JSON. Override:
 | kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
 | skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
-| flexoffers | worker | FLEXOFFERS_API_KEY, FLEXOFFERS_API_TOKEN, FLEXOFFERS_FEED_TOKEN, FLEXOFFERS_PUBLISHER_ID, FLEXOFFERS_AFFILIATE_ID | Secrets Manager JSON (`a-search/flexoffers/{env}`) |
+| flexoffers | `FLEXOFFERS_API_KEY`, `FLEXOFFERS_API_TOKEN`, `FLEXOFFERS_FEED_TOKEN`, `FLEXOFFERS_PUBLISHER_ID`, `FLEXOFFERS_AFFILIATE_ID` | `a-search-flexoffers-worker-{live,sandbox}` (FR-176) |
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
