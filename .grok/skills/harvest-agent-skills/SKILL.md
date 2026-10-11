@@ -174,4 +174,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable FR: flip one registry id both envs, add PROVIDER_CREDENTIAL_KEYS + PLAIN_DEFAULTS, update stay-dark pins/docs that asserted that id false, pin frN with in-process synth for a-search-{id}-{live,sandbox}
 - a-search product MRB: when tip is far behind main, merge origin/main into the FR branch and re-wait CI before gh pr merge; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
 - Harvest-lesson tips must append/fold one bullet on current main SKILL.md never rewrite/wipe the book; neutralize GitHub close keywords in session summaries so tips do not Closes product issues (MRB #1332 / #1338).
-
+- Harvest-lesson tip MRB: CONFLICTING SKILL.md -> keep-both tip bullet + main bullets; after product merge open docs/mrb NEEDLE pin; if concurrent enable raises floors, retarget prior docs/mrb floor asserts on the docs tip before merge.
