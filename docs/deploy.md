@@ -332,3 +332,19 @@ out of scope.
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
 - Opening IONOS firewall ports (ops; FR-149 / FR-122)
+
+## Multi-region second stack (FR-191)
+
+Active-passive (FR-190). Deploy a standby stack from the same source without renaming it:
+
+`ash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-1 -c stage=standby -c includeRegionInNames=true
+`
+
+- egion\ selects the AWS region for the stack (FR-141).
+- \stage\ adds the FR-156 name suffix.
+- \includeRegionInNames=true\ (or egionSuffix=euwest1\) appends a sanitized region token so function/queue names and the stack id differ across regions (e.g. \-search-entry-standby-euwest1\, stack \ASearchStack-standby-euwest1\).
+- Default deploy (no stage / no includeRegionInNames) keeps primary names unchanged.
+
+DNS / custom-domain failover is FR-193. S3 replication choice is FR-192.
+

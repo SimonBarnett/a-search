@@ -39,3 +39,7 @@ Club Madeira **SQL is a single IONOS instance**. Active-active AWS would still f
 - [docs/deploy.md](deploy.md) (primary `eu-west-2`)
 - [docs/environments.md](environments.md) (IONOS SQL)
 - [docs/fr/FR-190.md](fr/FR-190.md)
+
+### Second-region stack (FR-191)
+
+Use \-c region=\ + \-c stage=\ + \-c includeRegionInNames=true\ (see [deploy.md](deploy.md)).
