@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * Amazon live provider worker (FR-030).
- * PA-API SearchItems -> normalize -> writeResults (injectable HTTP + putObject).
+ * Amazon live provider worker (FR-030 / FR-183).
+ * Default: PA-API SearchItems -> normalize -> writeResults.
+ * When AMAZON_SEARCH_API=creators (or AMAZON_CREATORS_ENABLED), use Creators
+ * client instead (FR-181/182). Fail-closed if Creators creds missing while flag on.
  */
 
 const path = require('node:path');
@@ -16,6 +18,12 @@ const {
   assertAmazonCreds,
   AmazonCredsError,
 } = require('./search');
+const {
+  searchAmazonCreators,
+  isCreatorsSearchEnabled,
+  assertCreatorsCreds,
+  AmazonCreatorsCredsError,
+} = require('./creatorsSearch');
 
 /**
  * @param {object} msg - SQS fan-out payload
@@ -24,6 +32,7 @@ const {
  *   httpRequest?: Function,
  *   putObject?: Function,
  *   searchAmazon?: Function,
+ *   searchAmazonCreators?: Function,
  * }} [deps]
  */
 async function run(msg, deps) {
@@ -33,13 +42,23 @@ async function run(msg, deps) {
   const envVars = (deps && deps.env) || process.env;
   assertWorkerEnv(msg, envVars.A_SEARCH_ENV);
 
-  // Fail fast with a clear error before any HTTP / S3 call.
-  assertAmazonCreds(envVars);
+  const useCreators = isCreatorsSearchEnabled(envVars);
+  let searchFn;
+  if (useCreators) {
+    // Fail-closed before any HTTP / S3 call when Creators flag is on.
+    assertCreatorsCreds(envVars);
+    searchFn =
+      deps && typeof deps.searchAmazonCreators === 'function'
+        ? deps.searchAmazonCreators
+        : searchAmazonCreators;
+  } else {
+    assertAmazonCreds(envVars);
+    searchFn =
+      deps && typeof deps.searchAmazon === 'function'
+        ? deps.searchAmazon
+        : searchAmazon;
+  }
 
-  const searchFn =
-    deps && typeof deps.searchAmazon === 'function'
-      ? deps.searchAmazon
-      : searchAmazon;
   const products = await searchFn(msg, {
     env: envVars,
     httpRequest: deps && deps.httpRequest,
@@ -64,9 +83,9 @@ async function run(msg, deps) {
     products,
     key: written.key,
     bucket: written.bucket,
+    searchApi: useCreators ? 'creators' : 'paapi',
   };
 }
-
 
 /**
  * SQS Lambda entry (FR-038 / FR-036 CDK `worker.handler`).
@@ -81,6 +100,7 @@ module.exports = {
   handler,
   run,
   AmazonCredsError,
+  AmazonCreatorsCredsError,
   EnvIsolationError,
   // test helper path
   _fixtureDir: path.join(__dirname, '..', 'fixtures'),
