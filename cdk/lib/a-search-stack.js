@@ -251,6 +251,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-171: bol enabled -> FR-138 secret wiring
+  bol: ['BOL_API_KEY'],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
@@ -297,6 +299,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   etsy: {
     ETSY_TRACKING_ID: 'a-search',
+  },
+  // FR-171
+  bol: {
+    BOL_TRACKING_ID: 'a-search',
   },
 };
 

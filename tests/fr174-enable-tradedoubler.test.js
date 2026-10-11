@@ -13,16 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'bol',
-  'webgains',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const STILL_DARK = ["webgains", "admitad", "flexoffers", "avantlink", "shopify", "wix", "woocommerce"];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -49,6 +40,8 @@ describe('FR-174 enable tradedoubler', () => {
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 keep-both');
+    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -129,7 +122,7 @@ describe('FR-174 enable tradedoubler', () => {
       assert.ok(qHit, `missing queue a-search-tradedoubler-${env}`);
     }
 
-    for (const dark of ['bol', 'webgains']) {
+    for (const dark of ['webgains', 'shopify', 'admitad', 'flexoffers']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

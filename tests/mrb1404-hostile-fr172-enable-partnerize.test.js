@@ -2,7 +2,7 @@
 
 /**
  * MRB #1404 docs/hostile: FR-172 enable partnerize live+sandbox + FR-138 secret wiring.
- * Pins survive keep-both with FR-167..170 (11 enabled -> 22 queues); bol stays dark.
+ * Keep-both with FR-171 bol => 12 enabled -> 24 queues.
  */
 
 const { describe, it } = require('node:test');
@@ -19,14 +19,15 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1404 hostile FR-172 enable partnerize', () => {
-  it('registry: partnerize both envs true; bol stays dark; etsy+skimlinks enabled', () => {
+  it('registry: partnerize both envs true; bol also enabled; etsy+skimlinks enabled', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('partnerize').enabled.live, true);
     assert.equal(byId.get('partnerize').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 still open');
+    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
   });
@@ -40,13 +41,13 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     assert.match(text, /PARTNERIZE_PUBLISHER_ID/);
   });
 
-  it('FR-142/143 pins use 22 primary/DLQ floors (11 enabled x 2)', () => {
+  it('FR-142/143 pins use 26 primary/DLQ floors (13 enabled x 2)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 24 primary queues/);
-    assert.match(fr143, /expected 24 DLQ depth alarms/);
+    assert.match(fr142, /expected 26 primary queues/);
+    assert.match(fr143, /expected 26 DLQ depth alarms/);
     assert.match(fr142, /'partnerize'/);
   });
 
@@ -61,8 +62,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const mrb668 = utf8NoBom(
       path.join('tests', 'mrb668-hostile-fr061-phase2-stay-dark.test.js'),
     );
-    assert.match(mrb668, /exactly 8 Phase-2 stub ids stay dark/);
-    assert.match(mrb668, /stubs\.length,\s*8/);
+    assert.match(mrb668, /exactly 7 Phase-2 stub ids stay dark/);
+    assert.match(mrb668, /stubs\.length,\s*7/);
     const fr = utf8NoBom(path.join('docs', 'fr', 'FR-172.md'));
     assert.match(fr, /Decision\s*\(LOCKED\)/i);
     assert.match(fr, /partnerize/i);
