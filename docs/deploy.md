@@ -169,7 +169,7 @@ can sit beside production:
 npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
 ```
 
-ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
+ResultsBucket stays CDK auto-named (unique per stack). Multi-region strategy is LOCKED active-passive (see [multi-region.md](multi-region.md) FR-190). Multi-region active-active
 is out of scope. Same `stage` key feeds FR-155 cost `Env` tags.
 
 ### API access logs + throttle (FR-157)
