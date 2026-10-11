@@ -34,7 +34,7 @@ they do not unlock a silent client swap.
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
-| `kelkoo` | live | false | Shopping/offer search | Price-comparison shape; different result schema |
+| `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
 | `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
 | `etsy` | live | false | Handmade/niche | Open API v3; smaller club overlap |
@@ -66,7 +66,7 @@ flip only that id, pin others stay dark) - see
     { "id": "ebay", "kind": "live", "folder": "providers/live/ebay", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_EBAY_URL" },
     { "id": "rakuten", "kind": "live", "folder": "providers/live/rakuten", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_RAKUTEN_URL" },
     { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
-    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_KELKOO_URL" },
+    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_KELKOO_URL" },
     { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
     { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ALIEXPRESS_URL" },
     { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ETSY_URL" },
