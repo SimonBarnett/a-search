@@ -183,3 +183,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After concurrent Phase-4 enable keep-both, retarget each sibling enable-FR synth stay-dark list so neither lists the other as dark (fr172 must not assert tradedoubler dark; fr174 must not assert partnerize dark).
 - Amazon worker Creators flag (FR-183): when AMAZON_SEARCH_API=creators assertCreatorsCreds fail-closed then searchAmazonCreators; else PA-API assertAmazonCreds; return searchApi in result
 - Multi-region (FR-190): lock active-passive with primary eu-west-2; madeiradb/SQL stays single-region on IONOS; do not choose active-active without a SQL multi-region story
+- Phase-4 enable tips repeatedly corrupt secrets-matrix Lambda family shorthand and use a 4-column provider grant row; MRB must restore `{amazon,ebay,rakuten,cj}` / `{awin,impact}` and a 3-column grant before PASS (same class as admitad #1419).
