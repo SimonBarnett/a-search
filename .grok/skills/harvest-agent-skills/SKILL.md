@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book Ã¢â‚¬â€ FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â FAIL-supersede).
 
-Branch `harvest/Ã¢â‚¬Â¦` or `fix/Ã¢â‚¬Â¦` -> PR to `main`.
+Branch `harvest/ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦` or `fix/ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) Ã¢â‚¬â€ **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll Ã¢â€ â€™ fetch Ã¢â€ â€™ upsert Ã¢â€ â€™ delete (not
+   `schedule.handler`** must orchestrate roll ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ fetch ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ upsert ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill Ã¢â‚¬â€ already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÃ¢â‚¬Â¦EXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives Ã¢â‚¬â€ fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â fix the fixture instead.
 
 ## Do not
 
@@ -173,3 +173,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Set explicit Lambda memorySize floors (entry 256, workers 256|512 for local/MSSQL) so cold JWKS/SDK do not OOM; document in deploy.md and synth-pin MemorySize (FR-165 / #1008).
 - Phase-4 enable FR: flip one registry id both envs, add PROVIDER_CREDENTIAL_KEYS + PLAIN_DEFAULTS, update stay-dark pins/docs that asserted that id false, pin frN with in-process synth for a-search-{id}-{live,sandbox}
 - When two Phase-4 enable tips race, keep-both both PROVIDER_CREDENTIAL_KEYS/PLAIN_DEFAULTS and retarget FR-142/143 floors to 2*(enabled count); update sibling hostile pins that hard-code the old floor (e.g. mrb1327 14->16).
+- a-search product MRB: when tip is far behind main, merge origin/main into the FR branch and re-wait CI before gh pr merge; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
+- Harvest-lesson tips must append/fold one bullet on current main SKILL.md never rewrite/wipe the book; neutralize GitHub close keywords in session summaries so tips do not Closes product issues (MRB #1332 / #1338).

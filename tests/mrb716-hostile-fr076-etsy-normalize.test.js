@@ -68,13 +68,13 @@ describe('mrb716 hostile FR-076 etsy normalize', () => {
     });
   });
 
-  it('stay-dark; skill FR-076 ASCII; ETSY_TRACKING_ID in env', () => {
+  it('enabled FR-170; skill FR-076 ASCII; ETSY_TRACKING_ID in env', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
 
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
@@ -90,7 +90,7 @@ describe('mrb716 hostile FR-076 etsy normalize', () => {
     const env = fs.readFileSync(envPath, 'utf8');
     assert.ok(!env.includes('\ufffd'));
     assert.ok(!env.includes('<<<<<<'));
-    assert.match(env, /^ETSY_TRACKING_ID=$/m);
+    assert.match(env, /^ETSY_TRACKING_ID=(a-search)?$/m);
   });
 
   it('missing track throws TrackedUrlError when url present', () => {

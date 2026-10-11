@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-078: etsy selftestProbe + registry rateLimit (stay-dark).
+ * FR-078: etsy selftestProbe + registry rateLimit (enabled FR-170).
  */
 
 const { describe, it } = require('node:test');
@@ -84,8 +84,8 @@ describe('FR-078 etsy selftestProbe + rateLimit', () => {
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
     assert.ok(et);
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
     assert.ok(et.rateLimit);
     assert.equal(typeof et.rateLimit.maxConcurrency, 'number');
     assert.ok(et.rateLimit.maxConcurrency > 0);

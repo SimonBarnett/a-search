@@ -75,11 +75,13 @@ Per-source Secrets Manager JSON. Override:
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
 | impact | `IMPACT_CAMPAIGN_ID`, `IMPACT_ACCOUNT_SID`, `IMPACT_AUTH_TOKEN` | workers + impact onboarding live/sandbox |
-| kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167) |
+| kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
+| skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
+| etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-skimlinks, etsy, bol, partnerize, webgains, tradedoubler,
+bol, partnerize, webgains, tradedoubler,
 admitad, flexoffers, avantlink, shopify, wix, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)

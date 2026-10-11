@@ -1,12 +1,12 @@
-# a-search — provider shortlist (this pass)
+# a-search - provider shortlist (this pass)
 
 Every likely candidate ships as its **own folder + `.env` + SQS queue**, listed in
 `providers/registry.json` with per-env **`enabled`** flags (`{ "live": bool, "sandbox": bool }`).
 Entry fan-out only enqueues sources where `enabled[env]` is true. Operators flip
-flags without code edits. Loader: `providers/loadRegistry.js` → `enabled(env)`.
+flags without code edits. Loader: `providers/loadRegistry.js` -> `enabled(env)`.
 
 Kinds: **live** (remote search API on each SQS job) vs **local** (owned part
-data / feed ingest — Awin-style).
+data / feed ingest - Awin-style).
 
 Legacy reference: Amazon PA-API, eBay Browse, Awin-as-local (`MerchantProducts`).
 ShareASale is **not** a candidate (merged into Awin; API gone Oct 2025).
@@ -26,35 +26,35 @@ they do not unlock a silent client swap.
 |----|------|-----------------|-------------|---------------------|
 | `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). Creators API = follow-up FR |
 | `ebay` | live | true | Marketplace coverage | Browse API OAuth; port from `eBay.js` |
-| `awin` | local | true | Canonical aggregator → local FTS | Product **datafeeds** ingest + local search (not Awin reporting API) |
+| `awin` | local | true | Canonical aggregator -> local FTS | Product **datafeeds** ingest + local search (not Awin reporting API) |
 | `rakuten` | live | true | Real Product Search API | Keyword search; XML; 100 calls/min; optional later local-feed twin |
 | `cj` | live | true | Best next network search API | GraphQL Product Search `ads.api.cj.com` |
-| `impact` | local | true | DTC/brand gaps | Catalog feeds → local index |
+| `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
 | `partnerize` | local | false | Travel/finance depth | Feed-heavy; enable when programmes joined |
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
-| `kelkoo` | live | false | Shopping/offer search | Price-comparison shape; different result schema |
-| `skimlinks` | live | false | Meta across many networks | One API many nets; enable if first-class nets are thin |
+| `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
+| `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
 | `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
-| `etsy` | live | false | Handmade/niche | Open API v3; smaller club overlap |
+| `etsy` | live | true | Handmade/niche | Enabled FR-170;  Open API v3; smaller club overlap |
 | `bol` | live | false | NL/BE marketplace | Enable only for Benelux launch |
 | `flexoffers` | local | false | US mid-tail feeds | After Impact |
 | `avantlink` | local | false | US outdoor/retail feeds | After Impact |
-| `shopify` | local | false | Merchant store catalogues (Madeira) | Admin API → MSSQL Parts; enable per merchant |
-| `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API → MSSQL Parts |
-| `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST → MSSQL Parts |
+| `shopify` | local | false | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
+| `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API -> MSSQL Parts |
+| `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST -> MSSQL Parts |
 
 **This pass:** scaffold **all rows** (folder, `.env.example`, worker stub,
 queue name placeholder, registry entry). Defaults above set who is on at
 first deploy; every id remains individually switchable.
 
 **Phase 2 (FR-061):** complete remaining stubs with fixture-backed clients while
-keeping registry `enabled` false until credentials exist — see
+keeping registry `enabled` false until credentials exist - see
 `docs/phase2-providers.md` (CAST IRON stay-dark).
 
 **Phase 3 enable (FR-126):** one-provider enable ritual (credentials, selftest,
-flip only that id, pin others stay dark) — see
+flip only that id, pin others stay dark) - see
 `docs/phase3-enable-provider.md`. Do not bulk-enable Phase-2 ids.
 
 ## Example `providers/registry.json`
@@ -66,10 +66,10 @@ flip only that id, pin others stay dark) — see
     { "id": "ebay", "kind": "live", "folder": "providers/live/ebay", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_EBAY_URL" },
     { "id": "rakuten", "kind": "live", "folder": "providers/live/rakuten", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_RAKUTEN_URL" },
     { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
-    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_KELKOO_URL" },
-    { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_SKIMLINKS_URL" },
+    { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_KELKOO_URL" },
+    { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
     { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ALIEXPRESS_URL" },
-    { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ETSY_URL" },
+    { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ETSY_URL" },
     { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
