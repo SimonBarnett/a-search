@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['bol', 'webgains', 'tradedoubler', 'admitad', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'tradedoubler', 'admitad', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -116,7 +116,7 @@ describe('FR-170 enable etsy', () => {
       assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['bol', 'webgains']) {
+    for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

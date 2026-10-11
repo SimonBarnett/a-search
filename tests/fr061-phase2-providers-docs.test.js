@@ -15,16 +15,7 @@ const doc = path.join(root, 'docs', 'phase2-providers.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining Phase-2 stubs (skimlinks FR-168 + aliexpress FR-169 enabled). */
-const PHASE2_STUB_IDS = [
-  'bol',
-  'webgains',
-  'tradedoubler',
-  'admitad',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const PHASE2_STUB_IDS = ['webgains', 'tradedoubler', 'admitad', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 describe('FR-061 Phase-2 provider docs + stay-dark', () => {
   it('docs/phase2-providers.md states stay-dark until credentials', () => {

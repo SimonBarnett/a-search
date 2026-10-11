@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-081: bol worker wires search → normalize → writeResults (stay-dark).
+ * FR-081: bol worker wires search → normalize → writeResults (enabled FR-171).
  */
 
 const { describe, it } = require('node:test');
@@ -101,14 +101,14 @@ describe('FR-081 bol worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps bol enabled false for both envs', () => {
+  it('registry keeps bol enabled true for both envs (FR-171)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
     assert.ok(bol);
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
   });
 
   it('worker source no longer contains not-wired stub message', () => {
