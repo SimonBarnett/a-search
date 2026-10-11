@@ -109,14 +109,14 @@ describe('FR-088 webgains feed-parser hook', () => {
     assert.match(String(creds.defaultFeedUrl), /webgains\.csv/);
   });
 
-  it('registry keeps webgains enabled false both envs', () => {
+  it('registry keeps webgains enabled true both envs', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const pz = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(pz);
-    assert.equal(pz.enabled.live, false);
-    assert.equal(pz.enabled.sandbox, false);
+    assert.equal(pz.enabled.live, true);
+    assert.equal(pz.enabled.sandbox, true);
   });
 
   it('skill documents feed-parser hook + env keys', () => {

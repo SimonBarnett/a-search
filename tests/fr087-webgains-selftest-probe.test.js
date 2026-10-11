@@ -132,8 +132,8 @@ describe('FR-087 webgains selftestProbe + rateLimit', () => {
     );
     const row = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.ok(row.rateLimit);
     assert.equal(typeof row.rateLimit.maxConcurrency, 'number');
     assert.ok(row.rateLimit.maxConcurrency > 0);

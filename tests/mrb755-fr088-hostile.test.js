@@ -24,8 +24,8 @@ describe('MRB-755 FR-088 hostile', () => {
     );
     const wg = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
     assert.equal(wg.kind, 'local');
   });
 

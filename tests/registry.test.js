@@ -18,10 +18,10 @@ const DEFAULT_ON = [
   'etsy',
   'skimlinks',
   'bol',
+  'webgains',
   'partnerize',
 ];
 const DEFAULT_OFF = [
-  'webgains',
   'tradedoubler',
   'admitad',
   'flexoffers',

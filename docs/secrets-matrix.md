@@ -82,8 +82,10 @@ Per-source Secrets Manager JSON. Override:
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
 
+| webgains | `WEBGAINS_API_KEY`, `WEBGAINS_API_TOKEN`, `WEBGAINS_FEED_TOKEN`, `WEBGAINS_PUBLISHER_ID`, `WEBGAINS_CAMPAIGN_ID` | `a-search-webgains-worker-{live,sandbox}` (FR-173) |
+
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, wix, woocommerce.
+tradedoubler, admitad, flexoffers, avantlink, shopify, wix, woocommerce.
 
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
@@ -102,3 +104,4 @@ are plain CDK env - not Secrets Manager.
 - `tests/fr136-jwt-secrets-cdk.test.js` - entry JWT wiring
 - `tests/fr137-mssql-secrets-cdk.test.js` - MSSQL local-only
 - `tests/fr138-provider-secrets-cdk.test.js` - enabled sources only
+

@@ -36,8 +36,8 @@ describe('MRB-727 FR-086 hostile', () => {
     );
     const wg = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
     assert.equal(wg.kind, 'local');
     assert.equal(wg.queueEnv, 'SQS_WEBGAINS_URL');
   });

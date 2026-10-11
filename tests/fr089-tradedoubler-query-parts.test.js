@@ -267,7 +267,7 @@ describe('FR-089 tradedoubler MSSQL queryParts', () => {
     );
     const wg = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

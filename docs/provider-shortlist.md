@@ -31,7 +31,7 @@ they do not unlock a silent client swap.
 | `cj` | live | true | Best next network search API | GraphQL Product Search `ads.api.cj.com` |
 | `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
 | `partnerize` | local | true | Travel/finance depth | Enabled FR-172; MSSQL Parts + feed hooks |
-| `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
+| `webgains` (FR-173 enabled) | local | false | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |

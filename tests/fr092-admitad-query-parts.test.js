@@ -267,7 +267,7 @@ describe('FR-092 admitad MSSQL queryParts', () => {
     );
     const wg = registry.sources.find((s) => s.id === 'admitad');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

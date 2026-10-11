@@ -260,6 +260,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
   ],
+  // FR-173: enable webgains -> FR-138 secret wiring
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
