@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-181 / #1028: Amazon Creators coexistence with PA-API — docs lock only.
+ * FR-181 / #1028: Amazon Creators coexistence with PA-API - docs lock only.
  */
 
 const { describe, it } = require('node:test');
