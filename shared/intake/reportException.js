@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * Fatal-exception → bobiverse intake (FR-048a).
+ * Fatal-exception -> bobiverse intake (FR-048a).
  * POST https://irc.ntsa.uk/bob/v1/intake with repo SimonBarnett/a-search.
+ * FR-158: A_SEARCH_INTAKE_URL / BOB_INTAKE_URL override; fail-soft on egress block.
  * Handler wiring is out of scope for FR-048a.
  */
 
@@ -14,6 +15,27 @@ const DEFAULT_REPO = 'SimonBarnett/a-search';
 
 /** @type {Set<string>} in-process dedupe of idempotency keys */
 const seenKeys = new Set();
+
+/**
+ * FR-158: resolve intake URL (opts > A_SEARCH_INTAKE_URL > BOB_INTAKE_URL > default).
+ * @param {{ intakeUrl?: string }} [opts]
+ * @returns {string}
+ */
+function resolveIntakeUrl(opts = {}) {
+  const fromOpts = opts && opts.intakeUrl != null ? String(opts.intakeUrl).trim() : '';
+  if (fromOpts) return fromOpts;
+  const fromA =
+    process.env.A_SEARCH_INTAKE_URL != null
+      ? String(process.env.A_SEARCH_INTAKE_URL).trim()
+      : '';
+  if (fromA) return fromA;
+  const fromBob =
+    process.env.BOB_INTAKE_URL != null
+      ? String(process.env.BOB_INTAKE_URL).trim()
+      : '';
+  if (fromBob) return fromBob;
+  return DEFAULT_INTAKE_URL;
+}
 
 /**
  * @param {{ code?: string, message?: string, route?: string, err?: Error & { code?: string } }} parts
@@ -117,7 +139,7 @@ function buildIntakePayload(opts = {}) {
  */
 async function reportException(opts = {}) {
   const payload = buildIntakePayload(opts);
-  const intakeUrl = opts.intakeUrl || DEFAULT_INTAKE_URL;
+  const intakeUrl = resolveIntakeUrl(opts);
   const fetchImpl =
     opts.fetch ||
     (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
@@ -132,21 +154,48 @@ async function reportException(opts = {}) {
     throw err;
   }
 
-  const res = await fetchImpl(intakeUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(payload),
-  });
-  const status = res && typeof res.status === 'number' ? res.status : 0;
-  const responseText =
-    res && typeof res.text === 'function' ? await res.text() : '';
-  seenKeys.add(payload.idempotency_key);
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    payload,
-    responseText,
-  };
+  try {
+    const res = await fetchImpl(intakeUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    const status = res && typeof res.status === 'number' ? res.status : 0;
+    const responseText =
+      res && typeof res.text === 'function' ? await res.text() : '';
+    seenKeys.add(payload.idempotency_key);
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      payload,
+      responseText,
+      intakeUrl,
+    };
+  } catch (netErr) {
+    // FR-158: fail-soft when Lambda cannot reach intake (egress blocked / DNS).
+    // Log loudly; do not throw - callers must still rethrow the original fatal.
+    const code = 'intake_egress_blocked';
+    const detail =
+      netErr && netErr.message ? String(netErr.message) : String(netErr);
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        code,
+        route: opts.route || '',
+        intakeUrl,
+        message: detail.slice(0, 500),
+      }),
+    );
+    seenKeys.add(payload.idempotency_key);
+    return {
+      ok: false,
+      egressBlocked: true,
+      code,
+      payload,
+      intakeUrl,
+      error: detail.slice(0, 500),
+    };
+  }
 }
 
 /** Test helper: clear in-process dedupe. */
@@ -158,6 +207,7 @@ module.exports = {
   reportException,
   buildIntakePayload,
   buildIdempotencyKey,
+  resolveIntakeUrl,
   redact,
   clearReportExceptionDedupe,
   DEFAULT_INTAKE_URL,

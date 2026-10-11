@@ -2,7 +2,7 @@
 
 /**
  * Normalize Kelkoo Shopping API offers → a-search product schema (FR-064/065).
- * Stay-dark: do not enable registry.
+ * Enabled via FR-167; credentials from Secrets Manager (never commit secrets).
  *
  * Field map:
  * - `offerId` → `id`

@@ -14,9 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
-  'kelkoo',
   'skimlinks',
-  'aliexpress',
   'bol',
   'partnerize',
   'webgains',
@@ -50,6 +48,10 @@ describe('FR-170 enable etsy', () => {
     assert.ok(et, 'registry missing etsy');
     assert.equal(et.enabled.live, true);
     assert.equal(et.enabled.sandbox, true);
+    const kk = byId.get('kelkoo');
+    assert.equal(kk.enabled.live, true, 'FR-167');
+    const ae = byId.get('aliexpress');
+    assert.equal(ae.enabled.live, true, 'FR-169');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -126,7 +128,7 @@ describe('FR-170 enable etsy', () => {
       assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['kelkoo', 'skimlinks', 'aliexpress', 'partnerize']) {
+    for (const dark of ['skimlinks', 'partnerize', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

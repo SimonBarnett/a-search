@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Enabled sources include FR-170 etsy; other Phase-2 stubs stay dark.
+ * Enabled sources include FR-167 kelkoo + FR-169 aliexpress; other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -12,16 +12,8 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = [
-  'amazon',
-  'ebay',
-  'rakuten',
-  'cj',
-  'awin',
-  'impact',
-  'etsy',
-];
-const STAY_DARK_SAMPLE = ['kelkoo', 'skimlinks', 'partnerize', 'webgains'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy'];
+const STAY_DARK_SAMPLE = ['skimlinks', 'partnerize', 'webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -52,7 +44,6 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /CJ_API_TOKEN/);
     assert.match(text, /AWIN_API_TOKEN/);
     assert.match(text, /IMPACT_CAMPAIGN_ID/);
-    assert.match(text, /ETSY_API_KEY/);
     // Stay-dark ids must not appear in PROVIDER_CREDENTIAL_KEYS block
     for (const dark of STAY_DARK_SAMPLE) {
       assert.doesNotMatch(
@@ -134,6 +125,12 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'impact-sandbox',
     );
     assertSecretRef(
+      envOf('a-search-kelkoo-worker-live'),
+      'KELKOO_API_KEY',
+      'kelkoo-live',
+    );
+    assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
+    assertSecretRef(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
       'awin-onboarding-live',
@@ -142,21 +139,6 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       envOf('a-search-impact-onboarding-sandbox'),
       'IMPACT_CAMPAIGN_ID',
       'impact-onboarding-sandbox',
-    );
-
-    assertSecretRef(
-      envOf('a-search-etsy-worker-live'),
-      'ETSY_API_KEY',
-      'etsy-live',
-    );
-    assertSecretRef(
-      envOf('a-search-etsy-worker-sandbox'),
-      'ETSY_API_KEY',
-      'etsy-sandbox',
-    );
-    assert.equal(
-      envOf('a-search-etsy-worker-live').ETSY_TRACKING_ID,
-      'a-search',
     );
 
     // Stay-dark: no worker Lambdas

@@ -33,6 +33,17 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     const live = [...enabled('live')].sort();
     const sandbox = [...enabled('sandbox')].sort();
     assert.deepEqual(live, sandbox);
-    assert.deepEqual(live, ['amazon', 'awin', 'cj', 'ebay', 'impact', 'rakuten']);
+    // FR-167 kijiji + FR-169 aliexpress on the default-on set (both envs).
+    assert.deepEqual(live, [
+      'aliexpress',
+      'amazon',
+      'awin',
+      'cj',
+      'ebay',
+      'etsy',
+      'impact',
+      'kelkoo',
+      'rakuten',
+    ]);
   });
 });

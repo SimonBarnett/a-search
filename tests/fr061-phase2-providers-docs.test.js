@@ -14,11 +14,9 @@ const root = path.join(__dirname, '..');
 const doc = path.join(root, 'docs', 'phase2-providers.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Providers still stubbed / awaiting account details (etsy enabled by FR-170). */
+/** Providers still stubbed / awaiting account details (aliexpress enabled by FR-169). */
 const PHASE2_STUB_IDS = [
-  'kelkoo',
   'skimlinks',
-  'aliexpress',
   'bol',
   'partnerize',
   'webgains',

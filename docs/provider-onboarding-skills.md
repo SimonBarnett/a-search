@@ -24,8 +24,8 @@ Examples:
 | `cj` | `providers/live/cj/.grok/skills/a-search-cj-onboarding/SKILL.md` |
 | `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (enabled FR-170; onboarding skill retained) |
+| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (enabled FR-169; onboarding skill retained) |
+| `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 
 Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
@@ -81,7 +81,7 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `skimlinks`, `aliexpress`, `bol` (etsy enabled by FR-170)
+`skimlinks`, `bol` (kelkoo FR-167; aliexpress FR-169; etsy FR-170 enabled)
 
 Do not invent live credential steps or flip registry enabled from these stubs.
 See `docs/phase2-providers.md` stay-dark rule.
