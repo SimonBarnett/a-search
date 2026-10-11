@@ -12,7 +12,7 @@
 | HTTP API / Lambdas / SQS | Regional stacks; standby is cold or warm but not dual-active for the same env+stage. |
 | S3 results | **Region-local** ResultsBucket per stack (FR-192 LOCKED). No S3 CRR. Primary owns live results until cutover; standby stack has its own bucket. |
 | Secrets | Replicate or re-seed into the standby stack as needed for failover; never commit secret values. |
-| MSSQL / madeiradb | **Stays single-region on IONOS** (`WIN-MPRE8VI4U6U` / `madeiradb`). Do **not** assume SQL multi-region or dual-write. AWS regions fail over independently of the SQL host. |
+| MSSQL / madeiradb | **Stays single-region on IONOS** (`madeiradb`). Do **not** assume SQL multi-region or dual-write. AWS regions fail over independently of the SQL host. |
 
 ### Why not active-active
 
