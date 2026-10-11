@@ -180,3 +180,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search behind-main FR-158 stack conflict: keep resolveStageSuffix+costTags then FR-149/FR-158 no-VPC egress comment; release-gap Yes for 153-157 + FR-158
 - Phase-4 enable FR: after enabling an id, retarget mrb668 Phase-2 stub count (and fr166 PHASE2_STUB_IDS) down by 1 and FR-142/143 floors to 2*enabled_count before CI; concurrent open enable tips stay dark until merged
 - Phase-4 enable: after flipping registry+stay-dark lists, also flip leftover hostile pins that still assert the id enabled=false (title may already say FR-N enabled while asserts stay false)
+- When Phase-4 enables shopify merchant, update FR-607/mrb608 so only remaining dark Madeira stubs (wix/woocommerce) assert enabled=false; pin class=merchant merchantConnect on the enabled id
