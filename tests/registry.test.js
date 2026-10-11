@@ -19,10 +19,10 @@ const DEFAULT_ON = [
   'skimlinks',
   'bol',
   'partnerize',
+  'tradedoubler',
 ];
 const DEFAULT_OFF = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',
