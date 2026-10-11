@@ -43,6 +43,7 @@ without that FR. See [docs/provider-shortlist.md](../../../../../docs/provider-s
 1. `assertWorkerEnv` - `message.env` must equal `A_SEARCH_ENV`
 2. Require `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
 3. Signed PA-API `SearchItems` POST (`src/search.js`); injectable `httpRequest` for fixtures
+   - FR-182: optional Creators client \src/creatorsSearch.js\ behind \AMAZON_SEARCH_API=creators\ (default off)
 4. Normalize items (`src/normalize.js`) - `products[]`
 5. `writeResults` - `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
 
