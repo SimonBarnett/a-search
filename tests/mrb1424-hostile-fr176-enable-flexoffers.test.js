@@ -23,7 +23,11 @@ test('mrb1424: flexoffers enabled both envs; partnerize kept; floors 2*enabled',
   const enabled = reg.sources.filter((s) => s.enabled.live && s.enabled.sandbox).map((s) => s.id);
   assert.ok(enabled.includes('flexoffers'));
   assert.ok(enabled.includes('partnerize'));
-  assert.equal(enabled.length * 2, 24);
+  assert.ok(enabled.includes('bol'));
+  const floor = enabled.length * 2;
+  assert.equal(floor, 26); // keep-both bol+partnerize+flexoffers (13x2); retarget with enabled_count
+  const fr142 = fs.readFileSync(path.join(ROOT, 'tests/fr142-sqs-dlq.test.js'), 'utf8');
+  assert.match(fr142, new RegExp(`expected ${floor} primary queues`));
 });
 
 test('mrb1424: CDK PROVIDER_CREDENTIAL_KEYS includes flexoffers FR-138 names', () => {
