@@ -47,6 +47,8 @@ describe('FR-173 enable webgains', () => {
     assert.equal(wg.kind, 'local');
     assert.equal(byId.get('bol').enabled.live, true, 'FR-171 bol on main');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize on main');
+    assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 keep-both');
+    assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -66,6 +68,8 @@ describe('FR-173 enable webgains', () => {
     assert.match(keysBlock[0], /WEBGAINS_FEED_TOKEN/);
     assert.match(keysBlock[0], /WEBGAINS_PUBLISHER_ID/);
     assert.match(keysBlock[0], /WEBGAINS_CAMPAIGN_ID/);
+    assert.match(keysBlock[0], /\btradedoubler\s*:/);
+    assert.match(keysBlock[0], /TRADEDOUBLER_API_KEY/);
     const fr = utf8NoBom('docs/fr/FR-173.md');
     assert.match(fr, /Decision \(LOCKED\)/);
     assert.match(fr, /webgains/);
