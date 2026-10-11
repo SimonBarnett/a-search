@@ -30,7 +30,7 @@ they do not unlock a silent client swap.
 | `rakuten` | live | true | Real Product Search API | Keyword search; XML; 100 calls/min; optional later local-feed twin |
 | `cj` | live | true | Best next network search API | GraphQL Product Search `ads.api.cj.com` |
 | `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
-| `partnerize` | local | false | Travel/finance depth | Feed-heavy; enable when programmes joined |
+| `partnerize` | local | true | Travel/finance depth | Enabled FR-172; MSSQL Parts + feed hooks |
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
@@ -73,7 +73,7 @@ flip only that id, pin others stay dark) - see
     { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
-    { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_PARTNERIZE_URL" },
+    { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_PARTNERIZE_URL" },
     { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
     { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
