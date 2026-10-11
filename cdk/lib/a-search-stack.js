@@ -284,9 +284,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   etsy: {
     ETSY_TRACKING_ID: 'a-search',
+  },
+  // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
-  },
   },
 };
 
