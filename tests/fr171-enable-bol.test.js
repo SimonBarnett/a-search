@@ -62,6 +62,19 @@ describe('FR-171 enable bol', () => {
     assert.match(keysBlock[0], /\bbol\s*:/);
     assert.match(keysBlock[0], /BOL_API_KEY/);
     assert.match(text, /BOL_TRACKING_ID:\s*'a-search'/);
+    // PLAIN_DEFAULTS.bol must be a sibling of etsy (not nested); CDK env values must be strings.
+    const plainBlock = text.match(
+      /PROVIDER_PLAIN_DEFAULTS\s*=\s*\{[\s\S]*?\n\};/,
+    );
+    assert.ok(plainBlock, 'PROVIDER_PLAIN_DEFAULTS block');
+    assert.match(
+      plainBlock[0],
+      /etsy:\s*\{[^}]*\}\s*,\s*(?:\/\/[^\n]*\n\s*)*bol:\s*\{/,
+    );
+    assert.doesNotMatch(
+      plainBlock[0],
+      /etsy:\s*\{[^}]*\bbol\s*:/,
+    );
     const fr = utf8NoBom('docs/fr/FR-171.md');
     assert.match(fr, /Decision \(LOCKED\)/);
     assert.match(fr, /bol/);
