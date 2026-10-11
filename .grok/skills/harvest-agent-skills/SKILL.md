@@ -182,3 +182,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable: after flipping registry+stay-dark lists, also flip leftover hostile pins that still assert the id enabled=false (title may already say FR-N enabled while asserts stay false)
 - After concurrent Phase-4 enable keep-both, retarget each sibling enable-FR synth stay-dark list so neither lists the other as dark (fr172 must not assert tradedoubler dark; fr174 must not assert partnerize dark).
 - Amazon worker Creators flag (FR-183): when AMAZON_SEARCH_API=creators assertCreatorsCreds fail-closed then searchAmazonCreators; else PA-API assertAmazonCreds; return searchApi in result
+- Self-MRB is per seat: if this seat authored or pushed any commit on the assigned PR (including a behind-main keep-both fold), ACK then GIVEUP; a sibling seat reviews even when the PR is re-offered DIRTY.
