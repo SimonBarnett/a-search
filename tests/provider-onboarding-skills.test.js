@@ -70,8 +70,8 @@ describe('FR-060b provider onboarding skillbooks', () => {
   });
 
   // FR-062: disabled live stubs still require onboarding books (stay-dark).
-  // aliexpress enabled by FR-169; skill still required for remaining stubs.
-  const LIVE_STUB_IDS = ['bol'];
+  // FR-167..171 enabled; skills still required.
+  const LIVE_STUB_IDS = [];
   const ONBOARDING_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
 
   it('FR-062: each live stub/onboarding id has onboarding SKILL.md; stubs stay dark', () => {
@@ -99,6 +99,12 @@ describe('FR-060b provider onboarding skillbooks', () => {
     const kk = sources.find((x) => x.id === 'kelkoo');
     assert.equal(kk.enabled.live, true, 'FR-167 enables kelkoo live');
     assert.equal(kk.enabled.sandbox, true, 'FR-167 enables kelkoo sandbox');
+    const et = sources.find((x) => x.id === 'etsy');
+    assert.equal(et.enabled.live, true, 'FR-170 enables etsy live');
+    assert.equal(et.enabled.sandbox, true, 'FR-170 enables etsy sandbox');
+    const bl = sources.find((x) => x.id === 'bol');
+    assert.equal(bl.enabled.live, true, 'FR-171 enables bol live');
+    assert.equal(bl.enabled.sandbox, true, 'FR-171 enables bol sandbox');
     const sk = sources.find((x) => x.id === 'skimlinks');
     assert.equal(sk.enabled.live, true, 'FR-168 enables skimlinks live');
     assert.equal(sk.enabled.sandbox, true, 'FR-168 enables skimlinks sandbox');
