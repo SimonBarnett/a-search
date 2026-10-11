@@ -17,7 +17,7 @@ const {
 } = require('../providers/local/tradedoubler/src/selftestProbe');
 
 describe('MRB-789 FR-090 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled (FR-174)', () => {
     assert.deepEqual(rateLimit('tradedoubler'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
@@ -26,8 +26,8 @@ describe('MRB-789 FR-090 hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'tradedoubler');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {

@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-763 FR-089 hostile', () => {
-  it('registry tradedoubler stay-dark both envs (CAST IRON)', () => {
+  it('registry tradedoubler enabled both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const td = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(td);
-    assert.equal(td.enabled.live, false);
-    assert.equal(td.enabled.sandbox, false);
+    assert.equal(td.enabled.live, true);
+    assert.equal(td.enabled.sandbox, true);
     assert.equal(td.kind, 'local');
     assert.equal(td.queueEnv, 'SQS_TRADEDOUBLER_URL');
   });

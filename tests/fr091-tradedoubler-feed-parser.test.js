@@ -109,14 +109,14 @@ describe('FR-091 tradedoubler feed-parser hook', () => {
     assert.match(String(creds.defaultFeedUrl), /tradedoubler\.csv/);
   });
 
-  it('registry keeps tradedoubler enabled false both envs', () => {
+  it('registry keeps tradedoubler enabled true both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const pz = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(pz);
-    assert.equal(pz.enabled.live, false);
-    assert.equal(pz.enabled.sandbox, false);
+    assert.equal(pz.enabled.live, true);
+    assert.equal(pz.enabled.sandbox, true);
   });
 
   it('skill documents feed-parser hook + env keys', () => {
