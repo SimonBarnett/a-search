@@ -18,14 +18,16 @@ const {
 } = require('../providers/local/partnerize/src/parseFeed');
 
 describe('MRB-725 FR-085 hostile', () => {
-  it('registry partnerize stay-dark both envs (CAST IRON)', () => {
+  it('registry partnerize enabled both envs (FR-172)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const pz = registry.sources.find((s) => s.id === 'partnerize');
+
     assert.ok(pz);
-    assert.equal(pz.enabled.live, false);
-    assert.equal(pz.enabled.sandbox, false);
+
+    assert.equal(pz.enabled.live, true);
+    assert.equal(pz.enabled.sandbox, true);
     assert.equal(pz.kind, 'local');
   });
 

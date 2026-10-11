@@ -125,14 +125,16 @@ describe('FR-084 partnerize selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; enabled stays false', () => {
+  it('registry rateLimit present; enabled true (FR-172)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'partnerize');
+
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.ok(row.rateLimit);
     assert.equal(typeof row.rateLimit.maxConcurrency, 'number');
     assert.ok(row.rateLimit.maxConcurrency > 0);

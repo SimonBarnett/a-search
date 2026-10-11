@@ -80,9 +80,10 @@ Per-source Secrets Manager JSON. Override:
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
 | admitad | worker | ADMITAD_API_KEY, ADMITAD_API_TOKEN, ADMITAD_FEED_TOKEN, ADMITAD_PUBLISHER_ID, ADMITAD_WEBSITE_ID | Secrets Manager JSON (`a-search/admitad/{env}`) |
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
+| partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-bol, partnerize, webgains, tradedoubler,
+bol, webgains, tradedoubler,
 flexoffers, avantlink, shopify, wix, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)

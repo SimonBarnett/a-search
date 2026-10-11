@@ -13,7 +13,8 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ["bol", "partnerize", "webgains", "tradedoubler", "flexoffers", "avantlink", "shopify", "wix", "woocommerce"];
+// partnerize already enabled on main (FR-172); stay-dark siblings after FR-175 fold
+const STILL_DARK = ["bol", "webgains", "tradedoubler", "flexoffers", "avantlink", "shopify", "wix", "woocommerce"];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -40,7 +41,7 @@ describe('FR-175 enable admitad', () => {
     assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
-    assert.equal(byId.get('partnerize').enabled.live, false, 'FR-172 not on main');
+    assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 on main (keep-both fold)');
     assert.equal(byId.get('tradedoubler').enabled.live, false, 'FR-174 not on main');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
@@ -119,7 +120,7 @@ describe('FR-175 enable admitad', () => {
       assert.ok(qHit, `missing queue a-search-admitad-${env}`);
     }
 
-    for (const dark of ['bol', 'partnerize', 'webgains', 'tradedoubler']) {
+    for (const dark of ['bol', 'webgains', 'tradedoubler']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
