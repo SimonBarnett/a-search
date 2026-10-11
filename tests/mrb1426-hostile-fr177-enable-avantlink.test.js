@@ -23,11 +23,15 @@ test('mrb1426: avantlink enabled both envs; partnerize+bol kept; floors 2*enable
   const bol = byId.get('bol');
   assert.equal(bol.enabled.live, true);
   assert.equal(bol.enabled.sandbox, true);
+  const td = byId.get('tradedoubler');
+  assert.equal(td.enabled.live, true);
+  assert.equal(td.enabled.sandbox, true);
   const enabled = reg.sources.filter((s) => s.enabled.live && s.enabled.sandbox).map((s) => s.id).sort();
   assert.ok(enabled.includes('avantlink'));
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('bol'));
-  assert.equal(enabled.length * 2, 26);
+  assert.ok(enabled.includes('tradedoubler'));
+  assert.equal(enabled.length * 2, 28);
 });
 
 test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS includes avantlink FR-138 names', () => {
@@ -41,6 +45,8 @@ test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS includes avantlink FR-138 names', ()
   assert.match(stack, /\bpartnerize\s*:\s*\[/);
   assert.match(stack, /\bbol\s*:\s*\[/);
   assert.match(stack, /BOL_API_KEY/);
+  assert.match(stack, /\btradedoubler\s*:\s*\[/);
+  assert.match(stack, /TRADEDOUBLER_API_KEY/);
   assert.equal(stack.includes('<<<<<<<'), false);
 });
 
@@ -56,4 +62,5 @@ test('mrb1426: FR-177 Decision LOCKED; secrets-matrix has avantlink not stay-dar
   assert.doesNotMatch(omit.slice(0, 400), /\bavantlink\b/i);
   assert.doesNotMatch(omit.slice(0, 400), /\bpartnerize\b/i);
   assert.doesNotMatch(omit.slice(0, 400), /\bbol\b/i);
+  assert.doesNotMatch(omit.slice(0, 400), /\btradedoubler\b/i);
 });

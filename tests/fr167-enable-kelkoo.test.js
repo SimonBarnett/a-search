@@ -17,7 +17,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
 const OTHER_STAY_DARK = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'shopify',

@@ -20,6 +20,7 @@ const DEFAULT_ON = [
   'avantlink',
   'bol',
   'partnerize',
+  'tradedoubler',
 ];
 const DEFAULT_OFF = [
   'webgains',
@@ -28,7 +29,6 @@ const DEFAULT_OFF = [
   'shopify',
   'wix',
   'woocommerce',
-  'tradedoubler',
 ];
 
 describe('providers/loadRegistry', () => {

@@ -48,6 +48,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
       'partnerize',
       'rakuten',
       'skimlinks',
+      'tradedoubler',
     ]);
   });
 });

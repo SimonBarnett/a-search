@@ -16,7 +16,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 // Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
 const STILL_DARK = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'shopify',
