@@ -24,8 +24,11 @@ describe('MRB-728 FR-084 hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'partnerize');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+
+    assert.ok(row);
+
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {

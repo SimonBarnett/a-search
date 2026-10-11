@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'shopify', 'src', 'worker.js');
 
-const STILL_DARK = ["bol", "partnerize", "webgains", "tradedoubler", "admitad", "flexoffers", "avantlink", "wix", "woocommerce"];
+const STILL_DARK = ["bol", "webgains", "tradedoubler", "admitad", "flexoffers", "avantlink", "wix", "woocommerce"];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -41,6 +41,8 @@ describe('FR-178 enable shopify', () => {
     assert.equal(sh.merchantConnect, true);
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
+    assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
+    assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
