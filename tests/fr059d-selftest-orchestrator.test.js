@@ -97,7 +97,7 @@ describe('FR-059d selftest orchestrator', () => {
     const { enabled } = require('../providers/loadRegistry');
     const live = enabled('live');
     assert.ok(live.length >= 1, 'fixture registry should enable some live sources');
-    assert.ok(!live.includes('kelkoo'), 'kelkoo disabled in registry');
+    assert.ok(live.includes('kelkoo'), 'kelkoo enabled by FR-167');
 
     const probed = [];
     const out = await runSelftestOrchestrator({
@@ -110,7 +110,7 @@ describe('FR-059d selftest orchestrator', () => {
     });
     assert.deepEqual(probed, live);
     assert.equal(out.providers.length, live.length);
-    assert.ok(!probed.includes('kelkoo'));
+    assert.ok(probed.includes('kelkoo'));
   });
 
   it('shared package lists selftest/ and docs mention orchestrator', () => {

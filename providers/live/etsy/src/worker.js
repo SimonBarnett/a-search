@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Etsy live provider worker (FR-077).
+ * Etsy live provider worker (FR-077 / FR-170).
  * search -> normalize -> writeResults (injectable HTTP + putObject).
- * Stay-dark: registry enabled remains false until a later enable FR.
+ * Registry enabled true (FR-170).
  */
 
 const path = require('node:path');

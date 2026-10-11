@@ -56,7 +56,7 @@ describe('MRB #680 hostile FR-064 kelkoo normalize', () => {
     assert.equal(products[0].source, 'kelkoo');
   });
 
-  it('fixture products keep merchantName as description; stay-dark registry', () => {
+  it('fixture products keep merchantName as description; FR-167 enabled registry', () => {
     const { normalizeSearchResponse } = require(normalizePath);
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
@@ -76,8 +76,8 @@ describe('MRB #680 hostile FR-064 kelkoo normalize', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
-    assert.equal(kk.enabled.live, false);
-    assert.equal(kk.enabled.sandbox, false);
+    assert.equal(kk.enabled.live, true);
+    assert.equal(kk.enabled.sandbox, true);
   });
 
   it('skill documents FR-064 field map needles', () => {

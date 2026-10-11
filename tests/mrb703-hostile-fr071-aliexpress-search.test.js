@@ -38,7 +38,7 @@ describe('MRB #703 hostile FR-071 aliexpress search', () => {
     assert.equal(out.aliexpressProductAPI.products[0].product_id, 'ae-fix-001');
   });
 
-  it('missing creds throw; registry stay-dark', async () => {
+  it('missing creds throw; registry enabled true (FR-169)', async () => {
     const {
       searchAliexpress,
       AliexpressCredsError,
@@ -53,8 +53,8 @@ describe('MRB #703 hostile FR-071 aliexpress search', () => {
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
   });
 
   it('skill documents FR-071 search needles', () => {

@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * AliExpress Affiliate product search client (FR-071).
- * HTTP injectable for recorded fixtures. Stay-dark: do not enable registry.
- * normalize / worker wiring are out of scope for this FR.
+ * AliExpress Affiliate product search client (FR-071 / FR-169).
+ * HTTP injectable for recorded fixtures. Registry enabled true (FR-169).
+ * normalize / worker wiring landed in later FRs.
  */
 
 class AliexpressCredsError extends Error {

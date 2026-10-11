@@ -24,11 +24,11 @@ Examples:
 | `cj` | `providers/live/cj/.grok/skills/a-search-cj-onboarding/SKILL.md` |
 | `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
+| `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (enabled FR-169; onboarding skill retained) |
 | `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 
-Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
+Naming: `a-search-<id>-onboarding` - always the `-onboarding` suffix. This is
 **separate** from the maintain skillbook `a-search-<id>` (see
 `docs/skillbook-layout.md`).
 
@@ -43,7 +43,7 @@ Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
 2. **Obtain `.env` account credentials**
    - Steps to create or request the provider account / API keys for **this**
      source only.
-   - Map each secret to the placeholder names in that folder’s `.env.example`.
+   - Map each secret to the placeholder names in that folder's `.env.example`.
    - Secrets live only in `providers/<kind>/<id>/.env` (never `entry/.env`).
 
 3. **Sandbox vs live**
@@ -54,7 +54,7 @@ Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
 4. **Selftest pointer**
    - Point at the product selftest path once it exists (FR-059 family:
      `docs/endpoint-selftest.md` / selftest route). Until that lands, say
-     “selftest TBD — use sandbox worker smoke / provider fixture tests”.
+     "selftest TBD - use sandbox worker smoke / provider fixture tests".
    - Onboarding skill does not implement selftest; it only tells the agent
      where to verify after credentials are in place.
 
@@ -64,7 +64,7 @@ Naming: `a-search-<id>-onboarding` — always the `-onboarding` suffix. This is
 - Read `AGENTS.md`, then **both**:
   - `.grok/skills/a-search-<id>/SKILL.md` (maintain / runtime)
   - `.grok/skills/a-search-<id>-onboarding/SKILL.md` (setup)
-- Do not require loading other providers’ onboarding skills
+- Do not require loading other providers' onboarding skills
 
 ## Checklist (add-source)
 
@@ -81,16 +81,17 @@ Disabled live registry ids **must** still ship a minimal onboarding stub
 (CAST IRON harvest + deferred `.env` + sandbox/live + selftest pointer) even
 while `enabled.live` and `enabled.sandbox` stay false:
 
-`kelkoo`, `skimlinks`, `aliexpress`, `etsy`, `bol`
+`etsy`, `bol` (kelkoo FR-167 + skimlinks FR-168 + aliexpress FR-169 enabled; skills remain)
 
-Do not invent live credential steps or flip registry enabled from these stubs.
-See `docs/phase2-providers.md` stay-dark rule.
+`skimlinks` keeps its onboarding skill after FR-168 enable (credentials +
+selftest still documented there). See `docs/phase2-providers.md` stay-dark rule
+for remaining stubs.
 
 ## Out of scope (this contract doc)
 
-- Writing each provider’s onboarding body (FR-060c..h)
+- Writing each provider's onboarding body (FR-060c..h)
 - Automated tests that every enabled provider has the folder (FR-060b)
-- ~~Vision Success row (FR-060j)~~ — landed as Success **S20**
+- ~~Vision Success row (FR-060j)~~ - landed as Success **S20**
 - Enabling live stubs or implementing their search clients (later Phase-2 FRs)
 
 ## References

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-067: skimlinks search.js client + recorded fixtures (stay-dark).
+ * FR-067 / FR-168: skimlinks search.js client + recorded fixtures (enabled).
  * No live network; registry enabled stays false.
  */
 
@@ -116,13 +116,13 @@ describe('FR-067 skimlinks search client', () => {
     );
   });
 
-  it('registry keeps skimlinks enabled.live and enabled.sandbox false', () => {
+  it('registry enables skimlinks (FR-168)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk, 'registry missing skimlinks');
-    assert.equal(sk.enabled.live, false);
-    assert.equal(sk.enabled.sandbox, false);
+    assert.equal(sk.enabled.live, true);
+    assert.equal(sk.enabled.sandbox, true);
   });
 });

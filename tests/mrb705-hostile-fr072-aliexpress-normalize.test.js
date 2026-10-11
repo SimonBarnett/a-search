@@ -78,13 +78,13 @@ describe('mrb705 hostile FR-072 aliexpress normalize', () => {
     assert.match(String(products[0].url), /example\.test/);
   });
 
-  it('stay-dark: registry enabled false; skill has no mojibake; single TRACKING_ID', () => {
+  it('enabled: registry enabled true (FR-169); skill has no mojibake; single TRACKING_ID', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
 
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));

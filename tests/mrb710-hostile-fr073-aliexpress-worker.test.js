@@ -61,7 +61,7 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
     assert.match(src, /search -> normalize -> writeResults/);
   });
 
-  it('skill documents FR-073 worker path; stay-dark registry', () => {
+  it('skill documents FR-073 worker path; registry enabled (FR-169)', () => {
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
     assert.match(skill, /## Worker \(FR-073\)/);
@@ -72,8 +72,8 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
   });
 
   it('handler processes one SQS record via run', async () => {

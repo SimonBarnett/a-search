@@ -3,7 +3,7 @@
 /**
  * FR-074: AliExpress selftest probe — credential check + recorded fixture path
  * (or injectable HTTP) proving affiliate product.query client wiring works.
- * Stay-dark: registry enabled stays false.
+ * Registry enabled true (FR-169).
  */
 
 const fs = require('node:fs');

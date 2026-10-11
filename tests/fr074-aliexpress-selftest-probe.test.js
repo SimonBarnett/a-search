@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-074: aliexpress selftestProbe + registry rateLimit (stay-dark).
+ * FR-074: aliexpress selftestProbe + registry rateLimit (enabled FR-169).
  */
 
 const { describe, it } = require('node:test');
@@ -84,8 +84,8 @@ describe('FR-074 aliexpress selftestProbe + rateLimit', () => {
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.ok(ae);
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
     assert.ok(ae.rateLimit);
     assert.equal(typeof ae.rateLimit.maxConcurrency, 'number');
     assert.ok(ae.rateLimit.maxConcurrency > 0);

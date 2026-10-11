@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Only amazon/ebay/rakuten/cj/awin/impact; stay-dark sources omitted.
+ * Enabled sources include FR-167 kelkoo + FR-168 skimlinks + FR-169 aliexpress; other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -12,8 +12,8 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
-const STAY_DARK_SAMPLE = ['kelkoo', 'skimlinks', 'partnerize', 'webgains'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks'];
+const STAY_DARK_SAMPLE = ['bol', 'partnerize', 'webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -44,6 +44,10 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /CJ_API_TOKEN/);
     assert.match(text, /AWIN_API_TOKEN/);
     assert.match(text, /IMPACT_CAMPAIGN_ID/);
+    assert.match(text, /KELKOO_API_KEY/);
+    assert.match(text, /SKIMLINKS_API_KEY/);
+    assert.match(text, /SKIMLINKS_PUBLISHER_ID/);
+    assert.match(text, /ALIEXPRESS_API_KEY/);
     // Stay-dark ids must not appear in PROVIDER_CREDENTIAL_KEYS block
     for (const dark of STAY_DARK_SAMPLE) {
       assert.doesNotMatch(
@@ -125,6 +129,12 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'impact-sandbox',
     );
     assertSecretRef(
+      envOf('a-search-kelkoo-worker-live'),
+      'KELKOO_API_KEY',
+      'kelkoo-live',
+    );
+    assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
+    assertSecretRef(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
       'awin-onboarding-live',
@@ -133,6 +143,20 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       envOf('a-search-impact-onboarding-sandbox'),
       'IMPACT_CAMPAIGN_ID',
       'impact-onboarding-sandbox',
+    );
+    assertSecretRef(
+      envOf('a-search-skimlinks-worker-live'),
+      'SKIMLINKS_API_KEY',
+      'skimlinks-live',
+    );
+    assertSecretRef(
+      envOf('a-search-skimlinks-worker-sandbox'),
+      'SKIMLINKS_PUBLISHER_ID',
+      'skimlinks-sandbox',
+    );
+    assert.equal(
+      envOf('a-search-skimlinks-worker-live').SKIMLINKS_COUNTRY,
+      'uk',
     );
 
     // Stay-dark: no worker Lambdas

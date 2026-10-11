@@ -110,13 +110,13 @@ describe('FR-063 kelkoo search client', () => {
     );
   });
 
-  it('registry keeps kelkoo enabled.live and enabled.sandbox false', () => {
+  it('registry keeps kijiji enabled.live and enabled.sandbox true (FR-167)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk, 'registry missing kelkoo');
-    assert.equal(kk.enabled.live, false);
-    assert.equal(kk.enabled.sandbox, false);
+    assert.equal(kk.enabled.live, true);
+    assert.equal(kk.enabled.sandbox, true);
   });
 });
