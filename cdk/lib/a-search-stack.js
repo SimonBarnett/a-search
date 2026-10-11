@@ -307,7 +307,6 @@ const PROVIDER_PLAIN_DEFAULTS = {
   wix: {
     WIX_API_BASE: 'https://www.wixapis.com',
   },
-  },
 };
 
 /**
