@@ -18,8 +18,6 @@ const productTest = path.join(
 
 const PHASE2_STUB_IDS = [
   'skimlinks',
-
-  'etsy',
   'bol',
   'partnerize',
   'webgains',
