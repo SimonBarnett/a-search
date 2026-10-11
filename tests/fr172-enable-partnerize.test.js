@@ -13,17 +13,8 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'bol',
-  'webgains',
-  'tradedoubler',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+// admitad enabled by FR-175 keep-both fold on this tip
+const STILL_DARK = ['bol', 'webgains', 'tradedoubler', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
