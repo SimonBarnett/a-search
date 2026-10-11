@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'partnerize', 'flexoffers']; // FR-167..170 + FR-172 + FR-176
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'partnerize', 'flexoffers']; // FR-167..172 + FR-176
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
