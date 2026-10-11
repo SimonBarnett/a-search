@@ -187,3 +187,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon worker Creators flag (FR-183): when AMAZON_SEARCH_API=creators assertCreatorsCreds fail-closed then searchAmazonCreators; else PA-API assertAmazonCreds; return searchApi in result
 - Multi-region (FR-190): lock active-passive with primary eu-west-2; madeiradb/SQL stays single-region on IONOS; do not choose active-active without a SQL multi-region story
 - Phase-4 enable MRB: if a prior keep-both tip wiped a hostile pin file (e.g. mrb668 at 0-byte), restore that file from origin/main then retarget stub/PHASE2 counts to remaining stay-dark ids and FR-142/143 floors to 2*enabled_count before PASS
+- Phase-4 enable re-offer after CI red on sibling stay-dark: one update-branch then scrub STILL_DARK/synth dark lists for ids now enabled on tip (drop self from sibling FR STILL_DARK; drop already-enabled ids like bol from own synth dark list); PASS @ new SHA + --auto without CI poll
