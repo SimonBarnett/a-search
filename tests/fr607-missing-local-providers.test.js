@@ -12,9 +12,11 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const IDS = ['shopify', 'wix', 'woocommerce'];
+/** Still-dark Madeira stubs after FR-180 enables woocommerce as merchant. */
+const STILL_DISABLED = ['shopify', 'wix'];
 
 describe('FR-607 missing local providers (shopify/wix/woocommerce)', () => {
-  it('registry lists each as local disabled with queueEnv', () => {
+  it('registry lists each as local with queueEnv; dark stubs stay disabled', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     assert.equal(sources.length, 20);
@@ -23,10 +25,18 @@ describe('FR-607 missing local providers (shopify/wix/woocommerce)', () => {
       assert.ok(s, `missing ${id}`);
       assert.equal(s.kind, 'local');
       assert.equal(s.folder, `providers/local/${id}`);
-      assert.equal(s.enabled.live, false);
-      assert.equal(s.enabled.sandbox, false);
       assert.equal(s.queueEnv, `SQS_${id.toUpperCase()}_URL`);
     }
+    for (const id of STILL_DISABLED) {
+      const s = sources.find((x) => x.id === id);
+      assert.equal(s.enabled.live, false, `${id}.live`);
+      assert.equal(s.enabled.sandbox, false, `${id}.sandbox`);
+    }
+    const woo = sources.find((x) => x.id === 'woocommerce');
+    assert.equal(woo.enabled.live, true, 'FR-180 woocommerce.live');
+    assert.equal(woo.enabled.sandbox, true, 'FR-180 woocommerce.sandbox');
+    assert.equal(woo.class, 'merchant');
+    assert.equal(woo.merchantConnect, true);
   });
 
   for (const id of IDS) {
