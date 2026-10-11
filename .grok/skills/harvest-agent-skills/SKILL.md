@@ -176,4 +176,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search product MRB: when tip is far behind main, merge origin/main into the FR branch and re-wait CI before gh pr merge; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
 - Harvest-lesson tips must append/fold one bullet on current main SKILL.md never rewrite/wipe the book; neutralize GitHub close keywords in session summaries so tips do not Closes product issues (MRB #1332 / #1338).
 - a-search behind-main FR-158 stack conflict: keep resolveStageSuffix+costTags then FR-149/FR-158 no-VPC egress comment; release-gap Yes for 153-157 + FR-158
-
+- Phase-4 enable partnerize: flip registry both envs, wire PARTNERIZE_* Secrets Manager keys (not MSSQL_*), drop id from stay-dark/PHASE2_STUB/DEFAULT_OFF, retarget FR-142/143 floors to 2*enabled_count (22); local Windows CDK synth ENOTEMPTY is CI gate.
