@@ -36,6 +36,8 @@ describe('FR-177 enable avantlink', () => {
     assert.ok(al, 'registry missing avantlink');
     assert.equal(al.enabled.live, true);
     assert.equal(al.enabled.sandbox, true);
+    assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
+    assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
     assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
@@ -119,7 +121,7 @@ describe('FR-177 enable avantlink', () => {
       assert.ok(qHit, `missing queue a-search-avantlink-${env}`);
     }
 
-    for (const dark of ['bol', 'partnerize', 'admitad', 'flexoffers']) {
+    for (const dark of ['bol', 'shopify', 'admitad', 'flexoffers']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
