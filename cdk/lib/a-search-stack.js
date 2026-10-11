@@ -259,6 +259,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'AVANTLINK_PUBLISHER_ID',
     'AVANTLINK_AFFILIATE_ID',
   ],
+  // FR-172: enable partnerize
+  partnerize: [
+    'PARTNERIZE_API_KEY',
+    'PARTNERIZE_API_TOKEN',
+    'PARTNERIZE_FEED_TOKEN',
+    'PARTNERIZE_PUBLISHER_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

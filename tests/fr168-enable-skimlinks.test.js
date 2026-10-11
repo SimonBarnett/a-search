@@ -14,14 +14,14 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
-const STILL_DARK = [
+const STILL_DARK = [
+
   'bol',
-  'partnerize',
   'webgains',
   'tradedoubler',
   'admitad',
   'flexoffers',
-  'avantlink',
+
   'shopify',
   'wix',
   'woocommerce',
@@ -126,7 +126,7 @@ describe('FR-168 enable skimlinks', () => {
     }
 
     // aliexpress is enabled on main (FR-169); assert remaining stay-dark have no workers.
-    for (const dark of ['bol', 'partnerize', 'webgains']) {
+    for (const dark of ['bol', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

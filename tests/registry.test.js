@@ -18,9 +18,9 @@ const DEFAULT_ON = [
   'etsy',
   'skimlinks',
   'avantlink',
+  'partnerize',
 ];
 const DEFAULT_OFF = [
-  'partnerize',
   'webgains',
   'bol',
   'admitad',

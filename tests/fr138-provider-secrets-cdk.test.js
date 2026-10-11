@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks'];
-const STAY_DARK_SAMPLE = ['bol', 'partnerize', 'webgains'];
+const STAY_DARK_SAMPLE = ['bol', 'webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {

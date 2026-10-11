@@ -261,13 +261,15 @@ describe('FR-083 partnerize MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps partnerize enabled false both envs', () => {
+  it('registry keeps partnerize enabled true both envs (FR-172)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'partnerize');
+
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

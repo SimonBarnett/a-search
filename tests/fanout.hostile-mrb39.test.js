@@ -21,7 +21,7 @@ describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
         catalogId: 1,
         category: 'c',
         subcategory: 's',
-        sources: ['amazon', 'partnerize'],
+        sources: ['amazon', 'webgains'],
       },
       enabled: () => ['amazon', 'ebay'],
       sendMessage: async (p) => {
@@ -44,7 +44,7 @@ describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
             catalogId: 1,
             category: 'c',
             subcategory: 's',
-            sources: ['partnerize'],
+            sources: ['webgains'],
           },
           enabled: () => ['amazon'],
           sendMessage: async () => {},
