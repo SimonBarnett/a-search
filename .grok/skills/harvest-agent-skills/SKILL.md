@@ -172,4 +172,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - SQS->Lambda worker queues need visibilityTimeout > function timeout; LOCK 6x via shared WORKER_* constants and synth-pin every enabled queue (FR-164 / #1007).
 - Set explicit Lambda memorySize floors (entry 256, workers 256|512 for local/MSSQL) so cold JWKS/SDK do not OOM; document in deploy.md and synth-pin MemorySize (FR-165 / #1008).
 - Phase-4 enable FR: flip one registry id both envs, add PROVIDER_CREDENTIAL_KEYS + PLAIN_DEFAULTS, update stay-dark pins/docs that asserted that id false, pin frN with in-process synth for a-search-{id}-{live,sandbox}
-
+- a-search product MRB: when tip is far behind main, merge origin/main into the FR branch and re-wait CI before gh pr merge; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
