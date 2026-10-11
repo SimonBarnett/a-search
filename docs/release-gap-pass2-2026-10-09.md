@@ -15,14 +15,14 @@ Prior: FR-121..127 (#950-#956), FR-128..150 (#964-#986)
 | Cost tags | FR-155 | #998 (**Yes** - Project=a-search + Env from -c stage; pin fr155) |
 | Stack stage suffix | FR-156 | #999 (**Yes** - -c stage= suffixes names + ASearchStack-id; pin fr156) |
 | API access logs + throttle | FR-157 | #1000 (**Yes** - HttpStage access logs + rate/burst context) |
-| Intake egress UNKNOWN | FR-158 | #1001 |
-| shared files[] missing identity/ | FR-159 | #1002 |
-| Performance still injectable stub | FR-160 | #1003 |
-| Endpoint skill deploy pointers | FR-161 | #1004 |
-| SQS SSE | FR-162 | #1005 |
-| Destroy/rollback docs | FR-163 | #1006 |
-| visibilityTimeout <= worker timeout | FR-164 | #1007 |
-| Explicit Lambda memorySize | FR-165 | #1008 |
+| Intake egress UNKNOWN | FR-158 | #1001 (**Yes** - measure + A_SEARCH_INTAKE_URL + fail-soft intake_egress_blocked) |
+| shared files[] missing identity/ | FR-159 | #1002 (**Yes** - identity/ in files; pin fr159) |
+| Performance still injectable stub | FR-160 | #1003 (**Yes** - S3 stats + mapping default; pin fr160) |
+| Endpoint skill deploy pointers | FR-161 | #1004 (**Yes** - skill SearchApiUrl + FR-144 smoke; pin fr161) |
+| SQS SSE | FR-162 | #1005 (**Yes** - QueueEncryption.SQS_MANAGED on queues+DLQs; pin fr162) |
+| Destroy/rollback docs | FR-163 | #1006 (**Yes** - destroy-rollback.md + pointers; pin fr163) |
+| visibilityTimeout <= worker timeout | FR-164 | #1007 (**Yes** - visibility 6x timeout 360s; pin fr164) |
+| Explicit Lambda memorySize | FR-165 | #1008 (**Yes** - entry 256 / workers 256|512; pin fr165) |
 
 ## Explicitly still OOS for v0.1
 

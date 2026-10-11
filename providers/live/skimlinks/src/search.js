@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Skimlinks Product API search client (FR-067).
- * HTTP injectable for recorded fixtures. Stay-dark: do not enable registry.
- * normalize / worker wiring are out of scope for this FR.
+ * Skimlinks Product API search client (FR-067 / FR-168).
+ * HTTP injectable for recorded fixtures. Registry enabled true (FR-168).
+ * normalize / worker wiring landed in later FRs.
  */
 
 class SkimlinksCredsError extends Error {

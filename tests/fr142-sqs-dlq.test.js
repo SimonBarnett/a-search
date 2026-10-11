@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks']; // FR-167..170
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
@@ -88,14 +88,15 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // 12 primaries + 12 DLQs
+    // FR-167..171: 22 primaries + 22 DLQs (11 enabled x live+sandbox)
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean);
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    assert.equal(primaries.length, 12, `expected 12 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 12, `expected 12 DLQs, got ${dlqs.length}`);
+    // FR-167..171: 22 primaries + 22 DLQs (11 enabled x live+sandbox)
+    assert.equal(primaries.length, 22, `expected 22 primary queues, got ${primaries.length}`);
+    assert.equal(dlqs.length, 22, `expected 22 DLQs, got ${dlqs.length}`);
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {

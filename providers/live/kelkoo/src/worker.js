@@ -3,7 +3,7 @@
 /**
  * Kelkoo live provider worker (FR-065).
  * search → normalize → writeResults (injectable HTTP + putObject).
- * Stay-dark: registry enabled remains false until a later enable FR.
+ * Enabled via FR-167 (registry live+sandbox true; credentials from Secrets Manager).
  */
 
 const path = require('node:path');

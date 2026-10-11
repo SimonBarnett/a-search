@@ -70,23 +70,43 @@ describe('FR-060b provider onboarding skillbooks', () => {
   });
 
   // FR-062: disabled live stubs still require onboarding books (stay-dark).
-  const LIVE_STUB_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy']; // bol enabled FR-171
+  // FR-167..171 enabled; skills still required.
+  const LIVE_STUB_IDS = [];
+  const ONBOARDING_IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
 
-  it('FR-062: each disabled live stub has onboarding SKILL.md', () => {
+  it('FR-062: each live stub/onboarding id has onboarding SKILL.md; stubs stay dark', () => {
     const { sources } = loadRegistry();
-    for (const id of LIVE_STUB_IDS) {
+    for (const id of ONBOARDING_IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, `registry missing ${id}`);
-      assert.equal(s.enabled.live, false, `${id} must stay dark live`);
-      assert.equal(s.enabled.sandbox, false, `${id} must stay dark sandbox`);
       const skill = onboardingSkillPath(s);
       assert.ok(
         fs.existsSync(skill),
-        `missing onboarding for disabled live stub ${id}: ${path.relative(root, skill)}`,
+        `missing onboarding for ${id}: ${path.relative(root, skill)}`,
       );
       const text = fs.readFileSync(skill, 'utf8');
       assert.match(text, /CAST IRON/i);
       assert.match(text, /SimonBarnett\/a-search/);
     }
+    for (const id of LIVE_STUB_IDS) {
+      const s = sources.find((x) => x.id === id);
+      assert.equal(s.enabled.live, false, `${id} must stay dark live`);
+      assert.equal(s.enabled.sandbox, false, `${id} must stay dark sandbox`);
+    }
+    const ae = sources.find((x) => x.id === 'aliexpress');
+    assert.equal(ae.enabled.live, true, 'FR-169 enables aliexpress live');
+    assert.equal(ae.enabled.sandbox, true, 'FR-169 enables aliexpress sandbox');
+    const kk = sources.find((x) => x.id === 'kelkoo');
+    assert.equal(kk.enabled.live, true, 'FR-167 enables kelkoo live');
+    assert.equal(kk.enabled.sandbox, true, 'FR-167 enables kelkoo sandbox');
+    const et = sources.find((x) => x.id === 'etsy');
+    assert.equal(et.enabled.live, true, 'FR-170 enables etsy live');
+    assert.equal(et.enabled.sandbox, true, 'FR-170 enables etsy sandbox');
+    const bl = sources.find((x) => x.id === 'bol');
+    assert.equal(bl.enabled.live, true, 'FR-171 enables bol live');
+    assert.equal(bl.enabled.sandbox, true, 'FR-171 enables bol sandbox');
+    const sk = sources.find((x) => x.id === 'skimlinks');
+    assert.equal(sk.enabled.live, true, 'FR-168 enables skimlinks live');
+    assert.equal(sk.enabled.sandbox, true, 'FR-168 enables skimlinks sandbox');
   });
 });

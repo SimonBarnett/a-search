@@ -14,10 +14,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
-  'kelkoo',
-  'skimlinks',
-  'aliexpress',
-  'etsy',
   'partnerize',
   'webgains',
   'tradedoubler',
@@ -123,7 +119,7 @@ describe('FR-171 enable bol', () => {
       assert.ok(qHit, `missing queue a-search-bol-${env}`);
     }
 
-    for (const dark of ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'partnerize']) {
+    for (const dark of ['partnerize', 'webgains', 'shopify']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

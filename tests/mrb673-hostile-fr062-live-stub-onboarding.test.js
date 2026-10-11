@@ -10,7 +10,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy']; // bol enabled FR-171
+/** Live stub onboarding books (skills still required even when enabled). */
+const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+/** Still-disabled live stubs after FR-167..171. */
+const STAY_DARK_IDS = [];
 
 function readNoBom(rel) {
   const p = path.join(root, rel);
@@ -43,14 +46,20 @@ describe('MRB #673 hostile FR-062 live stub onboarding', () => {
     });
   }
 
-  it('registry keeps five live stubs disabled', () => {
+  it('registry keeps remaining live stubs disabled (kelkoo+skimlinks+aliexpress enabled)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    for (const id of IDS) {
+    for (const id of STAY_DARK_IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);
       assert.equal(s.enabled.live, false);
       assert.equal(s.enabled.sandbox, false);
+    }
+    for (const id of ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol']) {
+      const s = sources.find((x) => x.id === id);
+      assert.ok(s, id);
+      assert.equal(s.enabled.live, true, id);
+      assert.equal(s.enabled.sandbox, true, id);
     }
   });
 
