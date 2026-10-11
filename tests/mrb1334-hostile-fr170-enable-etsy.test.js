@@ -43,8 +43,8 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 22 primary queues/);
-    assert.match(fr143, /expected 22 DLQ depth alarms/);
+    assert.match(fr142, /expected 24 primary queues/);
+    assert.match(fr143, /expected 24 DLQ depth alarms/);
     assert.match(fr142, /'etsy'/);
     assert.match(fr142, /'skimlinks'/);
   });

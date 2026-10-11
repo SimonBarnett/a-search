@@ -17,8 +17,8 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 /** Remaining Phase-2 stubs (skimlinks FR-168 + aliexpress FR-169 enabled). */
 const PHASE2_STUB_IDS = [
   'bol',
-  'partnerize',
-  'webgains',  'admitad',
+  'webgains',
+  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

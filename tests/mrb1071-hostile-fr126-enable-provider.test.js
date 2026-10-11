@@ -19,8 +19,8 @@ const productTest = path.join(
 /** Remaining stay-dark stubs (skimlinks enabled by FR-168). */
 const PHASE2_STUB_IDS = [
   'bol',
-  'partnerize',
-  'webgains',  'admitad',
+  'webgains',
+  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

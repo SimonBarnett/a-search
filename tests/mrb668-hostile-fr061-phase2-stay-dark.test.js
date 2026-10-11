@@ -2,6 +2,7 @@
 
 /**
  * MRB #668 hostile: FR-061 Phase-2 stay-dark docs after product merge.
+ * Keep-both FR-172 partnerize + FR-174 tradedoubler => 8 remaining stubs.
  */
 
 const { describe, it } = require('node:test');
@@ -15,7 +16,7 @@ function utf8NoBom(rel) {
   const p = path.join(root, rel);
   const buf = fs.readFileSync(p);
   assert.equal(buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf, false, rel);
-  assert.equal(buf[buf.length - 1], 0x0a, `trailing newline ${rel}`);
+  assert.equal(buf[buf.length - 1], 0x0a, 'trailing newline ' + rel);
   const text = buf.toString('utf8');
   for (const ln of text.split(/\r?\n/)) {
     assert.equal(ln.startsWith('<<<<<<< '), false, rel);
@@ -46,20 +47,20 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     assert.match(shortlist, /stay-dark/i);
   });
 
-  it('exactly 10 Phase-2 stub ids stay dark (FR-167..170 enabled)', () => {
+  it('exactly 8 Phase-2 stub ids stay dark (FR-167..174 enabled)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     const stubs = [
       'bol',
-      'partnerize',
-      'webgains',      'admitad',
+      'webgains',
+      'admitad',
       'flexoffers',
       'avantlink',
       'shopify',
       'wix',
       'woocommerce',
     ];
-    assert.equal(stubs.length, 10);
+    assert.equal(stubs.length, 8);
     for (const id of stubs) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);

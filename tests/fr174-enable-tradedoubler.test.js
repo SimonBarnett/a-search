@@ -15,7 +15,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
   'bol',
-  'partnerize',
   'webgains',
   'admitad',
   'flexoffers',
@@ -48,7 +47,8 @@ describe('FR-174 enable tradedoubler', () => {
     assert.equal(td.enabled.sandbox, true);
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
-    assert.equal(byId.get('partnerize').enabled.live, false, 'FR-172 not on main');
+    assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
+    assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);

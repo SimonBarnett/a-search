@@ -77,8 +77,8 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
     for (const id of [
       'bol',
-      'partnerize',
-      'webgains',      'admitad',
+      'webgains',
+      'admitad',
       'flexoffers',
       'avantlink',
       'shopify',
