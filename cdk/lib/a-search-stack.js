@@ -258,6 +258,7 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'TRADEDOUBLER_FEED_TOKEN',
     'TRADEDOUBLER_AFFILIATE_ID',
     'TRADEDOUBLER_PUBLISHER_ID',
+  ],
   // FR-172: enable partnerize
   partnerize: [
     'PARTNERIZE_API_KEY',
