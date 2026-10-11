@@ -11,8 +11,8 @@ provider credentials [FR-138](fr/FR-138.md); deploy steps [deploy.md](deploy.md)
 | Lambda | JWT_* | Provider JSON | MSSQL_* | S3_RESULTS_BUCKET |
 |--------|-------|---------------|---------|-------------------|
 | `a-search-entry` | Yes (FR-136) | No | No | Yes (plain name + IAM) |
-| `a-search-{cj}-worker-{live,sandbox}` | No | Yes (own source only) | No | Yes |
-| `a-search-{awin}-worker-{live,sandbox}` | No | Yes (own source) | Yes (FR-137) | Yes |
+| `a-search-{amazon,ebay,rakuten,cj}-worker-{live,sandbox}` | No | Yes (own source only) | No | Yes |
+| `a-search-{awin,impact}-worker-{live,sandbox}` | No | Yes (own source) | Yes (FR-137) | Yes |
 | `a-search-maintainer-{live,sandbox}` | No | No | Yes | Yes |
 | `a-search-awin-onboarding-{live,sandbox}` | No | Yes (awin) | Yes | Yes |
 | `a-search-impact-onboarding-{live,sandbox}` | No | Yes (impact) | Yes | Yes |
