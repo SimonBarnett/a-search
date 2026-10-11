@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-078: Etsy selftest probe — credential check + recorded fixture path
+ * FR-078: Etsy selftest probe - credential check + recorded fixture path
  * (or injectable HTTP) proving Open API listings client wiring works.
- * Stay-dark: registry enabled stays false.
+ * Registry enabled true (FR-170).
  */
 
 const fs = require('node:fs');

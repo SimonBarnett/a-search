@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-070: Skimlinks selftest probe — credential check + recorded fixture path
+ * FR-070 / FR-168: Skimlinks selftest probe - credential check + recorded fixture path
  * (or injectable HTTP) proving Product API client wiring works.
- * Stay-dark: registry enabled stays false.
+ * Registry enabled true (FR-168); fixture path remains the offline green pin.
  */
 
 const fs = require('node:fs');
