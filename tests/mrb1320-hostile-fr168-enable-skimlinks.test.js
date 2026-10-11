@@ -2,7 +2,7 @@
 
 /**
  * MRB #1320 docs/hostile: FR-168 enable skimlinks live+sandbox + FR-138 secret wiring.
- * Keep-both with FR-167 kijiji + FR-169 aliexpress => 10 enabled x 2 envs = 20 floors.
+ * Keep-both with FR-167..171 => 11 enabled x 2 envs = 22 floors.
  */
 
 const { describe, it } = require('node:test');
@@ -46,7 +46,7 @@ describe('MRB #1320 hostile FR-168 enable skimlinks', () => {
     );
   });
 
-  it('FR-142/143 pins use 20 primary/DLQ floors (FR-167..170)', () => {
+  it('FR-142/143 pins use 22 primary/DLQ floors (FR-167..171)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
