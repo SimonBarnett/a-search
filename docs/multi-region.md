@@ -59,3 +59,8 @@ Do **not** enable Cross-Region Replication (CRR) for a-search results under acti
 ### DNS failover (FR-193)
 
 See [multi-region-dns.md](multi-region-dns.md) for the Route53/external DNS cutover runbook (docs-first; no CDK DNS in FR-193).
+
+### Smoke + failover checklist (FR-194)
+
+See [multi-region-smoke.md](multi-region-smoke.md). Uses FR-144 `scripts/smoke-deploy.js --region`.
+
