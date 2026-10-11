@@ -185,3 +185,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Multi-region second stack (FR-191): deploy same source with -c region= -c stage=standby -c includeRegionInNames=true so names/stack id get stage+region tokens; default names unchanged
 - Amazon worker Creators flag (FR-183): when AMAZON_SEARCH_API=creators assertCreatorsCreds fail-closed then searchAmazonCreators; else PA-API assertAmazonCreds; return searchApi in result
 - Multi-region (FR-190): lock active-passive with primary eu-west-2; madeiradb/SQL stays single-region on IONOS; do not choose active-active without a SQL multi-region story
+- a-search harvest tip: when Simon drops WAF on a Phase-4 FR, FR seat closes not-planned and NACKs; leave phase4 index annotation to #1381; MRB keep-both append on CONFLICTING harvest-agent-skills tips
