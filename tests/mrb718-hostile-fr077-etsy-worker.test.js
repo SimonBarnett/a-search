@@ -63,8 +63,8 @@ describe('mrb718 hostile FR-077 etsy worker', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
   });
 
   it('run end-to-end with fixture inject yields products + description', async () => {

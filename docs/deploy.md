@@ -253,6 +253,21 @@ npm run synth
 Template must show Secrets Manager dynamic references for JWT_* / MSSQL_* /
 provider credentials - never a real password, API token, or JWT string.
 
+## Lambda memorySize floors (FR-165)
+
+Default Lambda memory (128MB) is too small for cold JWKS (`jose`) + AWS SDK
+loads on entry fan-out. The stack sets explicit `memorySize` (not provisioned
+concurrency - OOS):
+
+| Function class | memorySize | Constant |
+|----------------|------------|----------|
+| Entry (`a-search-entry`) | **256** MB | `ENTRY_LAMBDA_MEMORY_MB` |
+| Marketplace workers (amazon/ebay/...) | **256** MB | `WORKER_LAMBDA_MEMORY_MB` |
+| Local/MSSQL workers (awin/impact/...) | **512** MB | `WORKER_MSSQL_LAMBDA_MEMORY_MB` |
+| Maintainer + onboarding | **512** MB | `HEAVY_LAMBDA_MEMORY_MB` |
+
+Pin: `tests/fr165-lambda-memory-size.test.js`. See `cdk/lib/a-search-stack.js`.
+
 ## 9. MSSQL network path - no-VPC + fixed egress (FR-149)
 
 `ASearchStack` is **explicit no-VPC**: Lambdas use default AWS networking.
@@ -302,10 +317,18 @@ to `irc.ntsa.uk` (bobiverse intake). Cross-link:
    return HTTP 500 / rethrow the original fatal.
 4. Private intake proxy is **out of scope** for this FR.
 
+## 11. Destroy / rollback (FR-163)
+
+Teardown order, what `cdk destroy` deletes vs retains (results bucket
+`RemovalPolicy.RETAIN`, SQL data, Secrets Manager), and redeploy notes:
+**[destroy-rollback.md](destroy-rollback.md)**. Automated destroy from CI is
+out of scope.
+
 ## Out of scope for this playbook
 
 - Production deploy from a PR / CI approval gate (separate FR)
 - CI auto-smoke against production without approval
+- Automated `cdk destroy` from CI (see [destroy-rollback.md](destroy-rollback.md))
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
 - Opening IONOS firewall ports (ops; FR-149 / FR-122)

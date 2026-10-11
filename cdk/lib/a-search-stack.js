@@ -28,6 +28,23 @@ const { resolveCostTags } = require('./resolve-cost-tags');
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
 
 /**
+ * FR-164: worker Lambda timeout (seconds). Queue visibility must be strictly
+ * greater; AWS guidance for SQS->Lambda is at least 6x the function timeout.
+ */
+const WORKER_LAMBDA_TIMEOUT_SEC = 60;
+const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
+
+/**
+ * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
+ * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
+ * maintainer, onboarding: 512MB.
+ */
+const ENTRY_LAMBDA_MEMORY_MB = 256;
+const WORKER_LAMBDA_MEMORY_MB = 256;
+const WORKER_MSSQL_LAMBDA_MEMORY_MB = 512;
+const HEAVY_LAMBDA_MEMORY_MB = 512;
+
+/**
  * FR-143: dedicated LogGroup with 30-day retention (prefer over deprecated logRetention).
  * @param {Construct} scope
  * @param {string} id
@@ -58,7 +75,7 @@ const {
 } = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
- * Title-case construct id fragment from source id (amazon â†’ Amazon).
+ * Title-case construct id fragment from source id (amazon Ã¢â€ â€™ Amazon).
  * @param {string} id
  */
 function pascalSource(id) {
@@ -66,7 +83,7 @@ function pascalSource(id) {
 }
 
 /**
- * Registry queueEnv `SQS_AMAZON_URL` â†’ entry env keys SQS_AMAZON_LIVE_URL /
+ * Registry queueEnv `SQS_AMAZON_URL` Ã¢â€ â€™ entry env keys SQS_AMAZON_LIVE_URL /
  * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
  * @param {string} queueEnv
  * @param {'live'|'sandbox'} env
@@ -137,7 +154,7 @@ function resolveEntryJwtSecret(scope, stack) {
 
 /**
  * FR-136: wire JWT_* env from Secrets Manager JSON fields + grant read.
- * CloudFormation dynamic refs — no secret strings in the synth snapshot.
+ * CloudFormation dynamic refs â€” no secret strings in the synth snapshot.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
  */
@@ -203,7 +220,7 @@ function wireMssqlSecretEnv(fn, secret, opts) {
 
 /**
  * FR-138: credential env keys from each enabled provider `.env.example`
- * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* — those are wired elsewhere).
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* â€” those are wired elsewhere).
  * Stay-dark sources are omitted until an enable-provider FR adds them here.
  */
 const PROVIDER_CREDENTIAL_KEYS = {
@@ -226,6 +243,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
+  // FR-167: enable kelkoo (Secrets Manager JSON keys)
+  kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
+  // FR-168: skimlinks enabled -> FR-138 secret wiring
+  skimlinks: ['SKIMLINKS_API_KEY', 'SKIMLINKS_PUBLISHER_ID'],
+  // FR-169: aliexpress enabled -> FR-138 secret wiring
+  aliexpress: ['ALIEXPRESS_API_KEY'],
+  // FR-170: enable etsy
+  etsy: ['ETSY_API_KEY'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -242,6 +267,21 @@ const PROVIDER_PLAIN_DEFAULTS = {
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
+  },
+  // FR-167
+  kelkoo: {
+    KELKOO_COUNTRY: 'uk',
+  },
+  // FR-168
+  skimlinks: {
+    SKIMLINKS_COUNTRY: 'uk',
+  },
+  // FR-169
+  aliexpress: {
+    ALIEXPRESS_TRACKING_ID: 'a-search',
+  },
+  etsy: {
+    ETSY_TRACKING_ID: 'a-search',
   },
 };
 
@@ -351,7 +391,7 @@ class ASearchStack extends cdk.Stack {
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
     // FR-130 wires env + IAM below.
-    // FR-154: deepen security defaults — SSE-S3, BlockPublicAccess ALL,
+    // FR-154: deepen security defaults â€” SSE-S3, BlockPublicAccess ALL,
     // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
     const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -408,6 +448,7 @@ class ASearchStack extends cdk.Stack {
       handler: 'entry/src/index.handler',
       code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
+      memorySize: ENTRY_LAMBDA_MEMORY_MB,
       environment: entryEnv,
       logGroup: lambdaLogGroup(this, 'EntryFunctionLogGroup'),
     });
@@ -443,13 +484,19 @@ class ASearchStack extends cdk.Stack {
         const qName = stagedName(queueName(src.id, env));
         const envPascal = env === 'live' ? 'Live' : 'Sandbox';
         // FR-142: sibling DLQ + redrive so poison messages leave the worker queue
+        // FR-162: SQS-managed SSE on primary + DLQ (no CMK per queue)
         const dlq = new sqs.Queue(this, `${pascal}${envPascal}DeadLetterQueue`, {
           queueName: `${qName}-dlq`,
           retentionPeriod: cdk.Duration.days(14),
+          encryption: sqs.QueueEncryption.SQS_MANAGED,
         });
+        // FR-164: visibilityTimeout > worker Lambda timeout (6x buffer)
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
-          visibilityTimeout: cdk.Duration.seconds(60),
+          visibilityTimeout: cdk.Duration.seconds(
+            WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
+          ),
+          encryption: sqs.QueueEncryption.SQS_MANAGED,
           deadLetterQueue: {
             queue: dlq,
             maxReceiveCount: 3,
@@ -460,6 +507,9 @@ class ASearchStack extends cdk.Stack {
         entry.addEnvironment(urlKey, queue.queueUrl);
         queue.grantSendMessages(entry);
 
+        const workerMemoryMb = isLocalProviderFolder(src.folder)
+          ? WORKER_MSSQL_LAMBDA_MEMORY_MB
+          : WORKER_LAMBDA_MEMORY_MB;
         const worker = new lambda.Function(
           this,
           `${pascal}${envPascal}WorkerFunction`,
@@ -468,7 +518,8 @@ class ASearchStack extends cdk.Stack {
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
-            timeout: cdk.Duration.seconds(60),
+            timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
+            memorySize: workerMemoryMb,
             environment: {
               A_SEARCH_ENV: env,
             },
@@ -617,6 +668,7 @@ class ASearchStack extends cdk.Stack {
       handler: maintainerHandlerPath(),
       code: maintainerCode,
       timeout: cdk.Duration.minutes(5),
+      memorySize: HEAVY_LAMBDA_MEMORY_MB,
       environment: {
         A_SEARCH_ENV: 'live',
         MAINTAINER_TOP: '10',
@@ -636,6 +688,7 @@ class ASearchStack extends cdk.Stack {
         handler: maintainerHandlerPath(),
         code: maintainerCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
           MAINTAINER_TOP: '10',
@@ -679,6 +732,7 @@ class ASearchStack extends cdk.Stack {
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'live',
         },
@@ -703,6 +757,7 @@ class ASearchStack extends cdk.Stack {
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
@@ -735,6 +790,7 @@ class ASearchStack extends cdk.Stack {
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'sandbox',
         },
@@ -762,6 +818,7 @@ class ASearchStack extends cdk.Stack {
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
+        memorySize: HEAVY_LAMBDA_MEMORY_MB,
         environment: {
           A_SEARCH_ENV: 'live',
         },
@@ -894,4 +951,10 @@ module.exports = {
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
+  WORKER_LAMBDA_TIMEOUT_SEC,
+  WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
+  ENTRY_LAMBDA_MEMORY_MB,
+  WORKER_LAMBDA_MEMORY_MB,
+  WORKER_MSSQL_LAMBDA_MEMORY_MB,
+  HEAVY_LAMBDA_MEMORY_MB,
 };

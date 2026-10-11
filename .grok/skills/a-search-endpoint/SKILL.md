@@ -1,12 +1,12 @@
 ---
 name: a-search-endpoint
 description: >
-  Call the a-search HTTP API as an agent: obtain login JWT, POST /search,
-  GET/POST /account/performance (clicks visits sales for JWT userId),
-  GET/POST /selftest (provider status + intake on fail),
-  interpret 200 accept vs 401/400, live vs sandbox, and find offline results
-  on the SQL host rclone path (or S3 key). Use when searching affiliate/local
-  parts via a-search, Club Madeira catalogue enrich, or /a-search.
+  Call the a-search HTTP API as an agent: obtain SearchApiUrl (CDK/CFN),
+  login JWT, POST /search, GET/POST /account/performance (clicks visits sales
+  for JWT userId), GET/POST /selftest, run FR-144 smoke against live|sandbox,
+  interpret 200 accept vs 401/400, and find offline results on the SQL host
+  rclone path (or S3 key). Use when searching affiliate/local parts via
+  a-search, Club Madeira catalogue enrich, or /a-search.
 ---
 
 # a-search endpoint (agent caller)
@@ -26,15 +26,16 @@ You are a **caller** of `a-search`, not a provider worker. Search is
 later under the results path.
 
 Canonical product docs: `docs/endpoint-search.md`,
-`docs/endpoint-performance.md` (FR-053a — clicks / visits / sales),
-`docs/endpoint-selftest.md` (FR-059a — provider status + intake on fail),
-`docs/environments.md`, `docs/rclone-results.md` (SQL host mount env vars +
-path), `docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is
-the agent playbook.
+`docs/endpoint-performance.md` (FR-053a - clicks / visits / sales),
+`docs/endpoint-selftest.md` (FR-059a - provider status + intake on fail),
+`docs/deploy.md` (SearchApiUrl + FR-144 smoke), `docs/environments.md`,
+`docs/rclone-results.md` (SQL host mount env vars + path),
+`docs/skillbook-layout.md` (FR-046a harvest checklist). This skill is the
+agent playbook.
 
 ## When to use
 
-- Need multi-source product hits (Amazon, eBay, Awin local parts, …)
+- Need multi-source product hits (Amazon, eBay, Awin local parts, ...)
 - Need **account performance** (clicks, visits, sales) for the JWT `userId`
 - Need a **provider selftest** (which sources are ok; failures file intake)
 - Must pass a **login JWT** whose `userId` claim owns the result files
@@ -43,10 +44,47 @@ the agent playbook.
 ## Preconditions
 
 1. Login service has issued a JWT with claim **`userId`** (string).
-2. Base URL for the env (examples — replace with deploy values):
+2. Base URL for the env (examples - replace with deploy values):
    - live: `A_SEARCH_URL_LIVE`
    - sandbox: `A_SEARCH_URL_SANDBOX`
 3. You know `catalogId`, `category`, `subcategory`, and search text.
+
+## Deploy URL + smoke (FR-161 / FR-144)
+
+Obtain the HTTP base from the CDK stack output **`SearchApiUrl`** (same value
+for live and sandbox request bodies; env is chosen by `sandbox` on each call).
+Operator playbook: **`docs/deploy.md`** sections 6 (Read stack outputs) and 7
+(Smoke FR-144).
+
+```bash
+# CloudFormation (stack name may differ per account)
+aws cloudformation describe-stacks --stack-name ASearchStack \
+  --query "Stacks[0].Outputs[?OutputKey=='SearchApiUrl'].OutputValue" \
+  --output text
+```
+
+Map that URL into caller env vars (never commit the JWT):
+
+| Env var | Use |
+|---------|-----|
+| `A_SEARCH_API_URL` | FR-144 smoke script base (`scripts/smoke-deploy.js`) |
+| `A_SEARCH_URL_LIVE` | Agent calls with `sandbox: false` / omit |
+| `A_SEARCH_URL_SANDBOX` | Agent calls with `sandbox: true` (often the same SearchApiUrl) |
+| `A_SEARCH_SMOKE_JWT` | Fixture JWT for smoke only (issuer/audience match deploy) |
+
+Post-deploy smoke against the chosen URL (default body uses `sandbox: true`):
+
+```bash
+export A_SEARCH_API_URL="<SearchApiUrl>"
+export A_SEARCH_SMOKE_JWT="<fixture jwt>"
+npm run smoke-deploy
+# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL" --jwt "$A_SEARCH_SMOKE_JWT"
+```
+
+Smoke asserts `POST /search` accept (200 + `accepted:true` + `searchId`) and
+`GET /selftest?sandbox=true` shape. Provider probe failures in the table are
+not fatal. Do not hit production from CI without an approval gate. Pin:
+`tests/fr161-endpoint-skill-deploy-smoke.test.js`.
 
 ## Call syntax
 
@@ -81,7 +119,7 @@ Content-Type: application/json
 
 **Do not** send `userId` in the body. It comes from the JWT.
 
-### Success — HTTP 200
+### Success - HTTP 200
 
 ```json
 {
@@ -120,10 +158,10 @@ Or `POST /account/performance` with JSON `{ "from", "to", "sandbox" }`.
 | Rule | Detail |
 |------|--------|
 | Auth | Same Bearer JWT; **`userId` from JWT only** |
-| Body/query `userId` | Not authority — omit it |
+| Body/query `userId` | Not authority - omit it |
 | 200 fields | `clicks`, `visits` / `uniqueVisitors`, `sales` (count/amount/commission), `env`, echoed `userId` |
 | Empty account | **200** with zeros / empty arrays (not 404) |
-| Env | `sandbox: true` → sandbox; omit/false → live |
+| Env | `sandbox: true` -> sandbox; omit/false -> live |
 
 Implementation / aggregates are later FR-053 slices; until then treat the
 route as stubbed per those docs.
@@ -142,7 +180,7 @@ Or `POST /selftest` with JSON `{ "sandbox", "sources?" }`.
 | Rule | Detail |
 |------|--------|
 | Auth | Same Bearer JWT; **`userId` from JWT only** |
-| Env | `sandbox: true` → sandbox; omit/false → live |
+| Env | `sandbox: true` -> sandbox; omit/false -> live |
 | 200 body | `providers[]` with `id` + `ok` (+ optional `error`); `failed`; `intakeFiled` |
 | Intake on fail | Each failed provider probe files intake with **`repo=SimonBarnett/a-search`** (redacted, deduped) |
 | 401/400 | No intake |
@@ -190,11 +228,11 @@ Agent pattern:
 
 1. After 200, note `searchId`, `userId`, `env`, `enqueued`.
 2. Poll/wait for each `{source}` file under the mount (or S3 list) for those
-   sources — timeout policy UNKNOWN (propose 60–180s with backoff).
+   sources - timeout policy UNKNOWN (propose 60-180s with backoff).
 3. Parse JSON product arrays; merge client-side if you need a single list.
-4. Never read the **other** env’s tree.
+4. Never read the **other** env's tree.
 
-If `enqueued` is `[]`, no files will appear — registry has nothing enabled
+If `enqueued` is `[]`, no files will appear - registry has nothing enabled
 for that env.
 
 ## Live vs sandbox
@@ -203,16 +241,16 @@ for that env.
 |---|------|---------|
 | Body | `sandbox: false` or omit | `sandbox: true` |
 | URL | `A_SEARCH_URL_LIVE` | `A_SEARCH_URL_SANDBOX` |
-| Results | `…/live/…` | `…/sandbox/…` |
+| Results | `.../live/...` | `.../sandbox/...` |
 
 Do not use a live JWT URL with sandbox paths or the reverse.
 
 ## What this skill does not cover
 
-- Implementing amazon/ebay/awin workers — use that folder’s
+- Implementing amazon/ebay/awin workers - use that folder's
   `a-search-<id>` skill with CWD in the provider directory
-- Running the parts maintainer — `a-search-maintainer`
-- Issuing JWTs — login product’s skill / human ops
+- Running the parts maintainer - `a-search-maintainer`
+- Issuing JWTs - login product's skill / human ops
 
 ## Do not
 

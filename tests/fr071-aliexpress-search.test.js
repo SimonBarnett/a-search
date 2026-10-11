@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-071: aliexpress search.js client + recorded fixtures (stay-dark).
+ * FR-071: aliexpress search.js client + recorded fixtures (enabled FR-169).
  * No live network; registry enabled stays false.
  */
 
@@ -122,13 +122,13 @@ describe('FR-071 aliexpress search client', () => {
     );
   });
 
-  it('registry keeps aliexpress enabled.live and enabled.sandbox false', () => {
+  it('registry keeps aliexpress enabled.live and enabled.sandbox true (FR-169)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.ok(ae, 'registry missing aliexpress');
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
   });
 });

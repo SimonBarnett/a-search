@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-073: aliexpress worker wires search → normalize → writeResults (stay-dark).
+ * FR-073: aliexpress worker wires search → normalize → writeResults (enabled FR-169).
  */
 
 const { describe, it } = require('node:test');
@@ -101,14 +101,14 @@ describe('FR-073 aliexpress worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps aliexpress enabled false for both envs', () => {
+  it('registry keeps aliexpress enabled true for both envs (FR-169)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.ok(ae);
-    assert.equal(ae.enabled.live, false);
-    assert.equal(ae.enabled.sandbox, false);
+    assert.equal(ae.enabled.live, true);
+    assert.equal(ae.enabled.sandbox, true);
   });
 
   it('worker source no longer contains not-wired stub message', () => {
