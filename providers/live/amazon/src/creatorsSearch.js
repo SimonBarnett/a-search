@@ -10,10 +10,8 @@ const {
   normalizeProduct,
   assertProductSchema,
 } = require('../../../../worker/lib/normalizeProduct');
-const {
-  buildTrackedUrl,
-  TrackedUrlError,
-} = require('../../../../shared/links/buildTrackedUrl');
+const { TrackedUrlError } = require('../../../../shared/links/buildTrackedUrl');
+const { stampAmazonTrackedUrl } = require('./stampAmazonTrackedUrl');
 const { keywordsFromMsg } = require('./search');
 
 class AmazonCreatorsCredsError extends Error {
@@ -139,12 +137,11 @@ function normalizeCreatorsItem(item, track) {
         'tracked_url_missing_userId',
       );
     }
-    url = buildTrackedUrl({
+    url = stampAmazonTrackedUrl({
       url: detail,
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['AMAZON_PARTNER_TAG'],
     });
   }
 
@@ -208,6 +205,7 @@ async function searchAmazonCreators(msg, deps) {
 }
 
 module.exports = {
+  stampAmazonTrackedUrl,
   searchAmazonCreators,
   isCreatorsSearchEnabled,
   assertCreatorsCreds,
