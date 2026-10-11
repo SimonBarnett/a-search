@@ -35,6 +35,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     assert.deepEqual(live, sandbox);
     // FR-167 kijiji + FR-169 aliexpress on the default-on set (both envs).
     assert.deepEqual(live, [
+      'admitad',
       'aliexpress',
       'amazon',
       'awin',

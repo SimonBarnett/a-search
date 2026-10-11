@@ -197,8 +197,8 @@
       "kind": "local",
       "folder": "providers/local/admitad",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_ADMITAD_URL",
       "rateLimit": {

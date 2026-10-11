@@ -251,6 +251,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-175: enable admitad -> FR-138 secret wiring
+  admitad: [
+    'ADMITAD_API_KEY',
+    'ADMITAD_API_TOKEN',
+    'ADMITAD_FEED_TOKEN',
+    'ADMITAD_PUBLISHER_ID',
+    'ADMITAD_WEBSITE_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

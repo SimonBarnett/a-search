@@ -54,7 +54,6 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
       'partnerize',
       'webgains',
       'tradedoubler',
-      'admitad',
       'flexoffers',
       'avantlink',
       'shopify',

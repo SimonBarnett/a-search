@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-800 FR-092 hostile', () => {
-  it('registry admitad stay-dark both envs (CAST IRON)', () => {
+  it('registry admitad enabled both envs (FR-175)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ad = registry.sources.find((s) => s.id === 'admitad');
     assert.ok(ad);
-    assert.equal(ad.enabled.live, false);
-    assert.equal(ad.enabled.sandbox, false);
+    assert.equal(ad.enabled.live, true);
+    assert.equal(ad.enabled.sandbox, true);
     assert.equal(ad.kind, 'local');
     assert.equal(ad.queueEnv, 'SQS_ADMITAD_URL');
   });

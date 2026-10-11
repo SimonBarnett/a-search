@@ -261,13 +261,13 @@ describe('FR-092 admitad MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps admitad enabled false both envs', () => {
+  it('registry keeps admitad enabled true both envs (FR-175)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'admitad');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

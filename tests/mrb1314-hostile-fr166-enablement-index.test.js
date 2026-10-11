@@ -19,7 +19,6 @@ const PHASE2_STUB_IDS = [
   'partnerize',
   'webgains',
   'tradedoubler',
-  'admitad',
   'flexoffers',
   'avantlink',
   'shopify',

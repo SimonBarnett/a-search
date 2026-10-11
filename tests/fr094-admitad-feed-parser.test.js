@@ -109,14 +109,14 @@ describe('FR-094 admitad feed-parser hook', () => {
     assert.match(String(creds.defaultFeedUrl), /admitad\.csv/);
   });
 
-  it('registry keeps admitad enabled false both envs', () => {
+  it('registry keeps admitad enabled true both envs (FR-175)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const pz = registry.sources.find((s) => s.id === 'admitad');
     assert.ok(pz);
-    assert.equal(pz.enabled.live, false);
-    assert.equal(pz.enabled.sandbox, false);
+    assert.equal(pz.enabled.live, true);
+    assert.equal(pz.enabled.sandbox, true);
   });
 
   it('skill documents feed-parser hook + env keys', () => {
