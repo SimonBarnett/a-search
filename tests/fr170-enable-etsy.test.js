@@ -14,7 +14,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
-  'partnerize',
   'webgains',
   'tradedoubler',
   'admitad',
@@ -126,7 +125,7 @@ describe('FR-170 enable etsy', () => {
       assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['partnerize', 'webgains']) {
+    for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

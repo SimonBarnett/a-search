@@ -253,6 +253,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
   etsy: ['ETSY_API_KEY'],
   // FR-171: bol enabled -> FR-138 secret wiring
   bol: ['BOL_API_KEY'],
+  // FR-172: enable partnerize
+  partnerize: [
+    'PARTNERIZE_API_KEY',
+    'PARTNERIZE_API_TOKEN',
+    'PARTNERIZE_FEED_TOKEN',
+    'PARTNERIZE_PUBLISHER_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

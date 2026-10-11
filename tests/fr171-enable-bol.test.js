@@ -132,7 +132,7 @@ describe('FR-171 enable bol', () => {
       assert.ok(qHit, `missing queue a-search-bol-${env}`);
     }
 
-    for (const dark of ['partnerize', 'webgains', 'shopify']) {
+    for (const dark of ['webgains', 'shopify']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
