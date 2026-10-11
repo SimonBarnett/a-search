@@ -19,8 +19,18 @@ const releaseGap = path.join(
   'release-gap-aws-installable-2026-10-09.md',
 );
 
-const ENABLED = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
-const STAY_DARK = ['kelkoo', 'skimlinks', 'partnerize', 'webgains'];
+const ENABLED = [
+  'amazon',
+  'ebay',
+  'rakuten',
+  'cj',
+  'awin',
+  'impact',
+  'kelkoo',
+  'skimlinks',
+  'aliexpress',
+];
+const STAY_DARK = ['partnerize', 'webgains', 'etsy'];
 
 describe('MRB #1138 hostile FR-138 provider secrets', () => {
   it('product test uses in-process synth + stay-dark omission', () => {
