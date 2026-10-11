@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * MRB #788 hostile pins for FR-091 tradedoubler feed-parser (stay-dark).
+ * MRB #788 hostile pins for FR-091 tradedoubler feed-parser.
+ * Registry enabled both envs by FR-174 / #1021.
  */
 
 const { describe, it } = require('node:test');
@@ -24,8 +25,8 @@ describe('MRB-788 FR-091 hostile', () => {
     );
     const wg = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
     assert.equal(wg.kind, 'local');
   });
 
