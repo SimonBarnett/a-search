@@ -211,8 +211,8 @@
       "kind": "local",
       "folder": "providers/local/flexoffers",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_FLEXOFFERS_URL",
       "rateLimit": {

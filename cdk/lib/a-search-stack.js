@@ -251,6 +251,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-176: enable flexoffers -> FR-138 secret wiring
+  flexoffers: [
+    'FLEXOFFERS_API_KEY',
+    'FLEXOFFERS_API_TOKEN',
+    'FLEXOFFERS_FEED_TOKEN',
+    'FLEXOFFERS_PUBLISHER_ID',
+    'FLEXOFFERS_AFFILIATE_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

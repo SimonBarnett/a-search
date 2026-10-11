@@ -261,13 +261,13 @@ describe('FR-095 flexoffers MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps flexoffers enabled false both envs', () => {
+  it('registry keeps flexoffers enabled true both envs (FR-176)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'flexoffers');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

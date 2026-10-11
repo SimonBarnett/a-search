@@ -41,6 +41,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
       'cj',
       'ebay',
       'etsy',
+      'flexoffers',
       'impact',
       'kelkoo',
       'rakuten',

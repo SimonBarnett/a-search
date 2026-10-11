@@ -39,7 +39,7 @@ they do not unlock a silent client swap.
 | `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
 | `etsy` | live | true | Handmade/niche | Enabled FR-170;  Open API v3; smaller club overlap |
 | `bol` | live | false | NL/BE marketplace | Enable only for Benelux launch |
-| `flexoffers` | local | false | US mid-tail feeds | After Impact |
+| `flexoffers` | local | true | US mid-tail feeds | After Impact |
 | `avantlink` | local | false | US outdoor/retail feeds | After Impact |
 | `shopify` | local | false | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
 | `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API -> MSSQL Parts |
@@ -77,7 +77,7 @@ flip only that id, pin others stay dark) - see
     { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
     { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
-    { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
+    { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_FLEXOFFERS_URL" },
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
     { "id": "shopify", "kind": "local", "folder": "providers/local/shopify", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_SHOPIFY_URL" },
     { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WIX_URL" },

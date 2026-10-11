@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-809 FR-095 hostile', () => {
-  it('registry flexoffers stay-dark both envs (CAST IRON)', () => {
+  it('registry flexoffers enabled both envs (FR-176)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const fo = registry.sources.find((s) => s.id === 'flexoffers');
     assert.ok(fo);
-    assert.equal(fo.enabled.live, false);
-    assert.equal(fo.enabled.sandbox, false);
+    assert.equal(fo.enabled.live, true);
+    assert.equal(fo.enabled.sandbox, true);
     assert.equal(fo.kind, 'local');
     assert.equal(fo.queueEnv, 'SQS_FLEXOFFERS_URL');
   });
