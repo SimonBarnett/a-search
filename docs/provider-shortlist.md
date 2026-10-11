@@ -20,11 +20,21 @@ explicitly re-scopes to Creators). Do not thrash PA-API vs Creators in
 Phase 1 without that new FR. PA-API v5 retirement notes stay informational;
 they do not unlock a silent client swap.
 
+
+## Amazon Creators coexistence (FR-181)
+
+Decision (LOCKED): Creators API runs **behind a feature flag** (default off).
+**PA-API SearchItems remains** the live production path for `amazon`.
+Creators does **not** replace PA-API. Sandbox may enable the flag for trials;
+live stays PA-API until a later enable FR. Implementation: **FR-182+**
+(client + fixtures, flagged off). See [docs/fr/FR-181.md](fr/FR-181.md).
+
+
 ## Registry candidates (all in repo this pass)
 
 | id | Kind | Default enabled | Why include | Implementation note |
 |----|------|-----------------|-------------|---------------------|
-| `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). Creators API = follow-up FR |
+| `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). **FR-181:** Creators behind flag (default off); PA-API remains live; FR-182+ |
 | `ebay` | live | true | Marketplace coverage | Browse API OAuth; port from `eBay.js` |
 | `awin` | local | true | Canonical aggregator -> local FTS | Product **datafeeds** ingest + local search (not Awin reporting API) |
 | `rakuten` | live | true | Real Product Search API | Keyword search; XML; 100 calls/min; optional later local-feed twin |
@@ -32,7 +42,7 @@ they do not unlock a silent client swap.
 | `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
 | `partnerize` | local | true | Travel/finance depth | Enabled FR-172; MSSQL Parts + feed hooks |
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
-| `tradedoubler` | local | false | EU aggregator | Same local pattern as Awin |
+| `tradedoubler` | local | true | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | Broad geo | Quality varies by market |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
@@ -75,7 +85,7 @@ flip only that id, pin others stay dark) - see
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
     { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_PARTNERIZE_URL" },
     { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
-    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
+    { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
