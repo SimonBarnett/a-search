@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-082: bol selftestProbe + registry rateLimit (stay-dark).
+ * FR-082: bol selftestProbe + registry rateLimit (enabled FR-171).
  */
 
 const { describe, it } = require('node:test');
@@ -84,8 +84,8 @@ describe('FR-082 bol selftestProbe + rateLimit', () => {
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
     assert.ok(bol);
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
     assert.ok(bol.rateLimit);
     assert.equal(typeof bol.rateLimit.maxConcurrency, 'number');
     assert.ok(bol.rateLimit.maxConcurrency > 0);

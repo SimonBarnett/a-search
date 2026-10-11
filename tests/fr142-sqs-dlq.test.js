@@ -88,15 +88,15 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-167+FR-168+FR-169: 18 primaries + 18 DLQs (9 enabled x live+sandbox)
+    // FR-167..171: 22 primaries + 22 DLQs (11 enabled x live+sandbox)
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean);
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    // FR-167+FR-168+FR-169: 18 primaries + 18 DLQs (9 enabled x live+sandbox)
-    assert.equal(primaries.length, 20, `expected 20 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 20, `expected 20 DLQs, got ${dlqs.length}`);
+    // FR-167..171: 22 primaries + 22 DLQs (11 enabled x live+sandbox)
+    assert.equal(primaries.length, 22, `expected 22 primary queues, got ${primaries.length}`);
+    assert.equal(dlqs.length, 22, `expected 22 DLQs, got ${dlqs.length}`);
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {

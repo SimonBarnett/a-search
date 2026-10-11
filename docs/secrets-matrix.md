@@ -79,9 +79,10 @@ Per-source Secrets Manager JSON. Override:
 | skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
+| bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-bol, partnerize, webgains, tradedoubler,
+partnerize, webgains, tradedoubler
 admitad, flexoffers, avantlink, shopify, wix, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)

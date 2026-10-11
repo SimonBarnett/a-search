@@ -64,13 +64,13 @@ describe('mrb721 hostile FR-080 bol normalize', () => {
     assert.equal(products[0].description, 'Fixture Bol Shop A');
   });
 
-  it('stay-dark; skill FR-080 ASCII; BOL_TRACKING_ID in env', () => {
+  it('enabled FR-171; skill FR-080 ASCII; BOL_TRACKING_ID in env', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
 
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
@@ -81,7 +81,7 @@ describe('mrb721 hostile FR-080 bol normalize', () => {
 
     const env = fs.readFileSync(envPath, 'utf8');
     assert.ok(!env.includes('\ufffd'));
-    assert.match(env, /^BOL_TRACKING_ID=$/m);
+    assert.match(env, /^BOL_TRACKING_ID=(a-search)?$/m);
   });
 
   it('missing track throws TrackedUrlError when url present', () => {

@@ -2,7 +2,7 @@
 
 /**
  * MRB #1334 docs/hostile: FR-170 enable etsy live+sandbox + FR-138 secret wiring.
- * Pins survive keep-both with FR-167..169 (10 enabled -> 20 queues).
+ * Pins survive keep-both with FR-167..171 (11 enabled -> 22 queues).
  */
 
 const { describe, it } = require('node:test');
@@ -19,14 +19,15 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1334 hostile FR-170 enable etsy', () => {
-  it('registry: etsy both envs true; bol stays dark', () => {
+  it('registry: etsy both envs true; bol also enabled (FR-171 keep-both)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('etsy').enabled.live, true);
     assert.equal(byId.get('etsy').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, false);
+    assert.equal(byId.get('bol').enabled.live, true);
+    assert.equal(byId.get('bol').enabled.sandbox, true);
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + ETSY_TRACKING_ID plain default', () => {
@@ -38,13 +39,13 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     );
   });
 
-  it('FR-142/143 pins use 20 primary/DLQ floors (FR-167..170)', () => {
+  it('FR-142/143 pins use 22 primary/DLQ floors (FR-167..171)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 20 primary queues/);
-    assert.match(fr143, /expected 20 DLQ depth alarms/);
+    assert.match(fr142, /expected 22 primary queues/);
+    assert.match(fr143, /expected 22 DLQ depth alarms/);
     assert.match(fr142, /'etsy'/);
     assert.match(fr142, /'skimlinks'/);
   });

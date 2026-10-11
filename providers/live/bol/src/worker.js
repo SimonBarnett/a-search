@@ -3,7 +3,7 @@
 /**
  * Bol live provider worker (FR-081).
  * search -> normalize -> writeResults (injectable HTTP + putObject).
- * Stay-dark: registry enabled remains false until a later enable FR.
+ * Registry enabled true (FR-171).
  */
 
 const path = require('node:path');

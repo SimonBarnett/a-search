@@ -35,7 +35,7 @@ exist. Completing a client + fixtures does **not** enable the source.
 FR-168 (#1015) and **`aliexpress`** by FR-169 (#1016) for both envs. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
-`kelkoo` was enabled for both envs by **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170** `etsy` enabled (both envs).
+`kelkoo` was enabled for both envs by **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170 / **bol** FR-171** `etsy` enabled (both envs).
 registry flip). Remaining rows in the stay-dark table above stay false until
 their own enable FR.
 

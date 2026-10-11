@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Enabled sources include FR-167 kelkoo + FR-168 skimlinks + FR-169 aliexpress; other Phase-2 stubs stay dark.
+ * Enabled sources include FR-167..171 (kelkoo/skimlinks/aliexpress/etsy/bol); other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -12,8 +12,8 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks'];
-const STAY_DARK_SAMPLE = ['bol', 'partnerize', 'webgains'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'bol'];
+const STAY_DARK_SAMPLE = ['partnerize', 'webgains', 'tradedoubler'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -48,6 +48,8 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /SKIMLINKS_API_KEY/);
     assert.match(text, /SKIMLINKS_PUBLISHER_ID/);
     assert.match(text, /ALIEXPRESS_API_KEY/);
+    assert.match(text, /ETSY_API_KEY/);
+    assert.match(text, /BOL_API_KEY/);
     // Stay-dark ids must not appear in PROVIDER_CREDENTIAL_KEYS block
     for (const dark of STAY_DARK_SAMPLE) {
       assert.doesNotMatch(

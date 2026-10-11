@@ -38,7 +38,7 @@ they do not unlock a silent client swap.
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
 | `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
 | `etsy` | live | true | Handmade/niche | Enabled FR-170;  Open API v3; smaller club overlap |
-| `bol` | live | false | NL/BE marketplace | Enable only for Benelux launch |
+| ol | live | true | NL/BE marketplace | Enabled FR-171; Benelux marketplace |
 | `flexoffers` | local | false | US mid-tail feeds | After Impact |
 | `avantlink` | local | false | US outdoor/retail feeds | After Impact |
 | `shopify` | local | false | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
@@ -70,7 +70,7 @@ flip only that id, pin others stay dark) - see
     { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
     { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ALIEXPRESS_URL" },
     { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ETSY_URL" },
-    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
+    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_BOL_URL" },
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
     { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_PARTNERIZE_URL" },
