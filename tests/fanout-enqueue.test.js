@@ -56,7 +56,7 @@ describe('FR-006 fan-out enqueue', () => {
         catalogId: 1,
         category: 'c',
         subcategory: 's',
-        sources: ['amazon', 'partnerize'],
+        sources: ['amazon', 'webgains'],
       },
       enabled: () => ['amazon', 'ebay'],
       sendMessage: async (payload) => {
@@ -64,7 +64,7 @@ describe('FR-006 fan-out enqueue', () => {
       },
     });
     assert.deepEqual(sent, ['amazon']);
-    assert.ok(!sent.includes('partnerize'));
+    assert.ok(!sent.includes('webgains'));
   });
 
   it('sources:["amazon"] → only amazon', async () => {
@@ -101,7 +101,7 @@ describe('FR-006 fan-out enqueue', () => {
             catalogId: 1,
             category: 'c',
             subcategory: 's',
-            sources: ['partnerize', 'webgains'],
+            sources: ['webgains', 'webgains'],
           },
           enabled: () => [...DEFAULT_ON],
           sendMessage: async () => {
@@ -116,7 +116,7 @@ describe('FR-006 fan-out enqueue', () => {
     assert.deepEqual(
       resolveEnqueueTargets({
         env: 'live',
-        sources: ['amazon', 'partnerize'],
+        sources: ['amazon', 'webgains'],
         enabled: () => ['amazon', 'ebay'],
       }),
       ['amazon'],
