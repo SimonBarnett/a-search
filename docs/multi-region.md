@@ -10,7 +10,7 @@
 | Primary region default | `eu-west-2` (matches `docs/deploy.md` / CDK context). |
 | Standby | Second region via FR-191+ (`region` / `stage` context). Cutover is an ops runbook (FR-193 DNS / FR-194 smoke). |
 | HTTP API / Lambdas / SQS | Regional stacks; standby is cold or warm but not dual-active for the same env+stage. |
-| S3 results | Strategy detail in FR-192 (replicate vs region-local). Under active-passive, primary owns the live results path until cutover. |
+| S3 results | **Region-local** ResultsBucket per stack (FR-192 LOCKED). No S3 CRR. Primary owns live results until cutover; standby stack has its own bucket. |
 | Secrets | Replicate or re-seed into the standby stack as needed for failover; never commit secret values. |
 | MSSQL / madeiradb | **Stays single-region on IONOS** (`WIN-MPRE8VI4U6U` / `madeiradb`). Do **not** assume SQL multi-region or dual-write. AWS regions fail over independently of the SQL host. |
 
@@ -42,4 +42,17 @@ Club Madeira **SQL is a single IONOS instance**. Active-active AWS would still f
 
 ### Second-region stack (FR-191)
 
-Use \-c region=\ + \-c stage=\ + \-c includeRegionInNames=true\ (see [deploy.md](deploy.md)).
+Use `-c region=` + `-c stage=` + `-c includeRegionInNames=true` (see [deploy.md](deploy.md)).
+
+## Results bucket strategy (FR-192)
+
+Decision (LOCKED): **region-local** S3 ResultsBucket per regional stack (CDK auto-named).
+Do **not** enable Cross-Region Replication (CRR) for a-search results under active-passive.
+
+| Concern | Lock |
+|---------|------|
+| Primary | Stack in `eu-west-2` owns the live `ResultsBucket` + `live/` / `sandbox/` key prefixes (FR-124). |
+| Standby | FR-191 second stack creates a **separate** regional bucket; workers there write locally after cutover. |
+| CRR | Not used (cost/complexity; dual-read ambiguity). Optional future FR only. |
+| SQL / rclone | IONOS SQL host and any rclone sync stay **primary-region oriented**; do not assume SQL multi-region. |
+

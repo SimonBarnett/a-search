@@ -407,6 +407,8 @@ class ASearchStack extends cdk.Stack {
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
+    // FR-192 LOCKED: region-local ResultsBucket per stack (no S3 CRR). Standby region
+    // gets its own bucket via FR-191 second stack; SQL/rclone stay primary/IONOS.
     // FR-130 wires env + IAM below.
     // FR-154: deepen security defaults --- SSE-S3, BlockPublicAccess ALL,
     // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
@@ -896,7 +898,7 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
       description:
-        'Dedicated a-search results bucket (FR-124 one-bucket; live/ + sandbox/ prefixes)',
+        'Dedicated a-search results bucket (FR-124 one-bucket; FR-192 region-local; live/ + sandbox/ prefixes)',
     });
     new cdk.CfnOutput(this, 'ResultsBucketArn', {
       value: resultsBucket.bucketArn,
