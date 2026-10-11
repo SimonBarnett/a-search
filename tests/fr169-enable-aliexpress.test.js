@@ -14,7 +14,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 const STILL_DARK = [
-  'skimlinks',
   'bol',
   'partnerize',
   'webgains',
@@ -128,7 +127,7 @@ describe('FR-169 enable aliexpress', () => {
       assert.ok(qHit, `missing queue a-search-aliexpress-${env}`);
     }
 
-    for (const dark of ['skimlinks', 'partnerize', 'webgains']) {
+    for (const dark of ['partnerize', 'webgains', 'bol']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

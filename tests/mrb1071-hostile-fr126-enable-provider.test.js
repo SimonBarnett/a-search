@@ -16,8 +16,8 @@ const productTest = path.join(
   'fr126-phase3-enable-provider-docs.test.js',
 );
 
+/** Remaining stay-dark stubs (skimlinks enabled by FR-168). */
 const PHASE2_STUB_IDS = [
-  'skimlinks',
   'bol',
   'partnerize',
   'webgains',

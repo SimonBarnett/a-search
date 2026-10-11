@@ -13,9 +13,8 @@ const root = path.join(__dirname, '..');
 const docRel = path.join('docs', 'phase4-enablement-index.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
-/** Remaining Phase-2 stay-dark ids after FR-167/169/170 (kelkoo+aliexpress+etsy enabled). */
+/** Remaining Phase-2 stay-dark ids after FR-167 kijiji + FR-169 aliexpress. */
 const PHASE2_STUB_IDS = [
-  'skimlinks',
   'bol',
   'partnerize',
   'webgains',

@@ -73,8 +73,8 @@
       "kind": "live",
       "folder": "providers/live/skimlinks",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_SKIMLINKS_URL",
       "rateLimit": {

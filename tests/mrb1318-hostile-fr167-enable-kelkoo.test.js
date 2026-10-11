@@ -2,7 +2,7 @@
 
 /**
  * MRB #1318 docs/hostile: FR-167 enable kelkoo live+sandbox + FR-138 secret wiring.
- * Pins survive keep-both with FR-169 aliexpress (8 enabled -> 16 queues).
+ * Retargeted under MRB #1320 keep-both: FR-168 skimlinks also enabled (9 x 2 = 18 floors).
  */
 
 const { describe, it } = require('node:test');
@@ -19,14 +19,15 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
-  it('registry: kelkoo both envs true; skimlinks stays dark', () => {
+  it('registry: kelkoo both envs true; skimlinks+aliexpress also enabled', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('kelkoo').enabled.live, true);
     assert.equal(byId.get('kelkoo').enabled.sandbox, true);
-    assert.equal(byId.get('skimlinks').enabled.live, false);
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
+    assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.kelkoo + KELKOO_COUNTRY plain default', () => {
@@ -41,18 +42,19 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     );
   });
 
-  it('FR-142/143 pins use 18 primary/DLQ floors (kelkoo+aliexpress+etsy)', () => {
+  it('FR-142/143 pins use 20 primary/DLQ floors after FR-167..170', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 18 primary queues/);
-    assert.match(fr143, /expected 18 DLQ depth alarms/);
+    assert.match(fr142, /expected 20 primary queues/);
+    assert.match(fr143, /expected 20 DLQ depth alarms/);
     assert.match(fr142, /'kelkoo'/);
+    assert.match(fr142, /'skimlinks'/);
     assert.match(fr142, /'aliexpress'/);
   });
 
-  it('stay-dark pins exclude kelkoo; DEFAULT_ON includes kelkoo; Decision LOCKED', () => {
+  it('stay-dark pins exclude kelkoo; DEFAULT_ON includes kijiji; Decision LOCKED', () => {
     const fr166 = utf8NoBom(
       path.join('tests', 'fr166-phase4-enablement-index.test.js'),
     );
