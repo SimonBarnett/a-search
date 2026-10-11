@@ -251,6 +251,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
   etsy: ['ETSY_API_KEY'],
+  // FR-172: enable partnerize
+  partnerize: [
+    'PARTNERIZE_API_KEY',
+    'PARTNERIZE_API_TOKEN',
+    'PARTNERIZE_FEED_TOKEN',
+    'PARTNERIZE_PUBLISHER_ID',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */

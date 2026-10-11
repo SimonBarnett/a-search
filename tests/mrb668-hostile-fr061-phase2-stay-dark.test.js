@@ -50,9 +50,7 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     const stubs = [
-      'bol',
-      'partnerize',
-      'webgains',
+      'bol',      'webgains',
       'tradedoubler',
       'admitad',
       'flexoffers',
