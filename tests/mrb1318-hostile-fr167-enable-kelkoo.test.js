@@ -42,7 +42,7 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     );
   });
 
-  it('FR-142/143 pins use 24 primary/DLQ floors after FR-167..170', () => {
+  it('FR-142/143 pins use 28 primary/DLQ floors after FR-167..170', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),

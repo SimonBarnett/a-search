@@ -39,7 +39,7 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     );
   });
 
-  it('FR-142/143 pins use 24 primary/DLQ floors (FR-167..172)', () => {
+  it('FR-142/143 pins use 28 primary/DLQ floors (FR-167..172)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
