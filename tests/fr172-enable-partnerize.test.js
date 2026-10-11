@@ -49,6 +49,8 @@ describe('FR-172 enable partnerize', () => {
     assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
+    assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 keep-both');
+    assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -126,7 +128,7 @@ describe('FR-172 enable partnerize', () => {
       assert.ok(qHit, `missing queue a-search-partnerize-${env}`);
     }
 
-    for (const dark of ['bol', 'webgains', 'tradedoubler']) {
+    for (const dark of ['bol', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
