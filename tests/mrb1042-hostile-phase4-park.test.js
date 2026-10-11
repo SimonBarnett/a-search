@@ -2,7 +2,7 @@
 
 /**
  * MRB #1042 hostile pins: Phase-4 park (enable/Creators/WAF/multi-region FR-166..194).
- * Refs #1011 #1013 #1015-#1041 â€” does not close implementation issues.
+ * Refs #1011 #1013 #1015-#1041 — does not close implementation issues.
  */
 
 const { describe, it } = require('node:test');
@@ -21,7 +21,7 @@ function read(rel) {
   );
   const text = buf.toString('utf8');
   assert.equal(
-    /Ã¢â‚¬|Ã¢â‚¬â„¢|Ã¯Â»Â¿|\uFFFD/.test(text),
+    /â€|â€™|ï»¿|\uFFFD/.test(text),
     false,
     `${rel} must not contain mojibake`,
   );
@@ -76,7 +76,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
     // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
     for (const id of [
-      'bol',      'webgains',
+      'webgains',
       'tradedoubler',
       'admitad',
       'flexoffers',

@@ -2,7 +2,7 @@
 
 /**
  * MRB #1404 docs/hostile: FR-172 enable partnerize live+sandbox + FR-138 secret wiring.
- * Pins survive keep-both with FR-167..170 (11 enabled -> 22 queues); bol stays dark.
+ * Keep-both with FR-171 bol => 12 enabled -> 24 queues.
  */
 
 const { describe, it } = require('node:test');
@@ -19,14 +19,15 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1404 hostile FR-172 enable partnerize', () => {
-  it('registry: partnerize both envs true; bol stays dark; etsy+skimlinks enabled', () => {
+  it('registry: partnerize both envs true; bol also enabled; etsy+skimlinks enabled', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('partnerize').enabled.live, true);
     assert.equal(byId.get('partnerize').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 still open');
+    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
   });
@@ -40,7 +41,7 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     assert.match(text, /PARTNERIZE_PUBLISHER_ID/);
   });
 
-  it('FR-142/143 pins use 24 primary/DLQ floors (12 enabled x 2)', () => {
+  it('FR-142/143 pins use 26 primary/DLQ floors (12 enabled x 2)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),

@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'shopify', 'src', 'worker.js');
 
-const STILL_DARK = ["bol", "webgains", "tradedoubler", "admitad", "flexoffers", "avantlink", "wix", "woocommerce"];
+const STILL_DARK = ['webgains', 'tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -123,7 +123,7 @@ describe('FR-178 enable shopify', () => {
       assert.ok(qHit, `missing queue a-search-shopify-${env}`);
     }
 
-    for (const dark of ['bol', 'wix', 'woocommerce', 'admitad']) {
+    for (const dark of ['wix', 'woocommerce', 'admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

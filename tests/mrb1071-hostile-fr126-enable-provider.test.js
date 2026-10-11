@@ -17,15 +17,7 @@ const productTest = path.join(
 );
 
 /** Remaining stay-dark stubs (skimlinks enabled by FR-168). */
-const PHASE2_STUB_IDS = [
-  'bol',  'webgains',
-  'tradedoubler',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'wix',
-  'woocommerce',
-];
+const PHASE2_STUB_IDS = ['webgains', 'tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'wix', 'woocommerce'];
 
 function read(rel) {
   return fs.readFileSync(path.join(root, rel), 'utf8');

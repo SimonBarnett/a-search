@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'partnerize', 'shopify']; // FR-167..172 + FR-178
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'partnerize', 'bol', 'shopify']; // keep-both fold; floors 26
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -77,7 +77,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       (res) => res && res.Type === 'AWS::CloudWatch::Alarm',
     );
     // FR-167+FR-168+FR-169: 18 DLQ depth alarms (9 enabled x live+sandbox)
-    assert.equal(alarms.length, 24, `expected 24 DLQ depth alarms, got ${alarms.length}`);
+    assert.equal(alarms.length, 26, `expected 24 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {
