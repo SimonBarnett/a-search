@@ -163,8 +163,8 @@ describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
     );
     const s = registry.sources.find((x) => x.id === 'wix');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {

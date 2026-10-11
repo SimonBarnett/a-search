@@ -39,7 +39,6 @@ const mssqlEnv = {
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
   WIX_STORE_URL: 'https://madeira-demo.wixsite.com/shop',
-  WIX_AFFILIATE_ID: 'wx-aff-test',
 };
 
 function mockPool(recordset) {
@@ -116,7 +115,7 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.wixsite\.com/);
-    assert.match(String(out.products[0].url), /sid=wx-aff-test/);
+    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -159,7 +158,6 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
           env: {
             A_SEARCH_ENV: 'sandbox',
             S3_RESULTS_BUCKET: 'b',
-            WIX_AFFILIATE_ID: 'x',
             WIX_STORE_URL: 'https://x.wixsite.com/shop',
           },
           putObject: async () => {
@@ -234,8 +232,8 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
     );
     const s = registry.sources.find((x) => x.id === 'wix');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('searchTextFromMsg and mssqlConfigFromEnv helpers', () => {

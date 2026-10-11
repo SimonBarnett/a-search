@@ -16,6 +16,7 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
 const OTHER_STAY_DARK = [
+  'bol',
   'webgains',
   'tradedoubler',
   'admitad',
@@ -70,6 +71,7 @@ describe('FR-167 enable provider kijiji', () => {
     assert.match(keysBlock[0], /KELKOO_API_KEY/);
     assert.match(keysBlock[0], /KELKOO_PUBLISHER_ID/);
     assert.match(text, /PROVIDER_PLAIN_DEFAULTS[\s\S]*kelkoo[\s\S]*KELKOO_COUNTRY/);
+    for (const dark of ['webgains']) {
     for (const dark of ['webgains']) {
       assert.doesNotMatch(
         keysBlock[0],
@@ -127,6 +129,7 @@ describe('FR-167 enable provider kijiji', () => {
     }
 
     // Sibling stay-dark: no worker
+    for (const dark of ['webgains']) {
     for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>

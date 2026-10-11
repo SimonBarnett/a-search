@@ -19,6 +19,7 @@ const DEFAULT_ON = [
   'skimlinks',
   'bol',
   'partnerize',
+  'wix',
 ];
 const DEFAULT_OFF = [
   'webgains',
@@ -27,7 +28,6 @@ const DEFAULT_OFF = [
   'flexoffers',
   'avantlink',
   'shopify',
-  'wix',
   'woocommerce',
 ];
 

@@ -42,7 +42,7 @@ they do not unlock a silent client swap.
 | `flexoffers` | local | false | US mid-tail feeds | After Impact |
 | `avantlink` | local | false | US outdoor/retail feeds | After Impact |
 | `shopify` | local | false | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
-| `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API -> MSSQL Parts |
+| `wix` | local | true | Merchant store catalogues (Madeira) | Enabled FR-179 merchant; Wix Stores API -> MSSQL Parts; no affiliate sid |
 | `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST -> MSSQL Parts |
 
 **This pass:** scaffold **all rows** (folder, `.env.example`, worker stub,
@@ -80,7 +80,7 @@ flip only that id, pin others stay dark) - see
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
     { "id": "shopify", "kind": "local", "folder": "providers/local/shopify", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_SHOPIFY_URL" },
-    { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WIX_URL" },
+    { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_WIX_URL", "class": "merchant", "merchantConnect": true },
     { "id": "woocommerce", "kind": "local", "folder": "providers/local/woocommerce", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WOOCOMMERCE_URL" }
   ]
 }

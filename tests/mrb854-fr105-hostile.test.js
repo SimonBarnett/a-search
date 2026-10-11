@@ -27,14 +27,14 @@ const {
 } = require('../providers/local/wix/src/catalog.js');
 
 describe('MRB-854 FR-105 hostile', () => {
-  it('registry wix stay-dark both envs (CAST IRON)', () => {
+  it('registry wix enabled both envs (FR-179) (CAST IRON)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'wix');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.equal(row.kind, 'local');
     assert.equal(row.queueEnv, 'SQS_WIX_URL');
   });
@@ -119,7 +119,7 @@ describe('MRB-854 FR-105 hostile', () => {
     );
     assert.match(skill, /## Catalogue client \(FR-105\)/);
     assert.match(skill, /catalog\.js/);
-    assert.match(skill, /stay dark|enabled.*false/i);
+    assert.match(skill, /FR-179|merchant|Enabled: live=true/i);
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
     const envEx = fs.readFileSync(

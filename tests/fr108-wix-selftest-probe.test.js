@@ -132,8 +132,8 @@ describe('FR-108 wix selftestProbe + rateLimit', () => {
     );
     const row = registry.sources.find((s) => s.id === 'wix');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.ok(row.rateLimit);
     assert.equal(row.rateLimit.maxConcurrency, 1);
     assert.equal(row.rateLimit.minIntervalMs, 250);

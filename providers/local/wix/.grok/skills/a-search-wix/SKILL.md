@@ -12,7 +12,7 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false (stay dark until account details exist).
+Registry folder `providers/local/wix`. Enabled: live=true, sandbox=true (FR-179 merchant; `class: merchant`).
 `rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-108).
 
 ## Catalogue client (FR-105)
@@ -35,8 +35,8 @@ SELECT dbo.Parts WHERE Source='wix' (maintainer owns store sync / feeds).
 ## Worker + queryParts (FR-107)
 
 `src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
-Relative product Urls resolve against `WIX_STORE_URL`; tracked links stamp `WIX_AFFILIATE_ID` as `sid`.
-Stay-dark; no "not wired" stub on the happy path.
+Relative product Urls resolve against `WIX_STORE_URL` as plain absolute http(s) (merchant; no affiliate `sid`).
+Enabled both envs; no "not wired" stub on the happy path.
 Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (FR-106) are separate.
 
 ## Selftest + pacing (FR-108)
@@ -44,8 +44,8 @@ Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (
 `src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
 `WIX_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
-(stay-dark; do not flip `enabled`). Pin: `tests/fr108-wix-selftest-probe.test.js`.
+(enabled FR-179). Pin: `tests/fr108-wix-selftest-probe.test.js`.
 
 ## Env
 
-See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_STORE_URL`, `WIX_AFFILIATE_ID`, optional `WIX_API_BASE`). Queue env: `SQS_WIX_URL`.
+See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_CLIENT_ID`, `WIX_STORE_URL`, optional `WIX_API_BASE`). Queue env: `SQS_WIX_URL`. No `WIX_AFFILIATE_ID`.

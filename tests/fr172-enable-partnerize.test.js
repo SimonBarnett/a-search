@@ -20,7 +20,6 @@ const STILL_DARK = [
   'flexoffers',
   'avantlink',
   'shopify',
-  'wix',
   'woocommerce',
 ];
 

@@ -81,10 +81,10 @@ Per-source Secrets Manager JSON. Override:
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
+| wix | `WIX_CLIENT_ID`, `WIX_API_TOKEN`, `WIX_SITE_ID`, `WIX_STORE_URL` | `a-search-wix-worker-{live,sandbox}` (FR-179 merchant); plain `WIX_API_BASE` |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, wix, woocommerce.
-
+webgains, tradedoubler, admitad, flexoffers, avantlink, shopify, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
 are plain CDK env - not Secrets Manager.
