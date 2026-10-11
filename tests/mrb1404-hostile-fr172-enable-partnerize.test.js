@@ -62,7 +62,7 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
       path.join('tests', 'mrb668-hostile-fr061-phase2-stay-dark.test.js'),
     );
     assert.match(mrb668, /exactly 8 Phase-2 stub ids stay dark/);
-    assert.match(mrb668, /stubs\.length,\s*9/);
+    assert.match(mrb668, /stubs\.length,\s*8/);
     const fr = utf8NoBom(path.join('docs', 'fr', 'FR-172.md'));
     assert.match(fr, /Decision\s*\(LOCKED\)/i);
     assert.match(fr, /partnerize/i);
