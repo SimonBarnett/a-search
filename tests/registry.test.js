@@ -17,12 +17,13 @@ const DEFAULT_ON = [
   'aliexpress',
   'etsy',
   'skimlinks',
-        'partnerize',
-        'admitad',
+  'bol',
+  'admitad',
+  'partnerize',
 ];
 const DEFAULT_OFF = [
   'webgains',
-  'bol',
+  'tradedoubler',
   'flexoffers',
   'avantlink',
   'shopify',

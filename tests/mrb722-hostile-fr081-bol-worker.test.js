@@ -61,8 +61,8 @@ describe('mrb722 hostile FR-081 bol worker', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
-    assert.equal(bol.enabled.live, false);
-    assert.equal(bol.enabled.sandbox, false);
+    assert.equal(bol.enabled.live, true);
+    assert.equal(bol.enabled.sandbox, true);
   });
 
   it('run end-to-end with fixture inject yields products + seller description', async () => {

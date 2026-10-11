@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // partnerize already enabled on main (FR-172); stay-dark siblings after FR-175 fold
-const STILL_DARK = ['bol', 'webgains', 'tradedoubler', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'tradedoubler', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -120,7 +120,7 @@ describe('FR-175 enable admitad', () => {
       assert.ok(qHit, `missing queue a-search-admitad-${env}`);
     }
 
-    for (const dark of ['bol', 'webgains', 'tradedoubler']) {
+    for (const dark of ['webgains', 'tradedoubler']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
