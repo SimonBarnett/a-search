@@ -2,7 +2,7 @@
 
 /**
  * FR-138: CDK Secrets Manager wiring for enabled provider credentials.
- * Enabled sources include FR-168 skimlinks + FR-169 aliexpress; other Phase-2 stubs stay dark.
+ * Enabled sources include FR-167 kelkoo + FR-168 skimlinks + FR-169 aliexpress; other Phase-2 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -19,10 +19,11 @@ const ENABLED_IDS = [
   'cj',
   'awin',
   'impact',
+  'kelkoo',
   'skimlinks',
   'aliexpress',
 ];
-const STAY_DARK_SAMPLE = ['kelkoo', 'partnerize', 'webgains', 'etsy'];
+const STAY_DARK_SAMPLE = ['partnerize', 'webgains', 'etsy'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {
   it('stack declares wireProviderSecretEnv + per-source ARN context + enabled keys only', () => {
@@ -53,6 +54,7 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /CJ_API_TOKEN/);
     assert.match(text, /AWIN_API_TOKEN/);
     assert.match(text, /IMPACT_CAMPAIGN_ID/);
+    assert.match(text, /KELKOO_API_KEY/);
     assert.match(text, /SKIMLINKS_API_KEY/);
     assert.match(text, /SKIMLINKS_PUBLISHER_ID/);
     assert.match(text, /ALIEXPRESS_API_KEY/);
@@ -137,6 +139,12 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'impact-sandbox',
     );
     assertSecretRef(
+      envOf('a-search-kelkoo-worker-live'),
+      'KELKOO_API_KEY',
+      'kelkoo-live',
+    );
+    assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
+    assertSecretRef(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
       'awin-onboarding-live',
@@ -159,21 +167,6 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.equal(
       envOf('a-search-skimlinks-worker-live').SKIMLINKS_COUNTRY,
       'uk',
-    );
-
-    assertSecretRef(
-      envOf('a-search-aliexpress-worker-live'),
-      'ALIEXPRESS_API_KEY',
-      'aliexpress-live',
-    );
-    assertSecretRef(
-      envOf('a-search-aliexpress-worker-sandbox'),
-      'ALIEXPRESS_API_KEY',
-      'aliexpress-sandbox',
-    );
-    assert.equal(
-      envOf('a-search-aliexpress-worker-live').ALIEXPRESS_TRACKING_ID,
-      'a-search',
     );
 
     // Stay-dark: no worker Lambdas

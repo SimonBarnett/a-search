@@ -17,7 +17,7 @@ describe('MRB #677 hostile FR-063 kelkoo search', () => {
     );
     assert.match(src, /httpRequest/);
     assert.match(src, /assertKelkooCreds|kelkoo_missing_credentials/);
-    assert.match(src, /Stay-dark|stay-dark|do not enable/i);
+    assert.match(src, /httpRequest|KELKOO_API_KEY|kelkoogroup/i);
     assert.doesNotMatch(src, /enabled\.live\s*=\s*true/);
   });
 

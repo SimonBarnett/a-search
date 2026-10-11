@@ -23,11 +23,11 @@ describe('MRB #1327 hostile FR-169 aliexpress enable', () => {
     assert.match(text, /PROVIDER_PLAIN_DEFAULTS[\s\S]*aliexpress[\s\S]*ALIEXPRESS_TRACKING_ID/);
   });
 
-  it('FR-142/143 pins use 14 primary/DLQ floors after FR-169', () => {
+  it('FR-142/143 pins use 16 primary/DLQ floors after FR-167+FR-169', () => {
     const fr142 = fs.readFileSync(path.join(root, 'tests', 'fr142-sqs-dlq.test.js'), 'utf8');
     const fr143 = fs.readFileSync(path.join(root, 'tests', 'fr143-cw-retention-dlq-alarm.test.js'), 'utf8');
-    assert.match(fr142, /expected 14 primary queues/);
-    assert.match(fr143, /expected 14 DLQ depth alarms/);
+    assert.match(fr142, /expected 18 primary queues/);
+    assert.match(fr143, /expected 18 DLQ depth alarms/);
   });
 
   it('stay-dark pins exclude aliexpress (fr166/mrb1042/registry DEFAULT_ON)', () => {

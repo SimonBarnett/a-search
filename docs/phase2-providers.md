@@ -17,7 +17,6 @@ exist. Completing a client + fixtures does **not** enable the source.
 
 | id | kind | folder |
 |----|------|--------|
-| `kelkoo` | live | `providers/live/kelkoo` |
 | `etsy` | live | `providers/live/etsy` |
 | `bol` | live | `providers/live/bol` |
 | `partnerize` | local | `providers/local/partnerize` |
@@ -36,6 +35,10 @@ exist. Completing a client + fixtures does **not** enable the source.
 `enabled.live/sandbox=true` from Phase 1. **`skimlinks`** was enabled by
 FR-168 (#1015) and **`aliexpress`** by FR-169 (#1016) for both envs. Do not flip enabled ids false as part of
 Phase-2 docs work.
+
+`kelkoo` was enabled for both envs by **FR-167** (Secrets Manager wiring +
+registry flip). Remaining rows in the stay-dark table above stay false until
+their own enable FR.
 
 ## When to enable
 

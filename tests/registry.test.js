@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
-// FR-168 skimlinks + FR-169 aliexpress enabled; keep in DEFAULT_ON.
+// FR-167 kijiji + FR-168 skimlinks + FR-169 aliexpress enabled; keep in DEFAULT_ON.
 const DEFAULT_ON = [
   'amazon',
   'ebay',
@@ -14,6 +14,7 @@ const DEFAULT_ON = [
   'cj',
   'impact',
   'aliexpress',
+  'kelkoo',
   'skimlinks',
 ];
 const DEFAULT_OFF = [
@@ -21,7 +22,6 @@ const DEFAULT_OFF = [
   'webgains',
   'tradedoubler',
   'admitad',
-  'kelkoo',
   'etsy',
   'bol',
   'flexoffers',

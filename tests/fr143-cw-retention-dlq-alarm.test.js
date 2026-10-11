@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'skimlinks', 'aliexpress']; // FR-167 + FR-169
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -62,7 +62,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       );
     }
 
-    // Entry + workers (12) + maintainer (2) + onboarding (4) = 19 Lambdas
+    // Entry + workers (14 after FR-167) + maintainer (2) + onboarding (...) — floor only
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',
     );
@@ -76,8 +76,8 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     const alarms = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::CloudWatch::Alarm',
     );
-    // FR-168 skimlinks + FR-169 aliexpress → 16 DLQ alarms.
-    assert.equal(alarms.length, 16, `expected 16 DLQ depth alarms, got ${alarms.length}`);
+    // FR-167+FR-168+FR-169: 18 DLQ depth alarms (9 enabled x live+sandbox)
+    assert.equal(alarms.length, 18, `expected 18 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {
