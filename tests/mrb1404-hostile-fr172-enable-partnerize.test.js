@@ -46,8 +46,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 26 primary queues/);
-    assert.match(fr143, /expected 26 DLQ depth alarms/);
+    assert.match(fr142, /expected 28 primary queues/);
+    assert.match(fr143, /expected 28 DLQ depth alarms/);
     assert.match(fr142, /'partnerize'/);
   });
 
@@ -62,8 +62,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const mrb668 = utf8NoBom(
       path.join('tests', 'mrb668-hostile-fr061-phase2-stay-dark.test.js'),
     );
-    assert.match(mrb668, /exactly 7 Phase-2 stub ids stay dark/);
-    assert.match(mrb668, /stubs\.length,\s*7/);
+    assert.match(mrb668, /exactly 6 Phase-2 stub ids stay dark/);
+    assert.match(mrb668, /stubs\.length,\s*6/);
     const fr = utf8NoBom(path.join('docs', 'fr', 'FR-172.md'));
     assert.match(fr, /Decision\s*\(LOCKED\)/i);
     assert.match(fr, /partnerize/i);

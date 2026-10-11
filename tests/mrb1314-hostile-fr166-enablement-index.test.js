@@ -14,7 +14,7 @@ const pin = path.join(root, 'tests', 'fr166-phase4-enablement-index.test.js');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining stay-dark after FR-167 kijiji + FR-169 aliexpress. */
-const PHASE2_STUB_IDS = ['tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+const PHASE2_STUB_IDS = ['admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 describe('MRB-1314 hostile FR-166 phase4 enablement index', () => {
   it('index + Decision LOCKED + product pin present', () => {

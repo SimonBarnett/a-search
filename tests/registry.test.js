@@ -20,9 +20,9 @@ const DEFAULT_ON = [
   'bol',
   'webgains',
   'partnerize',
+  'tradedoubler',
 ];
 const DEFAULT_OFF = [
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',

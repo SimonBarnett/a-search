@@ -253,6 +253,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
   etsy: ['ETSY_API_KEY'],
   // FR-171: bol enabled -> FR-138 secret wiring
   bol: ['BOL_API_KEY'],
+  // FR-174: enable tradedoubler
+  tradedoubler: [
+    'TRADEDOUBLER_API_KEY',
+    'TRADEDOUBLER_API_TOKEN',
+    'TRADEDOUBLER_FEED_TOKEN',
+    'TRADEDOUBLER_AFFILIATE_ID',
+    'TRADEDOUBLER_PUBLISHER_ID',
+  ],
   // FR-172: enable partnerize
   partnerize: [
     'PARTNERIZE_API_KEY',

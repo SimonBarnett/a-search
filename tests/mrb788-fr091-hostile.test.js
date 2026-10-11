@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * MRB #788 hostile pins for FR-091 tradedoubler feed-parser (stay-dark).
+ * MRB #788 hostile pins for FR-091 tradedoubler feed-parser.
+ * Registry enabled both envs by FR-174 / #1021.
  */
 
 const { describe, it } = require('node:test');
@@ -18,7 +19,7 @@ const {
 } = require('../providers/local/tradedoubler/src/parseFeed');
 
 describe('MRB-788 FR-091 hostile', () => {
-  it('registry tradedoubler stay-dark both envs (CAST IRON)', () => {
+  it('registry tradedoubler enabled both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

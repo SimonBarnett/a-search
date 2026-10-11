@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
-const STILL_DARK = ['tradedoubler', 'admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers', 'avantlink', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));

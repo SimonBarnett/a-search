@@ -15,7 +15,6 @@ const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // bol + partnerize already on main; webgains is this FR
 const STILL_DARK = [
-  'tradedoubler',
   'admitad',
   'flexoffers',
   'avantlink',
