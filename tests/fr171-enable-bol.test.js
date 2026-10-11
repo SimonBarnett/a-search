@@ -18,7 +18,6 @@ const STILL_DARK = [
   'tradedoubler',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',
@@ -47,6 +46,8 @@ describe('FR-171 enable bol', () => {
     assert.equal(bol.enabled.sandbox, true);
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
+    assert.equal(byId.get('avantlink').enabled.live, true, 'FR-177 keep-both');
+    assert.equal(byId.get('avantlink').enabled.sandbox, true, 'FR-177 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);

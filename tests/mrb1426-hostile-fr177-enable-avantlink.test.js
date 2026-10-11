@@ -11,7 +11,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 
-test('mrb1426: avantlink enabled both envs; partnerize kept; floors 2*enabled', () => {
+test('mrb1426: avantlink enabled both envs; partnerize+bol kept; floors 2*enabled', () => {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'providers/registry.json'), 'utf8'));
   const byId = new Map(reg.sources.map((s) => [s.id, s]));
   const al = byId.get('avantlink');
@@ -27,8 +27,6 @@ test('mrb1426: avantlink enabled both envs; partnerize kept; floors 2*enabled', 
   assert.ok(enabled.includes('avantlink'));
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('bol'));
-  const stackKeys = fs.readFileSync(path.join(ROOT, 'cdk/lib/a-search-stack.js'), 'utf8');
-  assert.match(stackKeys, /\\bbol\\s*:\\s*\[/);
   assert.equal(enabled.length * 2, 26);
 });
 
@@ -41,6 +39,8 @@ test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS includes avantlink FR-138 names', ()
   assert.match(stack, /AVANTLINK_PUBLISHER_ID/);
   assert.match(stack, /AVANTLINK_AFFILIATE_ID/);
   assert.match(stack, /\bpartnerize\s*:\s*\[/);
+  assert.match(stack, /\bbol\s*:\s*\[/);
+  assert.match(stack, /BOL_API_KEY/);
   assert.equal(stack.includes('<<<<<<<'), false);
 });
 
@@ -55,4 +55,5 @@ test('mrb1426: FR-177 Decision LOCKED; secrets-matrix has avantlink not stay-dar
   const omit = matrix.split(/Stay-dark omitted/i)[1] || '';
   assert.doesNotMatch(omit.slice(0, 400), /\bavantlink\b/i);
   assert.doesNotMatch(omit.slice(0, 400), /\bpartnerize\b/i);
+  assert.doesNotMatch(omit.slice(0, 400), /\bbol\b/i);
 });
