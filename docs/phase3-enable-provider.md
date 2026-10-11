@@ -54,7 +54,7 @@ land - enable only when ingest + selftest are ready.
 ## Already enabled (do not flip false here)
 
 Phase-1 ids stay on: `amazon`, `ebay`, `rakuten`, `cj`, `awin`, `impact`
-(`enabled.live/sandbox=true`). **`kelkoo`** FR-167 (#1013); **`skimlinks`** FR-168 (#1015); **`aliexpress`** FR-169 (#1016).
+(`enabled.live/sandbox=true`). **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170** `etsy` enabled.
 This template is for remaining stay-dark -> enable moves.
 This template is for remaining stay-dark -> enable moves.
 
@@ -62,7 +62,6 @@ This template is for remaining stay-dark -> enable moves.
 
 | id | kind |
 |----|------|
-| `etsy` | live |
 | `bol` | live |
 | `partnerize` | local |
 | `webgains` | local |

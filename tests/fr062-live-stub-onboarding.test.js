@@ -13,7 +13,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 
 /** Live stubs still stay-dark (kelkoo FR-167 + skimlinks FR-168 + aliexpress FR-169 enabled). */
-const LIVE_STUB_IDS = ['etsy', 'bol'];
+const LIVE_STUB_IDS = ['bol']; // FR-167/168/169/170 enabled the others
 
 function onboardingSkillPath(id) {
   return path.join(

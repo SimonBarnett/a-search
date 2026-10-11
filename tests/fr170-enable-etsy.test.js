@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-169 / #1016: enable aliexpress only; FR-138 secret wiring; others stay dark.
+ * FR-170 / #1017: enable etsy only; FR-138 secret wiring; others stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -39,18 +39,18 @@ function utf8NoBom(rel) {
   return text;
 }
 
-describe('FR-169 enable aliexpress', () => {
-  it('registry enables aliexpress both envs; siblings stay dark', () => {
+describe('FR-170 enable etsy', () => {
+  it('registry enables etsy both envs; siblings stay dark', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
-    const ae = byId.get('aliexpress');
-    assert.ok(ae, 'registry missing aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    const et = byId.get('etsy');
+    assert.ok(et, 'registry missing etsy');
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
     const kk = byId.get('kelkoo');
-    assert.ok(kk, 'kelkoo');
-    assert.equal(kk.enabled.live, true, 'FR-167 kelkoo.live');
-    assert.equal(kk.enabled.sandbox, true, 'FR-167 kelkoo.sandbox');
+    assert.equal(kk.enabled.live, true, 'FR-167');
+    const ae = byId.get('aliexpress');
+    assert.equal(ae.enabled.live, true, 'FR-169');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -58,32 +58,32 @@ describe('FR-169 enable aliexpress', () => {
     }
   });
 
-  it('CDK PROVIDER_CREDENTIAL_KEYS maps aliexpress; FR-169 Decision LOCKED', () => {
+  it('CDK PROVIDER_CREDENTIAL_KEYS maps etsy; FR-170 Decision LOCKED', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     const keysBlock = text.match(
       /PROVIDER_CREDENTIAL_KEYS\s*=\s*\{[\s\S]*?\n\};/,
     );
     assert.ok(keysBlock);
-    assert.match(keysBlock[0], /\baliexpress\s*:/);
-    assert.match(keysBlock[0], /ALIEXPRESS_API_KEY/);
-    assert.match(text, /ALIEXPRESS_TRACKING_ID:\s*'a-search'/);
-    const fr = utf8NoBom('docs/fr/FR-169.md');
+    assert.match(keysBlock[0], /\betsy\s*:/);
+    assert.match(keysBlock[0], /ETSY_API_KEY/);
+    assert.match(text, /ETSY_TRACKING_ID:\s*'a-search'/);
+    const fr = utf8NoBom('docs/fr/FR-170.md');
     assert.match(fr, /Decision \(LOCKED\)/);
-    assert.match(fr, /aliexpress/);
-    assert.match(fr, /ALIEXPRESS_API_KEY/);
+    assert.match(fr, /etsy/);
+    assert.match(fr, /ETSY_API_KEY/);
     const matrix = utf8NoBom('docs/secrets-matrix.md');
-    assert.match(matrix, /aliexpress/i);
-    assert.match(matrix, /ALIEXPRESS_API_KEY/);
+    assert.match(matrix, /etsy/i);
+    assert.match(matrix, /ETSY_API_KEY/);
     assert.doesNotMatch(
       matrix,
-      /Stay-dark omitted[\s\S]*\baliexpress\b/i,
+      /Stay-dark omitted[\s\S]*\betsy\b/i,
     );
   });
 
-  it('synth: aliexpress live+sandbox workers+queues; secret refs; dark ids absent', () => {
+  it('synth: etsy live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr169');
+    const outdir = path.join(root, 'cdk.out-fr170');
     fs.rmSync(outdir, { recursive: true, force: true });
     const app = new cdk.App({ outdir });
     new ASearchStack(app, 'ASearchStack');
@@ -108,26 +108,26 @@ describe('FR-169 enable aliexpress', () => {
     }
 
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-aliexpress-worker-${env}`);
-      assert.ok(envVars.ALIEXPRESS_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.ALIEXPRESS_API_KEY);
+      const envVars = envOf(`a-search-etsy-worker-${env}`);
+      assert.ok(envVars.ETSY_API_KEY, `missing API key ${env}`);
+      const keyVal = String(envVars.ETSY_API_KEY);
       assert.ok(
         keyVal.includes('resolve:secretsmanager') ||
           keyVal.includes('Secret') ||
-          typeof envVars.ALIEXPRESS_API_KEY === 'object',
-        `ALIEXPRESS_API_KEY must be Secrets Manager ref (${env})`,
+          typeof envVars.ETSY_API_KEY === 'object',
+        `ETSY_API_KEY must be Secrets Manager ref (${env})`,
       );
-      assert.equal(envVars.ALIEXPRESS_TRACKING_ID, 'a-search');
+      assert.equal(envVars.ETSY_TRACKING_ID, 'a-search');
       const qHit = queues.find(
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-aliexpress-${env}`,
+          q.Properties.QueueName === `a-search-etsy-${env}`,
       );
-      assert.ok(qHit, `missing queue a-search-aliexpress-${env}`);
+      assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['partnerize', 'webgains', 'bol']) {
+    for (const dark of ['bol', 'partnerize', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

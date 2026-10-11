@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 /** Live stub onboarding books (skills still required even when enabled). */
 const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
 /** Still-disabled live stubs after FR-167 + FR-168 + FR-169. */
-const STAY_DARK_IDS = ['etsy', 'bol'];
+const STAY_DARK_IDS = ['bol'];
 
 function readNoBom(rel) {
   const p = path.join(root, rel);

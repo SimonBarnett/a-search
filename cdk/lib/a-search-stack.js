@@ -249,6 +249,8 @@ const PROVIDER_CREDENTIAL_KEYS = {
   skimlinks: ['SKIMLINKS_API_KEY', 'SKIMLINKS_PUBLISHER_ID'],
   // FR-169: aliexpress enabled -> FR-138 secret wiring
   aliexpress: ['ALIEXPRESS_API_KEY'],
+  // FR-170: enable etsy
+  etsy: ['ETSY_API_KEY'],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -277,6 +279,9 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-169
   aliexpress: {
     ALIEXPRESS_TRACKING_ID: 'a-search',
+  },
+  etsy: {
+    ETSY_TRACKING_ID: 'a-search',
   },
 };
 

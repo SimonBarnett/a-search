@@ -9,12 +9,13 @@ const { enabled, loadRegistry } = require('../providers/loadRegistry');
 const DEFAULT_ON = [
   'amazon',
   'ebay',
-  'awin',
   'rakuten',
   'cj',
+  'awin',
   'impact',
-  'aliexpress',
   'kelkoo',
+  'aliexpress',
+  'etsy',
   'skimlinks',
 ];
 const DEFAULT_OFF = [
@@ -22,7 +23,6 @@ const DEFAULT_OFF = [
   'webgains',
   'tradedoubler',
   'admitad',
-  'etsy',
   'bol',
   'flexoffers',
   'avantlink',

@@ -15,7 +15,6 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining stay-dark after FR-167 kijiji + FR-169 aliexpress. */
 const PHASE2_STUB_IDS = [
-  'etsy',
   'bol',
   'partnerize',
   'webgains',

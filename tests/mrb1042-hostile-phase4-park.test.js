@@ -76,7 +76,6 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
     // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
     for (const id of [
-      'etsy',
       'bol',
       'partnerize',
       'webgains',
