@@ -190,3 +190,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a Phase-4 FR issue update says WAF dropped / do not build (Simon 2026-10-10), FR seat closes as not planned and NACKs; do not add WAFv2 resources; leave phase4 index annotation to #1381
 - Phase-4 enable keep-both: retarget every prior docs/mrb hostile pin that string-matches expected N primary/DLQ floors (and sibling stub.length) to 2*enabled_count in the same fold before PASS; CI red on those needles is FAIL even when product registry/CDK is correct
 - Phase-4 merchant enable CONFLICTING with sibling enables on main: one keep-both fold; floors 2*enabled_count; scrub PHASE2_STUB/mrb668/DISABLED_LOCAL and tip STILL_DARK for every id now enabled; restore secrets-matrix family rows
+- FR-191 deploy.md via PowerShell here-strings: never embed markdown fences/backticks in PS here-strings; write via Python Path.write_text; C0 controls fail FR-149 printable-ASCII gate
