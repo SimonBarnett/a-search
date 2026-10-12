@@ -183,6 +183,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable MRB: after one origin/main keep-both fold, confirm FR-142/143 floors are 2*enabled_count and clear cdk/entry-lambda-asset before retrying a sequential synth EPERM - treat Windows asset-lock as env flake, not product FAIL
 - After concurrent Phase-4 enable keep-both, retarget each sibling enable-FR synth stay-dark list so neither lists the other as dark (fr172 must not assert tradedoubler dark; fr174 must not assert partnerize dark).
 - Multi-region second stack (FR-191): deploy same source with -c region= -c stage=standby -c includeRegionInNames=true so names/stack id get stage+region tokens; default names unchanged
+- FR-191 deploy.md sections written via PowerShell here-strings: never embed markdown fences/backticks in PS @" "@ - write via Python Path.write_text; C0 \x08/\x07 fail FR-149 printable-ASCII gate
 - Multi-region S3 (FR-192): lock region-local ResultsBucket per stack under active-passive; do not enable S3 CRR; SQL/rclone stay primary/IONOS
 - Amazon worker Creators flag (FR-183): when AMAZON_SEARCH_API=creators assertCreatorsCreds fail-closed then searchAmazonCreators; else PA-API assertAmazonCreds; return searchApi in result
 - Multi-region (FR-190): lock active-passive with primary eu-west-2; madeiradb/SQL stays single-region on IONOS; do not choose active-active without a SQL multi-region story
