@@ -71,7 +71,7 @@ Already enabled (Phase-1; do not flip false here): `amazon`, `ebay`, `rakuten`,
 |------|----------|--------|-------|
 | Amazon Creators API | FR-181..185 | #1028-#1032 | Opt-in; PA-API default until locked otherwise |
 | WAF | FR-186..189 | #1033-#1036 | WAFv2 on HTTP API |
-| Multi-region | FR-190..194 | #1037-#1041 | Strategy + second stack |
+| Multi-region (active-passive LOCKED FR-190; see multi-region.md) | FR-190..194 | #1037-#1041 | Strategy + second stack |
 
 Those waves are **not** provider enable flips. See ISSUED-PHASE4 for titles.
 
