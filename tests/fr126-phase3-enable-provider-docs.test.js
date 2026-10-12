@@ -19,7 +19,6 @@ const PHASE2_STUB_IDS = [
   'webgains',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',

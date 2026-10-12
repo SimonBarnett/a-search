@@ -19,7 +19,6 @@ const OTHER_STAY_DARK = [
   'webgains',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',

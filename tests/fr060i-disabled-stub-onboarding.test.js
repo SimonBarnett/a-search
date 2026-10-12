@@ -15,7 +15,6 @@ const DISABLED_LOCAL = [
   'webgains',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',
