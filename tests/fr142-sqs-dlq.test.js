@@ -88,7 +88,7 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-167..177: 26 primaries + 26 DLQs (13 enabled x live+sandbox)
+    // FR-167..177: 28 primaries + 28 DLQs (14 enabled x live+sandbox)
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean);
