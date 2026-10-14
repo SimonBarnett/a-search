@@ -204,3 +204,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-201 widget: boot .a-search-widget[data-widget-guid] once via data-a-search-booted; GET /parts then API layout then data-mode; modes only change layout; stack on Parts tip when needed
 - ComponentsPiece widget CSS: ship layout-only sheet with currentColor/inherit/transparent/none only; pin-scan declarations not loose regex; stack FR-202 on FR-201 tip; non-main base needs MRB hand-close note.
 - Market-hold disable PRs must not globally delete provider id string literals from tests (paths/find/source); retarget enabled asserts and floors 2*enabled_count only.
+- a-search FR-212: check in tests/fixtures/components-piece JSON contracts; pin with node --test via D:\Tools\node (PATH Node 8 lacks --test); live.free length exactly LIVE_PART_CAP_FREE=10
