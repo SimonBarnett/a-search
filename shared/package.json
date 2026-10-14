@@ -21,6 +21,7 @@
     "selftest/",
     "mssql/",
     "widgets/",
+    "components/",
     "README.md"
   ]
 }
