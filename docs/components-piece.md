@@ -55,7 +55,7 @@ Layout attribute on the widget selects `horizontal` / `vertical` / `fullscreen` 
 
 ## Database ownership
 
-CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes live in the a-search database (`a_search` live / `a_search_sandbox` sandbox), created by `db/migrations/`. madeiradb is **read-only** through `mdb.*` views. a-search must not modify madeiradb.
+CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes live in the a-search database (`a_search` live / **Recommended** sandbox DB name FR-146: `a_search_sandbox`), created by `db/migrations/`. madeiradb is **read-only** through `mdb.*` views. a-search must not modify madeiradb.
 
 ## Out of scope (this FR)
 
