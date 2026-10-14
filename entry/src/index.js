@@ -39,6 +39,10 @@ const { enabled: registryEnabled } = require('../../providers/loadRegistry');
 const { handleParts, isPartsRoute } = require('./parts');
 const { handleGo, isGoRoute } = require('./go');
 const { handleExtStatus, isExtStatusRoute } = require('./extStatus');
+const {
+  matchComponentsPieceRoute,
+  handleComponentsPieceStub,
+} = require('./componentsPieceRoutes');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -196,17 +200,20 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
     : isGoRoute(method, path)
       ? GO_ROUTE
       : isPartsRoute(method, path)
       ? PARTS_ROUTE
-      : isSelftestRoute(method, path)
-        ? SELFTEST_ROUTE
-        : isPerformanceRoute(method, path)
-          ? PERF_ROUTE
-          : ENTRY_ROUTE;
+      : cpRoute
+        ? `entry/${cpRoute}`
+        : isSelftestRoute(method, path)
+          ? SELFTEST_ROUTE
+          : isPerformanceRoute(method, path)
+            ? PERF_ROUTE
+            : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -216,6 +223,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPartsRoute(method, path)) {
       return await handleParts(event, deps);
+    }
+    if (cpRoute) {
+      return await handleComponentsPieceStub(event, cpRoute);
     }
     if (isSelftestRoute(method, path)) {
       return await handleSelftest(event, deps);
