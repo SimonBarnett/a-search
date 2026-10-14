@@ -36,11 +36,16 @@ const {
   reportSelftestFailures: defaultReportSelftestFailures,
 } = require('../../shared/selftest/reportSelftestFailure');
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
+const {
+  matchAccountPayoutsRoute,
+  handleAccountPayouts,
+} = require('./accountPayouts');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
 const PERF_ROUTE = 'entry/account/performance';
 const SELFTEST_ROUTE = 'entry/selftest';
+const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -190,17 +195,26 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const payoutRoute = matchAccountPayoutsRoute(method, path);
   const route = isSelftestRoute(method, path)
     ? SELFTEST_ROUTE
     : isPerformanceRoute(method, path)
       ? PERF_ROUTE
-      : ENTRY_ROUTE;
+      : payoutRoute
+        ? ACCOUNT_PAYOUTS_ROUTE
+        : ENTRY_ROUTE;
   try {
     if (isSelftestRoute(method, path)) {
       return await handleSelftest(event, deps);
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (
+      payoutRoute === 'POST /account/payouts' ||
+      payoutRoute === 'POST /account/stripe/link'
+    ) {
+      return await handleAccountPayouts(event, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -554,10 +568,12 @@ module.exports = {
   handlePerformance,
   handleSelftest,
   handleSearch,
+  handleAccountPayouts,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
   resolveHttp,
   isPerformanceRoute,
   isSelftestRoute,
+  matchAccountPayoutsRoute,
 };

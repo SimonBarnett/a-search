@@ -681,6 +681,23 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-222: partner/club payout request + Stripe Connect link (optional until payout)
+    httpApi.addRoutes({
+      path: '/account/payouts',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryAccountPayoutsIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/account/stripe/link',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryAccountStripeLinkIntegration',
+        entry,
+      ),
+    });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
     const apiAccessLogGroup = new logs.LogGroup(this, 'HttpApiAccessLogGroup', {
