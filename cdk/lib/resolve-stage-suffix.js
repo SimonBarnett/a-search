@@ -51,16 +51,76 @@ function withStageSuffix(baseName, stageSuffix) {
 }
 
 /**
+ * FR-191: optional region token in physical names for a second regional stack.
+ *
+ * Context:
+ *   includeRegionInNames=true  -> append sanitized -c region= / deployRegion
+ *   regionSuffix=euwest1       -> append that token (explicit override)
+ *
+ * Default (unset): no region token (primary stack names unchanged).
+ *
  * @param {Record<string, unknown>} [context]
- * @returns {string} ASearchStack or ASearchStack-dev
+ * @returns {string} "" or "-euwest2" style suffix
+ */
+function resolveRegionNameSuffix(context) {
+  const ctx = context || {};
+  const explicit =
+    ctx.regionSuffix !== undefined && ctx.regionSuffix !== null
+      ? String(ctx.regionSuffix).trim().toLowerCase()
+      : '';
+  if (explicit) {
+    if (!/^[a-z][a-z0-9]*$/.test(explicit)) {
+      const err = new Error(
+        'FR-191: invalid regionSuffix. Use lowercase alphanumeric (e.g. -c regionSuffix=euwest1).',
+      );
+      err.code = 'A_SEARCH_INVALID_REGION_SUFFIX';
+      throw err;
+    }
+    const tok = explicit.replace(/[^a-z0-9]+/g, '');
+    if (!tok || !/^[a-z][a-z0-9]*$/.test(tok)) {
+      const err = new Error(
+        'FR-191: invalid regionSuffix. Use lowercase alphanumeric (e.g. -c regionSuffix=euwest1).',
+      );
+      err.code = 'A_SEARCH_INVALID_REGION_SUFFIX';
+      throw err;
+    }
+    return `-${tok}`;
+  }
+  const flag = ctx.includeRegionInNames;
+  const on =
+    flag === true ||
+    flag === 1 ||
+    (typeof flag === 'string' &&
+      ['true', '1', 'yes', 'on'].includes(flag.trim().toLowerCase()));
+  if (!on) return '';
+  const regionRaw = ctx.region || ctx.deployRegion || 'eu-west-2';
+  const tok = String(regionRaw).trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+  if (!tok) return '';
+  return `-${tok}`;
+}
+
+/**
+ * FR-156 + FR-191: stage suffix then optional region token.
+ * @param {Record<string, unknown>} [context]
+ * @returns {string}
+ */
+function resolveDeployNameSuffix(context) {
+  return `${resolveStageSuffix(context)}${resolveRegionNameSuffix(context)}`;
+}
+
+/**
+ * @param {Record<string, unknown>} [context]
+ * @returns {string} ASearchStack or ASearchStack-dev or ASearchStack-standby-euwest1
  */
 function resolveStackId(context) {
-  const suffix = resolveStageSuffix(context);
+  const suffix = resolveDeployNameSuffix(context);
   return suffix ? `ASearchStack${suffix}` : 'ASearchStack';
 }
 
 module.exports = {
   resolveStageSuffix,
+  resolveRegionNameSuffix,
+  resolveDeployNameSuffix,
   withStageSuffix,
   resolveStackId,
 };

@@ -13,15 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'webgains',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -46,8 +38,10 @@ describe('FR-171 enable bol', () => {
     assert.equal(bol.enabled.sandbox, true);
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
-    assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 tradedoubler.live');
-    assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 tradedoubler.sandbox');
+    assert.equal(byId.get('avantlink').enabled.live, true, 'FR-177 keep-both');
+    assert.equal(byId.get('avantlink').enabled.sandbox, true, 'FR-177 keep-both');
+    assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 keep-both');
+    assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -134,7 +128,7 @@ describe('FR-171 enable bol', () => {
       assert.ok(qHit, `missing queue a-search-bol-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify']) {
+    for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
