@@ -17,7 +17,6 @@ const STILL_DARK = [
   'webgains',
   'admitad',
   'flexoffers',
-  'avantlink',
   'shopify',
   'wix',
   'woocommerce',

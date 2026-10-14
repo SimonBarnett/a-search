@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-820 FR-098 hostile', () => {
-  it('registry avantlink stay-dark both envs (CAST IRON)', () => {
+  it('registry avantlink enabled both envs (FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const al = registry.sources.find((s) => s.id === 'avantlink');
     assert.ok(al);
-    assert.equal(al.enabled.live, false);
-    assert.equal(al.enabled.sandbox, false);
+    assert.equal(al.enabled.live, true);
+    assert.equal(al.enabled.sandbox, true);
     assert.equal(al.kind, 'local');
     assert.equal(al.queueEnv, 'SQS_AVANTLINK_URL');
   });
