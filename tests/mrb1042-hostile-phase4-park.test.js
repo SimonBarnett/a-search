@@ -78,7 +78,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     for (const id of [
       'webgains',
       'admitad',
-      'shopify',
+            'shopify',
       'wix',
       'woocommerce',
     ]) {
