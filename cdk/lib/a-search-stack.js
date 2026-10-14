@@ -75,6 +75,7 @@ const {
 } = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
+ * Title-case construct id fragment from source id (amazon ------------------- Amazon).
  * Title-case construct id fragment from source id (amazon -------- Amazon).
  * @param {string} id
  */
@@ -83,6 +84,7 @@ function pascalSource(id) {
 }
 
 /**
+ * Registry queueEnv `SQS_AMAZON_URL` ------------------- entry env keys SQS_AMAZON_LIVE_URL /
  * Registry queueEnv `SQS_AMAZON_URL` -------- entry env keys SQS_AMAZON_LIVE_URL /
  * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
  * @param {string} queueEnv
@@ -154,6 +156,7 @@ function resolveEntryJwtSecret(scope, stack) {
 
 /**
  * FR-136: wire JWT_* env from Secrets Manager JSON fields + grant read.
+ * CloudFormation dynamic refs -------- no secret strings in the synth snapshot.
  * CloudFormation dynamic refs --- no secret strings in the synth snapshot.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
@@ -220,6 +223,7 @@ function wireMssqlSecretEnv(fn, secret, opts) {
 
 /**
  * FR-138: credential env keys from each enabled provider `.env.example`
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* -------- those are wired elsewhere).
  * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* --- those are wired elsewhere).
  * Stay-dark sources are omitted until an enable-provider FR adds them here.
  */
@@ -253,6 +257,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
   etsy: ['ETSY_API_KEY'],
   // FR-171: bol enabled -> FR-138 secret wiring
   bol: ['BOL_API_KEY'],
+  // FR-178: enable shopify merchant -> FR-138 secret wiring
+  shopify: [
+    'SHOPIFY_API_KEY',
+    'SHOPIFY_API_SECRET_KEY',
+    'SHOPIFY_ACCESS_TOKEN',
+    'SHOPIFY_STORE_URL',
+  ],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
@@ -260,6 +271,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'TRADEDOUBLER_FEED_TOKEN',
     'TRADEDOUBLER_AFFILIATE_ID',
     'TRADEDOUBLER_PUBLISHER_ID',
+  ],
+  // FR-177: enable avantlink -> FR-138 secret wiring
+  avantlink: [
+    'AVANTLINK_API_KEY',
+    'AVANTLINK_API_TOKEN',
+    'AVANTLINK_FEED_TOKEN',
+    'AVANTLINK_PUBLISHER_ID',
+    'AVANTLINK_AFFILIATE_ID',
   ],
   // FR-172: enable partnerize
   partnerize: [
@@ -418,6 +437,7 @@ class ASearchStack extends cdk.Stack {
     // FR-192 LOCKED: region-local ResultsBucket per stack (no S3 CRR). Standby region
     // gets its own bucket via FR-191 second stack; SQL/rclone stay primary/IONOS.
     // FR-130 wires env + IAM below.
+    // FR-154: deepen security defaults -------- SSE-S3, BlockPublicAccess ALL,
     // FR-154: deepen security defaults --- SSE-S3, BlockPublicAccess ALL,
     // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
     const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
