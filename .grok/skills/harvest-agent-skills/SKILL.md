@@ -203,3 +203,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
 - FR-201 widget: boot .a-search-widget[data-widget-guid] once via data-a-search-booted; GET /parts then API layout then data-mode; modes only change layout; stack on Parts tip when needed
 - ComponentsPiece widget CSS: ship layout-only sheet with currentColor/inherit/transparent/none only; pin-scan declarations not loose regex; stack FR-202 on FR-201 tip; non-main base needs MRB hand-close note.
+- Phase5 FR-210 skillbook: create top-level components-piece/ like entry/maintainer; pin skillbook-layout.test.js triggers (parts/go/widget/agent/widgetGuid/feedback/idle); leave harvest-agent-skills at repo root; Closes on PR; FR seat never merges
+- Market-hold disable PRs must not globally delete provider id string literals from tests (paths/find/source); retarget enabled asserts and floors 2*enabled_count only.
+- a-search harvest twin: FAIL-supersede FR-212 fixtures session-receipt tips that duplicate open docs/mrb #1799 / product tip #1731
