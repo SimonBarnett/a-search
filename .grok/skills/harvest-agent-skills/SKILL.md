@@ -197,3 +197,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable keep-both: after folding a sibling enable from main into PROVIDER_PLAIN_DEFAULTS, require() the stack before push --- an extra closing brace from the merge leaves SyntaxError and red synth; non-synth registry/CDK-key pins can still look green.
 - When editing amazon skill for FR-181 Creators coexistence, keep the exact FR-045 needle LOCKED (Phase 1): Amazon live search uses PA-API SearchItems contiguous; do not rewrite to LOCKED (Phase 1 / FR-045)
 - Harvest-lesson tips that CONFLICT and rewrite unicode arrows into dash runs must FAIL-supersede; land a clean single-bullet append from current main instead of merging the corrupted tip
+- a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
