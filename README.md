@@ -25,6 +25,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Catalog / product / ASIN model](docs/catalog-model.md) (FR-115 - madeiradb map)
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
+- [ComponentsPiece architecture](docs/components-piece.md) (FR-195 -- widgetGuid storage, Parts/Click contracts, trust boundaries; docs lock)
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Phase-2 providers](docs/phase2-providers.md) (FR-061 -- stay-dark until credentials)
 - [Phase-3 enable one provider](docs/phase3-enable-provider.md) (FR-126 -- ritual template; does not enable anyone)
