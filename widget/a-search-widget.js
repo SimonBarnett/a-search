@@ -1,13 +1,15 @@
 'use strict';
 
 /**
- * FR-201: embeddable ComponentsPiece widget.
+ * FR-201 + FR-203: embeddable ComponentsPiece widget.
  * Boots every .a-search-widget[data-widget-guid] once; pages GET /parts.
- * Layout from Parts API; fall back to data-mode. Click /go is out of scope.
+ * Layout from Parts API; fall back to data-mode.
+ * FR-203: View deal -> GET /go?host&widgetGuid&part; never embed affiliate hrefs.
  */
 
 var SELECTOR = '.a-search-widget[data-widget-guid]';
 var BOOTED_ATTR = 'data-a-search-booted';
+var GO_BOUND_ATTR = 'data-a-search-go-bound';
 var DEFAULT_N = 10;
 
 /**
@@ -32,6 +34,22 @@ function buildPartsUrl(apiBase, q) {
   if (q.uri != null && String(q.uri) !== '') {
     params.push('uri=' + encodeURIComponent(String(q.uri)));
   }
+  return path + '?' + params.join('&');
+}
+
+/**
+ * Build GET /go URL. Identity is host + widgetGuid + part (FR-232 / FR-203).
+ * @param {string} apiBase
+ * @param {{ host: string, widgetGuid: string, part: string }} q
+ * @returns {string}
+ */
+function buildGoUrl(apiBase, q) {
+  var base = apiBase == null ? '' : String(apiBase).replace(/\/$/, '');
+  var path = base + '/go';
+  var params = [];
+  params.push('host=' + encodeURIComponent(q.host));
+  params.push('widgetGuid=' + encodeURIComponent(q.widgetGuid));
+  params.push('part=' + encodeURIComponent(q.part));
   return path + '?' + params.join('&');
 }
 
@@ -174,6 +192,127 @@ async function fetchPartsPage(opts) {
 }
 
 /**
+ * Default open helper: new browsing context with noopener.
+ * @param {string} url
+ */
+function defaultOpenUrl(url) {
+  if (typeof globalThis !== 'undefined' && typeof globalThis.open === 'function') {
+    return globalThis.open(url, '_blank', 'noopener,noreferrer');
+  }
+  throw new Error('open_unavailable');
+}
+
+/**
+ * FR-203: fetch /go and open returned url. Never uses part.href from markup.
+ * @param {Element} widgetEl
+ * @param {string} partKey
+ * @param {object} deps
+ */
+async function clickGo(widgetEl, partKey, deps) {
+  deps = deps || {};
+  var guid = widgetEl && widgetEl.getAttribute('data-widget-guid');
+  if (!guid) {
+    var eg = new Error('widget_guid_required');
+    eg.code = 'widget_guid_required';
+    throw eg;
+  }
+  var part = partKey != null ? String(partKey).trim() : '';
+  if (!part) {
+    var ep = new Error('part_required');
+    ep.code = 'part_required';
+    throw ep;
+  }
+  var host =
+    (deps.location && deps.location.host) ||
+    widgetEl.getAttribute('data-host') ||
+    '';
+  if (!host) {
+    var eh = new Error('host_required');
+    eh.code = 'host_required';
+    throw eh;
+  }
+  var apiBase =
+    deps.apiBase != null
+      ? String(deps.apiBase)
+      : widgetEl.getAttribute('data-api-base') || '';
+  var goUrl = buildGoUrl(apiBase, {
+    host: host,
+    widgetGuid: guid,
+    part: part,
+  });
+  var res = await deps.fetch(goUrl, { method: 'GET', credentials: 'omit' });
+  if (!res || !res.ok) {
+    var err = new Error('go_http_' + (res && res.status));
+    err.code = 'go_http_error';
+    throw err;
+  }
+  var body = await res.json();
+  var dest = body && body.url != null ? String(body.url).trim() : '';
+  if (!dest) {
+    var eu = new Error('go_url_missing');
+    eu.code = 'go_url_missing';
+    throw eu;
+  }
+  var openFn = typeof deps.openUrl === 'function' ? deps.openUrl : defaultOpenUrl;
+  openFn(dest);
+  return body;
+}
+
+/**
+ * Walk up from event target to find data-action="go" and its .part[data-part].
+ * @param {Element|null} start
+ * @param {Element} root
+ * @returns {{ action: string, part: string }|null}
+ */
+function findGoTarget(start, root) {
+  var node = start;
+  var actionEl = null;
+  while (node && node !== root) {
+    if (node.getAttribute && node.getAttribute('data-action') === 'go') {
+      actionEl = node;
+      break;
+    }
+    node = node.parentNode || node.parentElement || null;
+  }
+  if (!actionEl) return null;
+  node = actionEl;
+  while (node && node !== root) {
+    if (node.getAttribute) {
+      var part = node.getAttribute('data-part');
+      if (part != null && String(part) !== '') {
+        return { action: 'go', part: String(part) };
+      }
+    }
+    node = node.parentNode || node.parentElement || null;
+  }
+  return null;
+}
+
+/**
+ * Bind delegated click on widget root (idempotent).
+ * @param {Element} el
+ * @param {object} deps
+ */
+function bindGoClicks(el, deps) {
+  if (!el || el.getAttribute(GO_BOUND_ATTR) === '1') return;
+  if (typeof el.addEventListener !== 'function') {
+    // Minimal test DOM without events: callers use clickGo directly.
+    return;
+  }
+  el.setAttribute(GO_BOUND_ATTR, '1');
+  el.addEventListener('click', function (ev) {
+    var target = ev && (ev.target || ev.srcElement);
+    var hit = findGoTarget(target, el);
+    if (!hit) return;
+    if (ev.preventDefault) ev.preventDefault();
+    if (ev.stopPropagation) ev.stopPropagation();
+    clickGo(el, hit.part, deps).catch(function () {
+      /* soft-fail: leave widget mounted */
+    });
+  });
+}
+
+/**
  * Fullscreen paging helper: load nextOffset page and append parts.
  * @param {Element} el
  * @param {object} deps
@@ -250,6 +389,15 @@ async function mountWidget(el, deps) {
     deps.apiBase != null
       ? String(deps.apiBase)
       : el.getAttribute('data-api-base') || '';
+  var mountDeps = {
+    document: deps.document,
+    location: deps.location,
+    fetch: deps.fetch,
+    apiBase: apiBase,
+    n: deps.n,
+    openUrl: deps.openUrl,
+  };
+  bindGoClicks(el, mountDeps);
   try {
     var page = await fetchPartsPage({
       fetch: deps.fetch,
@@ -297,6 +445,7 @@ async function boot(deps) {
         fetch: fetchFn,
         apiBase: deps.apiBase,
         n: deps.n,
+        openUrl: deps.openUrl,
       }),
     );
   }
@@ -306,12 +455,17 @@ async function boot(deps) {
 var api = {
   SELECTOR: SELECTOR,
   BOOTED_ATTR: BOOTED_ATTR,
+  GO_BOUND_ATTR: GO_BOUND_ATTR,
   DEFAULT_N: DEFAULT_N,
   buildPartsUrl: buildPartsUrl,
+  buildGoUrl: buildGoUrl,
   resolveLayout: resolveLayout,
   partsHtml: partsHtml,
   renderPage: renderPage,
   fetchPartsPage: fetchPartsPage,
+  clickGo: clickGo,
+  bindGoClicks: bindGoClicks,
+  findGoTarget: findGoTarget,
   pageFullscreen: pageFullscreen,
   mountWidget: mountWidget,
   boot: boot,
