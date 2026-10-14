@@ -21,7 +21,7 @@ const workerPath = path.join(
   'worker.js',
 );
 
-const STILL_DARK = ['webgains','admitad','flexoffers','avantlink','shopify','wix'];
+const STILL_DARK = ['webgains','admitad','flexoffers','wix'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -144,7 +144,7 @@ describe('FR-180 enable woocommerce', () => {
       assert.ok(qHit, `missing queue a-search-woocommerce-${env}`);
     }
 
-    for (const dark of ['shopify', 'wix', 'admitad']) {
+    for (const dark of ['wix', 'admitad', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
@@ -155,3 +155,4 @@ describe('FR-180 enable woocommerce', () => {
     }
   });
 });
+

@@ -9,6 +9,9 @@
  * Usage:
  *   node scripts/smoke-deploy.js --url https://xxxx.execute-api... --jwt "$TOKEN"
  *   A_SEARCH_API_URL=... A_SEARCH_SMOKE_JWT=... node scripts/smoke-deploy.js
+ *   # FR-194 multi-region label / URL pick:
+ *   node scripts/smoke-deploy.js --region eu-west-2 --jwt "$TOKEN"
+ *   A_SEARCH_API_URL_EUWEST2=... A_SEARCH_SMOKE_JWT=... node scripts/smoke-deploy.js --region eu-west-2
  *
  * Never prints the JWT. Out of scope: CI hitting production without approval.
  */
@@ -180,10 +183,57 @@ function argValue(flag) {
   return undefined;
 }
 
+/**
+ * FR-194: sanitize region token for env key suffix (eu-west-2 -> EUWEST2).
+ * @param {string} region
+ * @returns {string}
+ */
+function regionEnvSuffix(region) {
+  return String(region || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '');
+}
+
+/**
+ * Resolve API URL: --url, else A_SEARCH_API_URL_<REGION>, else A_SEARCH_API_URL.
+ * @param {{ url?: string, region?: string, env?: NodeJS.ProcessEnv }} opts
+ * @returns {{ baseUrl: string|undefined, region: string|undefined }}
+ */
+function resolveSmokeTarget(opts) {
+  const env = (opts && opts.env) || process.env;
+  const regionRaw =
+    (opts && opts.region) ||
+    env.A_SEARCH_SMOKE_REGION ||
+    undefined;
+  const region =
+    regionRaw !== undefined && String(regionRaw).trim() !== ''
+      ? String(regionRaw).trim()
+      : undefined;
+  let baseUrl = opts && opts.url ? String(opts.url).trim() : '';
+  if (!baseUrl && region) {
+    const suf = regionEnvSuffix(region);
+    if (suf) {
+      const keyed = env[`A_SEARCH_API_URL_${suf}`];
+      if (keyed) baseUrl = String(keyed).trim();
+    }
+  }
+  if (!baseUrl) {
+    baseUrl = env.A_SEARCH_API_URL ? String(env.A_SEARCH_API_URL).trim() : '';
+  }
+  return { baseUrl: baseUrl || undefined, region };
+}
+
 async function main() {
-  const baseUrl = argValue('--url') || process.env.A_SEARCH_API_URL;
+  const { baseUrl, region } = resolveSmokeTarget({
+    url: argValue('--url'),
+    region: argValue('--region'),
+  });
   const jwt = argValue('--jwt') || process.env.A_SEARCH_SMOKE_JWT;
   const result = await runSmoke({ baseUrl, jwt });
+  if (region) {
+    result.region = region;
+  }
   process.stdout.write(JSON.stringify(result) + '\n');
 }
 
@@ -193,6 +243,8 @@ module.exports = {
   requireJwt,
   assertSearchAccept,
   assertSelftestShape,
+  resolveSmokeTarget,
+  regionEnvSuffix,
   DEFAULT_SEARCH_BODY,
 };
 

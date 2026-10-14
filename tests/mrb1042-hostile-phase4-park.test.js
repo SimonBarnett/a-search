@@ -82,6 +82,8 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       'avantlink',
       'shopify',
       'wix',
+            'wix',
+      'woocommerce',
     ]) {
       assert.ok(byId[id], `missing registry id ${id}`);
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
