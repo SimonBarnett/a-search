@@ -2,6 +2,7 @@
 
 /**
  * FR-173 / #1020: enable webgains only; FR-138 secret wiring; others stay dark.
+ * Keep-both: shopify/avantlink/tradedoubler already on main.
  */
 
 const { describe, it } = require('node:test');
@@ -13,7 +14,6 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-// bol + partnerize already on main; webgains is this FR
 const STILL_DARK = ['admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
@@ -42,6 +42,8 @@ describe('FR-173 enable webgains', () => {
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize on main');
     assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 keep-both');
     assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 keep-both');
+    assert.equal(byId.get('shopify').enabled.live, true, 'FR-178 keep-both');
+    assert.equal(byId.get('avantlink').enabled.live, true, 'FR-177 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -73,60 +75,69 @@ describe('FR-173 enable webgains', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bwebgains\b/i);
   });
 
-  it('synth: webgains live+sandbox workers+queues; secret refs; dark ids absent', () => {
-    const cdk = require('aws-cdk-lib');
-    const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr173');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
-    const templatePath = path.join(outdir, 'ASearchStack.template.json');
-    assert.ok(fs.existsSync(templatePath), 'missing template');
-    const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-    const resources = tpl.Resources || {};
-    const fns = Object.values(resources).filter(
-      (res) => res && res.Type === 'AWS::Lambda::Function',
-    );
-    const queues = Object.values(resources).filter(
-      (res) => res && res.Type === 'AWS::SQS::Queue',
-    );
+  it(
+    'synth: webgains live+sandbox workers+queues; secret refs; dark ids absent',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
+      const cdk = require('aws-cdk-lib');
+      const { ASearchStack } = require('../cdk/lib/a-search-stack');
+      const outdir = path.join(root, 'cdk.out-fr173');
+      fs.rmSync(outdir, { recursive: true, force: true });
+      const app = new cdk.App({ outdir });
+      new ASearchStack(app, 'ASearchStack');
+      app.synth();
+      const templatePath = path.join(outdir, 'ASearchStack.template.json');
+      assert.ok(fs.existsSync(templatePath), 'missing template');
+      const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+      const resources = tpl.Resources || {};
+      const fns = Object.values(resources).filter(
+        (res) => res && res.Type === 'AWS::Lambda::Function',
+      );
+      const queues = Object.values(resources).filter(
+        (res) => res && res.Type === 'AWS::SQS::Queue',
+      );
 
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
+      function envOf(name) {
+        const fn = fns.find(
+          (res) => res.Properties && res.Properties.FunctionName === name,
+        );
+        assert.ok(fn, `missing Lambda ${name}`);
+        return fn.Properties.Environment.Variables || {};
+      }
 
-    for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-webgains-worker-${env}`);
-      assert.ok(envVars.WEBGAINS_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.WEBGAINS_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.WEBGAINS_API_KEY === 'object',
-        `WEBGAINS_API_KEY must be Secrets Manager ref (${env})`,
-      );
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-webgains-${env}`,
-      );
-      assert.ok(qHit, `missing queue a-search-webgains-${env}`);
-    }
+      for (const env of ['live', 'sandbox']) {
+        const envVars = envOf(`a-search-webgains-worker-${env}`);
+        assert.ok(envVars.WEBGAINS_API_KEY, `missing API key ${env}`);
+        const keyVal = String(envVars.WEBGAINS_API_KEY);
+        assert.ok(
+          keyVal.includes('resolve:secretsmanager') ||
+            keyVal.includes('Secret') ||
+            typeof envVars.WEBGAINS_API_KEY === 'object',
+          `WEBGAINS_API_KEY must be Secrets Manager ref (${env})`,
+        );
+        const qHit = queues.find(
+          (q) =>
+            q.Properties &&
+            typeof q.Properties.QueueName === 'string' &&
+            q.Properties.QueueName === `a-search-webgains-${env}`,
+        );
+        assert.ok(qHit, `missing queue a-search-webgains-${env}`);
+      }
 
-    for (const dark of ['tradedoubler', 'shopify']) {
-      const hit = fns.find(
-        (res) =>
-          res.Properties &&
-          typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
-      );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
-    }
-  });
+      for (const dark of STILL_DARK) {
+        const hit = fns.find(
+          (res) =>
+            res.Properties &&
+            typeof res.Properties.FunctionName === 'string' &&
+            res.Properties.FunctionName.includes(`-${dark}-worker-`),
+        );
+        assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      }
+    },
+  );
 });
