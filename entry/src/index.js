@@ -36,11 +36,16 @@ const {
   reportSelftestFailures: defaultReportSelftestFailures,
 } = require('../../shared/selftest/reportSelftestFailure');
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
+const {
+  matchWidgetsCreateRoute,
+  handleWidgetsCreate,
+} = require('./widgetsCreate');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
 const PERF_ROUTE = 'entry/account/performance';
 const SELFTEST_ROUTE = 'entry/selftest';
+const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -190,17 +195,23 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const widgetsRoute = matchWidgetsCreateRoute(method, path);
   const route = isSelftestRoute(method, path)
     ? SELFTEST_ROUTE
     : isPerformanceRoute(method, path)
       ? PERF_ROUTE
-      : ENTRY_ROUTE;
+      : widgetsRoute
+        ? WIDGETS_CREATE_ROUTE
+        : ENTRY_ROUTE;
   try {
     if (isSelftestRoute(method, path)) {
       return await handleSelftest(event, deps);
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (widgetsRoute === 'POST /widgets') {
+      return await handleWidgetsCreate(event, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -554,10 +565,12 @@ module.exports = {
   handlePerformance,
   handleSelftest,
   handleSearch,
+  handleWidgetsCreate,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
   resolveHttp,
   isPerformanceRoute,
   isSelftestRoute,
+  matchWidgetsCreateRoute,
 };

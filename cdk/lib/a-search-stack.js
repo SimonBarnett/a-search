@@ -681,6 +681,15 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-219 / FR-232 prelude: mint widgetGuid + embed snippet (anonymous OK)
+    httpApi.addRoutes({
+      path: '/widgets',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryWidgetsCreateIntegration',
+        entry,
+      ),
+    });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
     const apiAccessLogGroup = new logs.LogGroup(this, 'HttpApiAccessLogGroup', {
