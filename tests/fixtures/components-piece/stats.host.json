@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-10-14T13:00:00.000Z",
+  "windows": {
+    "7d": {
+      "views": 100,
+      "partImpressions": 80,
+      "clicks": 4,
+      "ctr": 0.04
+    },
+    "30d": {
+      "views": 400,
+      "partImpressions": 320,
+      "clicks": 16,
+      "ctr": 0.04
+    }
+  },
+  "widgets": [
+    {
+      "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "layout": "horizontal",
+      "windows": {
+        "7d": {
+          "views": 100,
+          "partImpressions": 80,
+          "clicks": 4,
+          "ctr": 0.04
+        },
+        "30d": {
+          "views": 400,
+          "partImpressions": 320,
+          "clicks": 16,
+          "ctr": 0.04
+        }
+      }
+    }
+  ],
+  "topParts30d": [
+    {
+      "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "partNumber": "p-1",
+      "clicks30d": 8,
+      "ctr30d": 0.05
+    }
+  ]
+}

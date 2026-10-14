@@ -33,6 +33,11 @@ entry/
 maintainer/
   AGENTS.md
   .grok/skills/a-search-maintainer/SKILL.md
+
+components-piece/                         # Phase 5 widget + Parts/Click + agent tree (FR-210)
+  AGENTS.md
+  .grok/skills/a-search-components-piece/
+    SKILL.md                              # parts/go/widget/agent, widgetGuid, caps, dispatcher
 ```
 
 Live vs local skill focus:
@@ -40,9 +45,10 @@ Live vs local skill focus:
 | Kind | Skillbook must cover |
 |------|----------------------|
 | live | Auth, rate limits, search request/response normalize, SQS payload, S3 write, 401/429 playbook |
-| local | How parts land in MSSQL (points at maintainer + this source’s feed parser), search SQL/FTS, RejectedAsins-style filters if any, S3 write |
+| local | How parts land in MSSQL (points at maintainer + this source's feed parser), search SQL/FTS, RejectedAsins-style filters if any, S3 write |
 | entry | JWT, fan-out, registry, never hold provider secrets |
 | maintainer | Rolling keys, conditional download, staging MERGE, deletes |
+| components-piece | WidgetGuid identity, GET /parts /go /ext/status, S3 customer tree, agent site/context/ingest/prune, no affiliate URLs in widget HTML; honesty box stays repo-root harvest-agent-skills |
 
 ## Agent start rule
 

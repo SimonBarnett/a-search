@@ -431,6 +431,15 @@ class ASearchStack extends cdk.Stack {
     // Job env comes from body.sandbox (default live); workers/maintainer stay pinned.
     /** @type {Record<string, string>} */
     const entryEnv = {};
+    // FR-208: signup URL + DNS negative TTL via CDK context (never secrets in git).
+    const signupUrlCtx = this.node.tryGetContext('signupUrl');
+    if (typeof signupUrlCtx === 'string' && signupUrlCtx.trim()) {
+      entryEnv.A_SEARCH_SIGNUP_URL = signupUrlCtx.trim();
+    }
+    const negTtlCtx = this.node.tryGetContext('extStatusNegTtlS');
+    if (negTtlCtx != null && String(negTtlCtx).trim() !== '') {
+      entryEnv.EXT_STATUS_NEG_TTL_S = String(negTtlCtx).trim();
+    }
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
@@ -639,7 +648,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets /w/events + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -648,6 +657,7 @@ class ASearchStack extends cdk.Stack {
         allowMethods: [
           apigwv2.CorsHttpMethod.GET,
           apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.PATCH,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Authorization', 'Content-Type', 'Accept'],
@@ -680,6 +690,101 @@ class ASearchStack extends cdk.Stack {
         'EntrySelftestIntegration',
         entry,
       ),
+    });
+    // FR-198: public GET /parts?host&widgetGuid&offset&n (JWT not required; verified in Lambda)
+    httpApi.addRoutes({
+      path: '/parts',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartsIntegration',
+        entry,
+      ),
+    });
+    // FR-199 + FR-200: public GET /go (approved path + DNS TXT signup gate; JWT not required)
+    httpApi.addRoutes({
+      path: '/go',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryGoIntegration',
+        entry,
+      ),
+    });
+    // FR-200: public GET /ext/status?host (Club TXT gate for extension; JWT not required)
+    httpApi.addRoutes({
+      path: '/ext/status',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryExtStatusIntegration',
+        entry,
+      ),
+    });
+
+    // FR-208: ComponentsPiece + extension account routes (handlers owned by sibling FRs;
+    // entry stubs return 501 until those land). Public routes share FR-157 stage throttle.
+    const entryIntegration = (id) =>
+      new integrations.HttpLambdaIntegration(id, entry);
+
+    // FR-232: anonymous POST /widgets (public, throttled)
+    httpApi.addRoutes({
+      path: '/widgets',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetsCreateIntegration'),
+    });
+    // FR-232 / #1344: JWT PATCH /widgets/{widgetGuid}
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}',
+      methods: [apigwv2.HttpMethod.PATCH],
+      integration: entryIntegration('EntryWidgetsPatchIntegration'),
+    });
+    // #1344: JWT POST /widgets/{widgetGuid}/feedback
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}/feedback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetsFeedbackIntegration'),
+    });
+    // FR-234: JWT GET /widgets/stats and /widgets/{widgetGuid}/stats
+    httpApi.addRoutes({
+      path: '/widgets/stats',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryWidgetsStatsIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}/stats',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryWidgetStatsIntegration'),
+    });
+    // FR-234: public POST /w/events (beacon; throttled; JWT not required)
+    httpApi.addRoutes({
+      path: '/w/events',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetEventsIntegration'),
+    });
+    // #1344: JWT account commission / Stripe / payouts / upgrade
+    httpApi.addRoutes({
+      path: '/account/commission',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryAccountCommissionIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/stripe/link',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountStripeLinkIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/payouts',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountPayoutsIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/upgrade',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountUpgradeIntegration'),
+    });
+    // #1345: Stripe webhook for upgrade status (signature verified in handler FR)
+    httpApi.addRoutes({
+      path: '/webhooks/stripe',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryStripeWebhookIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
