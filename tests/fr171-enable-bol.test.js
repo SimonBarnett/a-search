@@ -13,14 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'webgains',
-  'admitad',
-  'flexoffers',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -135,7 +128,7 @@ describe('FR-171 enable bol', () => {
       assert.ok(qHit, `missing queue a-search-bol-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify']) {
+    for (const dark of ['webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

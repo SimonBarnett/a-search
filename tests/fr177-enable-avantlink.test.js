@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -121,7 +121,7 @@ describe('FR-177 enable avantlink', () => {
       assert.ok(qHit, `missing queue a-search-avantlink-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify', 'admitad', 'flexoffers', 'wix', 'woocommerce']) {
+    for (const dark of STILL_DARK) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

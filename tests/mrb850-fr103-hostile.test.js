@@ -33,14 +33,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-850 FR-103 hostile', () => {
-  it('registry shopify stay-dark both envs (CAST IRON)', () => {
+  it('registry shopify enabled both envs (FR-178)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'shopify');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.equal(row.queueEnv, 'SQS_SHOPIFY_URL');
   });
 
@@ -65,7 +65,7 @@ describe('MRB-850 FR-103 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> writeResults with sid track + relative Url resolve', async () => {
+  it('worker run: queryParts -> writeResults plain absolute Url (merchant, no sid)', async () => {
     const puts = [];
     const row = {
       Source: 'shopify',
@@ -102,7 +102,7 @@ describe('MRB-850 FR-103 hostile', () => {
     assert.equal(result.source, 'shopify');
     assert.equal(result.products.length, 1);
     assert.match(String(result.products[0].url), /madeira-demo\.myshopify\.com/);
-    assert.match(String(result.products[0].url), /sid=aff-hostile/);
+    assert.doesNotMatch(String(result.products[0].url), /[?&]sid=/);
     assert.equal(puts.length, 1);
   });
 
@@ -153,7 +153,7 @@ describe('MRB-850 FR-103 hostile', () => {
       path.join(root, 'providers', 'local', 'shopify', '.env.example'),
       'utf8',
     );
-    assert.match(envEx, /^SHOPIFY_AFFILIATE_ID=\s*$/m);
+    assert.doesNotMatch(envEx, /SHOPIFY_AFFILIATE_ID/);
     assert.match(envEx, /^SHOPIFY_ACCESS_TOKEN=\s*$/m);
     assert.match(envEx, /^MSSQL_PASSWORD=\s*$/m);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(envEx));

@@ -47,6 +47,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
       'kelkoo',
       'partnerize',
       'rakuten',
+      'shopify',
       'skimlinks',
       'tradedoubler',
     ]);

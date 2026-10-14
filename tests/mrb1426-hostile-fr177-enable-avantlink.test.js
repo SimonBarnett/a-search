@@ -31,7 +31,8 @@ test('mrb1426: avantlink enabled both envs; partnerize+bol kept; floors 2*enable
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('bol'));
   assert.ok(enabled.includes('tradedoubler'));
-  assert.equal(enabled.length * 2, 28);
+  assert.ok(enabled.includes('shopify'));
+  assert.equal(enabled.length * 2, 30);
 });
 
 test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS includes avantlink FR-138 names', () => {

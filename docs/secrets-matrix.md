@@ -78,6 +78,7 @@ Per-source Secrets Manager JSON. Override:
 | kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
 | skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
+| shopify | worker | SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STORE_URL | Secrets Manager JSON (`a-search/{env}/providers/shopify/app` + selftest fallback) |
 | avantlink | `AVANTLINK_API_KEY`, `AVANTLINK_API_TOKEN`, `AVANTLINK_FEED_TOKEN`, `AVANTLINK_PUBLISHER_ID`, `AVANTLINK_AFFILIATE_ID` | `a-search-avantlink-worker-{live,sandbox}` (FR-177) |
 | etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
@@ -85,7 +86,7 @@ Per-source Secrets Manager JSON. Override:
 | tradedoubler | `TRADEDOUBLER_API_KEY`, `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_FEED_TOKEN`, `TRADEDOUBLER_AFFILIATE_ID`, `TRADEDOUBLER_PUBLISHER_ID` | `a-search-tradedoubler-worker-{live,sandbox}` (FR-174) |
 
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
-webgains, admitad, flexoffers, shopify, wix, woocommerce.
+webgains, admitad, flexoffers, wix, woocommerce.
 
 Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
 are plain CDK env - not Secrets Manager.

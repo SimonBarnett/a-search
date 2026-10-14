@@ -46,13 +46,13 @@ describe('MRB #1320 hostile FR-168 enable skimlinks', () => {
     );
   });
 
-  it('FR-142/143 pins use 24 primary/DLQ floors (FR-167..172)', () => {
+  it('FR-142/143 pins use 26 primary/DLQ floors (FR-167..172)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 28 primary queues/);
-    assert.match(fr143, /expected 28 DLQ depth alarms/);
+    assert.match(fr142, /expected 30 primary queues/);
+    assert.match(fr143, /expected 30 DLQ depth alarms/);
     assert.match(fr142, /'skimlinks'/);
     assert.match(fr142, /'kelkoo'/);
     assert.match(fr142, /'aliexpress'/);
