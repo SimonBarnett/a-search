@@ -38,6 +38,7 @@ const {
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
 const { handleParts, isPartsRoute } = require('./parts');
 const { handleGo, isGoRoute } = require('./go');
+const { handleExtStatus, isExtStatusRoute } = require('./extStatus');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -45,6 +46,7 @@ const PERF_ROUTE = 'entry/account/performance';
 const SELFTEST_ROUTE = 'entry/selftest';
 const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
+const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -194,9 +196,11 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
-  const route = isGoRoute(method, path)
-    ? GO_ROUTE
-    : isPartsRoute(method, path)
+  const route = isExtStatusRoute(method, path)
+    ? EXT_STATUS_ROUTE
+    : isGoRoute(method, path)
+      ? GO_ROUTE
+      : isPartsRoute(method, path)
       ? PARTS_ROUTE
       : isSelftestRoute(method, path)
         ? SELFTEST_ROUTE
@@ -204,6 +208,9 @@ async function handler(event, _context, deps = {}) {
           ? PERF_ROUTE
           : ENTRY_ROUTE;
   try {
+    if (isExtStatusRoute(method, path)) {
+      return await handleExtStatus(event, deps);
+    }
     if (isGoRoute(method, path)) {
       return await handleGo(event, deps);
     }

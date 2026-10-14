@@ -639,7 +639,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + GET /parts + GET /go + GET|POST /selftest + /account/performance -> entry Lambda',
+        'a-search POST /search + GET /parts + GET /go + GET /ext/status + GET|POST /selftest + /account/performance -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -690,12 +690,21 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
-    // FR-199: public GET /go?host&widgetGuid&part&cid (approved path; JWT not required)
+    // FR-199 + FR-200: public GET /go (approved path + DNS TXT signup gate; JWT not required)
     httpApi.addRoutes({
       path: '/go',
       methods: [apigwv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration(
         'EntryGoIntegration',
+        entry,
+      ),
+    });
+    // FR-200: public GET /ext/status?host (Club TXT gate for extension; JWT not required)
+    httpApi.addRoutes({
+      path: '/ext/status',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryExtStatusIntegration',
         entry,
       ),
     });

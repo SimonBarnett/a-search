@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-199: GET /go?host&widgetGuid&part&cid HTTP adapter (approved path).
+ * FR-199 + FR-200: GET /go HTTP adapter (approved path + DNS TXT signup gate).
  * Public route (no JWT). Prefetch headers skip click recording.
  */
 
@@ -83,6 +83,18 @@ async function handleGo(event, deps = {}) {
     (envMap.A_SEARCH_WIDGET_ENV === 'live' ? 'live' : 'sandbox');
 
   try {
+    const signupUrl =
+      deps.signupUrl != null
+        ? String(deps.signupUrl)
+        : envMap.A_SEARCH_SIGNUP_URL != null
+          ? String(envMap.A_SEARCH_SIGNUP_URL)
+          : '';
+    const negTtlS =
+      deps.negTtlS != null
+        ? Number(deps.negTtlS)
+        : envMap.EXT_STATUS_NEG_TTL_S != null
+          ? Number(envMap.EXT_STATUS_NEG_TTL_S)
+          : undefined;
     const result = await resolveGo({
       root,
       env: widgetEnv,
@@ -94,7 +106,16 @@ async function handleGo(event, deps = {}) {
       stampUrl: deps.stampUrl,
       recordClick: deps.recordClick,
       prefetch: isPrefetch(event),
+      signupUrl,
+      resolveTxt: deps.resolveTxt,
+      now: deps.now,
+      negTtlS,
+      forceDns: deps.forceDns === true,
+      envMap,
     });
+    if (result.signup) {
+      return jsonResponse(200, { url: result.url });
+    }
     return jsonResponse(200, {
       url: result.url,
       clickId: result.clickId,

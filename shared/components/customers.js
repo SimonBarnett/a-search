@@ -119,6 +119,12 @@ class MemoryCustomersStore {
           ? null
           : String(patch.partnerId).trim();
     }
+    if (patch.dnsCheckedAt !== undefined) {
+      row.dnsCheckedAt =
+        patch.dnsCheckedAt == null || String(patch.dnsCheckedAt).trim() === ''
+          ? null
+          : String(patch.dnsCheckedAt).trim();
+    }
     row.updatedAt = new Date().toISOString();
     this.byHost.set(key, row);
     this.byNumber.set(row.customerNumber, row);

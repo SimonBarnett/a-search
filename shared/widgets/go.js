@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-199: GET /go approved path - resolve part URL from one widget's live.json.
+ * FR-199 + FR-200: GET /go by widgetGuid + dual DNS TXT gate for unapproved hosts.
  * Keys: host + widgetGuid + part (+ optional cid). Never search other widgets.
  */
 
@@ -14,7 +14,9 @@ const {
   getWidget,
   getCustomerByHost,
   normalizeHost,
+  ensureCustomer,
 } = require('../components/customers');
+const { hostTxtStatus } = require('../dns/hostTxtStatus');
 
 class GoError extends Error {
   /**
@@ -161,13 +163,41 @@ async function resolveGo(opts) {
     throw new GoError('widget_not_found');
   }
 
-  const customer = getCustomerByHost(opts.store, host);
-  if (!customer) {
-    throw new GoError('host_not_approved');
-  }
-  if (!customer.approved) {
-    // FR-200 owns signup / DNS path; approved-path FR returns closed shape.
-    throw new GoError('host_not_approved');
+  ensureCustomer(opts.store, { host });
+  let customer = getCustomerByHost(opts.store, host);
+  let dnsCalls = 0;
+  // DNS TXT gate only for unapproved hosts (FR-200). Approved-without-clubId
+  // still reaches stampUrl -> tracking_unavailable (FR-199).
+  if (!customer || !customer.approved) {
+    // FR-200: dual DNS TXT gate (Club required; Partner optional).
+    const signupUrl =
+      opts.signupUrl != null
+        ? String(opts.signupUrl).trim()
+        : opts.envMap && opts.envMap.A_SEARCH_SIGNUP_URL != null
+          ? String(opts.envMap.A_SEARCH_SIGNUP_URL).trim()
+          : '';
+    const status = await hostTxtStatus({
+      host,
+      store: opts.store,
+      resolveTxt: opts.resolveTxt,
+      now: opts.now,
+      negTtlS: opts.negTtlS,
+      force: opts.forceDns === true,
+    });
+    dnsCalls = status.dnsCalls || 0;
+    customer = getCustomerByHost(opts.store, host);
+    if (!status.clubId || !customer || !customer.approved) {
+      if (!signupUrl) {
+        throw new GoError('host_not_approved');
+      }
+      return {
+        url: signupUrl,
+        clickId: null,
+        recorded: false,
+        signup: true,
+        dnsCalls,
+      };
+    }
   }
 
   const liveKey = widgetFile(
@@ -242,7 +272,7 @@ async function resolveGo(opts) {
     }
   }
 
-  return { url: String(url), clickId, recorded };
+  return { url: String(url), clickId, recorded, signup: false, dnsCalls };
 }
 
 module.exports = {
