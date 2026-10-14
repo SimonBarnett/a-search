@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'admitad', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -43,7 +43,7 @@ describe('FR-177 enable avantlink', () => {
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
     assert.equal(byId.get('admitad').enabled.live, false, 'FR-175 not on main');
-    assert.equal(byId.get('flexoffers').enabled.live, false, 'FR-176 not on main');
+    assert.equal(byId.get('flexoffers').enabled.live, true, 'FR-176 on tip (keep-both fold)');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -121,7 +121,7 @@ describe('FR-177 enable avantlink', () => {
       assert.ok(qHit, `missing queue a-search-avantlink-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify', 'admitad', 'flexoffers', 'wix', 'woocommerce']) {
+    for (const dark of ['webgains', 'shopify', 'admitad', 'wix', 'woocommerce']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
