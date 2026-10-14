@@ -122,7 +122,7 @@ describe('FR-174 enable tradedoubler', () => {
       assert.ok(qHit, `missing queue a-search-tradedoubler-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify', 'admitad', 'flexoffers']) {
+    for (const dark of STILL_DARK) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

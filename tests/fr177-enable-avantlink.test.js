@@ -121,7 +121,7 @@ describe('FR-177 enable avantlink', () => {
       assert.ok(qHit, `missing queue a-search-avantlink-${env}`);
     }
 
-    for (const dark of ['webgains', 'shopify', 'admitad', 'flexoffers', 'wix', 'woocommerce']) {
+    for (const dark of STILL_DARK) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

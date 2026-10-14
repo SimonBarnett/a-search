@@ -123,7 +123,7 @@ describe('FR-178 enable shopify', () => {
       assert.ok(qHit, `missing queue a-search-shopify-${env}`);
     }
 
-    for (const dark of ['wix', 'woocommerce', 'admitad']) {
+    for (const dark of STILL_DARK) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
