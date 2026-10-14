@@ -203,6 +203,8 @@ LOCKED
 
 ## LOCKED
 
+- GBP/UK market hold (LOCKED 2026-10-14): hold non-GBP / non-UK-relevant provider ids without deleting folders; see `docs/provider-shortlist.md` Market hold + FR-252..257
+
 - Repo: `SimonBarnett/a-search`; shape **service**; Node on AWS
 - `POST /search` - **200** accept; offline SQS fan-out
 - JWT Bearer; claim **`userId`**; body cannot override; used in SQS + result keys
