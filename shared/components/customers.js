@@ -141,6 +141,42 @@ class MemoryCustomersStore {
   }
 
   /**
+   * FR-232 rule 5 / FR-198: bind an unbound widgetGuid to host on first /parts.
+   * @param {{ widgetGuid: string, host: string }} input
+   * @returns {object}
+   */
+  bindWidget(input) {
+    const guid = String(input.widgetGuid || '');
+    const row = this.widgets.get(guid);
+    if (!row) {
+      const err = new Error('widget_not_found');
+      err.code = 'widget_not_found';
+      throw err;
+    }
+    if (row.status === 'removed') {
+      const err = new Error('widget_removed');
+      err.code = 'widget_removed';
+      throw err;
+    }
+    const host = normalizeHost(input.host);
+    if (row.host && row.host !== host) {
+      const err = new Error('widget_host_mismatch');
+      err.code = 'widget_host_mismatch';
+      throw err;
+    }
+    if (row.host === host && row.customerNumber) {
+      return { ...row };
+    }
+    const cust = this.ensureCustomer({ host });
+    const now = new Date().toISOString();
+    row.host = host;
+    row.customerNumber = cust.customerNumber;
+    row.boundAt = row.boundAt || now;
+    this.widgets.set(guid, row);
+    return { ...row };
+  }
+
+  /**
    * @param {string} customerNumber
    * @returns {object[]}
    */
@@ -186,6 +222,14 @@ function getWidget(store, widgetGuid) {
 
 /**
  * @param {MemoryCustomersStore} store
+ * @param {{ widgetGuid: string, host: string }} input
+ */
+function bindWidget(store, input) {
+  return store.bindWidget(input);
+}
+
+/**
+ * @param {MemoryCustomersStore} store
  * @param {string} customerNumber
  */
 function listActiveWidgets(store, customerNumber) {
@@ -198,6 +242,7 @@ module.exports = {
   getCustomerByHost,
   createWidget,
   getWidget,
+  bindWidget,
   listActiveWidgets,
   normalizeHost,
   assertLayout,

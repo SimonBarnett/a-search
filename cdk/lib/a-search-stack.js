@@ -639,7 +639,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+        'a-search POST /search + GET /parts + GET|POST /selftest + /account/performance -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -678,6 +678,15 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration(
         'EntrySelftestIntegration',
+        entry,
+      ),
+    });
+    // FR-198: public GET /parts?host&widgetGuid&offset&n (JWT not required; verified in Lambda)
+    httpApi.addRoutes({
+      path: '/parts',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartsIntegration',
         entry,
       ),
     });
