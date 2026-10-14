@@ -183,8 +183,8 @@
       "kind": "local",
       "folder": "providers/local/tradedoubler",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_TRADEDOUBLER_URL",
       "rateLimit": {
@@ -225,8 +225,8 @@
       "kind": "local",
       "folder": "providers/local/avantlink",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_AVANTLINK_URL",
       "rateLimit": {

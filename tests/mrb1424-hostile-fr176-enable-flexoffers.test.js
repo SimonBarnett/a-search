@@ -25,7 +25,7 @@ test('mrb1424: flexoffers enabled both envs; partnerize kept; floors 2*enabled',
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('bol'));
   const floor = enabled.length * 2;
-  assert.equal(floor, 26); // keep-both bol+partnerize+flexoffers (13x2); retarget with enabled_count
+  assert.equal(floor, 30); // keep-both FR-167..177+174+176 (15x2); retarget with enabled_count
   const fr142 = fs.readFileSync(path.join(ROOT, 'tests/fr142-sqs-dlq.test.js'), 'utf8');
   assert.match(fr142, new RegExp(`expected ${floor} primary queues`));
 });

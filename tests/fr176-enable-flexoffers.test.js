@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'tradedoubler', 'admitad', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'admitad', 'shopify', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -42,7 +42,8 @@ describe('FR-176 enable flexoffers', () => {
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
     assert.equal(byId.get('admitad').enabled.live, false, 'FR-175 not on main');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 on main (keep-both fold)');
-    assert.equal(byId.get('tradedoubler').enabled.live, false, 'FR-174 not on main');
+    assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 on main (keep-both fold)');
+    assert.equal(byId.get('avantlink').enabled.live, true, 'FR-177 on main (keep-both fold)');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -120,7 +121,7 @@ describe('FR-176 enable flexoffers', () => {
       assert.ok(qHit, `missing queue a-search-flexoffers-${env}`);
     }
 
-    for (const dark of ['admitad', 'tradedoubler']) {
+    for (const dark of ['admitad', 'webgains']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

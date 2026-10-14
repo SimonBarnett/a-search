@@ -15,7 +15,7 @@ const doc = path.join(root, 'docs', 'phase3-enable-provider.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Phase-2 stay-dark ids still false (kelkoo+skimlinks+aliexpress enabled). */
-const PHASE2_STUB_IDS = ['webgains', 'tradedoubler', 'admitad', 'avantlink', 'shopify', 'wix', 'woocommerce'];
+  'admitad',
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
