@@ -52,6 +52,7 @@ consumers switch (later FR-047 slices). Moving modules out of
 | `widgets/widgetPath.js` | FR-197 / FR-232 `{env}/x/{customerNumber}/{widgetGuid}/` path helper + GUID assert |
 | `widgets/bootstrap.js` | FR-197 idempotent `_host.json` / `widget.json` / `live.json` / `searches.json` bootstrap |
 | `widgets/parts.js` | FR-198 `pageParts` over `live.json` (bind + bootstrap hook) |
+| `widgets/go.js` | FR-199 `resolveGo` approved-path click URL + clickId |
 | `components/customers.js` | FR-196 Customers + Widgets memory store + `bindWidget` |
 
 See parent FR-047 and `docs/feature-request-phase1b-2026-10-07.md` (Q2).

@@ -93,6 +93,39 @@ class MemoryCustomersStore {
   }
 
   /**
+   * Patch customer flags (approval / club / partner) for FR-199/200 tests.
+   * @param {string} host
+   * @param {{ approved?: boolean, clubId?: string|null, partnerId?: string|null }} patch
+   * @returns {object}
+   */
+  updateCustomer(host, patch = {}) {
+    const key = normalizeHost(host);
+    const row = this.byHost.get(key);
+    if (!row) {
+      const err = new Error('customer_not_found');
+      err.code = 'customer_not_found';
+      throw err;
+    }
+    if (patch.approved !== undefined) row.approved = !!patch.approved;
+    if (patch.clubId !== undefined) {
+      row.clubId =
+        patch.clubId == null || String(patch.clubId).trim() === ''
+          ? null
+          : String(patch.clubId).trim();
+    }
+    if (patch.partnerId !== undefined) {
+      row.partnerId =
+        patch.partnerId == null || String(patch.partnerId).trim() === ''
+          ? null
+          : String(patch.partnerId).trim();
+    }
+    row.updatedAt = new Date().toISOString();
+    this.byHost.set(key, row);
+    this.byNumber.set(row.customerNumber, row);
+    return { ...row };
+  }
+
+  /**
    * @param {object} input
    * @returns {object}
    */
@@ -206,6 +239,15 @@ function getCustomerByHost(store, host) {
 
 /**
  * @param {MemoryCustomersStore} store
+ * @param {string} host
+ * @param {object} patch
+ */
+function updateCustomer(store, host, patch) {
+  return store.updateCustomer(host, patch);
+}
+
+/**
+ * @param {MemoryCustomersStore} store
  * @param {object} input
  */
 function createWidget(store, input) {
@@ -240,6 +282,7 @@ module.exports = {
   MemoryCustomersStore,
   ensureCustomer,
   getCustomerByHost,
+  updateCustomer,
   createWidget,
   getWidget,
   bindWidget,
