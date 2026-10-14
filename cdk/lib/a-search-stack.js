@@ -491,7 +491,7 @@ class ASearchStack extends cdk.Stack {
     const entryAssetDir = stageEntryLambdaAsset(repoRoot);
     const entry = new lambda.Function(this, 'EntryFunction', {
       functionName: stagedName('a-search-entry'),
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: 'entry/src/index.handler',
       code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
@@ -562,7 +562,7 @@ class ASearchStack extends cdk.Stack {
           `${pascal}${envPascal}WorkerFunction`,
           {
             functionName: stagedName(`a-search-${src.id}-worker-${env}`),
-            runtime: lambda.Runtime.NODEJS_20_X,
+            runtime: lambda.Runtime.NODEJS_24_X,
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
@@ -711,7 +711,7 @@ class ASearchStack extends cdk.Stack {
     const maintainerCode = lambda.Code.fromAsset(maintainerAssetDir);
     const maintainerLive = new lambda.Function(this, 'MaintainerLiveFunction', {
       functionName: stagedName('a-search-maintainer-live'),
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: maintainerHandlerPath(),
       code: maintainerCode,
       timeout: cdk.Duration.minutes(5),
@@ -731,7 +731,7 @@ class ASearchStack extends cdk.Stack {
       'MaintainerSandboxFunction',
       {
         functionName: stagedName('a-search-maintainer-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: maintainerHandlerPath(),
         code: maintainerCode,
         timeout: cdk.Duration.minutes(5),
@@ -775,7 +775,7 @@ class ASearchStack extends cdk.Stack {
       'AwinOnboardingLiveFunction',
       {
         functionName: stagedName('a-search-awin-onboarding-live'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -800,7 +800,7 @@ class ASearchStack extends cdk.Stack {
       'AwinOnboardingSandboxFunction',
       {
         functionName: stagedName('a-search-awin-onboarding-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -833,7 +833,7 @@ class ASearchStack extends cdk.Stack {
       'ImpactOnboardingSandboxFunction',
       {
         functionName: stagedName('a-search-impact-onboarding-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -861,7 +861,7 @@ class ASearchStack extends cdk.Stack {
       'ImpactOnboardingLiveFunction',
       {
         functionName: stagedName('a-search-impact-onboarding-live'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
