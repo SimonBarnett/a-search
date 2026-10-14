@@ -201,3 +201,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
 - a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
 - a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
+- Harvest-lesson CONFLICTING after main moved: merge origin/main keep-both tip bullet + main bullets; never wipe book; re-enable --auto --squash; DONE immediately (FR #3948).
