@@ -262,7 +262,9 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "merchant",
+      "merchantConnect": true
     },
     {
       "id": "woocommerce",
@@ -276,7 +278,9 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "merchant",
+      "merchantConnect": true
     }
   ]
 }
