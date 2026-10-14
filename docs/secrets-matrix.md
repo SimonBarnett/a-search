@@ -1,4 +1,4 @@
-﻿# Secrets matrix (FR-150)
+# Secrets matrix (FR-150)
 
 Which Lambda needs which secret **keys**. **No secret values** in this file
 (never paste passwords, JWTs, or API tokens here or in git).
@@ -105,4 +105,3 @@ are plain CDK env - not Secrets Manager.
 - `tests/fr136-jwt-secrets-cdk.test.js` - entry JWT wiring
 - `tests/fr137-mssql-secrets-cdk.test.js` - MSSQL local-only
 - `tests/fr138-provider-secrets-cdk.test.js` - enabled sources only
-
