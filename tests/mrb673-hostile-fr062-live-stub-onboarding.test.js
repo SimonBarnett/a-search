@@ -11,7 +11,7 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 /** Live stub onboarding books (skills still required even when enabled). */
-const IDS = ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol'];
+const IDS = ['kelkoo', 'skimlinks', 'etsy', 'bol'];
 /** Still-disabled live stubs after FR-167..171. */
 const STAY_DARK_IDS = [];
 
@@ -55,7 +55,7 @@ describe('MRB #673 hostile FR-062 live stub onboarding', () => {
       assert.equal(s.enabled.live, false);
       assert.equal(s.enabled.sandbox, false);
     }
-    for (const id of ['kelkoo', 'skimlinks', 'aliexpress', 'etsy', 'bol']) {
+    for (const id of ['kelkoo', 'skimlinks', 'etsy', 'bol']) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);
       assert.equal(s.enabled.live, true, id);

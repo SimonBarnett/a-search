@@ -16,7 +16,7 @@ const frPath = path.join(root, 'docs', 'fr', 'FR-174.md');
 const matrixPath = path.join(root, 'docs', 'secrets-matrix.md');
 
 describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
-  it('registry enables tradedoubler both envs; floors 15x2 keep-both shopify', () => {
+  it('registry enables tradedoubler both envs; floors 12x2 keep-both shopify', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const td = byId.get('tradedoubler');

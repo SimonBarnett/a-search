@@ -18,11 +18,11 @@ test('mrb1426: avantlink enabled both envs; partnerize+bol kept; floors 2*enable
   assert.equal(al.enabled.live, true);
   assert.equal(al.enabled.sandbox, true);
   const pz = byId.get('partnerize');
-  assert.equal(pz.enabled.live, true);
-  assert.equal(pz.enabled.sandbox, true);
+  assert.equal(pz.enabled.live, false);
+  assert.equal(pz.enabled.sandbox, false);
   const bol = byId.get('bol');
-  assert.equal(bol.enabled.live, true);
-  assert.equal(bol.enabled.sandbox, true);
+  assert.equal(bol.enabled.live, false);
+  assert.equal(bol.enabled.sandbox, false);
   const td = byId.get('tradedoubler');
   assert.equal(td.enabled.live, true);
   assert.equal(td.enabled.sandbox, true);

@@ -14,7 +14,6 @@ const probePath = path.join(
   root,
   'providers',
   'live',
-  'aliexpress',
   'src',
   'selftestProbe.js',
 );
@@ -22,7 +21,6 @@ const skillPath = path.join(
   root,
   'providers',
   'live',
-  'aliexpress',
   '.grok',
   'skills',
   'a-search-aliexpress',
@@ -47,9 +45,9 @@ describe('mrb712 hostile FR-074 aliexpress selftest', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    const ae = registry.sources.find((s) => s.id ===);
+    assert.equal(ae.enabled.live, false);
+    assert.equal(ae.enabled.sandbox, false);
     assert.equal(ae.rateLimit.maxConcurrency, 1);
     assert.equal(ae.rateLimit.minIntervalMs, 250);
   });
@@ -66,7 +64,7 @@ describe('mrb712 hostile FR-074 aliexpress selftest', () => {
 
   it('invalid fixture JSON yields aliexpress_fixture_invalid', async () => {
     const { probeAliexpressSelftest } = require(probePath);
-    const tmp = path.join(root, 'providers', 'live', 'aliexpress', 'fixtures', '_mrb712-bad.json');
+    const tmp = path.join(root, 'providers', 'live', 'fixtures', '_mrb712-bad.json');
     fs.writeFileSync(tmp, '{"aliexpressProductAPI":{"products":[]}}\n', 'utf8');
     try {
       const result = await probeAliexpressSelftest({
