@@ -46,19 +46,17 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     assert.match(shortlist, /stay-dark/i);
   });
 
-  it('exactly 7 Phase-2 stub ids stay dark (bol+partnerize+shopify enabled keep-both)', () => {
+  it('exactly 5 Phase-2 stub ids stay dark (shopify+tradedoubler+avantlink enabled keep-both)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     const stubs = [
       'webgains',
-      'tradedoubler',
       'admitad',
       'flexoffers',
-      'avantlink',
       'wix',
       'woocommerce',
     ];
-    assert.equal(stubs.length, 7);
+    assert.equal(stubs.length, 5);
     for (const id of stubs) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);

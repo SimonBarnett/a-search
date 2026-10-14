@@ -17,19 +17,18 @@ const DEFAULT_ON = [
   'aliexpress',
   'etsy',
   'skimlinks',
+  'avantlink',
   'bol',
   'shopify',
   'partnerize',
+  'tradedoubler',
 ];
 const DEFAULT_OFF = [
   'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
-  'avantlink',
   'wix',
   'woocommerce',
-  'tradedoubler',
 ];
 
 describe('providers/loadRegistry', () => {
