@@ -206,3 +206,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase5 FR-210 skillbook: create top-level components-piece/ like entry/maintainer; pin skillbook-layout.test.js triggers (parts/go/widget/agent/widgetGuid/feedback/idle); leave harvest-agent-skills at repo root; Closes on PR; FR seat never merges
 - Market-hold disable PRs must not globally delete provider id string literals from tests (paths/find/source); retarget enabled asserts and floors 2*enabled_count only.
 - a-search harvest twin: FAIL-supersede FR-212 fixtures session-receipt tips that duplicate open docs/mrb #1799 / product tip #1731
+- a-search: FR-213 recordClick includes partnerId (null ok) + tenantId=clubId; destination may carry partnerId; Partner TXT alone never unlocks (FR-200); stack on FR-208 go.js; retarget to main when base tip merges
