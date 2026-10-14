@@ -681,6 +681,15 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-218: partner registration (mint DNS partner code + instructions)
+    httpApi.addRoutes({
+      path: '/partner/register',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartnerRegisterIntegration',
+        entry,
+      ),
+    });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
     const apiAccessLogGroup = new logs.LogGroup(this, 'HttpApiAccessLogGroup', {
