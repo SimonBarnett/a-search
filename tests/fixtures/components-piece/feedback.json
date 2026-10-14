@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "type": "context",
+      "text": "Prefer spare parts for model X only.",
+      "byUserId": "ABC12345",
+      "at": "2026-10-14T10:30:00.000Z"
+    },
+    {
+      "type": "remove",
+      "partNumber": "p-17",
+      "partId": "src-17",
+      "reason": "not_relevant",
+      "otherText": null,
+      "byUserId": "ABC12345",
+      "at": "2026-10-14T10:31:00.000Z"
+    },
+    {
+      "type": "remove",
+      "partNumber": "p-18",
+      "partId": "src-18",
+      "reason": "other",
+      "otherText": "Customer asked to hide this SKU.",
+      "byUserId": "ABC12345",
+      "at": "2026-10-14T10:32:00.000Z"
+    }
+  ]
+}
