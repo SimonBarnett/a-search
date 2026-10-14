@@ -197,3 +197,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable keep-both: after folding a sibling enable from main into PROVIDER_PLAIN_DEFAULTS, require() the stack before push --- an extra closing brace from the merge leaves SyntaxError and red synth; non-synth registry/CDK-key pins can still look green.
 - When editing amazon skill for FR-181 Creators coexistence, keep the exact FR-045 needle LOCKED (Phase 1): Amazon live search uses PA-API SearchItems contiguous; do not rewrite to LOCKED (Phase 1 / FR-045)
 - Harvest-lesson tips that CONFLICT and rewrite unicode arrows into dash runs must FAIL-supersede; land a clean single-bullet append from current main instead of merging the corrupted tip
+- a-search Phase-4 enable keep-both must not rewrite secrets-matrix Lambda family rows or expand provider grant rows to 4 columns; restore contiguous family shorthand and a 3-column grant before PASS
+- Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
+- a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
