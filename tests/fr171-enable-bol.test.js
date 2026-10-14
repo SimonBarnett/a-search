@@ -81,7 +81,15 @@ describe('FR-171 enable bol', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bbol\b/i);
   });
 
-  it('synth: GBP/UK hold - bol workers+queues absent (folder retained)', () => {
+  it(
+    'synth: GBP/UK hold - bol workers+queues absent (folder retained)',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
     const outdir = path.join(root, 'cdk.out-hold-bol');
@@ -113,5 +121,6 @@ describe('FR-171 enable bol', () => {
       );
       assert.equal(q, undefined, `hold bol must not have queue ${env}`);
     }
-  });
+    },
+  );
 });

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * MRB #703 hostile: FR-071 aliexpress search stay-dark gates.
@@ -52,7 +52,7 @@ describe('MRB #703 hostile FR-071 aliexpress search', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
-    const ae = registry.sources.find((s) => s.id ===);
+    const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.equal(ae.enabled.live, false);
     assert.equal(ae.enabled.sandbox, false);
   });

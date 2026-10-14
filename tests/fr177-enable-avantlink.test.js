@@ -74,7 +74,15 @@ describe('FR-177 enable avantlink', () => {
     );
   });
 
-  it('synth: GBP/UK hold - avantlink workers+queues absent (folder retained)', () => {
+  it(
+    'synth: GBP/UK hold - avantlink workers+queues absent (folder retained)',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
     const outdir = path.join(root, 'cdk.out-hold-avantlink');
@@ -106,5 +114,6 @@ describe('FR-177 enable avantlink', () => {
       );
       assert.equal(q, undefined, `hold avantlink must not have queue ${env}`);
     }
-  });
+    },
+  );
 });

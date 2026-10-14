@@ -69,7 +69,15 @@ describe('FR-169 enable aliexpress', () => {
     );
   });
 
-  it('synth: GBP/UK hold - aliexpress workers+queues absent (folder retained)', () => {
+  it(
+    'synth: GBP/UK hold - aliexpress workers+queues absent (folder retained)',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
     const outdir = path.join(root, 'cdk.out-hold-aliexpress');
@@ -101,5 +109,6 @@ describe('FR-169 enable aliexpress', () => {
       );
       assert.equal(q, undefined, `hold aliexpress must not have queue ${env}`);
     }
-  });
+    },
+  );
 });

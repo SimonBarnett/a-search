@@ -10,18 +10,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const workerPath = path.join(
-  root,
-  'providers',
-  'live',
-  'src',
+const workerPath = path.join(root, 'providers', 'live', 'aliexpress', 'src',
   'worker.js',
 );
-const skillPath = path.join(
-  root,
-  'providers',
-  'live',
-  '.grok',
+const skillPath = path.join(root, 'providers', 'live', 'aliexpress', '.grok',
   'skills',
   'a-search-aliexpress',
   'SKILL.md',
@@ -30,6 +22,7 @@ const fixturePath = path.join(
   root,
   'providers',
   'live',
+  'aliexpress',
   'fixtures',
   'products-ok.json',
 );
@@ -68,7 +61,7 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    const ae = registry.sources.find((s) => s.id ===);
+    const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.equal(ae.enabled.live, false);
     assert.equal(ae.enabled.sandbox, false);
   });
@@ -93,7 +86,7 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
           searchId: 'srch_mrb710',
           userId: 'U1',
           env: 'sandbox',
-          source:,
+          source: 'aliexpress',
           q: 'case',
           catalogId: 1,
         },

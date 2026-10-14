@@ -14,21 +14,14 @@ const fixturePath = path.join(
   root,
   'providers',
   'live',
+  'aliexpress',
   'fixtures',
   'products-ok.json',
 );
-const normalizePath = path.join(
-  root,
-  'providers',
-  'live',
-  'src',
+const normalizePath = path.join(root, 'providers', 'live', 'aliexpress', 'src',
   'normalize.js',
 );
-const skillPath = path.join(
-  root,
-  'providers',
-  'live',
-  '.grok',
+const skillPath = path.join(root, 'providers', 'live', 'aliexpress', '.grok',
   'skills',
   'a-search-aliexpress',
   'SKILL.md',
@@ -37,6 +30,7 @@ const envPath = path.join(
   root,
   'providers',
   'live',
+  'aliexpress',
   '.env.example',
 );
 
@@ -70,7 +64,7 @@ describe('mrb705 hostile FR-072 aliexpress normalize', () => {
     const products = normalizeSearchResponse(fixture, track);
     assert.equal(products.length, 2);
     assert.equal(products[0].currency, 'GBP');
-    assert.equal(products[0].source);
+    assert.equal(products[0].source, 'aliexpress');
     assert.match(String(products[0].url), /example\.test/);
   });
 
@@ -78,7 +72,7 @@ describe('mrb705 hostile FR-072 aliexpress normalize', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    const ae = registry.sources.find((s) => s.id ===);
+    const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.equal(ae.enabled.live, false);
     assert.equal(ae.enabled.sandbox, false);
 
