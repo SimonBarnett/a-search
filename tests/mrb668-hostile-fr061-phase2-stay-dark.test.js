@@ -2,6 +2,7 @@
 
 /**
  * MRB #668 hostile: FR-061 Phase-2 stay-dark docs after product merge.
+ * Keep-both: shopify+tradedoubler+avantlink+webgains enabled; 4 stubs stay dark.
  */
 
 const { describe, it } = require('node:test');
@@ -46,18 +47,11 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     assert.match(shortlist, /stay-dark/i);
   });
 
-  it('exactly 6 Phase-2 stub ids stay dark (FR-167..174 + FR-173 webgains+tradedoubler enabled)', () => {
+  it('exactly 4 Phase-2 stub ids stay dark (shopify+tradedoubler+avantlink+webgains enabled)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    const stubs = [
-      'admitad',
-      'flexoffers',
-      'avantlink',
-      'shopify',
-      'wix',
-      'woocommerce',
-    ];
-    assert.equal(stubs.length, 6);
+    const stubs = ['admitad', 'flexoffers', 'wix', 'woocommerce'];
+    assert.equal(stubs.length, 4);
     for (const id of stubs) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);

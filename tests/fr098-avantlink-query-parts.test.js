@@ -261,7 +261,7 @@ describe('FR-098 avantlink MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps avantlink enabled false both envs', () => {
+  it('registry keeps avantlink enabled true both envs (FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

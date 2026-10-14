@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 
-test('mrb1468: webgains+tradedoubler enabled; floors 2*enabled=28', () => {
+test('mrb1468: webgains+tradedoubler enabled; floors 2*enabled=32', () => {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'providers/registry.json'), 'utf8'));
   const byId = new Map(reg.sources.map((s) => [s.id, s]));
   assert.equal(byId.get('webgains').enabled.live, true);
@@ -15,7 +15,9 @@ test('mrb1468: webgains+tradedoubler enabled; floors 2*enabled=28', () => {
   assert.equal(byId.get('tradedoubler').enabled.live, true);
   assert.equal(byId.get('tradedoubler').enabled.sandbox, true);
   const enabled = reg.sources.filter((s) => s.enabled.live && s.enabled.sandbox);
-  assert.equal(enabled.length * 2, 28);
+  assert.ok(enabled.some((s) => s.id === 'webgains'));
+  assert.ok(enabled.some((s) => s.id === 'shopify'));
+  assert.equal(enabled.length * 2, 32);
 });
 
 test('mrb1468: CDK keys webgains+tradedoubler; secrets-matrix not stay-dark', () => {

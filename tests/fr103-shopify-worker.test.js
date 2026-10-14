@@ -116,7 +116,7 @@ describe('FR-103 shopify MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.myshopify\.com/);
-    assert.match(String(out.products[0].url), /sid=sh-aff-test/);
+    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -234,8 +234,8 @@ describe('FR-103 shopify MSSQL queryParts + worker', () => {
     );
     const s = registry.sources.find((x) => x.id === 'shopify');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('searchTextFromMsg and mssqlConfigFromEnv helpers', () => {

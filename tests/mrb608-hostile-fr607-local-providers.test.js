@@ -12,6 +12,8 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const IDS = ['shopify', 'wix', 'woocommerce'];
+/** Still-dark Madeira stubs after FR-178 enables shopify. */
+const STILL_DISABLED = ['admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const p = path.join(root, rel);
@@ -28,7 +30,7 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #608 hostile FR-607 Madeira local providers', () => {
-  it('registry keeps all three disabled with SQS_*_URL queueEnv', () => {
+  it('registry keeps dark Madeira stubs disabled; shopify enabled as merchant (FR-178)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     assert.equal(sources.length, 20);
@@ -36,11 +38,19 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);
       assert.equal(s.kind, 'local');
-      assert.equal(s.enabled.live, false);
-      assert.equal(s.enabled.sandbox, false);
       assert.equal(s.queueEnv, `SQS_${id.toUpperCase()}_URL`);
       assert.equal(s.folder, `providers/local/${id}`);
     }
+    for (const id of STILL_DISABLED) {
+      const s = sources.find((x) => x.id === id);
+      assert.equal(s.enabled.live, false, `${id}.live`);
+      assert.equal(s.enabled.sandbox, false, `${id}.sandbox`);
+    }
+    const shopify = sources.find((x) => x.id === 'shopify');
+    assert.equal(shopify.enabled.live, true);
+    assert.equal(shopify.enabled.sandbox, true);
+    assert.equal(shopify.class, 'merchant');
+    assert.equal(shopify.merchantConnect, true);
   });
 
   it('shortlist + vision extensibility pins Madeira store ids', () => {
@@ -63,8 +73,8 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
     });
   }
 
-  it('onboarding skills mark UNKNOWN / not enabled (FR-060i)', () => {
-    for (const id of IDS) {
+  it('onboarding skills mark UNKNOWN / not enabled for still-dark stubs (FR-060i)', () => {
+    for (const id of STILL_DISABLED) {
       const text = utf8NoBom(
         path.join(
           'providers',

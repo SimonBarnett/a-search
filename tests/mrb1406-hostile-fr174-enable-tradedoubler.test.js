@@ -16,7 +16,7 @@ const frPath = path.join(root, 'docs', 'fr', 'FR-174.md');
 const matrixPath = path.join(root, 'docs', 'secrets-matrix.md');
 
 describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
-  it('registry enables tradedoubler both envs; floors 13x2', () => {
+  it('registry enables tradedoubler both envs; floors 16x2 keep-both shopify', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const td = byId.get('tradedoubler');
@@ -27,10 +27,13 @@ describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
       .filter((s) => s.enabled && s.enabled.live && s.enabled.sandbox)
       .map((s) => s.id)
       .sort();
-    assert.equal(enabled.length, 13, `enabled count ${enabled.length}`);
+    assert.equal(enabled.length, 16, `enabled count ${enabled.length}`);
     assert.ok(enabled.includes('tradedoubler'));
     assert.ok(enabled.includes('bol'));
     assert.ok(enabled.includes('partnerize'));
+    assert.ok(enabled.includes('avantlink'));
+    assert.ok(enabled.includes('shopify'));
+    assert.ok(enabled.includes('webgains'));
   });
 
   it('CDK PROVIDER_CREDENTIAL_KEYS.tradedoubler + Decision LOCKED + matrix grant', () => {

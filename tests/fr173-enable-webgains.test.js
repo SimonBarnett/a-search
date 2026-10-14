@@ -14,14 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // bol + partnerize already on main; webgains is this FR
-const STILL_DARK = [
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const STILL_DARK = ['admitad', 'flexoffers', 'wix', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
