@@ -639,7 +639,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+        'a-search POST /search + GET|POST /selftest + /account/performance + FR-216 merchant shops connect -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -678,6 +678,23 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration(
         'EntrySelftestIntegration',
+        entry,
+      ),
+    });
+    // FR-216: merchant shop connect (JWT) + provider callback (state nonce)
+    httpApi.addRoutes({
+      path: '/merchant/shops/connect',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsConnectIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/callback/{provider}',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCallbackIntegration',
         entry,
       ),
     });
