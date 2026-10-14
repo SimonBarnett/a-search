@@ -198,3 +198,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When editing amazon skill for FR-181 Creators coexistence, keep the exact FR-045 needle LOCKED (Phase 1): Amazon live search uses PA-API SearchItems contiguous; do not rewrite to LOCKED (Phase 1 / FR-045)
 - Harvest-lesson tips that CONFLICT and rewrite unicode arrows into dash runs must FAIL-supersede; land a clean single-bullet append from current main instead of merging the corrupted tip
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
+- a-search FR-196: put Customers and Widgets DDL under db/migrations for a_search/a_search_sandbox (never madeiradb); MemoryCustomersStore ensureCustomer returns stable customerNumber with approved false and upgradeStatus none; two widgets share one customerNumber.
