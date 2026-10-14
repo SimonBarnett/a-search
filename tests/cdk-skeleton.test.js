@@ -17,7 +17,7 @@ describe('FR-023 CDK skeleton', () => {
     assert.match(text, /loadRegistry|queueName/);
     assert.match(text, /EntryFunction|a-search-entry/);
     assert.match(text, /SqsEventSource|worker\.handler/);
-    assert.match(text, /NODEJS_20/);
+    assert.match(text, /NODEJS_24/); // FR-1176: nodejs24.x (was NODEJS_20)
   });
 
   it('npm run synth exits 0', () => {
