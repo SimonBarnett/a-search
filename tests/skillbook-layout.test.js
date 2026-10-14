@@ -26,6 +26,33 @@ describe('FR-027 / S8 skillbook-layout', () => {
     assertSkillbook('maintainer', 'a-search-maintainer');
   });
 
+  it('components-piece has AGENTS.md + a-search-components-piece skill (FR-210)', () => {
+    assertSkillbook('components-piece', 'a-search-components-piece');
+    const skill = path.join(
+      root,
+      'components-piece',
+      '.grok',
+      'skills',
+      'a-search-components-piece',
+      'SKILL.md',
+    );
+    const text = fs.readFileSync(skill, 'utf8');
+    assert.match(text, /parts/i);
+    assert.match(text, /\bgo\b/i);
+    assert.match(text, /widget/i);
+    assert.match(text, /agent/i);
+    assert.match(text, /widgetGuid/);
+    assert.match(text, /feedback\.json/);
+    assert.match(text, /must not use tokens while idle|no tokens while idle/i);
+    assert.match(text, /harvest-agent-skills/);
+    const layout = fs.readFileSync(
+      path.join(root, 'docs', 'skillbook-layout.md'),
+      'utf8',
+    );
+    assert.match(layout, /components-piece\//);
+    assert.match(layout, /a-search-components-piece/);
+  });
+
   it('every registry source folder has AGENTS.md + a-search-<id> skill', () => {
     assert.ok(Array.isArray(registry.sources));
     for (const s of registry.sources) {
