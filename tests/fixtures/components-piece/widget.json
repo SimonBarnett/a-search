@@ -1,0 +1,8 @@
+{
+  "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "host": "shop.example",
+  "customerNumber": "C1001",
+  "layout": "horizontal",
+  "createdVia": "extension",
+  "createdAt": "2026-10-14T09:00:00.000Z"
+}
