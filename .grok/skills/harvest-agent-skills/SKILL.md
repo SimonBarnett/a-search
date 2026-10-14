@@ -198,3 +198,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When editing amazon skill for FR-181 Creators coexistence, keep the exact FR-045 needle LOCKED (Phase 1): Amazon live search uses PA-API SearchItems contiguous; do not rewrite to LOCKED (Phase 1 / FR-045)
 - Harvest-lesson tips that CONFLICT and rewrite unicode arrows into dash runs must FAIL-supersede; land a clean single-bullet append from current main instead of merging the corrupted tip
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
+- FR-197 bootstrap: paths only via shared/widgets/widgetPath.js; bootstrapHost/Widget exclusive-create _host.json and widget.json+live.json=[]+searches.json; never write site.md; second call must leave mtime/layout unchanged
