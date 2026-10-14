@@ -200,4 +200,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search Phase-4 enable keep-both must not rewrite secrets-matrix Lambda family rows or expand provider grant rows to 4 columns; restore contiguous family shorthand and a 3-column grant before PASS
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
 - a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
+- a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
 - FR-199 /go: resolve one widget live.json only; approved path 403 host_not_approved leaves FR-200 signup; affiliate fail-closed 503 tracking_unavailable without clubId; injectable recordClick fire-and-forget
