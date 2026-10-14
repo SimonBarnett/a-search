@@ -200,3 +200,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search Phase-4 enable keep-both must not rewrite secrets-matrix Lambda family rows or expand provider grant rows to 4 columns; restore contiguous family shorthand and a 3-column grant before PASS
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
 - a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
+- When bumping CDK Runtime enums, pin zero old NODEJS_N_X in stack source and assert aws-cdk-lib Runtime.NAME; fix docs title mojibake to ASCII --- (mrb1172).
