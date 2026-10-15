@@ -1,0 +1,7 @@
+draft	title	goal	status
+FR-252	Docs lock GBP/UK market-hold rule	Document hold vs keep; no delete	unfiled
+FR-253	Hold disable bol	registry false/false; keep folder	unfiled
+FR-254	Hold disable aliexpress	registry false/false; keep folder	unfiled
+FR-255	Hold disable avantlink	registry false/false; keep folder	unfiled
+FR-256	Formal hold flexoffers+admitad; close #1023/#1536	stop token burn on US/broad-geo enables	unfiled
+FR-257	Retarget enablement floors after disables	CI floors match new enabled count	unfiled
