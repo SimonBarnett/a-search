@@ -75,13 +75,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
     // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
-    for (const id of [
-      'webgains',
-      'admitad',
-      'flexoffers',
-            'wix',
-      'woocommerce',
-    ]) {
+    for (const id of ['webgains', 'admitad', 'flexoffers', 'wix']) {
       assert.ok(byId[id], `missing registry id ${id}`);
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
     }

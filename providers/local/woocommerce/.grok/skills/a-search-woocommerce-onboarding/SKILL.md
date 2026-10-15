@@ -1,46 +1,46 @@
 ---
 name: a-search-woocommerce-onboarding
 description: >
-  Minimal onboarding stub for disabled registry id `woocommerce`.
-  Not enabled - live credential steps UNKNOWN / deferred. Use in
-  providers/local/woocommerce or /a-search-woocommerce-onboarding.
+  Onboarding notes for registry id `woocommerce` (merchant). Enabled both
+  envs (FR-180). Use in providers/local/woocommerce or /a-search-woocommerce-onboarding.
 ---
 
-# a-search woocommerce onboarding (disabled stub)
+# a-search woocommerce onboarding
 
 > **CAST IRON harvest + intake**
 > 1. File gaps/bugs/FRs to SimonBarnett/a-search via bobiverse intake
 >    (`Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search ...` or
 >    `POST https://irc.ntsa.uk/bob/v1/intake`). Never leave a finding unfiled.
-> 2. Harvest setup playbooks back into **this** skillbook when the source is enabled.
+> 2. Harvest setup playbooks back into **this** skillbook when credentials change.
 > 3. Never put tokens, passwords, or partner keys in a filing, skill, log, or commit.
 > Never park a-search product lessons under bobiverse `harvest/SKILL.md`.
 
-You are in **`providers/local/woocommerce/`**. Registry: **enabled live=false, sandbox=false** - **not enabled**.
+You are in **`providers/local/woocommerce/`**. Registry: **enabled live=true, sandbox=true (FR-180)** as **merchant** (`merchantConnect: true`).
 
-## Status: UNKNOWN / not enabled
+## Status: enabled (FR-180)
 
-This merchant-store source is a **disabled stub** on the shortlist (FR-607). Full agent-led
-onboarding (obtain `.env`, sandbox vs live, live selftest) is **UNKNOWN** until a human
-enables `woocommerce` in `providers/registry.json` and files a follow-up FR.
+WooCommerce is an enabled merchant source. App-level selftest fallback secrets
+(`WOOCOMMERCE_CONSUMER_KEY` / `_SECRET` / `STORE_URL`) live in Secrets Manager
+(`a-search/{env}/providers/woocommerce/app`). Per-shop REST keys remain the
+vault / Shops path (FR-235 / FR-238 / FR-240).
 
-Do **not** invent live credential steps or enable the source from this skill.
+Do **not** invent live credential values in git. Fill deploy secrets from the
+operator secret store only.
 
-## Obtain `.env` (deferred)
+## Obtain `.env`
 
-Placeholders only: see `.env.example`. Do not request live API keys while
-`enabled.live` and `enabled.sandbox` are both false.
+Placeholders only: see `.env.example` (no `WOOCOMMERCE_AFFILIATE_ID` — merchant
+URLs stay plain absolute). Queue env: `SQS_WOOCOMMERCE_URL`.
 
 ## Sandbox vs live
 
-Both disabled. Prefer leaving flags false until a product FR enables the source.
+Both enabled. Prefer sandbox for first selftest / fixture smoke.
 
 ## Selftest pointer
 
-Selftest: `docs/endpoint-selftest.md`. Disabled sources are skipped by the
-orchestrator - no woocommerce probe required while not enabled.
+Selftest: `docs/endpoint-selftest.md`. Probe path: `src/selftestProbe.js`
+(MSSQL Parts reachability or consumer-key feed-ready).
 
-## After enablement
+## Runtime skill
 
-Expand this stub into a full onboarding skillbook (FR-060c..h pattern) and
-read `.grok/skills/a-search-woocommerce/SKILL.md` for the maintain/runtime path.
+Read `.grok/skills/a-search-woocommerce/SKILL.md` for the maintain/runtime path.

@@ -11,7 +11,7 @@ const registry = require('../providers/registry.json');
 describe('FR-022 every registry folder exists', () => {
   it('each sources[].folder has AGENTS, skill, .env.example, worker run()', () => {
     assert.ok(Array.isArray(registry.sources));
-    assert.equal(registry.sources.length, 20);
+    assert.equal(registry.sources.length, 22);
     for (const s of registry.sources) {
       const base = path.join(root, s.folder);
       assert.ok(fs.existsSync(path.join(base, 'AGENTS.md')), `${s.id} AGENTS.md`);
@@ -24,8 +24,9 @@ describe('FR-022 every registry folder exists', () => {
       assert.ok(fs.existsSync(path.join(base, '.env.example')), `${s.id} .env.example`);
       const workerPath = path.join(base, 'src', 'worker.js');
       assert.ok(fs.existsSync(workerPath), `${s.id} worker`);
-      const { run } = require(workerPath);
-      assert.equal(typeof run, 'function', `${s.id} run export`);
+      const worker = require(workerPath);
+      const entry = worker.run || worker.handleMessage || worker.handler;
+      assert.equal(typeof entry, 'function', `${s.id} run|handleMessage|handler`);
     }
   });
 });

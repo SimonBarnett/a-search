@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-112: woocommerce selftestProbe + registry rateLimit (stay-dark).
+ * FR-112: woocommerce selftestProbe + registry rateLimit (enabled FR-180).
  */
 
 const { describe, it } = require('node:test');
@@ -132,8 +132,10 @@ describe('FR-112 woocommerce selftestProbe + rateLimit', () => {
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
+    assert.equal(row.class, 'merchant');
+    assert.equal(row.merchantConnect, true);
     assert.ok(row.rateLimit);
     assert.equal(row.rateLimit.maxConcurrency, 1);
     assert.equal(row.rateLimit.minIntervalMs, 250);

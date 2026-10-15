@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #870 hostile pins for FR-109 woocommerce REST catalogue client (stay-dark).
+ * MRB #870 hostile pins for FR-109 woocommerce REST catalogue client (FR-180 enabled).
  */
 
 const { describe, it } = require('node:test');
@@ -28,14 +28,16 @@ const {
 } = require('../providers/local/woocommerce/src/catalog.js');
 
 describe('MRB-870 FR-109 hostile', () => {
-  it('registry woocommerce stay-dark both envs (CAST IRON)', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
+    assert.equal(row.class, 'merchant');
+    assert.equal(row.merchantConnect, true);
     assert.equal(row.kind, 'local');
     assert.equal(row.queueEnv, 'SQS_WOOCOMMERCE_URL');
   });
@@ -129,7 +131,8 @@ describe('MRB-870 FR-109 hostile', () => {
     );
     assert.match(skill, /## Catalogue client \(FR-109\)/);
     assert.match(skill, /catalog\.js/);
-    assert.match(skill, /stay dark|enabled.*false/i);
+    assert.match(skill, /FR-180|merchant|live=true/i);
+    assert.doesNotMatch(skill, /WOOCOMMERCE_AFFILIATE_ID/);
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
     const envEx = fs.readFileSync(

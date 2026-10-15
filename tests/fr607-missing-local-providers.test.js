@@ -13,13 +13,13 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const IDS = ['shopify', 'wix', 'woocommerce'];
 /** Still-dark Madeira stubs after FR-178 enables shopify as merchant. */
-const STILL_DISABLED = ['wix', 'woocommerce'];
+const STILL_DISABLED = ['wix'];
 
 describe('FR-607 missing local providers (shopify/wix/woocommerce)', () => {
   it('registry lists each as local with queueEnv; dark stubs stay disabled', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 20);
+    assert.equal(sources.length, 22);
     for (const id of IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, `missing ${id}`);

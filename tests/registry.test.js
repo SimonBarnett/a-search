@@ -19,13 +19,13 @@ const DEFAULT_ON = [
   'shopify',
   'partnerize',
   'tradedoubler',
+  'woocommerce',
 ];
 const DEFAULT_OFF = [
   'webgains',
   'admitad',
   'flexoffers',
   'wix',
-  'woocommerce',
   'bol',
   'aliexpress',
   'avantlink',

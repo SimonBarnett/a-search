@@ -264,6 +264,12 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'SHOPIFY_ACCESS_TOKEN',
     'SHOPIFY_STORE_URL',
   ],
+  // FR-180: enable woocommerce merchant
+  woocommerce: [
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+    'WOOCOMMERCE_STORE_URL',
+  ],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
