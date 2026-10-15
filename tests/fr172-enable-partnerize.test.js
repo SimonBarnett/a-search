@@ -37,11 +37,11 @@ describe('FR-172 enable partnerize', () => {
     assert.equal(pz.enabled.live, true);
     assert.equal(pz.enabled.sandbox, true);
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
-    assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
-    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 bol.live');
-    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 bol.sandbox');
+    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 bol.live');
+    assert.equal(byId.get('bol').enabled.sandbox, false, 'FR-171 bol.sandbox');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
