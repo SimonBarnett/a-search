@@ -126,7 +126,7 @@ describe('FR-112 woocommerce selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; enabled stays false', () => {
+  it('registry rateLimit present; enabled true both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
