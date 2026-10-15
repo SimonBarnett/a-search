@@ -226,3 +226,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson MRB: if tip commits include marchhare-<seat> keep-both author, ACK then GIVEUP self-MRB (FR #2604); leave OPEN for sibling; CONFLICTING does not change the hand-back
 
 - a-search FR-235 MRB keep-both with FR-236: preserve GET/DELETE /merchant/shops and Shopify webhook; export createMemoryVault+createCredentialsVault; registry aliases getByShopId/updateStatus/deleteByShopId; allow pending_payment->suspended for uninstall
+- FR-235 upsertConnect: unique (env,provider,providerShopId); same merchant refreshes credentials; other merchant throws ShopConflictError 409 shop_already_connected; allow fixture provider for FR-216 tests
