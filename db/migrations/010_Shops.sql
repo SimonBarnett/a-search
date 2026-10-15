@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-216 / FR-235 prelude: Merchant Shops registry (a_search database only).
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never modify madeiradb.
 -- Credentials live in Secrets Manager; store a pointer only.
