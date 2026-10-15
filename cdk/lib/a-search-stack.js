@@ -648,7 +648,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops connect + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops connect + FR-229 /auth/session|/auth/redirect + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -802,6 +802,17 @@ class ASearchStack extends cdk.Stack {
         'EntryMerchantShopsCallbackIntegration',
         entry,
       ),
+    });
+    // FR-229: shared login session mint + post-login redirect (public; JWT not required)
+    httpApi.addRoutes({
+      path: '/auth/session',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSessionIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/redirect',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryAuthRedirectIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)

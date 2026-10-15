@@ -22,6 +22,8 @@
     "mssql/",
     "widgets/",
     "components/",
+    "auth/",
+    "shops/",
     "README.md",
     "dns/"
   ]
