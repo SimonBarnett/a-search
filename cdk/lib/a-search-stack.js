@@ -648,7 +648,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -811,6 +811,29 @@ class ASearchStack extends cdk.Stack {
         'EntryMerchantShopsCallbackIntegration',
         entry,
       ),
+    });
+    // FR-235 / #1349: list + delete own shops
+    httpApi.addRoutes({
+      path: '/merchant/shops',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsListIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}',
+      methods: [apigwv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsDeleteIntegration',
+        entry,
+      ),
+    });
+    // FR-236: Shopify webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/shopify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryShopifyShopWebhookIntegration'),
     });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
