@@ -37,8 +37,8 @@ describe('docs/mrb-2172 hostile FR-239 pins', () => {
     assert.match(src, /applyMerchantShopStripeEvent/);
   });
 
-  it('migration 016 creates ShopInvoices + StripeEvents', () => {
-    const mig = read('db/migrations/016_ShopInvoices_StripeEvents.sql');
+  it('migration 017 creates ShopInvoices + StripeEvents', () => {
+    const mig = read('db/migrations/017_ShopInvoices_StripeEvents.sql');
     assert.match(mig, /CREATE TABLE.*ShopInvoices/s);
     assert.match(mig, /CREATE TABLE.*StripeEvents/s);
   });

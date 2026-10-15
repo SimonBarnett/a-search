@@ -17,7 +17,7 @@ const MIGRATION = path.join(
   ROOT,
   'db',
   'migrations',
-  '016_ShopInvoices_StripeEvents.sql',
+  '017_ShopInvoices_StripeEvents.sql',
 );
 
 const { createShopsRegistry } = require('../shared/shops/registry');
