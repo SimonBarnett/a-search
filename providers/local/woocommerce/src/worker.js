@@ -73,7 +73,7 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    // FR-180 merchant: plain absolute shop URLs (no affiliate sid stamp).
+    // FR-180 / FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).
     const envVars = (track && typeof track === 'object' && track.envVars) || {};
     url = resolveWooCommerceProductUrl(row.Url, envVars);
   }

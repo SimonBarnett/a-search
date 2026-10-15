@@ -12,7 +12,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "ebay",
@@ -25,7 +26,8 @@
       "queueEnv": "SQS_EBAY_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "rakuten",
@@ -39,7 +41,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 1000
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "cj",
@@ -52,7 +55,8 @@
       "queueEnv": "SQS_CJ_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "kelkoo",
@@ -66,7 +70,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "skimlinks",
@@ -80,7 +85,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "aliexpress",
@@ -94,7 +100,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "etsy",
@@ -108,7 +115,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "bol",
@@ -122,7 +130,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "awin",
@@ -135,7 +144,8 @@
       "queueEnv": "SQS_AWIN_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "impact",
@@ -148,7 +158,8 @@
       "queueEnv": "SQS_IMPACT_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "partnerize",
@@ -162,7 +173,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "webgains",
@@ -176,7 +188,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "tradedoubler",
@@ -190,7 +203,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "admitad",
@@ -204,7 +218,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "flexoffers",
@@ -218,7 +233,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "avantlink",
@@ -232,7 +248,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "shopify",

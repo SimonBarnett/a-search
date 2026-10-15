@@ -18,14 +18,14 @@ const {
 } = require('../providers/local/avantlink/src/parseFeed');
 
 describe('MRB-838 FR-100 hostile', () => {
-  it('registry avantlink enabled both envs (FR-177)', () => {
+  it('registry avantlink disabled both envs under GBP hold (FR-1426 supersedes FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const al = registry.sources.find((s) => s.id === 'avantlink');
     assert.ok(al);
-    assert.equal(al.enabled.live, true);
-    assert.equal(al.enabled.sandbox, true);
+    assert.equal(al.enabled.live, false);
+    assert.equal(al.enabled.sandbox, false);
     assert.equal(al.kind, 'local');
   });
 
