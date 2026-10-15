@@ -39,7 +39,7 @@ describe('FR-170 enable etsy', () => {
     const kk = byId.get('kelkoo');
     assert.equal(kk.enabled.live, true, 'FR-167');
     const ae = byId.get('aliexpress');
-    assert.equal(ae.enabled.live, true, 'FR-169');
+    assert.equal(ae.enabled.live, false, 'FR-169');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);

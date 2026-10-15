@@ -101,14 +101,14 @@ describe('FR-073 aliexpress worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps aliexpress enabled true for both envs (FR-169)', () => {
+  it('registry holds aliexpress disabled both envs (GBP/UK market hold)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
     assert.ok(ae);
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    assert.equal(ae.enabled.live, false);
+    assert.equal(ae.enabled.sandbox, false);
   });
 
   it('worker source no longer contains not-wired stub message', () => {

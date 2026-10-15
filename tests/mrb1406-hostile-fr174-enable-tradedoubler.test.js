@@ -16,7 +16,7 @@ const frPath = path.join(root, 'docs', 'fr', 'FR-174.md');
 const matrixPath = path.join(root, 'docs', 'secrets-matrix.md');
 
 describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
-  it('registry enables tradedoubler both envs; floors 15x2 keep-both shopify', () => {
+  it('registry enables tradedoubler both envs; floors 12x2 keep-both shopify', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const td = byId.get('tradedoubler');
@@ -27,12 +27,14 @@ describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
       .filter((s) => s.enabled && s.enabled.live && s.enabled.sandbox)
       .map((s) => s.id)
       .sort();
-    assert.equal(enabled.length, 15, `enabled count ${enabled.length}`);
+    // GBP/UK hold: bol/aliexpress/avantlink dark → 12 enabled (floors 24).
+    assert.equal(enabled.length, 12, `enabled count ${enabled.length}`);
     assert.ok(enabled.includes('tradedoubler'));
-    assert.ok(enabled.includes('bol'));
     assert.ok(enabled.includes('partnerize'));
-    assert.ok(enabled.includes('avantlink'));
     assert.ok(enabled.includes('shopify'));
+    assert.equal(enabled.includes('bol'), false, 'GBP hold bol');
+    assert.equal(enabled.includes('avantlink'), false, 'GBP hold avantlink');
+    assert.equal(enabled.includes('aliexpress'), false, 'GBP hold aliexpress');
   });
 
   it('CDK PROVIDER_CREDENTIAL_KEYS.tradedoubler + Decision LOCKED + matrix grant', () => {
