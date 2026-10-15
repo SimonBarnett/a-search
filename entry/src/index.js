@@ -52,6 +52,18 @@ const {
   handleWidgetsCreate,
 } = require('./widgetsCreate');
 const {
+  matchAccountCommissionRoute,
+  handleAccountCommission,
+} = require('./accountCommission');
+const {
+  matchAccountUpgradeRoute,
+  handleAccountUpgrade,
+} = require('./accountUpgrade');
+const {
+  matchWidgetsMutateRoute,
+  handleWidgetsMutate,
+} = require('./widgetsMutate');
+const {
   matchPartnerRegisterRoute,
   handlePartnerRegister,
 } = require('./partnerRegister');
@@ -231,6 +243,9 @@ async function handler(event, _context, deps = {}) {
   const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
+  const commissionRoute = matchAccountCommissionRoute(method, path);
+  const upgradeRoute = matchAccountUpgradeRoute(method, path);
+  const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -271,6 +286,16 @@ async function handler(event, _context, deps = {}) {
       payoutRoute === 'POST /account/stripe/link'
     ) {
       return await handleAccountPayouts(event, deps);
+    }
+    // #1344 extension account/widget mutate handlers win over FR-208 501 stubs
+    if (commissionRoute) {
+      return await handleAccountCommission(event, deps);
+    }
+    if (upgradeRoute) {
+      return await handleAccountUpgrade(event, deps);
+    }
+    if (widgetsMutateRoute) {
+      return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
     }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
