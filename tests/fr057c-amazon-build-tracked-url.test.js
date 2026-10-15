@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR-057c: Amazon normalize/worker stamps product.url via buildTrackedUrl
- * (JWT userId tenant + AMAZON_PARTNER_TAG from env).
+ * FR-057c + FR-248: Amazon normalize/worker stamps product.url via buildTrackedUrl.
+ * Base clubs: AMAZON_PARTNER_TAG only (tenant folded into tag only when upgraded).
  */
 
 const { describe, it } = require('node:test');
@@ -31,7 +31,7 @@ const envVars = {
 };
 
 describe('FR-057c amazon buildTrackedUrl wiring', () => {
-  it('normalizeAmazonItem stamps userId + partner tag on DetailPageURL', () => {
+  it('normalizeAmazonItem stamps partner tag on DetailPageURL (FR-248 base tag)', () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const item = fixture.SearchResult.Items[0];
     const a = normalizeAmazonItem(item, {
@@ -44,10 +44,10 @@ describe('FR-057c amazon buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
     assert.match(a.url, /tag=tag-20/);
-    assert.notEqual(a.url, b.url);
+    assert.match(b.url, /tag=tag-20/);
+    // FR-248: Amazon tenant is not a userId query param; base tag shared until upgrade
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.match(a.url, /^https:\/\/www\.amazon\.co\.uk\/dp\/B0TESTASIN1/);
   });
 
@@ -65,7 +65,7 @@ describe('FR-057c amazon buildTrackedUrl wiring', () => {
     );
   });
 
-  it('worker run results include tenant stamp for two userIds', async () => {
+  it('worker run results include partner tag (base club)', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const credEnv = {
       A_SEARCH_ENV: 'sandbox',
@@ -95,9 +95,9 @@ describe('FR-057c amazon buildTrackedUrl wiring', () => {
     }
     const outA = await runFor('U-A');
     const outB = await runFor('U-B');
-    assert.match(outA.products[0].url, /userId=U-A/);
-    assert.match(outB.products[0].url, /userId=U-B/);
     assert.match(outA.products[0].url, /tag=tag-20/);
+    assert.match(outB.products[0].url, /tag=tag-20/);
+    assert.doesNotMatch(outA.products[0].url, /[?&]userId=/);
   });
 
   it('DetailPageURL without track context fails closed', () => {
