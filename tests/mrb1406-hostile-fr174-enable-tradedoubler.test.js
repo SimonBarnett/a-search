@@ -27,12 +27,14 @@ describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
       .filter((s) => s.enabled && s.enabled.live && s.enabled.sandbox)
       .map((s) => s.id)
       .sort();
-    assert.equal(enabled.length, 15, `enabled count ${enabled.length}`);
+    // GBP/UK hold: bol/aliexpress/avantlink dark → 12 enabled (floors 24).
+    assert.equal(enabled.length, 12, `enabled count ${enabled.length}`);
     assert.ok(enabled.includes('tradedoubler'));
-    assert.ok(enabled.includes('bol'));
     assert.ok(enabled.includes('partnerize'));
-    assert.ok(enabled.includes('avantlink'));
     assert.ok(enabled.includes('shopify'));
+    assert.equal(enabled.includes('bol'), false, 'GBP hold bol');
+    assert.equal(enabled.includes('avantlink'), false, 'GBP hold avantlink');
+    assert.equal(enabled.includes('aliexpress'), false, 'GBP hold aliexpress');
   });
 
   it('CDK PROVIDER_CREDENTIAL_KEYS.tradedoubler + Decision LOCKED + matrix grant', () => {
