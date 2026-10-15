@@ -16,6 +16,7 @@ const {
   parseJwtFromRedirectUrl,
   decodeJwtPayload,
   isClubRole,
+  isAllowedExtensionRedirectUri,
 } = require('../shared/extension/webAuthFlow');
 const {
   formatCommissionChip,
@@ -77,6 +78,15 @@ describe('FR-2078 chrome identity + logged-in bar', () => {
     assert.equal(isClubRole(payload), true);
     assert.equal(isClubRole({ role: 'partner' }), false);
     assert.equal(parseJwtFromRedirectUrl('https://ext.chromiumapp.org/'), null);
+    assert.equal(
+      isAllowedExtensionRedirectUri(
+        'https://abcdefghijklmnopqrstuvwxyzabcdef.chromiumapp.org/',
+      ),
+      true,
+    );
+    assert.equal(isAllowedExtensionRedirectUri('chrome-extension://abc/cb'), true);
+    assert.equal(isAllowedExtensionRedirectUri('https://evil.example/steal'), false);
+    assert.equal(isAllowedExtensionRedirectUri('http://x.chromiumapp.org/'), false);
   });
 
   it('barModel: logged-out login only; club gets Claim; commission chip format', () => {
@@ -136,6 +146,11 @@ describe('FR-2078 chrome identity + logged-in bar', () => {
     assert.match(login, /access_token/);
     assert.match(login, /A_SEARCH_EXT_FIXTURE_JWT/);
     assert.match(login, /redirect_uri/);
+    // Source uses a RegExp literal: /\.chromiumapp\.org$/i
+    assert.match(login, /chromiumapp\\\.org/);
+    assert.match(login, /isAllowedExtensionRedirectUri|chrome-extension:/);
+    const bgSrc = utf8NoBom('extension/background.js');
+    assert.match(bgSrc, /forbidden_not_club|role !== 'club'/);
 
     const fr1344 = utf8NoBom('docs/fr/FR-1344.md');
     assert.match(fr1344, /FR-2078|#2078/);

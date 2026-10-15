@@ -219,12 +219,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     );
   }
   if (msg.type === 'claim') {
-    // Club-only UI; FR-222 payouts claim path.
+    // Club-only (UI + service-worker gate); FR-222 payouts claim path.
     return reply(
-      apiFetch('/account/payouts', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      }).then((r) => ({ ok: r.ok, status: r.status, result: r.body })),
+      getJwt().then((jwt) => {
+        const payload = decodeJwtPayload(jwt);
+        const role = String(
+          (payload && (payload.role || payload.intent)) || '',
+        )
+          .trim()
+          .toLowerCase();
+        if (role !== 'club') {
+          return { ok: false, error: 'forbidden_not_club' };
+        }
+        return apiFetch('/account/payouts', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }).then((r) => ({ ok: r.ok, status: r.status, result: r.body }));
+      }),
     );
   }
   if (msg.type === 'upgrade') {
