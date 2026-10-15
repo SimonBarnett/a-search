@@ -32,5 +32,29 @@
   <input id="email" type="email" placeholder="you@example.com" />
   <button type="button" class="btn" style="margin-top:0.5rem">Email me a magic link / OTP</button>
   <p class="meta">POST /auth/session mints one shared stack; GET /auth/redirect resolves post-login path.</p>
+  <p class="meta" id="ext-note" hidden>Chrome extension login (#2078): after identity, redirect to redirect_uri with #access_token=&lt;JWT&gt; (chrome.identity.launchWebAuthFlow).</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search || '');
+      if (params.get('extension') !== '1') return;
+      var note = document.getElementById('ext-note');
+      if (note) note.hidden = false;
+      var intentEl = document.getElementById('intent');
+      if (intentEl && params.get('intent')) intentEl.value = params.get('intent');
+      var redirectUri = params.get('redirect_uri') || '';
+      document.querySelectorAll('.btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!redirectUri) return;
+          // Production IdP / OAuth callback should land here with a real JWT.
+          // Local UAT: set window.A_SEARCH_EXT_FIXTURE_JWT before click.
+          var jwt = window.A_SEARCH_EXT_FIXTURE_JWT || '';
+          if (!jwt || jwt.indexOf('.') < 0) return;
+          var dest = redirectUri + (redirectUri.indexOf('#') >= 0 ? '&' : '#') +
+            'access_token=' + encodeURIComponent(jwt) + '&token_type=Bearer';
+          location.assign(dest);
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
