@@ -95,7 +95,7 @@ describe('MRB-800 FR-092 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'admitad');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /tag=ad-web-hostile/);
+    assert.match(String(result.products[0].url), /admitad_uid=ad-web-hostile&subid=/);
     assert.equal(puts.length, 1);
   });
 

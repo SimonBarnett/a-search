@@ -63,7 +63,7 @@ describe('MRB-820 FR-098 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> normalizePart -> writeResults with avad track', async () => {
+  it('worker run: queryParts -> normalizePart -> writeResults with pw+ctc track', async () => {
     const puts = [];
     const row = {
       Source: 'avantlink',
@@ -99,7 +99,7 @@ describe('MRB-820 FR-098 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'avantlink');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /avad=al-aff-hostile/);
+    assert.match(String(result.products[0].url), /pw=al-aff-hostile&ctc=/);
     assert.equal(puts.length, 1);
   });
 
