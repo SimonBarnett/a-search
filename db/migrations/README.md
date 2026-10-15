@@ -10,6 +10,8 @@
 |------|---------|
 | `001_Customers.sql` | ComponentsPiece Customers row: host, customerNumber, approved (default 0), DNS cache fields, upgradeStatus columns (FR-196 / #1345 webhook writers) |
 | `002_Widgets.sql` | Widgets registry: widgetGuid PK, customerNumber/host nullable until bind (FR-232 rule 3) |
+| `010_Shops.sql` | Merchant Shops registry (FR-216 / FR-235); credentials pointer only |
+| `011_Merchants_OtpCodes.sql` | Merchants verified contact + OtpCodes hashed secrets (FR-228); never SystemOTPs |
 
 Migrate-once: each script uses `IF OBJECT_ID ... IS NULL` / `IF NOT EXISTS` index guards.
 

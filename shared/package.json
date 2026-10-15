@@ -21,6 +21,9 @@
     "selftest/",
     "mssql/",
     "widgets/",
+    "shops/",
+    "auth/",
+    "notify/",
     "components/",
     "README.md",
     "dns/"

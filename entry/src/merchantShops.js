@@ -6,6 +6,10 @@
 
 const { AuthError, verifyAuthorization } = require('./auth/jwt');
 const {
+  assertContactVerified,
+  ContactUnverifiedError,
+} = require('../../shared/auth/gates');
+const {
   createNonceStore,
   createShopsRegistry,
   startConnect,
@@ -119,8 +123,13 @@ async function handleMerchantShopsConnect(event, deps = {}) {
   let userId;
   try {
     const auth = await verify(authHeader, { env, body: undefined });
+    // FR-228: Add-shop requires OTP/OAuth contact-verified session.
+    assertContactVerified(auth);
     userId = auth.userId;
   } catch (err) {
+    if (err instanceof ContactUnverifiedError) {
+      return jsonResponse(403, { ok: false, error: err.code });
+    }
     if (err instanceof AuthError) {
       return jsonResponse(401, { ok: false, error: err.code });
     }

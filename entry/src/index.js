@@ -52,6 +52,13 @@ const {
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
 } = require('./merchantShops');
+const {
+  matchAuthEmailRoute,
+  handleAuthEmailRequest,
+  handleAuthEmailVerify,
+  handleAuthSmsRequest,
+  handleAuthSmsVerify,
+} = require('./authEmail');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -62,6 +69,7 @@ const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
+const AUTH_EMAIL_ROUTE = 'entry/auth';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -213,6 +221,7 @@ async function handler(event, _context, deps = {}) {
   const { method, path } = resolveHttp(event || {});
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
+  const authRoute = matchAuthEmailRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -224,13 +233,15 @@ async function handler(event, _context, deps = {}) {
           ? WIDGETS_CREATE_ROUTE
           : merchantRoute
             ? MERCHANT_SHOPS_ROUTE
-            : cpRoute
-              ? `entry/${cpRoute}`
-              : isSelftestRoute(method, path)
-                ? SELFTEST_ROUTE
-                : isPerformanceRoute(method, path)
-                  ? PERF_ROUTE
-                  : ENTRY_ROUTE;
+            : authRoute
+              ? AUTH_EMAIL_ROUTE
+              : cpRoute
+                ? `entry/${cpRoute}`
+                : isSelftestRoute(method, path)
+                  ? SELFTEST_ROUTE
+                  : isPerformanceRoute(method, path)
+                    ? PERF_ROUTE
+                    : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -253,6 +264,18 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (authRoute === 'POST /auth/email/request') {
+      return await handleAuthEmailRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/email/verify') {
+      return await handleAuthEmailVerify(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/request') {
+      return await handleAuthSmsRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/verify') {
+      return await handleAuthSmsVerify(event, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
