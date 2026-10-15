@@ -115,7 +115,7 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.wixsite\.com/);
-    // FR-179 merchant: plain store URL, no affiliate sid stamp.
+    // FR-179/FR-248 merchant: plain product URL (no affiliate sid stamp)
     assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));

@@ -73,7 +73,7 @@ function normalizeSkimlinksProduct(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['SKIMLINKS_PUBLISHER_ID'],
+      source: 'skimlinks',
     });
   }
 

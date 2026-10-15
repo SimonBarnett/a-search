@@ -30,6 +30,7 @@
                   "merchantWizard.js",
                   "notify/",
                   "extension/",
-                  "account/"
+                  "account/",
+                  "finance/"
               ]
 }
