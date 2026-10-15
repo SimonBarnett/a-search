@@ -286,7 +286,7 @@ describe('FR-248 network params', () => {
     assert.match(out, /pw=pw1/);
     assert.match(out, /ctc=USER0001/);
     const mig = fs.readFileSync(
-      path.join(ROOT, 'db', 'migrations', '015_AmazonTrackingIds.sql'),
+      path.join(ROOT, 'db', 'migrations', '017_AmazonTrackingIds.sql'),
       'utf8',
     );
     assert.match(mig, /AmazonTrackingIds/);

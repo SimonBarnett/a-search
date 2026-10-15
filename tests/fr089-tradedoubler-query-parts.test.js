@@ -113,7 +113,8 @@ describe('FR-089 tradedoubler MSSQL queryParts', () => {
       feedKey: 'prog1',
       stock: 'in_stock',
     });
-    assert.match(String(out.products[0].url), /tduid=td-aff-test/);
+    assert.match(String(out.products[0].url), /(?:^|[?&])a=td-aff-test(?:&|$)/);
+    assert.match(String(out.products[0].url), /epi=U-TD/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');

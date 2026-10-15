@@ -113,7 +113,8 @@ describe('FR-083 partnerize MSSQL queryParts', () => {
       feedKey: 'prog1',
       stock: 'in_stock',
     });
-    assert.match(String(out.products[0].url), /pubref=pz-pub-test/);
+    assert.match(String(out.products[0].url), /camref=pz-pub-test/);
+    assert.match(String(out.products[0].url), /pubref=U-PZ/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');

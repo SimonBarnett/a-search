@@ -35,6 +35,6 @@ describe('docs/mrb-2195 hostile FR-248 pins', () => {
   it('fr248 suite + migration AmazonTrackingIds', () => {
     const t = read('tests/fr248-network-params.test.js');
     assert.match(t, /merchant|buildOutboundUrl|Impact|Rakuten|CJ/i);
-    assert.ok(fs.existsSync(path.join(ROOT, 'db/migrations/015_AmazonTrackingIds.sql')));
+    assert.ok(fs.existsSync(path.join(ROOT, 'db/migrations/017_AmazonTrackingIds.sql')));
   });
 });
