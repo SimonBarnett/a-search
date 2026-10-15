@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-201 + FR-203: embeddable ComponentsPiece widget.
+ * FR-201 + FR-203 (+ FR-221 placement: host from location.host; key is data-widget-guid).
+ * FR-201 + FR-203 (+ FR-221): embeddable ComponentsPiece widget. Host from location.host; widget key is data-widget-guid (not URI).
  * Boots every .a-search-widget[data-widget-guid] once; pages GET /parts.
  * Layout from Parts API; fall back to data-mode.
  * FR-203: View deal -> GET /go?host&widgetGuid&part; never embed affiliate hrefs.
