@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-240: PartFeedKeys Kind/Active/Locator for merchant shop sync
 -- Target: a_search / a_search_sandbox only (FR-251). Never madeiradb.
 SET NOCOUNT ON;

@@ -75,10 +75,11 @@ Disable FRs: FR-253 bol, FR-254 aliexpress, FR-255 avantlink. Folders stay.
 | Wave | FR codes | Issues | Notes |
 |------|----------|--------|-------|
 | Amazon Creators API | FR-181..185 | #1028-#1032 | Opt-in; PA-API default until locked otherwise |
-| WAF | FR-186..189 | #1033-#1036 | WAFv2 on HTTP API |
+| WAF | FR-186..189 | #1033-#1036 | **DROPPED** 2026-10-10 -- [#1033](https://github.com/SimonBarnett/a-search/issues/1033) closed not planned (Simon). Not a planned Phase-4 wave. |
 | Multi-region (active-passive LOCKED FR-190; see multi-region.md) | FR-190..194 | #1037-#1041 | Strategy + second stack |
 
 Those waves are **not** provider enable flips. See ISSUED-PHASE4 for titles.
+WAF remains indexed only as historical DROPPED context (#1381); do not schedule FR-186..189.
 
 ## Related
 
