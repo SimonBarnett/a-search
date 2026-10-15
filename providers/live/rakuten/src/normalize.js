@@ -67,7 +67,7 @@ function normalizeRakutenItem(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['RAKUTEN_SITE_ID'],
+      source: 'rakuten',
     });
   }
 
