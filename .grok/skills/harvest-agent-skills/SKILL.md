@@ -212,3 +212,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson: do not land absolute never-close-tip-as-twin-of-docs/mrb; when docs/mrb folds SKILL.md the tip may close as twin of that pin (#1748/#1753); only refuse twin-close for tests-only pins that do not carry the lesson text
 - ComponentsPiece widget context pass: widgetGuid folder via widgetPath; fold feedback context/removal; SEARCH_QUERY_CAP_FREE=3 FULL=15; stack on FR-204 tip; non-main base MRB hand-close.
 - FR-228 auth: mint contactVerified session after OTP; gate merchant shops connect with 403 contact_unverified; PR body must be ASCII/no-BOM or GitHub skips Closes parsing.
+- FR-200 /go unapproved path: inject resolveTxt into shared/dns/hostTxtStatus; Club TXT a-search-club= required; Partner alone never unlocks; /ext/status shares the same cache; stack on FR-199 tip when Parts+/go not yet on main
