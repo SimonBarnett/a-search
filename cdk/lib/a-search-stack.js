@@ -871,6 +871,23 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-239: per-shop subscribe (Checkout) + cancel_at_period_end
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/subscribe',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsSubscribeIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/cancel',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCancelIntegration',
+        entry,
+      ),
+    });
     // FR-236: Shopify webhooks
     httpApi.addRoutes({
       path: '/webhooks/shop/shopify',

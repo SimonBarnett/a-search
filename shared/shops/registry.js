@@ -56,6 +56,7 @@ function assertProvider(provider) {
  *   suspendReason: string|null,
  *   statusReason: string|null,
  *   credentialsSecretRef: string|null,
+ *   stripeCustomerId: string|null,
  *   stripeSubscriptionId: string|null,
  *   subscriptionStatus: string|null,
  *   subscriptionStatusAt: string|null,
@@ -158,6 +159,7 @@ function createShopsRegistry() {
         args.credentialsSecretRef != null
           ? String(args.credentialsSecretRef)
           : null,
+      stripeCustomerId: null,
       stripeSubscriptionId: null,
       subscriptionStatus: null,
       subscriptionStatusAt: null,
@@ -293,6 +295,20 @@ function createShopsRegistry() {
   }
 
 
+
+  function setStripeCustomerId(shopId, customerId) {
+    const row = rows.find((r) => r.shopId === String(shopId));
+    if (!row) {
+      const err = new Error('shop_not_found');
+      err.code = 'shop_not_found';
+      throw err;
+    }
+    row.stripeCustomerId =
+      customerId == null || customerId === ''
+        ? null
+        : String(customerId);
+    return get(shopId);
+  }
   function setSubscriptionStatus(shopId, status, opts) {
     const row = rows.find((r) => r.shopId === String(shopId));
     if (!row) {
@@ -307,6 +323,12 @@ function createShopsRegistry() {
         opts && opts.nowMs != null ? Number(opts.nowMs) : Date.now(),
       ).toISOString();
     row.subscriptionStatusAt = at;
+    if (opts && opts.stripeCustomerId !== undefined) {
+      row.stripeCustomerId =
+        opts.stripeCustomerId == null
+          ? null
+          : String(opts.stripeCustomerId);
+    }
     if (opts && opts.stripeSubscriptionId !== undefined) {
       row.stripeSubscriptionId =
         opts.stripeSubscriptionId == null
@@ -378,6 +400,7 @@ function createShopsRegistry() {
     statusLog,
     listByMerchant,
     listPublic,
+    setStripeCustomerId,
     setSubscriptionStatus,
     setConsecutiveUnpaidPeriods,
     markNoticeSent,

@@ -12,6 +12,10 @@ const {
   completeConnect,
   getAdapter,
 } = require('../../shared/shops/connect');
+const {
+  startShopSubscribe,
+  cancelShopSubscription,
+} = require('../../shared/shops/subscribe');
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
 
@@ -107,11 +111,25 @@ function matchMerchantShopsRoute(method, path) {
   ) {
     return 'GET|POST /merchant/shops/magento/identity';
   }
+  // FR-239
+  if (m === 'POST' && /^\/merchant\/shops\/[^/]+\/subscribe$/.test(p)) {
+    return 'POST /merchant/shops/{shopId}/subscribe';
+  }
+  if (m === 'POST' && /^\/merchant\/shops\/[^/]+\/cancel$/.test(p)) {
+    return 'POST /merchant/shops/{shopId}/cancel';
+  }
   return null;
 }
 
 function shopIdFromDeletePath(path) {
   const m = String(path || '').match(/^\/merchant\/shops\/([^/]+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function shopIdFromSubscribePath(path) {
+  const m = String(path || '').match(
+    /^\/merchant\/shops\/([^/]+)\/(?:subscribe|cancel)$/,
+  );
   return m ? decodeURIComponent(m[1]) : null;
 }
 
@@ -542,7 +560,109 @@ async function handleMagentoIdentity(event, deps = {}) {
 }
 
 /**
- * FR-235 dispatcher for list/delete (connect/callback keep dedicated handlers).
+ * FR-239: POST /merchant/shops/{shopId}/subscribe -> Checkout URL.
+ */
+async function handleMerchantShopsSubscribe(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+  const shopId = shopIdFromSubscribePath(resolvePath(event));
+  if (!shopId) {
+    return jsonResponse(400, { ok: false, error: 'shopId_required' });
+  }
+  const shops = deps.shops || defaultShops;
+  try {
+    const started = await startShopSubscribe({
+      shops,
+      shopId,
+      merchantUserId: userId,
+      env,
+      priceId: deps.shopMonthlyPriceId || env.SHOP_MONTHLY_PRICE_ID,
+      createCheckoutSession: deps.createCheckoutSession,
+      ensureStripeCustomer: deps.ensureStripeCustomer,
+      successUrl: deps.subscribeSuccessUrl,
+      cancelUrl: deps.subscribeCancelUrl,
+      nowMs: deps.nowMs,
+    });
+    return jsonResponse(200, {
+      ok: true,
+      checkoutUrl: started.checkoutUrl,
+      shopId: started.shopId,
+    });
+  } catch (err) {
+    const code = (err && err.code) || 'subscribe_failed';
+    if (code === 'shop_not_found') {
+      return jsonResponse(404, { ok: false, error: code });
+    }
+    if (code === 'forbidden') {
+      return jsonResponse(403, { ok: false, error: code });
+    }
+    if (code === 'shop_not_subscribable') {
+      return jsonResponse(409, { ok: false, error: code });
+    }
+    return jsonResponse(400, { ok: false, error: code });
+  }
+}
+
+/**
+ * FR-239: POST /merchant/shops/{shopId}/cancel -> cancel_at_period_end.
+ */
+async function handleMerchantShopsCancel(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+  const shopId = shopIdFromSubscribePath(resolvePath(event));
+  if (!shopId) {
+    return jsonResponse(400, { ok: false, error: 'shopId_required' });
+  }
+  const shops = deps.shops || defaultShops;
+  try {
+    const result = await cancelShopSubscription({
+      shops,
+      shopId,
+      merchantUserId: userId,
+      cancelStripeSubscription: deps.cancelStripeSubscription,
+      atPeriodEnd: true,
+    });
+    return jsonResponse(200, result);
+  } catch (err) {
+    const code = (err && err.code) || 'cancel_failed';
+    if (code === 'shop_not_found') {
+      return jsonResponse(404, { ok: false, error: code });
+    }
+    if (code === 'forbidden') {
+      return jsonResponse(403, { ok: false, error: code });
+    }
+    return jsonResponse(400, { ok: false, error: code });
+  }
+}
+
+/**
+ * FR-235/239/243 dispatcher for list/delete/subscribe/cancel/magento identity.
  */
 async function handleMerchantShops(event, routeId, deps = {}) {
   if (routeId === 'GET /merchant/shops') {
@@ -557,6 +677,12 @@ async function handleMerchantShops(event, routeId, deps = {}) {
   if (routeId === 'GET|POST /merchant/shops/callback/{provider}') {
     return handleMerchantShopsCallback(event, deps);
   }
+  if (routeId === 'POST /merchant/shops/{shopId}/subscribe') {
+    return handleMerchantShopsSubscribe(event, deps);
+  }
+  if (routeId === 'POST /merchant/shops/{shopId}/cancel') {
+    return handleMerchantShopsCancel(event, deps);
+  }
   if (routeId === 'GET|POST /merchant/shops/magento/identity') {
     return handleMagentoIdentity(event, deps);
   }
@@ -569,6 +695,8 @@ module.exports = {
   handleMagentoIdentity,
   handleMerchantShopsList,
   handleMerchantShopsDelete,
+  handleMerchantShopsSubscribe,
+  handleMerchantShopsCancel,
   handleMerchantShops,
   resolveMethod,
   resolvePath,
