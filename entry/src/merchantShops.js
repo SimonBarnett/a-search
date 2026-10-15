@@ -166,7 +166,11 @@ async function handleMerchantShopsConnect(event, deps = {}) {
     });
   } catch (err) {
     const code = (err && err.code) || 'connect_failed';
-    if (code === 'unknown_provider' || code === 'provider_required') {
+    if (
+      code === 'unknown_provider' ||
+      code === 'provider_required' ||
+      code === 'invalid_shop_domain'
+    ) {
       return jsonResponse(400, { ok: false, error: code });
     }
     if (code === 'empty_connect') {
@@ -235,7 +239,10 @@ async function handleMerchantShopsCallback(event, deps = {}) {
       code === 'provider_mismatch' ||
       code === 'login_required' ||
       code === 'unknown_provider' ||
-      code === 'empty_connect'
+      code === 'empty_connect' ||
+      code === 'invalid_hmac' ||
+      code === 'invalid_shop_domain' ||
+      code === 'code_required'
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }

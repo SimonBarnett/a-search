@@ -290,6 +290,54 @@ describe('FR-236 shopify connect', () => {
     assert.equal(cb.statusCode, 302);
     assert.ok(!String(cb.headers.location).includes('shpat_'));
     assert.equal(shops.listByMerchant('MERCH001', 'live').length, 1);
+
+    const shopsBad = createShopsRegistry();
+    const noncesBad = createNonceStore();
+    const startBad = await handleMerchantShopsConnect(
+      {
+        headers: { authorization: 'Bearer t' },
+        body: JSON.stringify({
+          provider: 'shopify',
+          shopDomain: 'bad-hmac.myshopify.com',
+        }),
+      },
+      {
+        ...deps,
+        nonces: noncesBad,
+        shops: shopsBad,
+        nowMs: 8000,
+      },
+    );
+    assert.equal(startBad.statusCode, 200);
+    const stateBad = JSON.parse(startBad.body).state;
+    const qBad = signQuery(
+      {
+        code: 'c',
+        shop: 'bad-hmac.myshopify.com',
+        state: stateBad,
+        timestamp: '1',
+      },
+      SECRET,
+    );
+    qBad.hmac = 'deadbeef';
+    const bad = await handleMerchantShopsCallback(
+      {
+        rawPath: '/merchant/shops/callback/shopify',
+        requestContext: {
+          http: { method: 'GET', path: '/merchant/shops/callback/shopify' },
+        },
+        queryStringParameters: qBad,
+        body: '',
+      },
+      {
+        ...deps,
+        nonces: noncesBad,
+        shops: shopsBad,
+      },
+    );
+    assert.equal(bad.statusCode, 400);
+    assert.equal(JSON.parse(bad.body).error, 'invalid_hmac');
+    assert.equal(shopsBad.listByMerchant('MERCH001', 'live').length, 0);
   });
 
   it('app/uninstalled => suspended; shop/redact deletes; privacy 200', async () => {
