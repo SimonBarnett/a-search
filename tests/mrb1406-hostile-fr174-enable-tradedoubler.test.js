@@ -16,7 +16,7 @@ const frPath = path.join(root, 'docs', 'fr', 'FR-174.md');
 const matrixPath = path.join(root, 'docs', 'secrets-matrix.md');
 
 describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
-  it('registry enables tradedoubler both envs; floors 12x2 keep-both shopify', () => {
+  it('registry enables tradedoubler both envs; floors 13x2 keep-both shopify (FR-179 wix)', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const td = byId.get('tradedoubler');
@@ -28,7 +28,7 @@ describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
       .map((s) => s.id)
       .sort();
     // GBP/UK hold: bol/aliexpress/avantlink dark → 13 enabled (floors 26).
-    assert.equal(enabled.length, 12, `enabled count ${enabled.length}`);
+    assert.equal(enabled.length, 13, `enabled count ${enabled.length}`);
     assert.ok(enabled.includes('tradedoubler'));
     assert.ok(enabled.includes('partnerize'));
     assert.ok(enabled.includes('shopify'));
