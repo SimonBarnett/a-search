@@ -224,3 +224,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - EventBridge cannot set dynamic SQS FIFO MessageGroupId from S3 key alone: use a small enqueue Lambda that runs agentQueue.classify/fifoSendParams before the rclone-host dispatcher polls
 - a-search FR-236: merchantShops callback must map adapter codes invalid_hmac/invalid_shop_domain/code_required to HTTP 400 so bad oauth never inserts a Shop row; pin with HTTP-layer bad-hmac after a fresh connect state
 - a-search harvest-lesson MRB: if tip commits include marchhare-<seat> keep-both author, ACK then GIVEUP self-MRB (FR #2604); leave OPEN for sibling; CONFLICTING does not change the hand-back
+
+- a-search FR-235 MRB keep-both with FR-236: preserve GET/DELETE /merchant/shops and Shopify webhook; export createMemoryVault+createCredentialsVault; registry aliases getByShopId/updateStatus/deleteByShopId; allow pending_payment->suspended for uninstall
