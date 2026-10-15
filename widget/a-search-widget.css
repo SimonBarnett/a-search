@@ -1,0 +1,119 @@
+/* FR-202: ComponentsPiece widget layout only.
+ * Host page owns color, font-family, and background theme.
+ * Allowed theme tokens: inherit, currentColor, transparent, none.
+ */
+
+.a-search-widget {
+  box-sizing: border-box;
+  margin: 1.25rem 0;
+  padding: 0.5rem 0;
+}
+
+.a-search-widget *,
+.a-search-widget *::before,
+.a-search-widget *::after {
+  box-sizing: border-box;
+}
+
+.a-search-widget[data-mode="horizontal"] {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
+  overflow-x: auto;
+}
+
+.a-search-widget[data-mode="vertical"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+}
+
+.a-search-widget[data-mode="fullscreen"] {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.a-search-widget .part {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+
+.a-search-widget[data-mode="horizontal"] .part {
+  flex: 0 0 11rem;
+}
+
+.a-search-widget[data-mode="vertical"] .part {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.a-search-widget[data-mode="fullscreen"] .part {
+  flex: 1 1 11rem;
+  max-width: 14rem;
+}
+
+.a-search-widget .part img {
+  width: 100%;
+  height: 6rem;
+  object-fit: cover;
+}
+
+.a-search-widget .part .title {
+  font-size: 0.9rem;
+}
+
+.a-search-widget .part .meta {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.a-search-widget .part button,
+.a-search-widget [data-action="page-more"] {
+  margin-top: auto;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  background: none;
+  border: 1px solid currentColor;
+}
+
+.a-search-widget .empty-msg,
+.a-search-widget .err,
+.a-search-widget .signup {
+  text-align: center;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.5rem;
+}
+
+.a-search-widget[data-state="empty"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6rem;
+  border: 1px dashed currentColor;
+  padding: 1rem;
+  opacity: 0.85;
+}
+
+.a-search-widget[data-state="error"] {
+  padding: 1rem;
+  border: 1px solid currentColor;
+}
+
+.a-search-widget[data-state="error"] .err {
+  font-weight: 600;
+}
+
+.a-search-widget[data-state="signup"] .signup {
+  margin-top: 0.5rem;
+}

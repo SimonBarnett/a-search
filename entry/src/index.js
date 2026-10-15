@@ -36,6 +36,13 @@ const {
   reportSelftestFailures: defaultReportSelftestFailures,
 } = require('../../shared/selftest/reportSelftestFailure');
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
+const { handleParts, isPartsRoute } = require('./parts');
+const { handleGo, isGoRoute } = require('./go');
+const { handleExtStatus, isExtStatusRoute } = require('./extStatus');
+const {
+  matchComponentsPieceRoute,
+  handleComponentsPieceStub,
+} = require('./componentsPieceRoutes');
 const {
   matchAccountPayoutsRoute,
   handleAccountPayouts,
@@ -45,6 +52,9 @@ const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
 const PERF_ROUTE = 'entry/account/performance';
 const SELFTEST_ROUTE = 'entry/selftest';
+const PARTS_ROUTE = 'entry/GET /parts';
+const GO_ROUTE = 'entry/GET /go';
+const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 
 function jsonResponse(statusCode, payload) {
@@ -196,25 +206,47 @@ async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
   const payoutRoute = matchAccountPayoutsRoute(method, path);
-  const route = isSelftestRoute(method, path)
-    ? SELFTEST_ROUTE
-    : isPerformanceRoute(method, path)
-      ? PERF_ROUTE
-      : payoutRoute
-        ? ACCOUNT_PAYOUTS_ROUTE
-        : ENTRY_ROUTE;
+  const cpRoute = matchComponentsPieceRoute(method, path);
+  const route = isExtStatusRoute(method, path)
+    ? EXT_STATUS_ROUTE
+    : isGoRoute(method, path)
+      ? GO_ROUTE
+      : isPartsRoute(method, path)
+        ? PARTS_ROUTE
+        : payoutRoute
+          ? ACCOUNT_PAYOUTS_ROUTE
+          : cpRoute
+            ? `entry/${cpRoute}`
+            : isSelftestRoute(method, path)
+              ? SELFTEST_ROUTE
+              : isPerformanceRoute(method, path)
+                ? PERF_ROUTE
+                : ENTRY_ROUTE;
   try {
-    if (isSelftestRoute(method, path)) {
-      return await handleSelftest(event, deps);
+    if (isExtStatusRoute(method, path)) {
+      return await handleExtStatus(event, deps);
     }
-    if (isPerformanceRoute(method, path)) {
-      return await handlePerformance(event, deps);
+    if (isGoRoute(method, path)) {
+      return await handleGo(event, deps);
     }
+    if (isPartsRoute(method, path)) {
+      return await handleParts(event, deps);
+    }
+    // FR-222 payout/stripe handlers win over FR-208 ComponentsPiece 501 stubs
     if (
       payoutRoute === 'POST /account/payouts' ||
       payoutRoute === 'POST /account/stripe/link'
     ) {
       return await handleAccountPayouts(event, deps);
+    }
+    if (cpRoute) {
+      return await handleComponentsPieceStub(event, cpRoute);
+    }
+    if (isSelftestRoute(method, path)) {
+      return await handleSelftest(event, deps);
+    }
+    if (isPerformanceRoute(method, path)) {
+      return await handlePerformance(event, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -568,6 +600,8 @@ module.exports = {
   handlePerformance,
   handleSelftest,
   handleSearch,
+  handleParts,
+  handleGo,
   handleAccountPayouts,
   validateSearchBody,
   newSearchId,
@@ -575,5 +609,7 @@ module.exports = {
   resolveHttp,
   isPerformanceRoute,
   isSelftestRoute,
+  isPartsRoute,
+  isGoRoute,
   matchAccountPayoutsRoute,
 };
