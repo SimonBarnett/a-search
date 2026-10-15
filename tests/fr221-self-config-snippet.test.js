@@ -112,7 +112,9 @@ describe('FR-221 self-configuring embed snippet', () => {
     assert.match(js, /location\.host/);
     assert.match(js, /data-widget-guid/);
     assert.doesNotMatch(js, /shop\.example/);
-    assert.match(js, /resolvePlacement|placement\.host/);
+    // FR-201/203 widget on main already resolves host from location.host;
+    // shared/widgets/placement.resolvePlacement is the Node-side twin.
+    assert.match(js, /resolvePlacement|placement\.host|deps\.location.*host|location\.host/);
     for (const b of Buffer.from(js, 'utf8')) {
       assert.ok(b < 128, 'widget JS ASCII');
     }
