@@ -457,6 +457,8 @@ class ASearchStack extends cdk.Stack {
       publicReadAccess: false,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       autoDeleteObjects: false,
+      // #1343 / FR-258: S3 -> EventBridge for widget-agent trigger suffixes
+      eventBridgeEnabled: true,
     });
 
 
@@ -1065,6 +1067,89 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
+    // #1343 / FR-258: ComponentsPiece widget-agent FIFO + enqueue Lambda + EventBridge rules
+    const AGENT_JOB_TIMEOUT_S = 900;
+    const widgetAgentDlq = new sqs.Queue(this, 'WidgetAgentDeadLetterQueue', {
+      queueName: stagedName('a-search-widget-agent-dlq.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetAgentQueue = new sqs.Queue(this, 'WidgetAgentQueue', {
+      queueName: stagedName('a-search-widget-agent.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(AGENT_JOB_TIMEOUT_S + 60),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetAgentDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    const widgetAgentEnqueue = new lambda.Function(this, 'WidgetAgentEnqueueFunction', {
+      functionName: stagedName('a-search-widget-agent-enqueue'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(
+        path.join(repoRoot, 'components-piece', 'dispatcher', 'enqueue'),
+      ),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: ENTRY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_WIDGET_AGENT_QUEUE_URL: widgetAgentQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'WidgetAgentEnqueueLogGroup'),
+    });
+    widgetAgentQueue.grantSendMessages(widgetAgentEnqueue);
+
+    const widgetAgentSuffixes = [
+      '_host.json',
+      'widget.json',
+      'feedback.json',
+      'in.json',
+    ];
+    for (const suffix of widgetAgentSuffixes) {
+      const idSuffix = suffix.replace(/[^a-zA-Z0-9]/g, '');
+      new events.Rule(this, `WidgetAgentS3_${idSuffix}`, {
+        ruleName: stagedName(`a-search-widget-agent-${idSuffix}`),
+        description: `#1343 S3 Object Created suffix ${suffix} -> widget-agent enqueue`,
+        eventPattern: {
+          source: ['aws.s3'],
+          detailType: ['Object Created'],
+          detail: {
+            bucket: { name: [resultsBucket.bucketName] },
+            object: { key: [{ suffix }] },
+          },
+        },
+        targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+      });
+    }
+    new events.Rule(this, 'WidgetAgentSweepDaily', {
+      ruleName: stagedName('a-search-widget-agent-sweep'),
+      description: '#1343 daily sweep tick for widget-agent (expand per active widget)',
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
+      targets: [
+        new targets.LambdaFunction(widgetAgentEnqueue, {
+          event: events.RuleTargetInput.fromObject({
+            eventType: 'sweep',
+            widgets: [],
+            note: 'ops/expander fills widgets[] from a_search.dbo.Widgets',
+          }),
+        }),
+      ],
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentQueueUrl', {
+      value: widgetAgentQueue.queueUrl,
+      description: '#1343 SQS FIFO a-search-widget-agent.fifo',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentDlqUrl', {
+      value: widgetAgentDlq.queueUrl,
+      description: '#1343 widget-agent DLQ (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentEnqueueFunctionName', {
+      value: widgetAgentEnqueue.functionName,
+    });
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
       description:
