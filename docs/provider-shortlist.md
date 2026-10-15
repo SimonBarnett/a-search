@@ -67,7 +67,7 @@ GBP shop connects).
 | `cj` | live | true | Best next network search API | GraphQL Product Search `ads.api.cj.com` |
 | `impact` | local | true | DTC/brand gaps | Catalog feeds -> local index |
 | `partnerize` | local | true | Travel/finance depth | Enabled FR-172; MSSQL Parts + feed hooks |
-| `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
+| `webgains` | local | true | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | true | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | **HOLD** broad geo / weak GBP | Stay dark (FR-256); do not enable |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
@@ -110,7 +110,7 @@ flip only that id, pin others stay dark) - see
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
     { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_PARTNERIZE_URL" },
-    { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WEBGAINS_URL" },
+    { "id": "webgains", "kind": "local", "folder": "providers/local/webgains", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_WEBGAINS_URL" },
     { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },

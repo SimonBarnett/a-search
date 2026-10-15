@@ -280,6 +280,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'AVANTLINK_PUBLISHER_ID',
     'AVANTLINK_AFFILIATE_ID',
   ],
+    // FR-173: enable webgains
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
+  ],
   // FR-172: enable partnerize
   partnerize: [
     'PARTNERIZE_API_KEY',

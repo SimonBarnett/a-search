@@ -19,9 +19,9 @@ const DEFAULT_ON = [
   'shopify',
   'partnerize',
   'tradedoubler',
+  'webgains',
 ];
 const DEFAULT_OFF = [
-  'webgains',
   'admitad',
   'flexoffers',
   'wix',

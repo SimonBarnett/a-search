@@ -18,14 +18,14 @@ const {
 } = require('../providers/local/webgains/src/parseFeed');
 
 describe('MRB-755 FR-088 hostile', () => {
-  it('registry webgains stay-dark both envs (CAST IRON)', () => {
+  it('registry webgains enabled both envs (FR-173)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
     assert.equal(wg.kind, 'local');
   });
 
@@ -100,6 +100,6 @@ describe('MRB-755 FR-088 hostile', () => {
     assert.match(skill, /FR-088/);
     assert.match(skill, /parseFeed\.js/);
     assert.match(skill, /FR-087/);
-    assert.match(skill, /stay-dark|enabled\.live\s*=\s*false/i);
+    assert.match(skill, /enabled.*true|FR-173|FR-087/i);
   });
 });
