@@ -313,6 +313,22 @@
       },
       "class": "merchant",
       "merchantConnect": true
+    },
+    {
+      "id": "bigcommerce",
+      "kind": "local",
+      "folder": "providers/local/bigcommerce",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_BIGCOMMERCE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
     }
   ]
 }
