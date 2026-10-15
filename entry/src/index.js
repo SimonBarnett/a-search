@@ -48,6 +48,10 @@ const {
   handleWidgetsCreate,
 } = require('./widgetsCreate');
 const {
+  matchPartnerRegisterRoute,
+  handlePartnerRegister,
+} = require('./partnerRegister');
+const {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
@@ -61,6 +65,7 @@ const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 
 function jsonResponse(statusCode, payload) {
@@ -212,6 +217,7 @@ async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
@@ -222,15 +228,17 @@ async function handler(event, _context, deps = {}) {
         ? PARTS_ROUTE
         : widgetsRoute
           ? WIDGETS_CREATE_ROUTE
-          : merchantRoute
-            ? MERCHANT_SHOPS_ROUTE
-            : cpRoute
-              ? `entry/${cpRoute}`
-              : isSelftestRoute(method, path)
-                ? SELFTEST_ROUTE
-                : isPerformanceRoute(method, path)
-                  ? PERF_ROUTE
-                  : ENTRY_ROUTE;
+          : partnerRoute
+            ? PARTNER_REGISTER_ROUTE
+            : merchantRoute
+              ? MERCHANT_SHOPS_ROUTE
+              : cpRoute
+                ? `entry/${cpRoute}`
+                : isSelftestRoute(method, path)
+                  ? SELFTEST_ROUTE
+                  : isPerformanceRoute(method, path)
+                    ? PERF_ROUTE
+                    : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -253,6 +261,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (partnerRoute === 'POST /partner/register') {
+      return await handlePartnerRegister(event, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
@@ -615,6 +626,7 @@ module.exports = {
   handleParts,
   handleGo,
   handleWidgetsCreate,
+  handlePartnerRegister,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
   validateSearchBody,
@@ -626,5 +638,6 @@ module.exports = {
   isPartsRoute,
   isGoRoute,
   matchWidgetsCreateRoute,
+  matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
 };
