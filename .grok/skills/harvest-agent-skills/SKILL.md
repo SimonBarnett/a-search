@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø FAIL-supersede).
 
-Branch `harvest/ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦` or `fix/ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦` -> PR to `main`.
+Branch `harvest/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` or `fix/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ fetch ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ upsert ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ delete (not
+   `schedule.handler`** must orchestrate roll ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó fetch ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó upsert ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦EXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ªEXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø fix the fixture instead.
 
 ## Do not
 
@@ -201,9 +201,12 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
 - a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
 - a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
+- FR-252 docs MRB: pin HOLD markers on phase4/shortlist rows before PASS; put additive pin+vision LOCKED bullet on docs/mrb-N; product tip may omit pin
 - FR-201 widget: boot .a-search-widget[data-widget-guid] once via data-a-search-booted; GET /parts then API layout then data-mode; modes only change layout; stack on Parts tip when needed
+- ComponentsPiece agent site pass: CWD hostDir via widgetPath; exclusive-create site.md/top10.json; secret-needle guard; stack on FR-203 tip; non-main base MRB hand-close.
 - ComponentsPiece widget CSS: ship layout-only sheet with currentColor/inherit/transparent/none only; pin-scan declarations not loose regex; stack FR-202 on FR-201 tip; non-main base needs MRB hand-close note.
-- GBP/UK market-hold MRB: disable via registry enabled false only (keep folders + id/path string literals); retarget floors to 2*enabled_count; skip win32 CDK synth FR#3717; merge main then --auto --squash; DONE without CI poll
+- FR-195 ComponentsPiece docs MRB: pin widgetGuid tree (no uri-slug required), Parts/Click contracts, FR-251 DB ownership with FR-146 Recommended near a_search_sandbox; docs-only tip MERGEABLE on main then --auto --squash; DONE without CI poll
 - Phase5 FR-210 skillbook: create top-level components-piece/ like entry/maintainer; pin skillbook-layout.test.js triggers (parts/go/widget/agent/widgetGuid/feedback/idle); leave harvest-agent-skills at repo root; Closes on PR; FR seat never merges
 - Market-hold disable PRs must not globally delete provider id string literals from tests (paths/find/source); retarget enabled asserts and floors 2*enabled_count only.
 - a-search harvest twin: FAIL-supersede FR-212 fixtures session-receipt tips that duplicate open docs/mrb #1799 / product tip #1731
+- GBP/UK market-hold MRB: disable via registry enabled false only (keep folders + id/path string literals); retarget floors to 2*enabled_count; skip win32 CDK synth FR#3717; merge main then --auto --squash; DONE without CI poll
