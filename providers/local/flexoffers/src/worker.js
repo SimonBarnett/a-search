@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['FLEXOFFERS_AFFILIATE_ID'],
-      accountQueryMap: { FLEXOFFERS_AFFILIATE_ID: 'foid' },
+      source: 'flexoffers',
     });
   }
 

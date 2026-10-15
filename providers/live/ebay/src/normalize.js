@@ -41,7 +41,7 @@ function normalizeEbayItem(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['EBAY_CAMPAIGN_ID'],
+      source: 'ebay',
     });
   }
 
