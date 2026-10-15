@@ -232,3 +232,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest tip CONFLICTING on SKILL.md: restore tip to main+1 via git checkout origin/main -- path OR git cat-file blob origin/main:path bytes, then .NET UTF8Encoding(false) WriteAllText append; never assign git-show multiline to a PowerShell string; avoid wrong-encoding WriteAllText/Set-Content mojibake on unicode arrows
 - a-search FR-237 Wix connect: verify signedInstance before trust; vault instanceId credentials only (never access token); mint via oauth2 client_credentials with memory TTL; App Removed webhook suspends shop
 - a-search harvest meta tip that says keep a complementary open tip: if that tip was FAIL-superseded as product tip-loop, close the meta tip too; do not re-open both
+- Harvest meta tip that says keep complementary tip open: if that tip was FAIL-superseded as product tip-loop, close the meta tip too; do not re-open both
