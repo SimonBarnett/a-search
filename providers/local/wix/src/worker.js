@@ -73,7 +73,8 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    // FR-179/FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).    const envVars = (track && typeof track === 'object' && track.envVars) || {};
+    // FR-179/FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).
+    const envVars = (track && typeof track === 'object' && track.envVars) || {};
     url = resolveWixProductUrl(row.Url, envVars);
   }
 
