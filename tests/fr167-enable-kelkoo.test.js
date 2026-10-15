@@ -40,10 +40,11 @@ describe('FR-167 enable provider kijiji', () => {
     assert.equal(kk.enabled.sandbox, true, 'kelkoo.sandbox');
     assert.equal(kk.kind, 'live');
     assert.equal(kk.queueEnv, 'SQS_KELKOO_URL');
-    for (const id of ['skimlinks', 'aliexpress']) {
-      assert.equal(byId.get(id).enabled.live, true, `${id}.live`);
-      assert.equal(byId.get(id).enabled.sandbox, true, `${id}.sandbox`);
-    }
+    // FR-168 skimlinks stays on; GBP/UK hold (FR-254) keeps aliexpress dark.
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'skimlinks.live');
+    assert.equal(byId.get('skimlinks').enabled.sandbox, true, 'skimlinks.sandbox');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'GBP hold aliexpress.live');
+    assert.equal(byId.get('aliexpress').enabled.sandbox, false, 'GBP hold aliexpress.sandbox');
     for (const id of OTHER_STAY_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -127,14 +128,22 @@ describe('FR-167 enable provider kijiji', () => {
       );
       assert.equal(hit, undefined, `${dark} must stay without worker`);
     }
-    for (const on of ['skimlinks', 'aliexpress']) {
+    const skim = fns.find(
+      (res) =>
+        res.Properties &&
+        typeof res.Properties.FunctionName === 'string' &&
+        res.Properties.FunctionName.includes('-skimlinks-worker-'),
+    );
+    assert.ok(skim, 'skimlinks worker must remain after concurrent enable fold');
+    // GBP/UK hold: aliexpress workers must be absent (folder retained).
+    for (const hold of ['aliexpress', 'bol', 'avantlink']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${on}-worker-`),
+          res.Properties.FunctionName.includes(`-${hold}-worker-`),
       );
-      assert.ok(hit, `${on} worker must remain after concurrent enable fold`);
+      assert.equal(hit, undefined, `GBP hold ${hold} must not have worker`);
     }
   });
 
