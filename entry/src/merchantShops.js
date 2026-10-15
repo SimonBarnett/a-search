@@ -10,6 +10,7 @@ const {
   createShopsRegistry,
   startConnect,
   completeConnect,
+  getAdapter,
 } = require('../../shared/shops/connect');
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
@@ -99,6 +100,12 @@ function matchMerchantShopsRoute(method, path) {
     /^\/merchant\/shops\/callback\/[^/]+$/.test(p)
   ) {
     return 'GET|POST /merchant/shops/callback/{provider}';
+  }
+  if (
+    (m === 'GET' || m === 'POST') &&
+    p === '/merchant/shops/magento/identity'
+  ) {
+    return 'GET|POST /merchant/shops/magento/identity';
   }
   return null;
 }
@@ -227,6 +234,9 @@ async function handleMerchantShopsConnect(event, deps = {}) {
       state: result.state,
       redirectUrl: result.redirectUrl,
       loginRequired: result.loginRequired,
+      callbackUrl: result.callbackUrl,
+      identityLinkUrl: result.identityLinkUrl,
+      instructions: result.instructions,
     });
   } catch (err) {
     const code = (err && err.code) || 'connect_failed';
@@ -237,7 +247,8 @@ async function handleMerchantShopsConnect(event, deps = {}) {
       code === 'wc_probe_failed' ||
       code === 'keys_invalid' ||
       code === 'keys_required' ||
-      code === 'invalid_key_permissions'
+      code === 'invalid_key_permissions' ||
+      code === 'state_required'
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }
@@ -264,6 +275,23 @@ async function handleMerchantShopsCallback(event, deps = {}) {
   if (parsed === null) {
     return jsonResponse(400, { ok: false, error: 'invalid_json' });
   }
+
+  // FR-243: Magento Activate POST holds consumer creds (no FR-216 state yet).
+  if (
+    String(provider).toLowerCase() === 'magento' &&
+    (parsed.oauth_consumer_key || parsed.oauthConsumerKey) &&
+    (parsed.oauth_verifier || parsed.oauthVerifier)
+  ) {
+    try {
+      const adapter = getAdapter('magento');
+      const held = adapter.receiveActivation(parsed, { nowMs: deps.nowMs });
+      return jsonResponse(200, { ok: true, activation: true, ...held });
+    } catch (err) {
+      const code = (err && err.code) || 'activation_failed';
+      return jsonResponse(400, { ok: false, error: code });
+    }
+  }
+
   // Woo /wc-auth POSTs user_id = FR-216 state (FR-238).
   const state =
     q.state ||
@@ -429,6 +457,91 @@ async function handleMerchantShopsDelete(event, deps = {}) {
 }
 
 /**
+ * FR-243: Magento identity link — JWT merchant binds oauth_consumer_key then
+ * completes token exchange; redirects to Magento success_call_back when present.
+ */
+async function handleMagentoIdentity(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+
+  const q = queryParams(event);
+  const parsed = parseBody(event && event.body) || {};
+  const state = q.state || parsed.state;
+  if (!state) {
+    return jsonResponse(400, { ok: false, error: 'invalid_state' });
+  }
+  const consumerKey =
+    q.oauth_consumer_key ||
+    parsed.oauth_consumer_key ||
+    q.oauthConsumerKey ||
+    parsed.oauthConsumerKey;
+  if (!consumerKey) {
+    return jsonResponse(400, { ok: false, error: 'oauth_consumer_key_required' });
+  }
+
+  const subscribeBaseUrl =
+    deps.subscribeBaseUrl ||
+    (deps.env && deps.env.A_SEARCH_SUBSCRIBE_URL) ||
+    process.env.A_SEARCH_SUBSCRIBE_URL ||
+    'https://smartcatalogue.uk/wizard/subscribe';
+
+  try {
+    const done = await completeConnect({
+      provider: 'magento',
+      state: String(state),
+      req: {
+        query: q,
+        body: { ...parsed, oauth_consumer_key: String(consumerKey) },
+      },
+      adapterOpts: {
+        httpRequest: deps.httpRequest,
+        vault: deps.vault,
+        ...(deps.adapterOpts || {}),
+      },
+      nonces: deps.nonces || defaultNonces,
+      shops: deps.shops || defaultShops,
+      nowMs: deps.nowMs,
+      subscribeBaseUrl,
+    });
+    // Nonce bind must belong to this merchant (completeConnect consumed nonce).
+    if (
+      done.shop &&
+      done.shop.merchantUserId &&
+      String(done.shop.merchantUserId) !== String(userId)
+    ) {
+      return jsonResponse(403, { ok: false, error: 'merchant_mismatch' });
+    }
+    const success =
+      (q.success_call_back || parsed.success_call_back || done.successCallBack) ||
+      done.redirectTo;
+    if (success && String(success).startsWith('http')) {
+      return {
+        statusCode: 302,
+        headers: { location: String(success), 'cache-control': 'no-store' },
+        body: '',
+      };
+    }
+    return jsonResponse(200, { ok: true, shop: done.shop, redirectTo: done.redirectTo });
+  } catch (err) {
+    const code = (err && err.code) || 'connect_failed';
+    return jsonResponse(400, { ok: false, error: code });
+  }
+}
+
+/**
  * FR-235 dispatcher for list/delete (connect/callback keep dedicated handlers).
  */
 async function handleMerchantShops(event, routeId, deps = {}) {
@@ -444,12 +557,16 @@ async function handleMerchantShops(event, routeId, deps = {}) {
   if (routeId === 'GET|POST /merchant/shops/callback/{provider}') {
     return handleMerchantShopsCallback(event, deps);
   }
+  if (routeId === 'GET|POST /merchant/shops/magento/identity') {
+    return handleMagentoIdentity(event, deps);
+  }
   return jsonResponse(404, { ok: false, error: 'unknown_route' });
 }
 module.exports = {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMagentoIdentity,
   handleMerchantShopsList,
   handleMerchantShopsDelete,
   handleMerchantShops,

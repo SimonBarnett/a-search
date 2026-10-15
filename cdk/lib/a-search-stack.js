@@ -812,6 +812,15 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-243: Magento Integration identity link
+    httpApi.addRoutes({
+      path: '/merchant/shops/magento/identity',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsMagentoIdentityIntegration',
+        entry,
+      ),
+    });
     // FR-235 / #1349: list + delete own shops
     httpApi.addRoutes({
       path: '/merchant/shops',

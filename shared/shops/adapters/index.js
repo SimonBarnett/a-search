@@ -9,6 +9,7 @@ const shopify = require('./shopify');
 const wix = require('./wix');
 const woocommerce = require('./woocommerce');
 const squarespace = require('./squarespace');
+const magento = require('./magento');
 
 /** @type {Record<string, object>} */
 const ADAPTERS = {
@@ -17,6 +18,7 @@ const ADAPTERS = {
   wix,
   woocommerce,
   squarespace,
+  magento,
 };
 
 /**
