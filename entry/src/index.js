@@ -71,6 +71,7 @@ const {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMerchantShops,
 } = require('./merchantShops');
 const {
   matchShopifyWebhookRoute,
@@ -343,6 +344,12 @@ async function handler(event, _context, deps = {}) {
     }
     if (shopifyWebhookRoute) {
       return await handleShopifyWebhook(event, deps);
+    }
+    if (
+      merchantRoute === 'GET /merchant/shops' ||
+      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+    ) {
+      return await handleMerchantShops(event, merchantRoute, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
@@ -709,6 +716,7 @@ module.exports = {
   handlePartnerRegister,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMerchantShops,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,

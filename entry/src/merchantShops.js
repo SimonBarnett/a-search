@@ -85,6 +85,12 @@ function queryParams(event) {
 function matchMerchantShopsRoute(method, path) {
   const m = String(method || '').toUpperCase();
   const p = String(path || '');
+  if (m === 'GET' && p === '/merchant/shops') {
+    return 'GET /merchant/shops';
+  }
+  if (m === 'DELETE' && /^\/merchant\/shops\/[^/]+$/.test(p)) {
+    return 'DELETE /merchant/shops/{shopId}';
+  }
   if (m === 'POST' && p === '/merchant/shops/connect') {
     return 'POST /merchant/shops/connect';
   }
@@ -95,6 +101,11 @@ function matchMerchantShopsRoute(method, path) {
     return 'GET|POST /merchant/shops/callback/{provider}';
   }
   return null;
+}
+
+function shopIdFromDeletePath(path) {
+  const m = String(path || '').match(/^\/merchant\/shops\/([^/]+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
 }
 
 function providerFromCallbackPath(path) {
@@ -246,14 +257,132 @@ async function handleMerchantShopsCallback(event, deps = {}) {
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }
+    if (code === 'shop_already_connected') {
+      return jsonResponse(409, { ok: false, error: code });
+    }
     throw err;
   }
 }
 
+
+/**
+ * FR-235: GET /merchant/shops — own shops only (JWT merchant).
+ */
+async function handleMerchantShopsList(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+  let userId;
+  let role;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+    role = auth.role;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+  if (role && String(role).toLowerCase() !== 'merchant') {
+    return jsonResponse(403, { ok: false, error: 'merchant_role_required' });
+  }
+  const envName =
+    deps.envName ||
+    (typeof env === 'string'
+      ? env
+      : env.A_SEARCH_ENV === 'sandbox'
+        ? 'sandbox'
+        : 'live');
+  const shops = deps.shops || defaultShops;
+  return jsonResponse(200, {
+    ok: true,
+    shops: shops.listPublic(userId, envName),
+  });
+}
+
+/**
+ * FR-235: DELETE /merchant/shops/{shopId} — cancel at period end + mark cancelled.
+ */
+async function handleMerchantShopsDelete(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+  const shopId = shopIdFromDeletePath(resolvePath(event));
+  if (!shopId) {
+    return jsonResponse(400, { ok: false, error: 'shopId_required' });
+  }
+  const shops = deps.shops || defaultShops;
+  const row = shops.get(shopId);
+  if (!row || row.merchantUserId !== userId) {
+    return jsonResponse(404, { ok: false, error: 'shop_not_found' });
+  }
+  if (typeof deps.cancelSubscription === 'function') {
+    await deps.cancelSubscription({
+      shopId,
+      stripeSubscriptionId: row.stripeSubscriptionId,
+      atPeriodEnd: true,
+    });
+  }
+  try {
+    const next = shops.transition(shopId, 'cancelled', {
+      reason: 'admin',
+      nowMs: deps.nowMs,
+    });
+    return jsonResponse(200, {
+      ok: true,
+      shopId: next.shopId,
+      status: next.status,
+      suspendReason: next.suspendReason,
+      atPeriodEnd: true,
+    });
+  } catch (err) {
+    if (err && err.code === 'illegal_transition') {
+      return jsonResponse(409, { ok: false, error: err.code });
+    }
+    throw err;
+  }
+}
+
+/**
+ * FR-235 dispatcher for list/delete (connect/callback keep dedicated handlers).
+ */
+async function handleMerchantShops(event, routeId, deps = {}) {
+  if (routeId === 'GET /merchant/shops') {
+    return handleMerchantShopsList(event, deps);
+  }
+  if (routeId === 'DELETE /merchant/shops/{shopId}') {
+    return handleMerchantShopsDelete(event, deps);
+  }
+  if (routeId === 'POST /merchant/shops/connect') {
+    return handleMerchantShopsConnect(event, deps);
+  }
+  if (routeId === 'GET|POST /merchant/shops/callback/{provider}') {
+    return handleMerchantShopsCallback(event, deps);
+  }
+  return jsonResponse(404, { ok: false, error: 'unknown_route' });
+}
 module.exports = {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMerchantShopsList,
+  handleMerchantShopsDelete,
+  handleMerchantShops,
   resolveMethod,
   resolvePath,
 };
