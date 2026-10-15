@@ -1,4 +1,4 @@
-# a-search Chrome Extension (#1344)
+# a-search Chrome Extension (#1344 / #2078)
 
 Manifest V3 content script + service worker.
 
@@ -6,16 +6,19 @@ Manifest V3 content script + service worker.
 
 - Calls `GET /ext/status?host=` on load / host change.
 - **Inert** (zero DOM) when `enabled` is false or `clubId` is null (Club TXT gate).
-- When enabled, injects a 36px Shadow DOM top bar (Login shell).
-- JWT is stored only via `chrome.storage.session` in `background.js` -- never `localStorage` / page DOM.
-- Edit buttons attach to `.a-search-widget[data-widget-guid]` when the bar is active.
-
-## Out of scope in this landing
-
-- Live `chrome.identity.launchWebAuthFlow` against production Cognito/OAuth.
-- Full Edit dialog (layout / context / remove) UI polish -- APIs are on entry (`PATCH /widgets/{guid}`, `POST .../feedback`).
-- FR-234 stats chip / Performance tab (routes remain 501 until FR-234).
+- When enabled, injects a 36px Shadow DOM top bar.
+- Logged-out: Login -> `chrome.identity.launchWebAuthFlow` against shared login
+  (`/components-piece/login/?extension=1&redirect_uri=`), JWT from `#access_token=`.
+- Logged-in: commission chip, Stripe, Claim (club role only), Upgrade, Create widget
+  (clipboard snippet), Logout. Edit dialog on `.a-search-widget[data-widget-guid]`.
+- JWT is stored only via `chrome.storage.session` in `background.js` -- never
+  `localStorage` / page DOM.
 
 ## Pins
 
-`tests/fr1344-chrome-extension.test.js`
+- `tests/fr1344-chrome-extension.test.js` (gate + APIs)
+- `tests/fr2078-chrome-identity-bar.test.js` (identity + bar + edit)
+
+## Out of scope
+
+- FR-234 stats chip / Performance tab (routes remain 501 until FR-234).
