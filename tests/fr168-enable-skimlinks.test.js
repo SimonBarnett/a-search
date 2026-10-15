@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // Remaining stay-dark after FR-168; GBP/UK hold also keeps aliexpress/bol/avantlink dark.
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
 const GBP_HOLD_DARK = ['aliexpress', 'bol', 'avantlink'];
 
 function utf8NoBom(rel) {
