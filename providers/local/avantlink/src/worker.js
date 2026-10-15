@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['AVANTLINK_AFFILIATE_ID'],
-      accountQueryMap: { AVANTLINK_AFFILIATE_ID: 'avad' },
+      source: 'avantlink',
     });
   }
 
