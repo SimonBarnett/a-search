@@ -3,7 +3,7 @@
 /**
  * Wix local provider worker (FR-607 stub + FR-107 SqlClient SELECT).
  * Search reads MSSQL Parts (ingest is maintainer / FR-105..106) -> normalize -> writeResults.
- * Stay-dark: registry enabled stays false.
+ * Enabled both envs (FR-179); merchant class, no affiliate stamp.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]
@@ -24,7 +24,6 @@ const {
   assertProductSchema,
 } = require('../../../../worker/lib/normalizeProduct');
 const {
-  buildTrackedUrl,
   TrackedUrlError,
 } = require('../../../../shared/links/buildTrackedUrl');
 const {
@@ -45,7 +44,7 @@ function resolveWixProductUrl(rawUrl, envVars) {
     const abs = new URL(s);
     if (abs.protocol === 'http:' || abs.protocol === 'https:') return abs.toString();
   } catch {
-    // relative path â€” join store base
+    // relative path - join store base
   }
   const store = String((envVars && envVars.WIX_STORE_URL) || '').trim();
   if (!store) {
@@ -74,21 +73,9 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    if (!track || typeof track !== 'object') {
-      throw new TrackedUrlError(
-        'Wix normalizePart requires track context { userId, envVars } for Url',
-        'tracked_url_missing_userId',
-      );
-    }
-    const absolute = resolveWixProductUrl(row.Url, track.envVars || {});
-    url = buildTrackedUrl({
-      url: absolute,
-      userId: track.userId,
-      env: track.env,
-      envVars: track.envVars || {},
-      requiredAccountKeys: ['WIX_AFFILIATE_ID'],
-      accountQueryMap: { WIX_AFFILIATE_ID: 'sid' },
-    });
+    // FR-179 merchant: plain absolute shop URLs (no affiliate sid stamp).
+    const envVars = (track && typeof track === 'object' && track.envVars) || {};
+    url = resolveWixProductUrl(row.Url, envVars);
   }
 
   const product = normalizeProduct({
