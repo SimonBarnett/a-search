@@ -283,6 +283,22 @@
       "merchantConnect": true
     },
     {
+      "id": "squarespace",
+      "kind": "local",
+      "folder": "providers/local/squarespace",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_SQUARESPACE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
       "id": "magento",
       "kind": "local",
       "folder": "providers/local/magento",
