@@ -255,6 +255,7 @@ async function resolveGo(opts) {
           partNumber: partKey,
           clickId,
           partnerId: customer.partnerId || null,
+          tenantId: customer.clubId || null,
           env,
           at: new Date().toISOString(),
           host,
