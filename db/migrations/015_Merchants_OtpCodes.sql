@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-228 / #1238: Merchants (verified phone) + OtpCodes (hashed secrets).
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never modify madeiradb.
 -- Do not write SystemOTPs in madeiradb (a-search owns OtpCodes here).
