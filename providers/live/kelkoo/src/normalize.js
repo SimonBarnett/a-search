@@ -57,7 +57,7 @@ function normalizeKelkooOffer(offer, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['KELKOO_PUBLISHER_ID'],
+      source: 'kelkoo',
     });
   }
 

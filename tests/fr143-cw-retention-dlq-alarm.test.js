@@ -81,7 +81,11 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     assert.ok(topics.length >= 1, 'expected placeholder SNS topic');
 
     const alarms = Object.values(resources).filter(
-      (res) => res && res.Type === 'AWS::CloudWatch::Alarm',
+      (res) =>
+        res &&
+        res.Type === 'AWS::CloudWatch::Alarm' &&
+        // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
+        !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
     // Worker DLQ alarms only (14 enabled x live+sandbox = 28). FR-2139 shop-sync DLQ alarm is extra.
     const workerDlqAlarms = alarms.filter((a) => {
