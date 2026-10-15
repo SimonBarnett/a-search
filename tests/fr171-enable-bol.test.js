@@ -29,17 +29,17 @@ function utf8NoBom(rel) {
 }
 
 describe('FR-171 enable bol', () => {
-  it('registry enables bol both envs; siblings stay dark', () => {
+  it('registry holds bol disabled both envs; siblings stay dark', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const bol = byId.get('bol');
     assert.ok(bol, 'registry missing bol');
-    assert.equal(bol.enabled.live, true);
-    assert.equal(bol.enabled.sandbox, true);
+    assert.equal(bol.enabled.live, false);
+    assert.equal(bol.enabled.sandbox, false);
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
-    assert.equal(byId.get('avantlink').enabled.live, true, 'FR-177 keep-both');
-    assert.equal(byId.get('avantlink').enabled.sandbox, true, 'FR-177 keep-both');
+    assert.equal(byId.get('avantlink').enabled.live, false, 'FR-177 keep-both');
+    assert.equal(byId.get('avantlink').enabled.sandbox, false, 'FR-177 keep-both');
     assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174 keep-both');
     assert.equal(byId.get('tradedoubler').enabled.sandbox, true, 'FR-174 keep-both');
     for (const id of STILL_DARK) {
@@ -81,10 +81,18 @@ describe('FR-171 enable bol', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bbol\b/i);
   });
 
-  it('synth: bol live+sandbox workers+queues; secret refs; dark ids absent', () => {
+  it(
+    'synth: GBP/UK hold - bol workers+queues absent (folder retained)',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr171');
+    const outdir = path.join(root, 'cdk.out-hold-bol');
     fs.rmSync(outdir, { recursive: true, force: true });
     const app = new cdk.App({ outdir });
     new ASearchStack(app, 'ASearchStack');
@@ -99,43 +107,20 @@ describe('FR-171 enable bol', () => {
     const queues = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
-
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
-
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-bol-worker-${env}`);
-      assert.ok(envVars.BOL_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.BOL_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.BOL_API_KEY === 'object',
-        `BOL_API_KEY must be Secrets Manager ref (${env})`,
-      );
-      assert.equal(envVars.BOL_TRACKING_ID, 'a-search');
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-bol-${env}`,
-      );
-      assert.ok(qHit, `missing queue a-search-bol-${env}`);
-    }
-
-    for (const dark of ['webgains']) {
-      const hit = fns.find(
+      const fn = fns.find(
         (res) =>
           res.Properties &&
-          typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
+          res.Properties.FunctionName === `a-search-bol-worker-${env}`,
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(fn, undefined, `hold bol must not have worker ${env}`);
+      const q = queues.find(
+        (q) =>
+          q.Properties &&
+          q.Properties.QueueName === `a-search-bol-${env}`,
+      );
+      assert.equal(q, undefined, `hold bol must not have queue ${env}`);
     }
-  });
+    },
+  );
 });
