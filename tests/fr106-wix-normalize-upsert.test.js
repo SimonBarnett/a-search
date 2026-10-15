@@ -157,14 +157,14 @@ describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
     assert.match(MERGE_SQL, /PartsStaging/i);
   });
 
-  it('registry wix stays dark', () => {
+  it('registry wix enabled after FR-179', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'wix');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {
