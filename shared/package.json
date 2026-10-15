@@ -24,6 +24,9 @@
     "auth/",
     "components/",
     "README.md",
-    "dns/"
+    "dns/",
+    "merchantWizard.js",
+    "shops/",
+    "notify/"
   ]
 }
