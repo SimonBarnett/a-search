@@ -313,6 +313,22 @@
       },
       "class": "merchant",
       "merchantConnect": true
+    },
+    {
+      "id": "ecwid",
+      "kind": "local",
+      "folder": "providers/local/ecwid",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_ECWID_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
     }
   ]
 }

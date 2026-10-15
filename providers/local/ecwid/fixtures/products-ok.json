@@ -1,0 +1,48 @@
+{
+  "total": 3,
+  "count": 3,
+  "offset": 0,
+  "limit": 100,
+  "items": [
+    {
+      "id": 1001,
+      "sku": "MUG-MAD-01",
+      "name": "Madeira Ceramic Mug",
+      "price": 12.5,
+      "defaultDisplayedPrice": 12.5,
+      "enabled": true,
+      "quantity": 8,
+      "url": "https://demo.ecwid.com/products/madeira-ceramic-mug",
+      "thumbnailUrl": "https://cdn.example.com/mug-thumb.jpg",
+      "imageUrl": "https://cdn.example.com/mug.jpg",
+      "description": "Glazed mug",
+      "combinations": []
+    },
+    {
+      "id": 1002,
+      "sku": "HAT-SUN",
+      "name": "Sun Hat",
+      "price": 20,
+      "defaultDisplayedPrice": 18,
+      "enabled": true,
+      "quantity": 3,
+      "url": "https://demo.ecwid.com/products/sun-hat",
+      "imageUrl": "https://cdn.example.com/hat.jpg",
+      "description": "Wide brim",
+      "combinations": [
+        { "id": 9001, "sku": "HAT-SUN-M", "price": 18, "quantity": 2 }
+      ]
+    },
+    {
+      "id": 1003,
+      "sku": "DRAFT",
+      "name": "Hidden Draft",
+      "price": 1,
+      "defaultDisplayedPrice": 1,
+      "enabled": false,
+      "quantity": 0,
+      "url": "https://demo.ecwid.com/products/hidden",
+      "combinations": []
+    }
+  ]
+}

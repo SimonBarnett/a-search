@@ -82,6 +82,10 @@ const {
   handleWixWebhook,
 } = require('./wixWebhooks');
 const {
+  matchEcwidWebhookRoute,
+  handleEcwidWebhook,
+} = require('./ecwidWebhooks');
+const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
@@ -261,6 +265,7 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const ecwidWebhookRoute = matchEcwidWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
@@ -352,6 +357,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (wixWebhookRoute) {
       return await handleWixWebhook(event, deps);
+    }
+    if (ecwidWebhookRoute) {
+      return await handleEcwidWebhook(event, deps);
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||

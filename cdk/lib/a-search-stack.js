@@ -850,6 +850,12 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
     });
+    // FR-246: Ecwid application.uninstalled webhook
+    httpApi.addRoutes({
+      path: '/webhooks/shop/ecwid',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryEcwidShopWebhookIntegration'),
+    });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
       path: '/auth/session',
