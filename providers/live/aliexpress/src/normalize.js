@@ -73,7 +73,7 @@ function normalizeAliexpressProduct(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['ALIEXPRESS_TRACKING_ID'],
+      source: 'aliexpress',
     });
   }
 
