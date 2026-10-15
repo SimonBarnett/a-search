@@ -648,7 +648,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops connect + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -785,6 +785,23 @@ class ASearchStack extends cdk.Stack {
       path: '/webhooks/stripe',
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryStripeWebhookIntegration'),
+    });
+    // FR-216: merchant shop connect (JWT) + provider callback (state nonce)
+    httpApi.addRoutes({
+      path: '/merchant/shops/connect',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsConnectIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/callback/{provider}',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCallbackIntegration',
+        entry,
+      ),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
