@@ -57,6 +57,8 @@ function assertProvider(provider) {
  *   statusReason: string|null,
  *   credentialsSecretRef: string|null,
  *   stripeSubscriptionId: string|null,
+ *   subscriptionStatus: string|null,
+ *   lastSyncResult: string|null,
  *   liveAt: string|null,
  *   statusChangedAt: string|null,
  *   nextSyncAt: string|null,
@@ -148,6 +150,8 @@ function createShopsRegistry() {
           ? String(args.credentialsSecretRef)
           : null,
       stripeSubscriptionId: null,
+      subscriptionStatus: null,
+      lastSyncResult: null,
       liveAt: null,
       statusChangedAt: at,
       nextSyncAt: null,
@@ -276,6 +280,46 @@ function createShopsRegistry() {
       }));
   }
 
+
+  function setSubscriptionStatus(shopId, status, opts) {
+    const row = rows.find((r) => r.shopId === String(shopId));
+    if (!row) {
+      const err = new Error('shop_not_found');
+      err.code = 'shop_not_found';
+      throw err;
+    }
+    row.subscriptionStatus = status == null ? null : String(status);
+    if (opts && opts.stripeSubscriptionId !== undefined) {
+      row.stripeSubscriptionId =
+        opts.stripeSubscriptionId == null
+          ? null
+          : String(opts.stripeSubscriptionId);
+    }
+    return get(shopId);
+  }
+
+  function recordSyncSummary(shopId, summary) {
+    const row = rows.find((r) => r.shopId === String(shopId));
+    if (!row) {
+      const err = new Error('shop_not_found');
+      err.code = 'shop_not_found';
+      throw err;
+    }
+    if (summary && summary.lastSyncAt !== undefined) {
+      row.lastSyncAt = summary.lastSyncAt;
+    }
+    if (summary && summary.nextSyncAt !== undefined) {
+      row.nextSyncAt = summary.nextSyncAt;
+    }
+    if (summary && summary.partsCount !== undefined) {
+      row.partsCount = Number(summary.partsCount) || 0;
+    }
+    if (summary && summary.lastSyncResult !== undefined) {
+      row.lastSyncResult =
+        summary.lastSyncResult == null ? null : String(summary.lastSyncResult);
+    }
+    return get(shopId);
+  }
   return {
     insert,
     upsertConnect,
@@ -289,6 +333,8 @@ function createShopsRegistry() {
     statusLog,
     listByMerchant,
     listPublic,
+    setSubscriptionStatus,
+    recordSyncSummary,
   };
 }
 
