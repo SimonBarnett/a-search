@@ -52,6 +52,18 @@ const {
   handleWidgetsCreate,
 } = require('./widgetsCreate');
 const {
+  matchAccountCommissionRoute,
+  handleAccountCommission,
+} = require('./accountCommission');
+const {
+  matchAccountUpgradeRoute,
+  handleAccountUpgrade,
+} = require('./accountUpgrade');
+const {
+  matchWidgetsMutateRoute,
+  handleWidgetsMutate,
+} = require('./widgetsMutate');
+const {
   matchPartnerRegisterRoute,
   handlePartnerRegister,
 } = require('./partnerRegister');
@@ -64,6 +76,10 @@ const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
+const {
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
+} = require('./oauthCallback');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -77,6 +93,10 @@ const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
 const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
+const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
+const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
+const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
+const WIDGETS_MUTATE_ROUTE = 'entry/widgets/mutate';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -231,6 +251,10 @@ async function handler(event, _context, deps = {}) {
   const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
+  const oauthRoute = matchOAuthCallbackRoute(method, path);
+  const commissionRoute = matchAccountCommissionRoute(method, path);
+  const upgradeRoute = matchAccountUpgradeRoute(method, path);
+  const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -248,13 +272,21 @@ async function handler(event, _context, deps = {}) {
                 ? MERCHANT_SHOPS_ROUTE
                 : loginRoute
                   ? LOGIN_ENTRY_ROUTE
-              : cpRoute
-                ? `entry/${cpRoute}`
-                : isSelftestRoute(method, path)
-                  ? SELFTEST_ROUTE
-                  : isPerformanceRoute(method, path)
-                    ? PERF_ROUTE
-                    : ENTRY_ROUTE;
+                  : oauthRoute
+                    ? OAUTH_CALLBACK_ROUTE
+                    : commissionRoute
+                      ? ACCOUNT_COMMISSION_ROUTE
+                      : upgradeRoute
+                        ? ACCOUNT_UPGRADE_ROUTE
+                        : widgetsMutateRoute
+                          ? WIDGETS_MUTATE_ROUTE
+                          : cpRoute
+                            ? `entry/${cpRoute}`
+                            : isSelftestRoute(method, path)
+                              ? SELFTEST_ROUTE
+                              : isPerformanceRoute(method, path)
+                                ? PERF_ROUTE
+                                : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -272,9 +304,22 @@ async function handler(event, _context, deps = {}) {
     ) {
       return await handleAccountPayouts(event, deps);
     }
+    // #1344 extension account/widget mutate handlers win over FR-208 501 stubs
+    if (commissionRoute) {
+      return await handleAccountCommission(event, deps);
+    }
+    if (upgradeRoute) {
+      return await handleAccountUpgrade(event, deps);
+    }
+    if (widgetsMutateRoute) {
+      return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
+    }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
+    }
+    if (oauthRoute) {
+      return await handleOAuthCallback(event, oauthRoute, deps);
     }
     if (loginRoute) {
       return await handleLoginEntry(event, loginRoute, deps);
@@ -670,4 +715,6 @@ module.exports = {
   matchMerchantShopsRoute,
   matchLoginEntryRoute,
   handleLoginEntry,
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
 };
