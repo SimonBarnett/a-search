@@ -50,7 +50,7 @@ An **installable release** means:
 | Onboarding zip includes `shared/` | **Yes** (FR-132 `stage-onboarding-lambda-asset.js`) | No |
 | SQS DLQ | **Yes** (FR-142 #978 - DLQ + maxReceiveCount 3 per enabled worker queue) | Yes (ops safety) |
 | CloudWatch retention / alarms | **Yes** (FR-143 #979 - 30d LogGroup + DLQ depth alarms to placeholder SNS) | Yes (ops safety) |
-| `.github/workflows` CI | **Yes** - `.github/workflows/ci.yml` Node 20 `npm ci` + `npm test` + `npm run synth` on PR/push main (FR-139 #975) | **Yes** (vision S4) |
+| `.github/workflows` CI | **Yes** - `.github/workflows/ci.yml` Node 20 `npm ci` + `npm test` + `npm run synth` on PR/push main (FR-139 #975); FR-2021 concurrency cancel-in-progress + path-aware synth skip for docs/harvest tips (job id stays `test-and-synth`) | **Yes** (vision S4) |
 | `docs/deploy.md` / install playbook | **Yes** - bootstrap, secrets, cdk deploy, SearchApiUrl, smoke, rclone (FR-140 #976; keeps FR-136 JWT section) | **Yes** |
 | `npm run deploy` / account-region context | **Yes** - `npm run deploy` + `-c account`/`region` via `resolve-deploy-env` (FR-141 #977); no account IDs in source | **Yes** |
 | Post-deploy smoke | **Yes** (FR-144 #980 - `scripts/smoke-deploy.js` + mocked pin) | Yes |
