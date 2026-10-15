@@ -219,3 +219,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson PR body that quotes product Closes #N-#M in session summary can link closingIssuesReferences: rewrite to prose without Closes keywords before merge so skill tips do not close product FRs
 - GBP/UK market-hold MRB: disable via registry enabled false only (keep folders + id/path string literals); retarget floors to 2*enabled_count; skip win32 CDK synth FR#3717; merge main then --auto --squash; DONE without CI poll
 - a-search docs/mrb for open product tip: merge origin/main into docs pin and dependency FR tip when both behind; run hostile suite against the product tip tree; --auto --squash both; DONE without CI poll
+- a-search product tip re-offer self-MRB: if this seat already folded/pushed the tip, ACK then GIVEUP self-MRB when re-offered behind main; sibling merges origin/main and re-arms --auto --squash
