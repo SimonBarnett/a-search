@@ -40,8 +40,8 @@ test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; fl
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('tradedoubler'));
   assert.ok(enabled.includes('shopify'));
-  assert.equal(enabled.length, 12);
-  assert.equal(enabled.length * 2, 24);
+  assert.equal(enabled.length, 13); // FR-179 wix
+  assert.equal(enabled.length * 2, 26);
 });
 
 test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS still includes avantlink FR-138 names', () => {
