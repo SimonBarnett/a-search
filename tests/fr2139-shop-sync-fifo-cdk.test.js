@@ -122,6 +122,29 @@ describe('FR-2139 shop-sync FIFO CDK wiring', () => {
     const workerSrc = utf8NoBom(WORKER);
     assert.match(workerSrc, /handleShopSyncMessage/);
     assert.match(workerSrc, /ApproximateReceiveCount/);
+    assert.match(workerSrc, /shop_sync_deps_unconfigured/);
+    assert.match(workerSrc, /resolveShopSyncDeps|awsRequestId/);
+
+    await assert.rejects(
+      () =>
+        handler(
+          {
+            Records: [
+              {
+                messageId: 'bare',
+                body: JSON.stringify({
+                  type: 'full',
+                  env: 'live',
+                  shopId: 'x',
+                  provider: 'shopify',
+                }),
+              },
+            ],
+          },
+          { awsRequestId: 'req-1', invokedFunctionArn: 'arn:aws:lambda:x' },
+        ),
+      /shop_sync_deps_unconfigured/,
+    );
   });
 
   it('docs Decision LOCKED ASCII; FR-240 points at FR-2139', () => {
