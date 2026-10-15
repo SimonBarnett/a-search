@@ -78,7 +78,7 @@ GBP shop connects).
 | `flexoffers` | local | false | **HOLD** US mid-tail | Stay dark (FR-256); do not enable |
 | `avantlink` | local | false (**HOLD**) | US outdoor/retail | Disable both envs FR-255; folder stays |
 | `shopify` | local | true | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
-| `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API -> MSSQL Parts |
+| `wix` | local | true | Merchant store catalogues (Madeira) | Enabled FR-179; Wix Stores API -> MSSQL Parts; no affiliate stamp |
 | `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST -> MSSQL Parts |
 
 **This pass:** scaffold **all rows** (folder, `.env.example`, worker stub,

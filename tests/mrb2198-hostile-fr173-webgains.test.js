@@ -32,7 +32,7 @@ describe('MRB-2198 FR-173 webgains enable hostile', () => {
     assert.doesNotMatch(stack, /^<<<<<<<|^=======|^>>>>>>>/m);
   });
 
-  it('FR-173 Decision LOCKED UTF-8 no-BOM; floors 26; siblings dark', () => {
+  it('FR-173 Decision LOCKED UTF-8 no-BOM; floors 28; siblings dark', () => {
     const buf = fs.readFileSync(path.join(root, 'docs', 'fr', 'FR-173.md'));
     assert.notEqual(buf[0], 0xef);
     const fr = buf.toString('utf8');
@@ -43,7 +43,7 @@ describe('MRB-2198 FR-173 webgains enable hostile', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
-    for (const id of ['admitad', 'flexoffers', 'wix', 'woocommerce']) {
+    for (const id of ['admitad', 'flexoffers', 'woocommerce']) {
       const s = registry.sources.find((x) => x.id === id);
       assert.equal(s.enabled.live, false, id);
       assert.equal(s.enabled.sandbox, false, id);
@@ -51,11 +51,11 @@ describe('MRB-2198 FR-173 webgains enable hostile', () => {
     const both = registry.sources.filter(
       (s) => s.enabled && s.enabled.live && s.enabled.sandbox,
     );
-    assert.equal(both.length, 13);
+    assert.equal(both.length, 14);
     const fr142 = fs.readFileSync(
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 26 primary queues/);
+    assert.match(fr142, /expected 28 primary queues/);
   });
 });

@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['admitad', 'flexoffers', 'wix', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -45,6 +45,8 @@ describe('FR-173 enable webgains', () => {
       'FR-174 keep-both',
     );
     assert.equal(byId.get('shopify').enabled.live, true, 'FR-178 keep-both');
+    assert.equal(byId.get('wix').enabled.live, true, 'FR-179 keep-both');
+    assert.equal(byId.get('wix').enabled.sandbox, true, 'FR-179 keep-both');
     assert.equal(byId.get('bol').enabled.live, false, 'GBP/UK hold bol');
     assert.equal(byId.get('avantlink').enabled.live, false, 'FR-177 hold');
     for (const id of STILL_DARK) {
