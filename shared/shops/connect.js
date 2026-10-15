@@ -55,6 +55,9 @@ async function startConnect(args) {
     state,
     redirectUrl: String(started.redirectUrl),
     loginRequired: started.loginRequired === true,
+    callbackUrl: started.callbackUrl,
+    identityLinkUrl: started.identityLinkUrl,
+    instructions: started.instructions,
   };
 }
 
@@ -82,6 +85,7 @@ async function completeConnect(args) {
   const adapter = getAdapter(provider);
   const completed = await adapter.completeConnect(args.req || {}, {
     ...nonce,
+    nowMs: args.nowMs,
     ...(args.adapterOpts || {}),
   });
   if (

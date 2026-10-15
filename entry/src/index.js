@@ -365,6 +365,9 @@ async function handler(event, _context, deps = {}) {
     if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
       return await handleMerchantShopsCallback(event, deps);
     }
+    if (merchantRoute === 'GET|POST /merchant/shops/magento/identity') {
+      return await handleMerchantShops(event, merchantRoute, deps);
+    }
     return await handleSearch(event, deps);
   } catch (err) {
     // Client AuthError / EnqueueError are returned as 401/400 inside handlers.
