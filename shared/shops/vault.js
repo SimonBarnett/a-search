@@ -1,9 +1,45 @@
 'use strict';
 
 /**
- * FR-236 / FR-235 prelude: in-memory credentials vault (tests).
- * Production writes Secrets Manager / a_search vault; never log token values.
+ * FR-235 + FR-236: credentials vault helpers.
+ * createMemoryVault: Secrets Manager-shaped put({env,shopId,credentials}).
+ * createCredentialsVault: ref-keyed put(ref, payload) for Shopify connect tests.
+ * Never log credentials / token values.
  */
+
+/**
+ * @returns {{
+ *   put: (args: { env: string, shopId: string, credentials: object }) => Promise<string>,
+ *   get: (ref: string) => Promise<object|null>,
+ *   delete: (ref: string) => Promise<void>,
+ *   _store: Map<string, object>,
+ * }}
+ */
+function createMemoryVault() {
+  /** @type {Map<string, object>} */
+  const store = new Map();
+  return {
+    _store: store,
+    async put(args) {
+      const env = String(args.env);
+      const shopId = String(args.shopId);
+      const ref = `a-search/${env}/shops/${shopId}`;
+      store.set(ref, {
+        ...(args.credentials && typeof args.credentials === 'object'
+          ? args.credentials
+          : {}),
+      });
+      return ref;
+    },
+    async get(ref) {
+      const v = store.get(String(ref));
+      return v ? { ...v } : null;
+    },
+    async delete(ref) {
+      store.delete(String(ref));
+    },
+  };
+}
 
 /**
  * @returns {{
@@ -31,4 +67,17 @@ function createCredentialsVault() {
   };
 }
 
-module.exports = { createCredentialsVault };
+/**
+ * Build the Secrets Manager name / ARN path shape (pointer only).
+ * @param {string} env
+ * @param {string} shopId
+ */
+function vaultSecretName(env, shopId) {
+  return `a-search/${String(env)}/shops/${String(shopId)}`;
+}
+
+module.exports = {
+  createMemoryVault,
+  createCredentialsVault,
+  vaultSecretName,
+};
