@@ -26,7 +26,8 @@ describe('MRB #1869 hostile FR-214 merchant docs lock', () => {
     assert.match(m, /PROVIDER/);
     assert.match(m, /merchant_shop/);
     assert.match(m, /widget_upgrade/);
-    assert.doesNotMatch(m, /partner_monthly/);
+    assert.match(m, /never use[\s\S]{0,40}partner_monthly|partner_monthly[\s\S]{0,40}never/i);
+    assert.match(m, /Partners are never billed/i);
     assert.match(m, /PrestaShop.*dropped|dropped.*PrestaShop/i);
     assert.match(m, /SMS OTP/);
     assert.match(m, /GBP 20/);
@@ -39,3 +40,4 @@ describe('MRB #1869 hostile FR-214 merchant docs lock', () => {
     assert.ok(fs.existsSync(path.join(ROOT, 'tests', 'fr214-merchant-docs.test.js')));
   });
 });
+
