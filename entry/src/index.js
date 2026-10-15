@@ -56,6 +56,10 @@ const {
   handleAccountCommission,
 } = require('./accountCommission');
 const {
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
+} = require('./clubRevenueShare');
+const {
   matchAccountUpgradeRoute,
   handleAccountUpgrade,
 } = require('./accountUpgrade');
@@ -109,6 +113,7 @@ const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
 const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
 const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
 const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
+const CLUB_REVENUE_SHARE_ROUTE = 'entry/club/revenue-share';
 const WIDGETS_MUTATE_ROUTE = 'entry/widgets/mutate';
 
 function jsonResponse(statusCode, payload) {
@@ -270,6 +275,7 @@ async function handler(event, _context, deps = {}) {
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
   const upgradeRoute = matchAccountUpgradeRoute(method, path);
+  const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
   const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
@@ -294,15 +300,17 @@ async function handler(event, _context, deps = {}) {
                       ? ACCOUNT_COMMISSION_ROUTE
                       : upgradeRoute
                         ? ACCOUNT_UPGRADE_ROUTE
-                        : widgetsMutateRoute
-                          ? WIDGETS_MUTATE_ROUTE
-                          : cpRoute
-                            ? `entry/${cpRoute}`
-                            : isSelftestRoute(method, path)
-                              ? SELFTEST_ROUTE
-                              : isPerformanceRoute(method, path)
-                                ? PERF_ROUTE
-                                : ENTRY_ROUTE;
+                        : clubRevenueShareRoute
+                          ? CLUB_REVENUE_SHARE_ROUTE
+                          : widgetsMutateRoute
+                            ? WIDGETS_MUTATE_ROUTE
+                            : cpRoute
+                              ? `entry/${cpRoute}`
+                              : isSelftestRoute(method, path)
+                                ? SELFTEST_ROUTE
+                                : isPerformanceRoute(method, path)
+                                  ? PERF_ROUTE
+                                  : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -326,6 +334,10 @@ async function handler(event, _context, deps = {}) {
     }
     if (upgradeRoute) {
       return await handleAccountUpgrade(event, deps);
+    }
+    // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
+    if (clubRevenueShareRoute) {
+      return await handleClubRevenueShare(event, deps);
     }
     if (widgetsMutateRoute) {
       return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
@@ -752,4 +764,6 @@ module.exports = {
   handleLoginEntry,
   matchOAuthCallbackRoute,
   handleOAuthCallback,
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
 };
