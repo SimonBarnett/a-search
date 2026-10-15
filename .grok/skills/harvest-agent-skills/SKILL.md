@@ -216,3 +216,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - ComponentsPiece prune/top10: host-level top10 only; prune exclude+expiry+broken flags without HTTP; re-apply live cap each pass; stack on FR-206 tip; non-main base MRB hand-close.
 - ComponentsPiece widget click: buildGoUrl host+widgetGuid+part only; open via openUrl/window.open noopener; pin partsHtml never embeds part.url; stack on FR-202 tip; non-main base MRB hand-close.
 - FR-212 ComponentsPiece fixtures: check in tests/fixtures/components-piece/ for in/live.free/live.full/searches/widget/feedback/host/job/events/stats; pin LIVE_PART_CAP_FREE=10, FR-232 GUID regex, clean live URLs, forbidden secret/PII keys, ctr 0 when denom 0; Closes on PR; FR seat never merges
+- a-search harvest twin: FAIL-supersede later tip that restates keep-both when tip drops Harvested bullets; prefer first open tip #2031
