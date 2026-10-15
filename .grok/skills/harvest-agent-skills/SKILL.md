@@ -224,3 +224,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - EventBridge cannot set dynamic SQS FIFO MessageGroupId from S3 key alone: use a small enqueue Lambda that runs agentQueue.classify/fifoSendParams before the rclone-host dispatcher polls
 - a-search FR-236: merchantShops callback must map adapter codes invalid_hmac/invalid_shop_domain/code_required to HTTP 400 so bad oauth never inserts a Shop row; pin with HTTP-layer bad-hmac after a fresh connect state
 - a-search harvest-lesson MRB: if tip commits include marchhare-<seat> keep-both author, ACK then GIVEUP self-MRB (FR #2604); leave OPEN for sibling; CONFLICTING does not change the hand-back
+- Near-twin harvest tips on self-MRB keep-both author: land one consolidated bullet (leave OPEN for sibling + CONFLICTING does not change hand-back), close the later tip citing the first
