@@ -12,6 +12,8 @@
 | `002_Widgets.sql` | Widgets registry: widgetGuid PK, customerNumber/host nullable until bind (FR-232 rule 3) |
 | `010_Shops.sql` | Merchant Shops registry prelude (FR-216 / FR-235) |
 | `011_ShopStatusLog.sql` | Shop status columns + ShopStatusLog + global unique (FR-235 / #1349) |
+| `012_PartFeedKeys_shop_kind.sql` | PartFeedKeys shop/kind columns (FR-216 follow-on) |
+| `013_RevenueShare.sql` | ClubPoolBudget + RevenueSharePeriods + ClubRevenueShares (FR-249 / #1363) |
 
 Migrate-once: each script uses `IF OBJECT_ID ... IS NULL` / `IF NOT EXISTS` index guards.
 
