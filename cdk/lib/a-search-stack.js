@@ -648,7 +648,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops connect + FR-229 /auth/session|/auth/redirect + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-229 /auth/session|/auth/redirect + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -785,6 +785,15 @@ class ASearchStack extends cdk.Stack {
       path: '/webhooks/stripe',
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryStripeWebhookIntegration'),
+    });
+    // FR-218: partner registration (mint DNS partner code + instructions)
+    httpApi.addRoutes({
+      path: '/partner/register',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartnerRegisterIntegration',
+        entry,
+      ),
     });
     // FR-216: merchant shop connect (JWT) + provider callback (state nonce)
     httpApi.addRoutes({

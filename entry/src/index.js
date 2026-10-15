@@ -44,9 +44,17 @@ const {
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
 const {
+  matchAccountPayoutsRoute,
+  handleAccountPayouts,
+} = require('./accountPayouts');
+const {
   matchWidgetsCreateRoute,
   handleWidgetsCreate,
 } = require('./widgetsCreate');
+const {
+  matchPartnerRegisterRoute,
+  handlePartnerRegister,
+} = require('./partnerRegister');
 const {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
@@ -64,7 +72,9 @@ const SELFTEST_ROUTE = 'entry/selftest';
 const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
+const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
 
@@ -216,7 +226,9 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const payoutRoute = matchAccountPayoutsRoute(method, path);
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
@@ -226,12 +238,16 @@ async function handler(event, _context, deps = {}) {
       ? GO_ROUTE
       : isPartsRoute(method, path)
         ? PARTS_ROUTE
-        : widgetsRoute
-          ? WIDGETS_CREATE_ROUTE
-          : merchantRoute
-            ? MERCHANT_SHOPS_ROUTE
-            : loginRoute
-              ? LOGIN_ENTRY_ROUTE
+        : payoutRoute
+          ? ACCOUNT_PAYOUTS_ROUTE
+          : widgetsRoute
+            ? WIDGETS_CREATE_ROUTE
+            : partnerRoute
+              ? PARTNER_REGISTER_ROUTE
+              : merchantRoute
+                ? MERCHANT_SHOPS_ROUTE
+                : loginRoute
+                  ? LOGIN_ENTRY_ROUTE
               : cpRoute
                 ? `entry/${cpRoute}`
                 : isSelftestRoute(method, path)
@@ -249,6 +265,13 @@ async function handler(event, _context, deps = {}) {
     if (isPartsRoute(method, path)) {
       return await handleParts(event, deps);
     }
+    // FR-222 payout/stripe handlers win over FR-208 ComponentsPiece 501 stubs
+    if (
+      payoutRoute === 'POST /account/payouts' ||
+      payoutRoute === 'POST /account/stripe/link'
+    ) {
+      return await handleAccountPayouts(event, deps);
+    }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
@@ -264,6 +287,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (partnerRoute === 'POST /partner/register') {
+      return await handlePartnerRegister(event, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
@@ -625,7 +651,9 @@ module.exports = {
   handleSearch,
   handleParts,
   handleGo,
+  handleAccountPayouts,
   handleWidgetsCreate,
+  handlePartnerRegister,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
   validateSearchBody,
@@ -636,7 +664,9 @@ module.exports = {
   isSelftestRoute,
   isPartsRoute,
   isGoRoute,
+  matchAccountPayoutsRoute,
   matchWidgetsCreateRoute,
+  matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
   matchLoginEntryRoute,
   handleLoginEntry,
