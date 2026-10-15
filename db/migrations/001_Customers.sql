@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-196: Customers registry for ComponentsPiece (a_search / a_search_sandbox only).
 -- Run against a_search (live) or a_search_sandbox (sandbox). Never madeiradb (FR-251).
 SET NOCOUNT ON;

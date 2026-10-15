@@ -1,12 +1,21 @@
 # ComponentsPiece shared login (merchants, partners, clubs)
 
 **Repo:** SimonBarnett/a-search
-**Locks:** FR-225 (#1235)
+**Locks:** FR-225 (#1235); shared entry FR-229 (#1239)
 **Mocks:** docs/mocks/components-piece-auth/ (AL1 home, AL2 empty, AL3 error)
 **Identity:** [identity.md](identity.md) -- 8-char tenant codes for userId
 
 ## Goal
 One shared sign-in for merchants, partners, and clubs. Phase 5 has **no passwords**.
+
+## Shared login entry (FR-229)
+
+- One UI stack: `components-piece/login/` (`data-login-stack="shared"`).
+- Session mint: `POST /auth/session` via `shared/auth/loginEntry.js`.
+- Post-login path: `GET /auth/redirect?intent=merchant|partner|club`.
+- Same session is valid across merchant, partner, and club intents after
+  identity; role/intent attaches after contact is known.
+- Fail-when: divergent per-role auth stacks (no password login modules).
 
 ## OAuth registry (pluggable)
 

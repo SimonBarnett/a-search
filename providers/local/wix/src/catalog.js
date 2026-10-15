@@ -23,23 +23,41 @@ class WixCredsError extends Error {
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{ siteId?: string, apiToken?: string, accessToken?: string, apiBase?: string }} [overrides]
+ * FR-237: per-call siteId+accessToken; env remains selftest fallback.
  */
-function readWixCreds(env) {
+function readWixCreds(env, overrides) {
   const e = env || process.env;
-  const siteId = e.WIX_SITE_ID != null ? String(e.WIX_SITE_ID).trim() : '';
-  const apiToken = e.WIX_API_TOKEN != null ? String(e.WIX_API_TOKEN).trim() : '';
+  const o = overrides || {};
+  const siteId =
+    o.siteId != null && String(o.siteId).trim()
+      ? String(o.siteId).trim()
+      : e.WIX_SITE_ID != null
+        ? String(e.WIX_SITE_ID).trim()
+        : '';
+  const apiToken =
+    o.accessToken != null && String(o.accessToken).trim()
+      ? String(o.accessToken).trim()
+      : o.apiToken != null && String(o.apiToken).trim()
+        ? String(o.apiToken).trim()
+        : e.WIX_API_TOKEN != null
+          ? String(e.WIX_API_TOKEN).trim()
+          : '';
   const apiBase =
-    e.WIX_API_BASE != null && String(e.WIX_API_BASE).trim()
-      ? String(e.WIX_API_BASE).trim().replace(/\/$/, '')
-      : DEFAULT_API_BASE;
+    o.apiBase != null && String(o.apiBase).trim()
+      ? String(o.apiBase).trim().replace(/\/$/, '')
+      : e.WIX_API_BASE != null && String(e.WIX_API_BASE).trim()
+        ? String(e.WIX_API_BASE).trim().replace(/\/$/, '')
+        : DEFAULT_API_BASE;
   return { siteId, apiToken, apiBase };
 }
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{ siteId?: string, apiToken?: string, accessToken?: string, apiBase?: string }} [overrides]
  */
-function assertWixCreds(env) {
-  const c = readWixCreds(env);
+function assertWixCreds(env, overrides) {
+  const c = readWixCreds(env, overrides);
   const missing = [];
   if (!c.siteId) missing.push('WIX_SITE_ID');
   if (!c.apiToken) missing.push('WIX_API_TOKEN');
@@ -221,10 +239,18 @@ function parseProductsResponse(body, meta) {
  * @param {number} [deps.limit]
  * @param {string} [deps.envName]
  * @param {string} [deps.feedKey]
+ * @param {string} [deps.siteId]
+ * @param {string} [deps.apiToken]
+ * @param {string} [deps.accessToken]
  */
 async function fetchCatalogPage(deps) {
   const envVars = (deps && deps.env) || process.env;
-  const creds = assertWixCreds(envVars);
+  const creds = assertWixCreds(envVars, {
+    siteId: deps && deps.siteId,
+    apiToken: deps && deps.apiToken,
+    accessToken: deps && deps.accessToken,
+    apiBase: deps && deps.apiBase,
+  });
   const url = buildProductsQueryUrl(creds.apiBase);
   const limit = Math.min(100, Math.max(1, Number((deps && deps.limit) || 50) || 50));
   const bodyObj = {
