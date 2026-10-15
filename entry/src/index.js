@@ -43,6 +43,15 @@ const {
   matchComponentsPieceRoute,
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
+const {
+  matchWidgetsCreateRoute,
+  handleWidgetsCreate,
+} = require('./widgetsCreate');
+const {
+  matchMerchantShopsRoute,
+  handleMerchantShopsConnect,
+  handleMerchantShopsCallback,
+} = require('./merchantShops');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -51,6 +60,8 @@ const SELFTEST_ROUTE = 'entry/selftest';
 const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
+const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -200,20 +211,26 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const merchantRoute = matchMerchantShopsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
     : isGoRoute(method, path)
       ? GO_ROUTE
       : isPartsRoute(method, path)
-      ? PARTS_ROUTE
-      : cpRoute
-        ? `entry/${cpRoute}`
-        : isSelftestRoute(method, path)
-          ? SELFTEST_ROUTE
-          : isPerformanceRoute(method, path)
-            ? PERF_ROUTE
-            : ENTRY_ROUTE;
+        ? PARTS_ROUTE
+        : widgetsRoute
+          ? WIDGETS_CREATE_ROUTE
+          : merchantRoute
+            ? MERCHANT_SHOPS_ROUTE
+            : cpRoute
+              ? `entry/${cpRoute}`
+              : isSelftestRoute(method, path)
+                ? SELFTEST_ROUTE
+                : isPerformanceRoute(method, path)
+                  ? PERF_ROUTE
+                  : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -224,6 +241,10 @@ async function handler(event, _context, deps = {}) {
     if (isPartsRoute(method, path)) {
       return await handleParts(event, deps);
     }
+    // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
+    if (widgetsRoute === 'POST /widgets') {
+      return await handleWidgetsCreate(event, deps);
+    }
     if (cpRoute) {
       return await handleComponentsPieceStub(event, cpRoute);
     }
@@ -232,6 +253,12 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (merchantRoute === 'POST /merchant/shops/connect') {
+      return await handleMerchantShopsConnect(event, deps);
+    }
+    if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
+      return await handleMerchantShopsCallback(event, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -587,6 +614,9 @@ module.exports = {
   handleSearch,
   handleParts,
   handleGo,
+  handleWidgetsCreate,
+  handleMerchantShopsConnect,
+  handleMerchantShopsCallback,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
@@ -595,4 +625,6 @@ module.exports = {
   isSelftestRoute,
   isPartsRoute,
   isGoRoute,
+  matchWidgetsCreateRoute,
+  matchMerchantShopsRoute,
 };
