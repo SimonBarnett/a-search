@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-248: provisioned Amazon Associates per-tenant tracking IDs (a_search only).
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never modify madeiradb.
 
