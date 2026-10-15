@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-199 / #1187: GET /go approved path by widgetGuid + part.
+ * FR-199 / #1187 + FR-248: GET /go approved path by widgetGuid + part.
+ * Affiliate/provider stamps use per-network tenant slots (clubId).
  */
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
@@ -25,6 +26,8 @@ function writeLive(root, env, customerNumber, widgetGuid, parts) {
   fs.writeFileSync(abs, `${JSON.stringify(parts, null, 2)}\n`, 'utf8');
   return abs;
 }
+
+const awinEnv = { AWIN_PUBLISHER_ID: 'pub-go-test' };
 
 describe('FR-199 ComponentsPiece GET /go approved path', () => {
   /** @type {string} */
@@ -61,16 +64,16 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
       {
         partNumber: 'P1',
         class: 'affiliate',
-        source: 'amazon',
-        url: 'https://www.amazon.co.uk/dp/B0001',
+        source: 'awin',
+        url: 'https://www.awin1.com/cread.php?ued=https%3A%2F%2Fex.example%2Fp%2FB0001',
       },
     ]);
     writeLive(root, 'sandbox', w2.customerNumber, w2.widgetGuid, [
       {
         partNumber: 'P1',
         class: 'affiliate',
-        source: 'amazon',
-        url: 'https://www.amazon.co.uk/dp/B0002',
+        source: 'awin',
+        url: 'https://www.awin1.com/cread.php?ued=https%3A%2F%2Fex.example%2Fp%2FB0002',
       },
     ]);
 
@@ -82,6 +85,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
       part: 'P1',
       cid: 'cid-shared',
       store,
+      envMap: awinEnv,
     });
     const b = await resolveGo({
       root,
@@ -91,12 +95,15 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
       part: 'P1',
       cid: 'cid-shared',
       store,
+      envMap: awinEnv,
     });
     assert.match(a.url, /B0001/);
     assert.match(b.url, /B0002/);
     assert.notEqual(a.url, b.url);
-    assert.match(a.url, /tenantId=club-42/);
-    assert.match(a.url, /clickId=cid-shared/);
+    // FR-248: awin tenant=clickref, clickId=clickref3
+    assert.match(a.url, /[?&]clickref=club-42/);
+    assert.match(a.url, /[?&]clickref3=cid-shared/);
+    assert.match(a.url, /awinaffid=pub-go-test/);
     assert.ok(a.url, 'fail-when: url empty for known part');
   });
 
@@ -114,6 +121,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
       {
         partNumber: 'M1',
         class: 'merchant',
+        source: 'shopify',
         url: 'https://shop.example/product/1',
       },
     ]);
@@ -166,7 +174,8 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
       {
         partNumber: 'A1',
         class: 'affiliate',
-        url: 'https://www.amazon.co.uk/dp/X',
+        source: 'awin',
+        url: 'https://www.awin1.com/cread.php?ued=https%3A%2F%2Fex.example%2Fp%2FX',
       },
     ]);
 
@@ -179,6 +188,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
           widgetGuid: w.widgetGuid,
           part: 'A1',
           store,
+          envMap: awinEnv,
         }),
       (err) => err instanceof GoError && err.code === 'tracking_unavailable',
     );
@@ -200,6 +210,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
         root,
         store,
         widgetEnv: 'sandbox',
+        env: awinEnv,
         recordClick: async (ev) => {
           clicks.push(ev);
         },
@@ -208,6 +219,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
     assert.equal(res.statusCode, 200);
     const body = JSON.parse(res.body);
     assert.ok(body.url);
+    assert.match(body.url, /[?&]clickref=club-x/);
     assert.equal(body.clickId, 'c1');
     assert.equal(clicks.length, 1);
     assert.equal(clicks[0].source, 'server');
@@ -223,7 +235,12 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
         },
       },
       {},
-      { root, store, widgetEnv: 'sandbox', env: { A_SEARCH_WIDGET_ROOT: root } },
+      {
+        root,
+        store,
+        widgetEnv: 'sandbox',
+        env: { A_SEARCH_WIDGET_ROOT: root, ...awinEnv },
+      },
     );
     assert.equal(viaEntry.statusCode, 200);
 
@@ -237,7 +254,7 @@ describe('FR-199 ComponentsPiece GET /go approved path', () => {
           part: 'ZZ',
         },
       },
-      { root, store, widgetEnv: 'sandbox' },
+      { root, store, widgetEnv: 'sandbox', env: awinEnv },
     );
     assert.equal(missing.statusCode, 404);
     assert.equal(JSON.parse(missing.body).error, 'part_not_found');
