@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'woocommerce', 'src', 'worker.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix'];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -40,6 +40,8 @@ describe('FR-180 enable woocommerce', () => {
     assert.equal(woo.class, 'merchant');
     assert.equal(woo.merchantConnect, true);
     assert.equal(byId.get('shopify').enabled.live, true, 'FR-178');
+    assert.equal(byId.get('wix').enabled.live, true, 'FR-179 keep-both');
+    assert.equal(byId.get('wix').enabled.sandbox, true, 'FR-179 keep-both');
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');

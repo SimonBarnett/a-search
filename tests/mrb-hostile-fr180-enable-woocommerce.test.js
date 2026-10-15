@@ -10,16 +10,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix'];
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers'];
 
 describe('hostile FR-180 enable woocommerce', () => {
-  it('floors 26 = 13 enabled x live+sandbox; woo on; siblings dark', () => {
+  it('floors 28 = 14 enabled x live+sandbox; woo+wix on; siblings dark', () => {
     const { loadRegistry, enabled } = require('../providers/loadRegistry');
     const live = enabled('live');
-    assert.equal(live.length, 13);
+    assert.equal(live.length, 14);
     assert.ok(live.includes('woocommerce'));
     assert.ok(live.includes('shopify'));
-    assert.ok(!live.includes('wix'));
+    assert.ok(live.includes('wix'));
     assert.ok(!live.includes('webgains'));
     const { sources } = loadRegistry();
     const woo = sources.find((s) => s.id === 'woocommerce');
@@ -67,6 +67,6 @@ describe('hostile FR-180 enable woocommerce', () => {
     const omit = matrix.match(/Stay-dark omitted[\s\S]*?(?=\n\n|\nPublic)/);
     assert.ok(omit);
     assert.doesNotMatch(omit[0], /\bwoocommerce\b/);
-    assert.match(omit[0], /\bwix\b/);
+    assert.doesNotMatch(omit[0], /\bwix\b/);
   });
 });
