@@ -63,10 +63,9 @@ describe('FR-185 Creators tracked-link parity', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a, /userId=U-A/);
-    assert.match(b, /userId=U-B/);
     assert.match(a, /tag=tag-20/);
-    assert.notEqual(a, b);
+    assert.match(b, /tag=tag-20/);
+    assert.doesNotMatch(a, /[?&]userId=/);
   });
 
   it('Creators normalize stamps same rules as PA-API normalize', () => {
@@ -82,10 +81,10 @@ describe('FR-185 Creators tracked-link parity', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(c.url, /userId=U-A/);
     assert.match(c.url, /tag=tag-20/);
-    assert.match(p.url, /userId=U-A/);
     assert.match(p.url, /tag=tag-20/);
+    assert.doesNotMatch(c.url, /[?&]userId=/);
+    assert.doesNotMatch(p.url, /[?&]userId=/);
     assert.match(c.url, /^https:\/\/www\.amazon\.co\.uk\/dp\/B0CREATOR1/);
   });
 
@@ -128,8 +127,8 @@ describe('FR-185 Creators tracked-link parity', () => {
       },
     );
     assert.equal(out.searchApi, 'creators');
-    assert.match(out.products[0].url, /userId=U-A/);
     assert.match(out.products[0].url, /tag=tag-20/);
+    assert.doesNotMatch(out.products[0].url, /[?&]userId=/);
   });
 
   it('FR-185 Decision LOCKED + tracked-links Creators parity', () => {
