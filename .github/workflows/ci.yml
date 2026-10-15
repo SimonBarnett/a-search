@@ -1,4 +1,5 @@
 # FR-139: Node 20 CI gate - npm test + npm run synth (vision S4 / release D1)
+# FR-2021: concurrency cancel-in-progress + path-aware synth skip for docs/harvest tips
 name: ci
 
 on:
@@ -7,7 +8,13 @@ on:
   pull_request:
     branches: [main]
 
+# One in-flight run per PR/ref; newer pushes cancel stale queued/running siblings.
+concurrency:
+  group: a-search-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # Job id must stay test-and-synth (ruleset required-ci-3948 context).
   test-and-synth:
     runs-on: ubuntu-latest
     # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
@@ -15,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node 20
         uses: actions/setup-node@v4
@@ -33,5 +42,38 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Detect CDK-relevant paths
+        id: need_synth
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Always synth on main pushes (post-merge gate).
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "synth=true" >> "$GITHUB_OUTPUT"
+            echo "reason=main-push"
+            exit 0
+          fi
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          if [ -z "${BASE}" ] || [ -z "${HEAD}" ]; then
+            echo "synth=true" >> "$GITHUB_OUTPUT"
+            echo "reason=missing-pr-shas"
+            exit 0
+          fi
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD" || true)"
+          echo "changed_files<<"
+          echo "$CHANGED"
+          echo ">>"
+          # Synth when CDK/runtime/stage/lockfile paths change. Docs, skills, and
+          # most tests alone skip the long npm run synth (FR-2021 queue starvation).
+          if printf '%s\n' "$CHANGED" | grep -E '^(cdk/|providers/|entry/|maintainer/|shared/|components-piece/|package(-lock)?\.json$|scripts/stage|scripts/smoke|cdk\.json$)' >/dev/null; then
+            echo "synth=true" >> "$GITHUB_OUTPUT"
+            echo "reason=cdk-relevant-paths"
+          else
+            echo "synth=false" >> "$GITHUB_OUTPUT"
+            echo "reason=docs-harvest-or-tests-only"
+          fi
+
       - name: Synth
+        if: steps.need_synth.outputs.synth == 'true'
         run: npm run synth
