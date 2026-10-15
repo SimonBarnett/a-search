@@ -20,11 +20,11 @@ const DEFAULT_ON = [
   'partnerize',
   'tradedoubler',
   'webgains',
+  'wix',
 ];
 const DEFAULT_OFF = [
   'admitad',
   'flexoffers',
-  'wix',
   'woocommerce',
   'bol',
   'aliexpress',

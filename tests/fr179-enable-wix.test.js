@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'wix', 'src', 'worker.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -81,15 +81,16 @@ describe('FR-179 enable wix', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bwix\b/i);
   });
 
-  it('synth: wix live+sandbox workers+queues; secret refs; dark ids absent', () => {
-    let cdk;
-    try {
-      cdk = require('aws-cdk-lib');
-    } catch (err) {
-      // Local seats without cdk deps still pin source; CI runs synth.
-      assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
-      return;
-    }
+  it(
+    'synth: wix live+sandbox workers+queues; secret refs; dark ids absent',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
+    const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
     const outdir = path.join(root, 'cdk.out-fr179');
     fs.rmSync(outdir, { recursive: true, force: true });
@@ -143,5 +144,6 @@ describe('FR-179 enable wix', () => {
       );
       assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
     }
-  });
+    },
+  );
 });

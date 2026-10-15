@@ -42,7 +42,7 @@ describe('MRB-1568 FR-173 hostile', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bwebgains\b/i);
   });
 
-  it('fr142/fr143 floors expect 26 primaries after webgains enable', () => {
+  it('fr142/fr143 floors expect 28 primaries after wix+webgains keep-both', () => {
     const fr142 = fs.readFileSync(
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
