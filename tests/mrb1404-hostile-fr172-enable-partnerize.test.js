@@ -26,8 +26,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('partnerize').enabled.live, true);
     assert.equal(byId.get('partnerize').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
-    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.live, false, 'GBP/UK hold bol');
+    assert.equal(byId.get('bol').enabled.sandbox, false, 'GBP/UK hold bol');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
   });
@@ -41,13 +41,13 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     assert.match(text, /PARTNERIZE_PUBLISHER_ID/);
   });
 
-  it('FR-142/143 pins use 30 primary/DLQ floors (15 enabled x 2)', () => {
+  it('FR-142/143 pins use 30 primary/DLQ floors (12 enabled x 2)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 30 primary queues/);
-    assert.match(fr143, /expected 30 DLQ depth alarms/);
+    assert.match(fr142, /expected 24 primary queues/);
+    assert.match(fr143, /expected 24 DLQ depth alarms/);
     assert.match(fr142, /'partnerize'/);
   });
 

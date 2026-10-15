@@ -48,22 +48,27 @@ Fail-when: credentials missing, selftest red, bulk enable, secrets in git.
 Already enabled (Phase-1; do not flip false here): `amazon`, `ebay`, `rakuten`,
 `cj`, `awin`, `impact`.
 
-| id | kind | Enable FR | Issue |
-|----|------|-----------|------:|
-| `kelkoo` | live | FR-167 | [#1013](https://github.com/SimonBarnett/a-search/issues/1013) |
-| `skimlinks` | live | FR-168 | [#1015](https://github.com/SimonBarnett/a-search/issues/1015) |
-| `aliexpress` | live | FR-169 | [#1016](https://github.com/SimonBarnett/a-search/issues/1016) |
-| `etsy` | live | FR-170 | [#1017](https://github.com/SimonBarnett/a-search/issues/1017) |
-| `bol` | live | FR-171 | [#1018](https://github.com/SimonBarnett/a-search/issues/1018) |
-| `partnerize` | local | FR-172 | [#1019](https://github.com/SimonBarnett/a-search/issues/1019) |
-| `webgains` | local | FR-173 | [#1020](https://github.com/SimonBarnett/a-search/issues/1020) |
-| `tradedoubler` | local | FR-174 | [#1021](https://github.com/SimonBarnett/a-search/issues/1021) |
-| `admitad` | local | FR-175 | [#1022](https://github.com/SimonBarnett/a-search/issues/1022) |
-| `flexoffers` | local | FR-176 | [#1023](https://github.com/SimonBarnett/a-search/issues/1023) |
-| `avantlink` | local | FR-177 | [#1024](https://github.com/SimonBarnett/a-search/issues/1024) |
-| `shopify` | local | FR-178 | [#1025](https://github.com/SimonBarnett/a-search/issues/1025) |
-| `wix` | local | FR-179 | [#1026](https://github.com/SimonBarnett/a-search/issues/1026) |
-| `woocommerce` | local | FR-180 | [#1027](https://github.com/SimonBarnett/a-search/issues/1027) |
+**GBP/UK market hold (LOCKED 2026-10-14):** do **not** spend tokens enabling or
+fixing `bol`, `aliexpress`, `avantlink`, `flexoffers`, or `admitad`. See
+[provider-shortlist.md](provider-shortlist.md) Market hold + FR-252..257.
+Disable FRs: FR-253 bol, FR-254 aliexpress, FR-255 avantlink. Folders stay.
+
+| id | kind | Enable FR | Issue | Hold? |
+|----|------|-----------|------:|-------|
+| `kelkoo` | live | FR-167 | [#1013](https://github.com/SimonBarnett/a-search/issues/1013) | no |
+| `skimlinks` | live | FR-168 | [#1015](https://github.com/SimonBarnett/a-search/issues/1015) | no |
+| `aliexpress` | live | FR-169 | [#1016](https://github.com/SimonBarnett/a-search/issues/1016) | **HOLD** - disable FR-254 |
+| `etsy` | live | FR-170 | [#1017](https://github.com/SimonBarnett/a-search/issues/1017) | no |
+| `bol` | live | FR-171 | [#1018](https://github.com/SimonBarnett/a-search/issues/1018) | **HOLD** - disable FR-253 |
+| `partnerize` | local | FR-172 | [#1019](https://github.com/SimonBarnett/a-search/issues/1019) | no |
+| `webgains` | local | FR-173 | [#1020](https://github.com/SimonBarnett/a-search/issues/1020) | no |
+| `tradedoubler` | local | FR-174 | [#1021](https://github.com/SimonBarnett/a-search/issues/1021) | no |
+| `admitad` | local | FR-175 | [#1022](https://github.com/SimonBarnett/a-search/issues/1022) | **HOLD** - stay dark FR-256 |
+| `flexoffers` | local | FR-176 | [#1023](https://github.com/SimonBarnett/a-search/issues/1023) | **HOLD** - stay dark FR-256 |
+| `avantlink` | local | FR-177 | [#1024](https://github.com/SimonBarnett/a-search/issues/1024) | **HOLD** - disable FR-255 |
+| `shopify` | local | FR-178 | [#1025](https://github.com/SimonBarnett/a-search/issues/1025) | no (merchant) |
+| `wix` | local | FR-179 | [#1026](https://github.com/SimonBarnett/a-search/issues/1026) | no (merchant) |
+| `woocommerce` | local | FR-180 | [#1027](https://github.com/SimonBarnett/a-search/issues/1027) | no (merchant) |
 
 ## Other Phase-4 waves (index only)
 
