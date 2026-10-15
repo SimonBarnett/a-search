@@ -71,7 +71,37 @@ async function handleMessage(msg, deps) {
   };
 }
 
+/**
+ * FR-022 worker contract: run(msg, deps) (same pattern as shopify/wix).
+ * @param {object} msg - SQS fan-out payload
+ * @param {object} [deps]
+ */
+async function run(msg, deps) {
+  if (!msg || typeof msg !== 'object') {
+    throw new Error('run(msg) requires a message object');
+  }
+  return handleMessage(msg, deps);
+}
+
+/**
+ * SQS Lambda entry. Parses Records and calls run(msg).
+ * @param {{ Records?: Array<{ body: string }> }} event
+ * @param {object} [deps]
+ */
+async function handler(event, deps) {
+  const records = (event && event.Records) || [];
+  const results = [];
+  for (const record of records) {
+    const body = record && record.body;
+    const msg = typeof body === 'string' ? JSON.parse(body) : body;
+    results.push(await run(msg, deps));
+  }
+  return { ok: true, results };
+}
+
 module.exports = {
+  handler,
+  run,
   handleMessage,
   EnvIsolationError,
   SquarespaceMssqlConfigError,

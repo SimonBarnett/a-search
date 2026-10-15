@@ -49,7 +49,7 @@ test('mrb1541: wix enabled merchant both envs; floors 26; no AFFILIATE; woocomme
     'utf8',
   );
   assert.match(worker, /resolveWixProductUrl/);
-  assert.match(worker, /FR-179 merchant/);
+  assert.match(worker, /FR-179\).*merchant|FR-179 merchant/);
   assert.doesNotMatch(worker, /sid=.*aff|WIX_AFFILIATE_ID/);
 
   const fr179 = fs.readFileSync(path.join(root, 'docs', 'fr', 'FR-179.md'), 'utf8');
