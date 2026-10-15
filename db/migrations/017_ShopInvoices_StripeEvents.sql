@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-239 / #1353: Shop subscription columns + ShopInvoices + StripeEvents.
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never modify madeiradb (FR-251).
 
