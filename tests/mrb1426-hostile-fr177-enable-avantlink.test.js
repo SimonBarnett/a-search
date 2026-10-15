@@ -2,7 +2,7 @@
 
 /**
  * MRB #1426 hostile pin: FR-177 avantlink credential keys retained;
- * GBP/UK market hold (FR-255) keeps avantlink+bol disabled; floors 12x2=24.
+ * GBP/UK market hold (FR-255) keeps avantlink+bol disabled; floors 14x2=28 keep-both wix+webgains.
  */
 
 const test = require('node:test');
@@ -12,7 +12,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 
-test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; floors 26', () => {
+test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; floors 28', () => {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'providers/registry.json'), 'utf8'));
   const byId = new Map(reg.sources.map((s) => [s.id, s]));
   const al = byId.get('avantlink');
@@ -40,8 +40,8 @@ test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; fl
   assert.ok(enabled.includes('partnerize'));
   assert.ok(enabled.includes('tradedoubler'));
   assert.ok(enabled.includes('shopify'));
-  assert.equal(enabled.length, 12);
-  assert.equal(enabled.length * 2, 24);
+  assert.equal(enabled.length, 14);
+  assert.equal(enabled.length * 2, 28);
 });
 
 test('mrb1426: CDK PROVIDER_CREDENTIAL_KEYS still includes avantlink FR-138 names', () => {
