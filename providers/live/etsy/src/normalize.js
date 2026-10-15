@@ -87,7 +87,7 @@ function normalizeEtsyListing(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['ETSY_TRACKING_ID'],
+      source: 'etsy',
     });
   }
 
