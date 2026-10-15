@@ -126,8 +126,7 @@ describe('FR-108 wix selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; wix enabled (FR-179)', () => {
-    // FR #2451 / FR-179: enabled true; keep rateLimit floors.
+  it('registry rateLimit present; enabled after FR-179', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
