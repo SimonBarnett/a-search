@@ -74,7 +74,9 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
       assert.match(text, new RegExp(ENABLE_FR_BY_ID[id]));
     }
     assert.match(text, /FR-181|Creators/);
-    assert.match(text, /FR-186|WAF/);
+    // #1381 / #1033: WAF annotated DROPPED (not a planned wave).
+    assert.match(text, /WAF[\s\S]{0,160}DROPPED|#1033[\s\S]{0,80}not planned/i);
+    assert.match(text, /FR-186/);
     assert.match(text, /FR-190|Multi-region|multi-region/);
   });
 
