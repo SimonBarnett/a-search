@@ -30,6 +30,32 @@ live stays PA-API until a later enable FR. Implementation: **FR-182+**
 (client + fixtures, flagged off). See [docs/fr/FR-181.md](fr/FR-181.md).
 
 
+## Market hold - GBP / UK (LOCKED 2026-10-14)
+
+Target market: **UK shoppers / GBP catalogue** (Club Madeira / smartcatalogue.uk).
+
+**Rule:** Hold any merchant, affiliate, or provider that does not sell specifically
+in GBP, or is irrelevant to that market. **Do not delete** provider folders.
+**Spend no more tokens** on hold ids (no enable tips, no fix FRs). Keep main
+UK-capable networks and merchant platforms. Affiliates: prefer best UK coverage.
+
+Parent FR pack: [feature-request-gbp-market-hold-2026-10-14.md](feature-request-gbp-market-hold-2026-10-14.md)
+(FR-252 docs; FR-253..255 registry disable; FR-256 backlog hold; FR-257 floors).
+
+| Hold id | Why | Action |
+|---------|-----|--------|
+| `bol` | Benelux NL/BE; EUR primary | Registry false both envs (FR-253); folder stays |
+| `aliexpress` | Not GBP-native; weak club fit | Registry false both envs (FR-254); folder stays |
+| `avantlink` | US outdoor/retail feeds | Registry false both envs (FR-255); folder stays |
+| `flexoffers` | US mid-tail feeds | Stay dark; close enable backlog (FR-256) |
+| `admitad` | Broad geo; weak GBP focus | Stay dark; no reopen (FR-256) |
+
+Keep (continue when needed): `amazon` (amazon.co.uk), `ebay`, `rakuten`, `cj`,
+`kelkoo`, `skimlinks`, `etsy`, `awin`, `impact`, `partnerize`, `tradedoubler`,
+`webgains` path, and merchant platforms `shopify` / `wix` / `woocommerce` (+ later
+GBP shop connects).
+
+
 ## Registry candidates (all in repo this pass)
 
 | id | Kind | Default enabled | Why include | Implementation note |
@@ -43,14 +69,14 @@ live stays PA-API until a later enable FR. Implementation: **FR-182+**
 | `partnerize` | local | true | Travel/finance depth | Enabled FR-172; MSSQL Parts + feed hooks |
 | `webgains` | local | false | EU retail | Overlaps Awin; useful as second EU feed |
 | `tradedoubler` | local | true | EU aggregator | Same local pattern as Awin |
-| `admitad` | local | false | Broad geo | Quality varies by market |
+| `admitad` | local | false | **HOLD** broad geo / weak GBP | Stay dark (FR-256); do not enable |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
 | `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
-| `aliexpress` | live | true | Volume/price | Enabled FR-169; compliance heavier for club catalogues |
-| `etsy` | live | true | Handmade/niche | Enabled FR-170;  Open API v3; smaller club overlap |
-| ol | live | true | NL/BE marketplace | Enabled FR-171; Benelux marketplace |
-| `flexoffers` | local | false | US mid-tail feeds | After Impact |
-| `avantlink` | local | true | US outdoor/retail feeds | After Impact |
+| `aliexpress` | live | false (**HOLD**) | Not GBP-native | Disable both envs FR-254; folder stays |
+| `etsy` | live | true | Handmade/niche | Enabled FR-170; Open API v3; smaller club overlap |
+| `bol` | live | false (**HOLD**) | NL/BE Benelux EUR | Disable both envs FR-253; folder stays |
+| `flexoffers` | local | false | **HOLD** US mid-tail | Stay dark (FR-256); do not enable |
+| `avantlink` | local | false (**HOLD**) | US outdoor/retail | Disable both envs FR-255; folder stays |
 | `shopify` | local | true | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
 | `wix` | local | false | Merchant store catalogues (Madeira) | Wix Stores API -> MSSQL Parts |
 | `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST -> MSSQL Parts |
@@ -78,9 +104,9 @@ flip only that id, pin others stay dark) - see
     { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
     { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_KELKOO_URL" },
     { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
-    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ALIEXPRESS_URL" },
+    { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ALIEXPRESS_URL" },
     { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ETSY_URL" },
-    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_BOL_URL" },
+    { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },
     { "id": "awin", "kind": "local", "folder": "providers/local/awin", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AWIN_URL" },
     { "id": "impact", "kind": "local", "folder": "providers/local/impact", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_IMPACT_URL" },
     { "id": "partnerize", "kind": "local", "folder": "providers/local/partnerize", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_PARTNERIZE_URL" },
@@ -88,7 +114,7 @@ flip only that id, pin others stay dark) - see
     { "id": "tradedoubler", "kind": "local", "folder": "providers/local/tradedoubler", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_TRADEDOUBLER_URL" },
     { "id": "admitad", "kind": "local", "folder": "providers/local/admitad", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ADMITAD_URL" },
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
-    { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_AVANTLINK_URL" },
+    { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
     { "id": "shopify", "kind": "local", "folder": "providers/local/shopify", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SHOPIFY_URL" },
     { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WIX_URL" },
     { "id": "woocommerce", "kind": "local", "folder": "providers/local/woocommerce", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WOOCOMMERCE_URL" }
