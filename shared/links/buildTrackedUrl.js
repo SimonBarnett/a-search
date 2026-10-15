@@ -1,56 +1,64 @@
 'use strict';
 
 /**
- * Shared tracked / affiliate URL builder (FR-057a).
+ * Shared tracked / affiliate URL builder (FR-057a + FR-248).
  *
- * Stamps JWT `userId` as the tenant and injects required provider `.env`
- * account fields as query params. Never hardcode publisher IDs; never take
- * tenant from the request body (callers pass JWT claim only).
- *
- * Provider wiring is out of scope for FR-057a — see FR-057c..h.
- *
- * Prefer this path over `worker/lib/` (FR-047 shared layer home).
+ * Prefer `source` + buildOutboundUrl (per-network tenant slots). Legacy callers
+ * without `source` keep query stamping via accountQueryMap / tenantParam.
+ * JWT userId (or clubId on /go) is the tenant; never hardcode publisher
+ * account ids - read them from provider .env / Secrets Manager only.
  */
 
-class TrackedUrlError extends Error {
-  /**
-   * @param {string} message
-   * @param {string} [code]
-   */
-  constructor(message, code = 'tracked_url') {
-    super(message);
-    this.name = 'TrackedUrlError';
-    this.code = code;
-  }
-}
+const {
+  DEFAULT_ACCOUNT_QUERY_MAP: NETWORK_ACCOUNT_MAP,
+} = require('./networkParams');
+const {
+  buildOutboundUrl,
+  TrackedUrlError,
+} = require('./buildOutboundUrl');
 
-/**
- * Default env-key → query-param names for known a-search accounts.
- * Callers may override via `accountQueryMap`.
- */
+/** @deprecated use networkParams.DEFAULT_ACCOUNT_QUERY_MAP - kept for FR-057 tests */
 const DEFAULT_ACCOUNT_QUERY_MAP = {
-  AMAZON_PARTNER_TAG: 'tag',
-  AWIN_PUBLISHER_ID: 'awinaffid',
-  EBAY_CAMPAIGN_ID: 'campid',
-  CJ_WEBSITE_ID: 'sid',
-  RAKUTEN_SITE_ID: 'mid',
-  IMPACT_CAMPAIGN_ID: 'subId1',
+  ...NETWORK_ACCOUNT_MAP,
 };
 
 /**
  * @param {object} opts
- * @param {string} opts.url - Absolute http(s) product / offer URL
- * @param {string} opts.userId - JWT tenant claim (required, non-empty)
- * @param {string} [opts.env] - live|sandbox (stamped as a_search_env when set)
- * @param {Record<string, string|undefined>} opts.envVars - provider folder env
- * @param {string[]} opts.requiredAccountKeys - env keys that must be present
- * @param {Record<string, string>} [opts.accountQueryMap] - env key → query name
- * @param {string} [opts.tenantParam='userId'] - query param for the tenant
+ * @param {string} opts.url
+ * @param {string} opts.userId - JWT tenant claim (API path) or clubId
+ * @param {string} [opts.source] - registry source id (FR-248)
+ * @param {string} [opts.env]
+ * @param {Record<string, string|undefined>} opts.envVars
+ * @param {string[]} [opts.requiredAccountKeys]
+ * @param {Record<string, string>} [opts.accountQueryMap]
+ * @param {string} [opts.tenantParam]
+ * @param {string} [opts.partnerId]
+ * @param {string} [opts.clickId]
+ * @param {object} [opts.partnerUser]
+ * @param {boolean} [opts.upgradedClub]
+ * @param {Set<string>|string[]} [opts.provisionedAmazonTags]
+ * @param {Function} [opts.log]
  * @returns {string}
  */
 function buildTrackedUrl(opts) {
   if (!opts || typeof opts !== 'object') {
     throw new TrackedUrlError('buildTrackedUrl requires an options object');
+  }
+
+  if (opts.source != null && String(opts.source).trim() !== '') {
+    return buildOutboundUrl(String(opts.source).trim(), {
+      url: opts.url,
+      tenantId: opts.userId,
+      partnerId: opts.partnerId,
+      partnerUser: opts.partnerUser,
+      partnerIsPartner: opts.partnerIsPartner,
+      clickId: opts.clickId,
+      env: opts.env,
+      envVars: opts.envVars,
+      upgradedClub: opts.upgradedClub,
+      provisionedAmazonTags: opts.provisionedAmazonTags,
+      log: opts.log,
+    });
   }
 
   const userId = opts.userId;
@@ -136,4 +144,5 @@ module.exports = {
   TrackedUrlError,
   DEFAULT_ACCOUNT_QUERY_MAP,
   buildTrackedUrl,
+  buildOutboundUrl,
 };

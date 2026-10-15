@@ -17,6 +17,8 @@ const {
   ensureCustomer,
 } = require('../components/customers');
 const { hostTxtStatus } = require('../dns/hostTxtStatus');
+const { buildOutboundUrl } = require('../links/buildOutboundUrl');
+const { getSourceClass } = require('../links/networkParams');
 
 class GoError extends Error {
   /**
@@ -57,13 +59,18 @@ function findPart(parts, part) {
 }
 
 /**
- * Default outbound URL stamp (FR-248 lite for approved path).
- * merchant class -> plain destination; else require clubId + destination.
+ * Default outbound URL stamp (FR-248): per-source buildOutboundUrl at click time.
+ * merchant class -> plain destination; else clubId as tenantId.
  * @param {{
  *   part: object,
  *   customer: object,
  *   clickId: string,
  *   env: string,
+ *   envMap?: Record<string, string|undefined>,
+ *   partnerUser?: object,
+ *   upgradedClub?: boolean,
+ *   provisionedAmazonTags?: Set<string>|string[],
+ *   log?: Function,
  * }} args
  * @returns {string}
  */
@@ -78,10 +85,16 @@ function defaultStampUrl(args) {
   if (!dest) {
     throw new GoError('tracking_unavailable', 'part missing destination url');
   }
-  const cls = String(part.class || part.Class || 'affiliate')
+  const source =
+    part.source != null
+      ? String(part.source).trim().toLowerCase()
+      : '';
+  const cls = String(
+    part.class || part.Class || getSourceClass(source) || 'affiliate',
+  )
     .trim()
     .toLowerCase();
-  if (cls === 'merchant') {
+  if (cls === 'merchant' || getSourceClass(source) === 'merchant') {
     return dest;
   }
   const clubId =
@@ -91,25 +104,34 @@ function defaultStampUrl(args) {
   if (!clubId) {
     throw new GoError('tracking_unavailable');
   }
-  let parsed;
-  try {
-    parsed = new URL(dest);
-  } catch {
-    throw new GoError('tracking_unavailable', 'invalid destination url');
+  if (!source) {
+    throw new GoError('tracking_unavailable', 'part missing source');
   }
-  // Minimal stamp: tenant + clickId (full per-source table is FR-248).
-  parsed.searchParams.set('tenantId', clubId);
-  parsed.searchParams.set('clickId', args.clickId);
-  if (args.env) parsed.searchParams.set('a_search_env', args.env);
   const partnerId =
     args.customer && args.customer.partnerId != null
       ? String(args.customer.partnerId).trim()
       : '';
-  if (partnerId) parsed.searchParams.set('partnerId', partnerId);
-  const source =
-    part.source != null ? String(part.source).trim() : '';
-  if (source) parsed.searchParams.set('source', source);
-  return parsed.toString();
+  try {
+    return buildOutboundUrl(source, {
+      url: dest,
+      tenantId: clubId,
+      partnerId,
+      partnerUser: args.partnerUser,
+      partnerIsPartner: args.partnerIsPartner,
+      clickId: args.clickId,
+      env: args.env,
+      envVars: args.envMap || args.envVars || process.env,
+      upgradedClub: args.upgradedClub === true,
+      provisionedAmazonTags: args.provisionedAmazonTags,
+      log: args.log,
+    });
+  } catch (err) {
+    const code = err && err.code ? String(err.code) : '';
+    if (/tracked_url|missing/.test(code) || /tracked_url/.test(String(err && err.message))) {
+      throw new GoError('tracking_unavailable');
+    }
+    throw err;
+  }
 }
 
 /**
@@ -229,6 +251,12 @@ async function resolveGo(opts) {
       env,
       widgetGuid: guid,
       host,
+      envMap: opts.envMap || opts.envVars,
+      partnerUser: opts.partnerUser,
+      partnerIsPartner: opts.partnerIsPartner,
+      upgradedClub: opts.upgradedClub,
+      provisionedAmazonTags: opts.provisionedAmazonTags,
+      log: opts.log,
     });
   } catch (err) {
     if (err instanceof GoError) throw err;

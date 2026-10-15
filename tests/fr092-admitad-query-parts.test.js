@@ -113,7 +113,7 @@ describe('FR-092 admitad MSSQL queryParts', () => {
       feedKey: 'prog1',
       stock: 'in_stock',
     });
-    assert.match(String(out.products[0].url), /tag=ad-web-test/);
+    assert.match(String(out.products[0].url), /admitad_uid=ad-web-test&subid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
