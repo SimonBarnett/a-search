@@ -12,7 +12,7 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/wix`. Enabled: live=false, sandbox=false (stay dark until account details exist).
+Registry folder `providers/local/wix`. Enabled: live=true, sandbox=true (FR-179 merchant).
 `rateLimit`: maxConcurrency 1 / minIntervalMs 250 (FR-108).
 
 ## Catalogue client (FR-105)
@@ -35,16 +35,15 @@ SELECT dbo.Parts WHERE Source='wix' (maintainer owns store sync / feeds).
 ## Worker + queryParts (FR-107)
 
 `src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
-Relative product Urls resolve against `WIX_STORE_URL`; tracked links stamp `WIX_AFFILIATE_ID` as `sid`.
-Stay-dark; no "not wired" stub on the happy path.
+Relative product Urls resolve against `WIX_STORE_URL` to absolute http(s) (merchant; no affiliate sid stamp).
 Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (FR-106) are separate.
 
 ## Selftest + pacing (FR-108)
 
 `src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
 `WIX_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
-for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
-(stay-dark; do not flip `enabled`). Pin: `tests/fr108-wix-selftest-probe.test.js`.
+for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`.
+Pin: `tests/fr108-wix-selftest-probe.test.js`. Enable pin: `tests/fr179-enable-wix.test.js`.
 
 ## Merchant connect (FR-237)
 
@@ -64,4 +63,4 @@ Pin: `tests/fr237-wix-connect.test.js`. Docs: `docs/fr/FR-237.md`.
 
 ## Env
 
-See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_STORE_URL`, `WIX_AFFILIATE_ID`, optional `WIX_API_BASE`; merchant connect uses `WIX_APP_ID` / `WIX_APP_SECRET` from Secrets Manager). Queue env: `SQS_WIX_URL`.
+See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_CLIENT_ID`, `WIX_STORE_URL`, optional `WIX_API_BASE`; merchant connect uses `WIX_APP_ID` / `WIX_APP_SECRET` from Secrets Manager). Queue env: `SQS_WIX_URL`. No `WIX_AFFILIATE_ID`.
