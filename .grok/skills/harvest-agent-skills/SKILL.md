@@ -228,3 +228,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR-235 MRB keep-both with FR-236: preserve GET/DELETE /merchant/shops and Shopify webhook; export createMemoryVault+createCredentialsVault; registry aliases getByShopId/updateStatus/deleteByShopId; allow pending_payment->suspended for uninstall
 - FR-235 upsertConnect: unique (env,provider,providerShopId); same merchant refreshes credentials; other merchant throws ShopConflictError 409 shop_already_connected; allow fixture provider for FR-216 tests
 - docs/mrb superseding open harvest tip: git checkout origin/main -- SKILL.md then UTF8 append lesson bullet (never assign git-show multiline to a PowerShell string or the book collapses)
+- FR-232 mint must share Customers store with /parts: separate createWidgetsRegistry left copy-page GUIDs widget_not_found on first bind - use getDefaultCustomersStore across widgetsCreate/parts/go
