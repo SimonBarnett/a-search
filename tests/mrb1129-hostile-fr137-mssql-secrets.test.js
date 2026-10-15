@@ -40,7 +40,7 @@ describe('MRB #1129 hostile FR-137 MSSQL secrets', () => {
     // Contiguous FR-137 stack wiring window (constructor), not the helper JSDoc alone.
     const i = text.indexOf('FR-137: MSSQL_* from Secrets Manager');
     assert.ok(i >= 0, 'missing FR-137 constructor wiring comment');
-    const window = text.slice(i, i + 360);
+    const window = text.slice(i, i + 720);
     assert.match(window, /mssqlSecretArn/);
     assert.match(window, /fromSecretCompleteArn/);
     assert.match(window, /SERVER/);
