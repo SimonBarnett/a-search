@@ -1,0 +1,34 @@
+{
+  "providers": [
+    {
+      "id": "x",
+      "label": "X",
+      "enabled": false,
+      "kind": "oauth"
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "enabled": false,
+      "kind": "oauth"
+    },
+    {
+      "id": "facebook",
+      "label": "Facebook",
+      "enabled": false,
+      "kind": "oauth"
+    },
+    {
+      "id": "google",
+      "label": "Google",
+      "enabled": false,
+      "kind": "oauth"
+    },
+    {
+      "id": "instagram",
+      "label": "Instagram",
+      "enabled": false,
+      "kind": "oauth"
+    }
+  ]
+}
