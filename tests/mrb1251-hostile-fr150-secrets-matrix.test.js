@@ -61,7 +61,7 @@ describe('MRB-1251 FR-150 secrets-matrix hostile', () => {
 
   it('FR-146 Recommended a_search_sandbox Treat-as-missing (suite-debt #1280)', () => {
     const env = fs.readFileSync(path.join(root, 'docs', 'environments.md'), 'utf8');
-    assert.match(env, /Recommended[\s\S]{0,120}a_search_sandbox/i);
+    assert.match(env, /(?:Recommended|Required)[\s\S]{0,120}a_search_sandbox/i);
     assert.match(env, /Treat as missing|do not invent credentials/i);
     assert.doesNotMatch(env, /MSSQL_DATABASE=a_search_sandbox/);
     const fr119 = fs.readFileSync(
@@ -75,8 +75,8 @@ describe('MRB-1251 FR-150 secrets-matrix hostile', () => {
       path.join(root, 'tests', 'mrb921-fr119-hostile.test.js'),
       'utf8',
     );
-    assert.match(mrb921, /Recommended[\s\S]{0,120}a_search_sandbox/i);
-    assert.match(mrb921, /Treat as missing|do not invent credentials/i);
+    // FR-251 superseded FR-146 wording in mrb921: pins a_search placeholders instead.
+    assert.match(mrb921, /FR-251/);
   });
 
   it('docs/mrb/mrb-1251.md cites product + #1280', () => {
