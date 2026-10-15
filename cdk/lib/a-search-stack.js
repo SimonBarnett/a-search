@@ -35,6 +35,15 @@ const WORKER_LAMBDA_TIMEOUT_SEC = 60;
 const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
 
 /**
+ * FR-2139 / FR-240: shop-sync FIFO consumer. Catalogue pages can run long;
+ * visibility must be strictly greater than Lambda timeout (6x buffer).
+ */
+const SHOP_SYNC_LAMBDA_TIMEOUT_SEC = 300;
+const SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC = SHOP_SYNC_LAMBDA_TIMEOUT_SEC * 6;
+const SHOP_SYNC_FIFO_BASE = 'a-search-shop-sync.fifo';
+const SHOP_SYNC_MAX_RECEIVE_COUNT = 5;
+
+/**
  * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
  * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
  * maintainer, onboarding: 512MB.
@@ -300,6 +309,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
   ],
+  // FR-179: enable wix (merchant app + selftest fallback) -> FR-138
+  wix: [
+    'WIX_CLIENT_ID',
+    'WIX_API_TOKEN',
+    'WIX_SITE_ID',
+    'WIX_STORE_URL',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -335,6 +351,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
+  },
+  // FR-179 merchant API base default
+  wix: {
+    WIX_API_BASE: 'https://www.wixapis.com',
   },
 };
 
@@ -981,6 +1001,95 @@ class ASearchStack extends cdk.Stack {
       schedule,
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
+
+    // FR-2139 / FR-240 follow-up: SQS FIFO a-search-shop-sync.fifo + DLQ + consumer.
+    // MessageGroupId=shopId; maxReceiveCount 5; visibility > Lambda timeout.
+    // FR-239 live transition will call onShopLive (enqueue); grant send to entry + maintainers now.
+    /** @param {string} fifoBase e.g. a-search-shop-sync.fifo */
+    const stagedFifoName = (fifoBase) => {
+      const raw = String(fifoBase || '');
+      if (!raw.endsWith('.fifo')) return stagedName(raw);
+      return `${stagedName(raw.slice(0, -'.fifo'.length))}.fifo`;
+    };
+    const shopSyncQueueName = stagedFifoName(SHOP_SYNC_FIFO_BASE);
+    const shopSyncDlqName = stagedFifoName('a-search-shop-sync-dlq.fifo');
+    const shopSyncDlq = new sqs.Queue(this, 'ShopSyncDeadLetterQueue', {
+      queueName: shopSyncDlqName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const shopSyncQueue = new sqs.Queue(this, 'ShopSyncFifoQueue', {
+      queueName: shopSyncQueueName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(
+        SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC,
+      ),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: shopSyncDlq,
+        maxReceiveCount: SHOP_SYNC_MAX_RECEIVE_COUNT,
+      },
+    });
+    entry.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerLive.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerSandbox.addEnvironment(
+      'SQS_SHOP_SYNC_URL',
+      shopSyncQueue.queueUrl,
+    );
+    shopSyncQueue.grantSendMessages(entry);
+    shopSyncQueue.grantSendMessages(maintainerLive);
+    shopSyncQueue.grantSendMessages(maintainerSandbox);
+
+    const shopSyncWorker = new lambda.Function(this, 'ShopSyncWorkerFunction', {
+      functionName: stagedName('a-search-shop-sync-worker'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'maintainer/src/shopSyncWorker.handler',
+      code: maintainerCode,
+      timeout: cdk.Duration.seconds(SHOP_SYNC_LAMBDA_TIMEOUT_SEC),
+      memorySize: HEAVY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_ENV: 'live',
+        SQS_SHOP_SYNC_URL: shopSyncQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'ShopSyncWorkerLogGroup'),
+    });
+    wireResultsBucketAccess(shopSyncWorker, resultsBucket);
+    wireMssqlSecretEnv(shopSyncWorker, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
+    shopSyncQueue.grantConsumeMessages(shopSyncWorker);
+    shopSyncWorker.addEventSource(
+      new SqsEventSource(shopSyncQueue, { batchSize: 1 }),
+    );
+
+    new cdk.CfnOutput(this, 'ShopSyncFifoQueueUrl', {
+      value: shopSyncQueue.queueUrl,
+      description: 'FR-2139/FR-240 SQS FIFO a-search-shop-sync.fifo',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncDeadLetterQueueUrl', {
+      value: shopSyncDlq.queueUrl,
+      description: 'FR-2139 DLQ for shop-sync FIFO (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
+      value: shopSyncWorker.functionName,
+    });
+
+    const shopSyncDlqAlarm = new cloudwatch.Alarm(this, 'ShopSyncDlqDepthAlarm', {
+      alarmName: stagedName('a-search-shop-sync-dlq-depth'),
+      alarmDescription:
+        'FR-2139: shop-sync DLQ ApproximateNumberOfMessagesVisible >= 1',
+      metric: shopSyncDlq.metricApproximateNumberOfMessagesVisible(),
+      threshold: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    shopSyncDlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
 
     // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
     // FR-132: stage onboarding/src + shared/ (handler path under staged root).

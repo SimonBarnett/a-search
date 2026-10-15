@@ -1,6 +1,6 @@
 'use strict';
 
-/** FR-107: wix MSSQL queryParts + writeResults (stay-dark). */
+/** FR-107: wix MSSQL queryParts + writeResults; enabled both envs (FR-179). */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -39,7 +39,6 @@ const mssqlEnv = {
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
   WIX_STORE_URL: 'https://madeira-demo.wixsite.com/shop',
-  WIX_AFFILIATE_ID: 'wx-aff-test',
 };
 
 function mockPool(recordset) {
@@ -116,8 +115,7 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.wixsite\.com/);
-    // FR-248 merchant: plain product URL (no affiliate sid stamp)
-    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
+    // FR-179/FR-248 merchant: plain product URL (no affiliate sid stamp)    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -160,7 +158,6 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
           env: {
             A_SEARCH_ENV: 'sandbox',
             S3_RESULTS_BUCKET: 'b',
-            WIX_AFFILIATE_ID: 'x',
             WIX_STORE_URL: 'https://x.wixsite.com/shop',
           },
           putObject: async () => {
@@ -229,14 +226,15 @@ describe('FR-107 wix MSSQL queryParts + worker', () => {
     );
   });
 
-  it('registry wix stays dark', () => {
+  it('registry wix enabled both envs (FR-179)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'wix');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
   });
 
   it('searchTextFromMsg and mssqlConfigFromEnv helpers', () => {

@@ -3,7 +3,7 @@
 /**
  * Wix local provider worker (FR-607 stub + FR-107 SqlClient SELECT).
  * Search reads MSSQL Parts (ingest is maintainer / FR-105..106) -> normalize -> writeResults.
- * Stay-dark: registry enabled stays false.
+ * Enabled both envs (FR-179); merchant class, no affiliate stamp.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]
@@ -73,8 +73,7 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    // FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).
-    const envVars = (track && typeof track === 'object' && track.envVars) || {};
+    // FR-179/FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).    const envVars = (track && typeof track === 'object' && track.envVars) || {};
     url = resolveWixProductUrl(row.Url, envVars);
   }
 
