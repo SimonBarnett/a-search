@@ -28,7 +28,7 @@ const { TrackedUrlError } = require('../shared/links/buildTrackedUrl');
 const envVars = { EBAY_CAMPAIGN_ID: 'camp-42' };
 
 describe('FR-057e ebay buildTrackedUrl wiring', () => {
-  it('normalizeEbayItem stamps userId + campid for two tenants', () => {
+  it('normalizeEbayItem stamps customid + campid for two tenants (FR-248)', () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const item = fixture.itemSummaries[0];
     const a = normalizeEbayItem(item, {
@@ -41,9 +41,10 @@ describe('FR-057e ebay buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
+    assert.match(a.url, /[?&]customid=U-A/);
+    assert.match(b.url, /[?&]customid=U-B/);
     assert.match(a.url, /campid=camp-42/);
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.notEqual(a.url, b.url);
   });
 
@@ -99,7 +100,7 @@ describe('FR-057e ebay buildTrackedUrl wiring', () => {
         putObject: async () => ({}),
       },
     );
-    assert.match(out.products[0].url, /userId=U-EBAY/);
+    assert.match(out.products[0].url, /[?&]customid=U-EBAY/);
     assert.match(out.products[0].url, /campid=camp-42/);
   });
 
