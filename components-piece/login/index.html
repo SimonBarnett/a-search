@@ -42,9 +42,20 @@
       var intentEl = document.getElementById('intent');
       if (intentEl && params.get('intent')) intentEl.value = params.get('intent');
       var redirectUri = params.get('redirect_uri') || '';
+      function isAllowedExtensionRedirectUri(uri) {
+        // MRB #2224: never open-redirect JWT to arbitrary hosts.
+        try {
+          var u = new URL(String(uri || ''));
+          if (u.protocol === 'chrome-extension:') return true;
+          if (u.protocol === 'https:' && /\.chromiumapp\.org$/i.test(u.hostname)) return true;
+          return false;
+        } catch (e) {
+          return false;
+        }
+      }
       document.querySelectorAll('.btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          if (!redirectUri) return;
+          if (!redirectUri || !isAllowedExtensionRedirectUri(redirectUri)) return;
           // Production IdP / OAuth callback should land here with a real JWT.
           // Local UAT: set window.A_SEARCH_EXT_FIXTURE_JWT before click.
           var jwt = window.A_SEARCH_EXT_FIXTURE_JWT || '';

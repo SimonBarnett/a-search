@@ -101,9 +101,31 @@ function isClubRole(payload) {
   return role === 'club';
 }
 
+/**
+ * MRB #2224: login page must only redirect JWTs to chrome.identity URLs.
+ * Allow chrome-extension: and https://*.chromiumapp.org/ (getRedirectURL hosts).
+ * @param {string} redirectUri
+ * @returns {boolean}
+ */
+function isAllowedExtensionRedirectUri(redirectUri) {
+  const raw = String(redirectUri || '').trim();
+  if (!raw) return false;
+  try {
+    const u = new URL(raw);
+    if (u.protocol === 'chrome-extension:') return true;
+    if (u.protocol === 'https:' && /\.chromiumapp\.org$/i.test(u.hostname)) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   buildExtensionLoginUrl,
   parseJwtFromRedirectUrl,
   decodeJwtPayload,
   isClubRole,
+  isAllowedExtensionRedirectUri,
 };
