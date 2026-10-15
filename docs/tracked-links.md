@@ -82,3 +82,9 @@ Full catalog/product map: [catalog-model.md](catalog-model.md) (FR-115).
 - Other providers' `.env.example` account rows (later FR-057 slices)
 - Vision Success row (FR-057i)
 - Changing the JWT issuer
+
+## Etsy (FR-244)
+
+Etsy listing URLs are wrapped (not query-stamped) via `providers/live/etsy/src/affiliateUrl.js`:
+Rakuten Advertising deeplink by default (`u1` = tenantId); Awin `cread.php` when
+`ETSY_AFFILIATE_NETWORK=awin`. Clean query/fragment before wrap; fail closed if mid/publisher missing.

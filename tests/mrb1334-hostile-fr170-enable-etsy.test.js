@@ -30,14 +30,19 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     assert.equal(byId.get('bol').enabled.sandbox, false);
   });
 
-  it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + ETSY_TRACKING_ID plain default', () => {
+  it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + FR-244 affiliate plain default', () => {
     const text = utf8NoBom(path.join('cdk', 'lib', 'a-search-stack.js'));
     assert.match(text, /PROVIDER_CREDENTIAL_KEYS[\s\S]*etsy[\s\S]*ETSY_API_KEY/);
     assert.match(
       text,
-      /PROVIDER_PLAIN_DEFAULTS[\s\S]*etsy[\s\S]*ETSY_TRACKING_ID/,
+      /PROVIDER_CREDENTIAL_KEYS[\s\S]*etsy[\s\S]*ETSY_SHARED_SECRET/,
+    );
+    assert.match(
+      text,
+      /PROVIDER_PLAIN_DEFAULTS[\s\S]*etsy[\s\S]*ETSY_AFFILIATE_NETWORK/,
     );
   });
+
 
   it('FR-142/143 pins use 26 primary/DLQ floors (FR-167..172)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));

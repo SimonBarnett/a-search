@@ -8,7 +8,7 @@
  * Field map:
  * - `listing_id` / `id` → `id`
  * - `title` → `title`
- * - `url` / `url_full` → `url` via buildTrackedUrl + ETSY_TRACKING_ID
+ * - `url` / `url_full` → `url` via FR-244 Rakuten/Awin affiliate wrap
  * - `images[0].url_570xN` / `image_url` → `imageUrl`
  * - `price.amount` / `price.divisor` → `price` (major units)
  * - `price.currency_code` → `currency`
@@ -16,9 +16,9 @@
  */
 
 const {
-  buildTrackedUrl,
+  buildEtsyAffiliateUrl,
   TrackedUrlError,
-} = require('../../../../shared/links/buildTrackedUrl');
+} = require('./affiliateUrl');
 const {
   normalizeProduct,
   assertProductSchema,
@@ -82,12 +82,11 @@ function normalizeEtsyListing(item, track) {
         'tracked_url_missing_userId',
       );
     }
-    url = buildTrackedUrl({
+    url = buildEtsyAffiliateUrl({
       url: String(rawUrl),
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['ETSY_TRACKING_ID'],
     });
   }
 
