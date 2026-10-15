@@ -82,6 +82,7 @@ describe('FR-213 partnerId click attribution', () => {
     const dns = countingResolver({});
     const clicks = [];
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'agency.example',
@@ -94,7 +95,7 @@ describe('FR-213 partnerId click attribution', () => {
       },
     });
     assert.ok(a.url);
-    assert.match(a.url, /partnerId=partner-agency/);
+    assert.match(a.url, /tag=tag-21/); // FR-248: amazon carries no partner param; partnerId on click record
     assert.equal(clicks.length, 1);
     assert.equal(clicks[0].partnerId, 'partner-agency');
     assert.equal(clicks[0].widgetGuid, w.widgetGuid);
@@ -102,6 +103,7 @@ describe('FR-213 partnerId click attribution', () => {
     assert.equal(dns.calls, 0, 'cached customer: no DNS on click');
 
     const b = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'agency.example',
@@ -132,6 +134,7 @@ describe('FR-213 partnerId click attribution', () => {
     });
     const clicks = [];
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'selfserve.example',
@@ -161,6 +164,7 @@ describe('FR-213 partnerId click attribution', () => {
     });
     const signup = 'https://signup.example/join';
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'partneronly.example',
