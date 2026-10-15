@@ -215,3 +215,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - ComponentsPiece in.json ingest: exclusive rename to in.processing.json then merge+cap+unlink; free live cap 10; stack on FR-205 tip; non-main base MRB hand-close.
 - ComponentsPiece prune/top10: host-level top10 only; prune exclude+expiry+broken flags without HTTP; re-apply live cap each pass; stack on FR-206 tip; non-main base MRB hand-close.
 - ComponentsPiece widget click: buildGoUrl host+widgetGuid+part only; open via openUrl/window.open noopener; pin partsHtml never embeds part.url; stack on FR-202 tip; non-main base MRB hand-close.
+- When harvest tip is CLOSED superseded by docs/mrb stack that carries the lesson bullet + hostile pin, MRB the docs tip: merge origin/main keep-both, verify needle+test, merge; do not reopen the closed parent tip.
