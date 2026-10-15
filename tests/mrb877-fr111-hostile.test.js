@@ -101,7 +101,8 @@ describe('MRB-877 FR-111 hostile', () => {
     assert.equal(result.source, 'woocommerce');
     assert.equal(result.products.length, 1);
     assert.match(String(result.products[0].url), /example\.invalid/);
-    assert.match(String(result.products[0].url), /sid=aff-hostile/);
+    // FR-248 merchant: plain product URL (no affiliate sid stamp)
+    assert.doesNotMatch(String(result.products[0].url), /[?&]sid=/);
     assert.equal(puts.length, 1);
   });
 
@@ -159,7 +160,8 @@ describe('MRB-877 FR-111 hostile', () => {
       path.join(root, 'providers', 'local', 'woocommerce', '.env.example'),
       'utf8',
     );
-    assert.match(envEx, /^WOOCOMMERCE_AFFILIATE_ID=\s*$/m);
+    // FR-248: merchants do not stamp affiliate ids
+    assert.doesNotMatch(envEx, /WOOCOMMERCE_AFFILIATE_ID/);
     assert.match(envEx, /^WOOCOMMERCE_CONSUMER_KEY=\s*$/m);
     assert.match(envEx, /^MSSQL_PASSWORD=\s*$/m);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(envEx));
