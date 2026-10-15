@@ -211,3 +211,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest twin: FAIL-supersede FR-212 fixtures session-receipt tips that duplicate open docs/mrb #1799 / product tip #1731
 - a-search harvest-lesson: do not land absolute never-close-tip-as-twin-of-docs/mrb; when docs/mrb folds SKILL.md the tip may close as twin of that pin (#1748/#1753); only refuse twin-close for tests-only pins that do not carry the lesson text
 - ComponentsPiece widget context pass: widgetGuid folder via widgetPath; fold feedback context/removal; SEARCH_QUERY_CAP_FREE=3 FULL=15; stack on FR-204 tip; non-main base MRB hand-close.
+- a-search FR-215 MRB: merge origin/main into merchant-picker tip, run components-piece-merchant-wizard pins (6), --auto --squash (FR #3948) without CI wait
