@@ -109,14 +109,14 @@ describe('FR-100 avantlink feed-parser hook', () => {
     assert.match(String(creds.defaultFeedUrl), /avantlink\.csv/);
   });
 
-  it('registry keeps avantlink enabled true both envs (FR-177)', () => {
+  it('registry holds avantlink disabled both envs (GBP/UK market hold)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const pz = registry.sources.find((s) => s.id === 'avantlink');
     assert.ok(pz);
-    assert.equal(pz.enabled.live, true);
-    assert.equal(pz.enabled.sandbox, true);
+    assert.equal(pz.enabled.live, false);
+    assert.equal(pz.enabled.sandbox, false);
   });
 
   it('skill documents feed-parser hook + env keys', () => {

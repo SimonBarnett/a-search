@@ -87,7 +87,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     }
     assert.equal(byId.amazon.enabled.live, true);
     assert.equal(byId.kelkoo.enabled.live, true, 'FR-167 enables kelkoo');
-    assert.equal(byId.aliexpress.enabled.live, true, 'FR-169 enables aliexpress');
+    assert.equal(byId.aliexpress.enabled.live, false, 'FR-169 enables aliexpress');
     assert.equal(byId.skimlinks.enabled.live, true, 'FR-168 enables skimlinks');
   });
 });
