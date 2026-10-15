@@ -73,6 +73,10 @@ const {
   handleMerchantShopsCallback,
 } = require('./merchantShops');
 const {
+  matchShopifyWebhookRoute,
+  handleShopifyWebhook,
+} = require('./shopifyWebhooks');
+const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
@@ -250,6 +254,7 @@ async function handler(event, _context, deps = {}) {
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
   const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
+  const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
@@ -335,6 +340,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (partnerRoute === 'POST /partner/register') {
       return await handlePartnerRegister(event, deps);
+    }
+    if (shopifyWebhookRoute) {
+      return await handleShopifyWebhook(event, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
