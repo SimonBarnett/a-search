@@ -46,7 +46,7 @@ describe('MRB #668 hostile FR-061 stay-dark', () => {
     assert.match(shortlist, /stay-dark/i);
   });
 
-  it('exactly 5 Phase-2 stub ids stay dark (shopify+tradedoubler+avantlink enabled keep-both)', () => {
+  it('exactly 5 Phase-2 stub ids stay dark (webgains/admitad/flexoffers/wix/woocommerce); GBP/UK hold also darks bol/aliexpress/avantlink', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
     const stubs = [

@@ -13,8 +13,9 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-// Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
+// Remaining stay-dark after FR-168; GBP/UK hold also keeps aliexpress/bol/avantlink dark.
 const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const GBP_HOLD_DARK = ['aliexpress', 'bol', 'avantlink'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -37,7 +38,7 @@ describe('FR-168 enable skimlinks', () => {
     assert.ok(sk, 'registry missing skimlinks');
     assert.equal(sk.enabled.live, true);
     assert.equal(sk.enabled.sandbox, true);
-    for (const id of STILL_DARK) {
+    for (const id of STILL_DARK.concat(GBP_HOLD_DARK)) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
       assert.equal(byId.get(id).enabled.sandbox, false, `${id}.sandbox`);
@@ -114,22 +115,15 @@ describe('FR-168 enable skimlinks', () => {
       assert.ok(qHit, `missing queue a-search-skimlinks-${env}`);
     }
 
-    // aliexpress is enabled on main (FR-169); assert remaining stay-dark have no workers.
-    for (const dark of ['webgains']) {
+    // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
+    for (const dark of ['webgains'].concat(GBP_HOLD_DARK)) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
           res.Properties.FunctionName.includes(`-${dark}-worker-`),
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(hit, undefined, `stay-dark/hold ${dark} must not have worker`);
     }
-    const ae = fns.find(
-      (res) =>
-        res.Properties &&
-        typeof res.Properties.FunctionName === 'string' &&
-        res.Properties.FunctionName.includes('-aliexpress-worker-'),
-    );
-    assert.ok(ae, 'FR-169 aliexpress worker must remain after fold');
   });
 });

@@ -101,14 +101,14 @@ describe('FR-081 bol worker search→normalize→writeResults', () => {
     );
   });
 
-  it('registry keeps bol enabled true for both envs (FR-171)', () => {
+  it('registry holds bol disabled both envs (GBP/UK market hold)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
     assert.ok(bol);
-    assert.equal(bol.enabled.live, true);
-    assert.equal(bol.enabled.sandbox, true);
+    assert.equal(bol.enabled.live, false);
+    assert.equal(bol.enabled.sandbox, false);
   });
 
   it('worker source no longer contains not-wired stub message', () => {
