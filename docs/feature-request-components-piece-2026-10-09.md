@@ -185,9 +185,19 @@ clubmadeira.uk.
 | CP17 | Payout Stripe optional | Partner/club can operate without payout Stripe until payout requested | docs + pin | Forced Connect at partner register |
 | CP18 | Monthly partner no commission | Partner on monthly plan is not charged commission | billing pin / docs rule | Commission charged to monthly-paying partner |
 
+### Amendment 2026-10-10 - FR-214 docs lock (#1219) supersedes CP12/CP13/CP18
+
+Durable lock: [components-piece-merchant.md](components-piece-merchant.md).
+
+- **CP12:** payment gate is **per shop going live** (GBP 20/shop/month `merchant_shop`), not account signup.
+- **CP13:** merchants **never** generate commission / affiliate stamps (taxonomy MERCHANT).
+- **CP18:** monthly partner plan **dropped**; partners are never billed (payouts only, FR-222).
+- Stripe products only: `merchant_shop`, `widget_upgrade` (never `partner_monthly`).
+
 ### New small FRs
 
-FR-214..FR-224 (see `docs/fr/`). File after approve.
+FR-214..FR-224 (see `docs/fr/`). File after approve. FR-214 durable doc:
+[components-piece-merchant.md](components-piece-merchant.md).
 
 
 
