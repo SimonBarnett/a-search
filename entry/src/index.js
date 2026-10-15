@@ -78,6 +78,10 @@ const {
   handleShopifyWebhook,
 } = require('./shopifyWebhooks');
 const {
+  matchWixWebhookRoute,
+  handleWixWebhook,
+} = require('./wixWebhooks');
+const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
@@ -256,6 +260,7 @@ async function handler(event, _context, deps = {}) {
   const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
+  const wixWebhookRoute = matchWixWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
@@ -344,6 +349,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (shopifyWebhookRoute) {
       return await handleShopifyWebhook(event, deps);
+    }
+    if (wixWebhookRoute) {
+      return await handleWixWebhook(event, deps);
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||

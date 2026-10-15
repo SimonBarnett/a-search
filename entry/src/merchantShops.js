@@ -252,8 +252,12 @@ async function handleMerchantShopsCallback(event, deps = {}) {
       code === 'unknown_provider' ||
       code === 'empty_connect' ||
       code === 'invalid_hmac' ||
+      code === 'invalid_signed_instance' ||
       code === 'invalid_shop_domain' ||
-      code === 'code_required'
+      code === 'code_required' ||
+      code === 'instance_id_required' ||
+      code === 'wix_app_credentials_missing' ||
+      code === 'shopify_app_credentials_missing'
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }
