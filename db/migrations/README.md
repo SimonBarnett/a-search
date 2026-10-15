@@ -10,6 +10,8 @@
 |------|---------|
 | `001_Customers.sql` | ComponentsPiece Customers row: host, customerNumber, approved (default 0), DNS cache fields, upgradeStatus columns (FR-196 / #1345 webhook writers) |
 | `002_Widgets.sql` | Widgets registry: widgetGuid PK, customerNumber/host nullable until bind (FR-232 rule 3) |
+| `010_Shops.sql` | Merchant Shops registry prelude (FR-216 / FR-235) |
+| `011_ShopStatusLog.sql` | Shop status columns + ShopStatusLog + global unique (FR-235 / #1349) |
 
 Migrate-once: each script uses `IF OBJECT_ID ... IS NULL` / `IF NOT EXISTS` index guards.
 
@@ -18,6 +20,7 @@ Migrate-once: each script uses `IF OBJECT_ID ... IS NULL` / `IF NOT EXISTS` inde
 Node helpers for unit tests and later Lambda wiring:
 
 - `shared/components/customers.js` -- `ensureCustomer`, `getCustomerByHost`, `createWidget`, `getWidget`, `listActiveWidgets` (MemoryCustomersStore by default)
+- `shared/shops/` -- Shops registry, status machine, vault helpers, connect orchestration (FR-216 / FR-235)
 
 ## Out of scope here
 
