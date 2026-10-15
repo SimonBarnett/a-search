@@ -57,7 +57,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['AWIN_PUBLISHER_ID'],
+      source: 'awin',
     });
   }
 
