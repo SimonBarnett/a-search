@@ -47,6 +47,11 @@ const {
   matchWidgetsCreateRoute,
   handleWidgetsCreate,
 } = require('./widgetsCreate');
+const {
+  matchMerchantShopsRoute,
+  handleMerchantShopsConnect,
+  handleMerchantShopsCallback,
+} = require('./merchantShops');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -56,6 +61,7 @@ const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -206,6 +212,7 @@ async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const merchantRoute = matchMerchantShopsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -215,6 +222,8 @@ async function handler(event, _context, deps = {}) {
         ? PARTS_ROUTE
         : widgetsRoute
           ? WIDGETS_CREATE_ROUTE
+          : merchantRoute
+            ? MERCHANT_SHOPS_ROUTE
           : cpRoute
             ? `entry/${cpRoute}`
             : isSelftestRoute(method, path)
@@ -244,6 +253,12 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (merchantRoute === 'POST /merchant/shops/connect') {
+      return await handleMerchantShopsConnect(event, deps);
+    }
+    if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
+      return await handleMerchantShopsCallback(event, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -600,6 +615,8 @@ module.exports = {
   handleParts,
   handleGo,
   handleWidgetsCreate,
+  handleMerchantShopsConnect,
+  handleMerchantShopsCallback,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
@@ -609,4 +626,5 @@ module.exports = {
   isPartsRoute,
   isGoRoute,
   matchWidgetsCreateRoute,
+  matchMerchantShopsRoute,
 };
