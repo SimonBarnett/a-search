@@ -1,0 +1,23 @@
+{
+  "queries": [
+    {
+      "q": "blue widgets",
+      "intent": "browse",
+      "maxResults": 10
+    },
+    {
+      "q": "replacement filter",
+      "intent": "parts",
+      "maxResults": 5
+    }
+  ],
+  "exclude": [
+    {
+      "partId": "src-99",
+      "match": "title:spam",
+      "reason": "not_relevant",
+      "otherText": null,
+      "at": "2026-10-14T10:00:00.000Z"
+    }
+  ]
+}
