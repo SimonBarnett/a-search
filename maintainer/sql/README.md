@@ -1,3 +1,4 @@
+> **FR-251:** canonical DDL now lives under `db/migrations/` (`003_PartFeedKeys` .. `007_DeleteMissingParts`). Apply with `scripts/db-migrate.js` against `a_search` / `a_search_sandbox` only. Never `-d madeiradb`.
 # Maintainer SQL migrations (FR-011 / FR-120)
 
 **FR-120:** these objects are **a-search-owned**. They do not exist on
