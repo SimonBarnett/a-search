@@ -19,6 +19,7 @@ const crypto = require('node:crypto');
  *   displayName: string,
  *   scopes: string[],
  *   status: string,
+ *   statusReason: string|null,
  *   credentialsSecretRef: string|null,
  *   createdAt: number,
  * }} ShopRow
@@ -55,6 +56,7 @@ function createShopsRegistry() {
         displayName: String(args.displayName || args.shopDomain),
         scopes: Array.isArray(args.scopes) ? args.scopes.map(String) : [],
         status: 'pending_payment',
+        statusReason: null,
         credentialsSecretRef:
           args.credentialsSecretRef != null
             ? String(args.credentialsSecretRef)
@@ -63,6 +65,36 @@ function createShopsRegistry() {
       };
       rows.push(row);
       return { ...row };
+    },
+    getByShopId(shopId) {
+      const row = rows.find((r) => r.shopId === String(shopId));
+      return row ? { ...row } : null;
+    },
+    getByProviderShopId(provider, providerShopId) {
+      const p = String(provider).toLowerCase();
+      const id = String(providerShopId);
+      const row = rows.find(
+        (r) => r.provider === p && r.providerShopId === id,
+      );
+      return row ? { ...row } : null;
+    },
+    /**
+     * @param {string} shopId
+     * @param {string} status
+     * @param {string|null} [reason]
+     */
+    updateStatus(shopId, status, reason) {
+      const row = rows.find((r) => r.shopId === String(shopId));
+      if (!row) return null;
+      row.status = String(status);
+      row.statusReason = reason != null ? String(reason) : null;
+      return { ...row };
+    },
+    deleteByShopId(shopId) {
+      const i = rows.findIndex((r) => r.shopId === String(shopId));
+      if (i < 0) return false;
+      rows.splice(i, 1);
+      return true;
     },
     /**
      * Public view: never includes raw credentials.
@@ -86,6 +118,7 @@ function createShopsRegistry() {
           displayName: r.displayName,
           scopes: r.scopes.slice(),
           status: r.status,
+          statusReason: r.statusReason,
           createdAt: r.createdAt,
         }));
     },

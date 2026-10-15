@@ -812,6 +812,12 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-236: Shopify webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/shopify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryShopifyShopWebhookIntegration'),
+    });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
       path: '/auth/session',
