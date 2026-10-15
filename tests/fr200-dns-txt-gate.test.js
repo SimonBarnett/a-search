@@ -97,6 +97,7 @@ describe('FR-200 DNS TXT gate', () => {
     });
     const signup = 'https://signup.example/join';
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'shop.example',
@@ -115,6 +116,7 @@ describe('FR-200 DNS TXT gate', () => {
     assert.equal(cust.clubId, null);
 
     const b = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'shop.example',
@@ -146,6 +148,7 @@ describe('FR-200 DNS TXT gate', () => {
       'clubonly.example': [[`${CLUB_PREFIX}club-42`]],
     });
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'clubonly.example',
@@ -156,7 +159,7 @@ describe('FR-200 DNS TXT gate', () => {
       resolveTxt: dns.resolveTxt.bind(dns),
     });
     assert.equal(a.signup, false);
-    assert.match(a.url, /tenantId=club-42/);
+    assert.match(a.url, /tag=tag-21/); // FR-248: amazon non-upgraded club -> base tag; tenant on click record
     assert.ok(a.clickId);
     assert.equal(dns.calls, 1);
     const cust = getCustomerByHost(store, 'clubonly.example');
@@ -165,6 +168,7 @@ describe('FR-200 DNS TXT gate', () => {
     assert.equal(cust.partnerId, null);
 
     const b = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'clubonly.example',
@@ -199,6 +203,7 @@ describe('FR-200 DNS TXT gate', () => {
       ],
     });
     const a = await resolveGo({
+      envMap: { AMAZON_PARTNER_TAG: 'tag-21' }, // FR-248 fail-closed: base amazon tag
       root,
       env: 'sandbox',
       host: 'both.example',
@@ -209,7 +214,7 @@ describe('FR-200 DNS TXT gate', () => {
       resolveTxt: dns.resolveTxt.bind(dns),
     });
     assert.equal(a.signup, false);
-    assert.match(a.url, /partnerId=partner-3/);
+    assert.match(a.url, /tag=tag-21/); // FR-248: amazon carries no partner param; partnerId on click record
     const cust = getCustomerByHost(store, 'both.example');
     assert.equal(cust.partnerId, 'partner-3');
   });

@@ -35,7 +35,7 @@ const row = {
 };
 
 describe('FR-057d awin buildTrackedUrl wiring', () => {
-  it('normalizePart stamps userId + awinaffid for two tenants', () => {
+  it('normalizePart stamps clickref + awinaffid for two tenants (FR-248)', () => {
     const envVars = { AWIN_PUBLISHER_ID: 'pub-99' };
     const a = normalizePart(row, {
       userId: 'U-A',
@@ -47,9 +47,10 @@ describe('FR-057d awin buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
+    assert.match(a.url, /[?&]clickref=U-A/);
+    assert.match(b.url, /[?&]clickref=U-B/);
     assert.match(a.url, /awinaffid=pub-99/);
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.notEqual(a.url, b.url);
   });
 
@@ -89,7 +90,7 @@ describe('FR-057d awin buildTrackedUrl wiring', () => {
         putObject: async () => ({}),
       },
     );
-    assert.match(out.products[0].url, /userId=U-AWIN/);
+    assert.match(out.products[0].url, /[?&]clickref=U-AWIN/);
     assert.match(out.products[0].url, /awinaffid=pub-99/);
   });
 

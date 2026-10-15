@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-057h: Impact Parts Url → buildTrackedUrl (JWT userId + IMPACT_CAMPAIGN_ID).
+ * FR-057h + FR-248: Impact Parts Url -> buildTrackedUrl.
+ * Campaign belongs in path /c/{mp}/{ad}/{campaign}; subId1 is tenant.
  */
 
 const { describe, it } = require('node:test');
@@ -25,10 +26,15 @@ const row = {
   Currency: 'GBP',
 };
 
-const envVars = { IMPACT_CAMPAIGN_ID: 'camp-77' };
+const envVars = {
+  IMPACT_CAMPAIGN_ID: 'camp-77',
+  IMPACT_MEDIA_PARTNER_ID: 'mp1',
+  IMPACT_AD_ID: 'ad1',
+  IMPACT_TRACKING_HOST: 'go.sjv.io',
+};
 
 describe('FR-057h impact buildTrackedUrl wiring', () => {
-  it('normalizePart stamps userId + subId1 for two tenants', () => {
+  it('normalizePart stamps path campaign + subId1=tenant (FR-248)', () => {
     const a = normalizePart(row, {
       userId: 'U-A',
       env: 'sandbox',
@@ -39,9 +45,11 @@ describe('FR-057h impact buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
-    assert.match(a.url, /subId1=camp-77/);
+    assert.match(a.url, /\/c\/mp1\/ad1\/camp-77/);
+    assert.match(a.url, /[?&]subId1=U-A/);
+    assert.match(b.url, /[?&]subId1=U-B/);
+    assert.doesNotMatch(a.url, /subId1=camp-77/);
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.notEqual(a.url, b.url);
   });
 
@@ -61,7 +69,7 @@ describe('FR-057h impact buildTrackedUrl wiring', () => {
     assert.throws(() => normalizePart(row), /track|userId|tracked/i);
   });
 
-  it('run() results include tenant stamp', async () => {
+  it('run() results include tenant on subId1', async () => {
     const out = await run(
       {
         searchId: 'srch_057h',
@@ -76,13 +84,16 @@ describe('FR-057h impact buildTrackedUrl wiring', () => {
           A_SEARCH_ENV: 'sandbox',
           S3_RESULTS_BUCKET: 'test-results',
           IMPACT_CAMPAIGN_ID: 'camp-77',
+          IMPACT_MEDIA_PARTNER_ID: 'mp1',
+          IMPACT_AD_ID: 'ad1',
+          IMPACT_TRACKING_HOST: 'go.sjv.io',
         },
         queryParts: async () => [row],
         putObject: async () => ({}),
       },
     );
-    assert.match(out.products[0].url, /userId=U-IMP/);
-    assert.match(out.products[0].url, /subId1=camp-77/);
+    assert.match(out.products[0].url, /\/c\/mp1\/ad1\/camp-77/);
+    assert.match(out.products[0].url, /[?&]subId1=U-IMP/);
   });
 
   it('impact .env.example documents IMPACT_CAMPAIGN_ID as tracked account key', () => {
@@ -91,7 +102,7 @@ describe('FR-057h impact buildTrackedUrl wiring', () => {
       'utf8',
     );
     assert.match(text, /IMPACT_CAMPAIGN_ID/);
-    assert.match(text, /tracked|FR-057|affiliate|account/i);
+    assert.match(text, /tracked|FR-057|affiliate|account|FR-248/i);
     assert.match(text, /IMPACT_CAMPAIGN_ID=\s*$/m);
   });
 });
