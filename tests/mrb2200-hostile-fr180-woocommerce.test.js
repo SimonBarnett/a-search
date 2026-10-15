@@ -2,6 +2,8 @@
 
 /**
  * docs/mrb-2200 hostile pin for FR-180 enable woocommerce merchant (PR #2200 / #1027).
+ * Tip-local floors 28 after keep-both wix (#2260) + woocommerce; webgains stays dark
+ * while sibling FR-173 #2198 remains OPEN.
  */
 
 const { describe, it } = require('node:test');
@@ -10,6 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
+const STILL_DARK = ['webgains', 'admitad', 'flexoffers'];
 
 describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
   it('registry woo merchant both envs; PROVIDER_CREDENTIAL_KEYS contiguous; no AFFILIATE key', () => {
@@ -22,7 +25,10 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
     assert.equal(woo.enabled.sandbox, true);
     assert.equal(woo.class, 'merchant');
     assert.equal(woo.merchantConnect, true);
-    for (const id of ['webgains', 'admitad', 'flexoffers', 'wix']) {
+    const wix = registry.sources.find((x) => x.id === 'wix');
+    assert.equal(wix.enabled.live, true, 'wix');
+    assert.equal(wix.enabled.sandbox, true, 'wix');
+    for (const id of STILL_DARK) {
       const s = registry.sources.find((x) => x.id === id);
       assert.equal(s.enabled.live, false, id);
       assert.equal(s.enabled.sandbox, false, id);
@@ -30,7 +36,7 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
     const both = registry.sources.filter(
       (s) => s.enabled && s.enabled.live && s.enabled.sandbox,
     );
-    assert.equal(both.length, 13);
+    assert.equal(both.length, 14);
     const stack = fs.readFileSync(
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
@@ -43,7 +49,7 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
     assert.doesNotMatch(stack, /^<<<<<<<|^=======|^>>>>>>>/m);
   });
 
-  it('FR-180 Decision LOCKED UTF-8 no-BOM; worker plain URLs; floors 26', () => {
+  it('FR-180 Decision LOCKED UTF-8 no-BOM; worker plain URLs; floors 28', () => {
     const buf = fs.readFileSync(path.join(root, 'docs', 'fr', 'FR-180.md'));
     assert.notEqual(buf[0], 0xef);
     const fr = buf.toString('utf8');
@@ -62,7 +68,7 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 26 primary queues/);
+    assert.match(fr142, /expected 28 primary queues/);
     const fr112 = fs.readFileSync(
       path.join(root, 'tests', 'fr112-woocommerce-selftest-probe.test.js'),
       'utf8',
