@@ -67,6 +67,7 @@ CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes liv
 ## Related
 
 - Feature request park: [feature-request-components-piece-2026-10-09.md](feature-request-components-piece-2026-10-09.md)
+- Merchant / partner / Stripe docs lock: [components-piece-merchant.md](components-piece-merchant.md) (FR-214 / #1219)
 - FR-232 widgetGuid: #1346
 - FR-233 docs amendments: #1347
 - FR-251 a-search DB: #1365

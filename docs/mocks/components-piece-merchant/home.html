@@ -2,41 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>a-search merchant signup wizard - provider + Stripe</title>
+  <title>a-search merchant Add shop - provider picker</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 42rem; color: #122; }
     h1 { font-size: 1.25rem; }
     .step { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
     .ok { color: #0a7; font-weight: 600; }
+    .soon { color: #886600; font-size: 0.85rem; }
     label { display: block; margin: 0.35rem 0; }
     .meta { color: #556; font-size: 0.9rem; }
     code { background: #f4f6f8; padding: 0.1rem 0.3rem; }
   </style>
 </head>
 <body>
-  <h1>Merchant signup wizard</h1>
-  <p class="meta">Wireframe MW1 - Shopify / Wix / Woo connect + monthly Stripe gate.</p>
+  <h1>Merchant Add shop wizard</h1>
+  <p class="meta">Wireframe MW1 - FR-215 provider picker (seven MERCHANT platforms). Reused for every Add shop.</p>
 
   <div class="step">
     <h2>1. Catalogue provider</h2>
-    <label><input type="radio" name="provider" checked /> Shopify</label>
-    <label><input type="radio" name="provider" /> Wix</label>
-    <label><input type="radio" name="provider" /> WooCommerce</label>
+    <label><input type="radio" name="provider" value="shopify" checked /> Shopify <code>shopify</code></label>
+    <label><input type="radio" name="provider" value="wix" /> Wix <code>wix</code> <span class="soon">coming soon</span></label>
+    <label><input type="radio" name="provider" value="woocommerce" /> WooCommerce <code>woocommerce</code> <span class="soon">coming soon</span></label>
+    <label><input type="radio" name="provider" value="squarespace" /> Squarespace <code>squarespace</code> <span class="soon">coming soon</span></label>
+    <label><input type="radio" name="provider" value="magento" /> Magento <code>magento</code> <span class="soon">coming soon</span></label>
+    <label><input type="radio" name="provider" value="bigcommerce" /> BigCommerce <code>bigcommerce</code> <span class="soon">coming soon</span></label>
+    <label><input type="radio" name="provider" value="ecwid" /> Ecwid <code>ecwid</code> <span class="soon">coming soon</span></label>
+    <p class="meta">Cannot advance to Connect without a selection. Coming soon options open interest capture, not an error.</p>
   </div>
 
   <div class="step">
     <h2>2. Shop connection</h2>
-    <p class="ok">Connected via logged-in Shopify session</p>
+    <p class="ok">Connected via logged-in Shopify session (FR-216)</p>
     <p>Shop: <code>example-shop.myshopify.com</code></p>
-    <p class="meta">If not logged in, platform login is prompted before details return.</p>
   </div>
 
   <div class="step">
-    <h2>3. Stripe monthly subscription</h2>
-    <p class="ok">Customer created - subscription active - first payment confirmed</p>
-    <p class="meta">Signup cannot finish until payment confirmation. Monthly merchants do not pay commission.</p>
+    <h2>3. Stripe per-shop subscription</h2>
+    <p class="ok">GBP 20/month merchant_shop active (FR-239)</p>
+    <p class="meta">Payment gate is per shop going live, not account signup.</p>
   </div>
 
-  <p class="ok">Signup complete</p>
+  <p class="ok">Shop live</p>
 </body>
 </html>

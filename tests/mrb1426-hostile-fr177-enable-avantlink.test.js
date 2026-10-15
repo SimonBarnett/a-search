@@ -12,7 +12,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 
-test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; floors 24', () => {
+test('mrb1426: GBP hold - avantlink+bol disabled; partnerize+tradedoubler on; floors 26', () => {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'providers/registry.json'), 'utf8'));
   const byId = new Map(reg.sources.map((s) => [s.id, s]));
   const al = byId.get('avantlink');

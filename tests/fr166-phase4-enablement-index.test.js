@@ -14,7 +14,7 @@ const docRel = path.join('docs', 'phase4-enablement-index.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 kijiji + FR-169 aliexpress. */
-const PHASE2_STUB_IDS = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const PHASE2_STUB_IDS = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
 
 /** Index still lists every FR-167..180 id (including already-enabled kelkoo). */
 const ENABLE_FR_BY_ID = {
@@ -74,7 +74,9 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
       assert.match(text, new RegExp(ENABLE_FR_BY_ID[id]));
     }
     assert.match(text, /FR-181|Creators/);
-    assert.match(text, /FR-186|WAF/);
+    // #1381 / #1033: WAF annotated DROPPED (not a planned wave).
+    assert.match(text, /WAF[\s\S]{0,160}DROPPED|#1033[\s\S]{0,80}not planned/i);
+    assert.match(text, /FR-186/);
     assert.match(text, /FR-190|Multi-region|multi-region/);
   });
 
