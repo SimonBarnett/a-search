@@ -83,8 +83,21 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     const alarms = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::CloudWatch::Alarm',
     );
-    // keep-both wix+woocommerce: 28 floors (14 enabled x live+sandbox)
-    assert.equal(alarms.length, 28, `expected 28 DLQ depth alarms, got ${alarms.length}`);
+    // Worker DLQ alarms only (14 enabled x live+sandbox = 28). FR-2139 shop-sync DLQ alarm is extra.
+    const workerDlqAlarms = alarms.filter((a) => {
+      const name = (a.Properties && a.Properties.AlarmName) || '';
+      const blob = JSON.stringify(a.Properties || {});
+      return (
+        !/shop-sync|ShopSync/i.test(String(name)) &&
+        !/shop-sync/i.test(blob) &&
+        (/-dlq/i.test(String(name)) || /-dlq/i.test(blob))
+      );
+    });
+    assert.equal(
+      workerDlqAlarms.length,
+      28,
+      `expected 28 DLQ depth alarms, got ${workerDlqAlarms.length}`,
+    );
 
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {

@@ -98,10 +98,11 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
     // FR-180: 26 primaries + 26 DLQs (13 enabled x live+sandbox)
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
-      .filter(Boolean);
+      .filter(Boolean)
+      .filter((n) => !String(n).includes('.fifo'));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    // FR-167+FR-168+FR-169: 18 primaries + 18 DLQs (9 enabled x live+sandbox)
+    // FR-180+FR-179: 28 worker primaries (14 enabled). Exclude FR-2139 shop-sync .fifo.
     assert.equal(primaries.length, 28, `expected 28 primary queues, got ${primaries.length}`);
     assert.equal(dlqs.length, 28, `expected 28 DLQs, got ${dlqs.length}`);
   });
