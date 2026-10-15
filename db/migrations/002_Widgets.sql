@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-196 / FR-232 rule 3: Widgets registry (a_search / a_search_sandbox only).
 -- Never madeiradb (FR-251).
 SET NOCOUNT ON;

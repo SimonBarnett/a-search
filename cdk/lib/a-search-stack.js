@@ -174,11 +174,13 @@ function wireResultsBucketAccess(fn, bucket) {
   bucket.grantReadWrite(fn);
 }
 
-const MSSQL_LIVE_DATABASE = 'madeiradb';
-const MSSQL_SANDBOX_DATABASE_DEFAULT = '<sandbox-mssql-database>';
-/** Synth/deploy placeholder when -c mssqlSecretArn is omitted (never a real account). */
+/** FR-251: a-search owns a_search / a_search_sandbox; madeiradb is read-only. */
+const MSSQL_LIVE_DATABASE = 'a_search';
+const MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox';
+const MADEIRADB_DATABASE_DEFAULT = 'madeiradb';
+/** Synth/deploy placeholder when -c mssqlAppSecretArn / mssqlSecretArn is omitted. */
 const MSSQL_SECRET_ARN_PLACEHOLDER =
-  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-fr137-AbCdEf';
+  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-app-AbCdEf';
 
 /**
  * @param {string} [folder] registry src.folder
@@ -191,17 +193,23 @@ function isLocalProviderFolder(folder) {
 }
 
 /**
- * FR-137: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
+ * FR-137 / FR-251: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
  * Secret string JSON keys: SERVER, USER, PASSWORD (optional TRUSTED_CONNECTION / DOMAIN).
- * DATABASE is env-specific plain text (live madeiradb / sandbox placeholder from context).
+ * DATABASE is env-specific plain text (live a_search / sandbox a_search_sandbox).
+ * Synth fails closed if database is madeiradb.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
- * @param {{ database: string }} opts
+ * @param {{ database: string, madeiradbDatabase?: string }} opts
  */
 function wireMssqlSecretEnv(fn, secret, opts) {
   const database = opts && opts.database;
   if (!database) {
     throw new Error('wireMssqlSecretEnv: opts.database required');
+  }
+  if (String(database).toLowerCase() === 'madeiradb') {
+    throw new Error(
+      'wireMssqlSecretEnv: MSSQL_DATABASE=madeiradb forbidden (FR-251); use a_search / a_search_sandbox',
+    );
   }
   fn.addEnvironment(
     'MSSQL_SERVER',
@@ -218,6 +226,11 @@ function wireMssqlSecretEnv(fn, secret, opts) {
   fn.addEnvironment('MSSQL_DATABASE', database);
   fn.addEnvironment('MSSQL_ENCRYPT', 'true');
   fn.addEnvironment('MSSQL_TRUST_SERVER_CERTIFICATE', 'true');
+  fn.addEnvironment(
+    'MADEIRADB_DATABASE',
+    (opts && opts.madeiradbDatabase) || MADEIRADB_DATABASE_DEFAULT,
+  );
+  fn.addEnvironment('A_SEARCH_DB_ALLOWLIST', 'a_search,a_search_sandbox');
   secret.grantRead(fn);
 }
 
@@ -468,10 +481,12 @@ class ASearchStack extends cdk.Stack {
     });
 
 
-    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlSecretArn=...).
-    // JSON keys SERVER/USER/PASSWORD; DATABASE is plain per env (FR-121 sandbox name).
+    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlAppSecretArn / mssqlSecretArn=...).
+    // JSON keys SERVER/USER/PASSWORD; DATABASE plain per env (FR-251 live a_search / sandbox a_search_sandbox).
     const mssqlSecretArn =
-      this.node.tryGetContext('mssqlSecretArn') || MSSQL_SECRET_ARN_PLACEHOLDER;
+      this.node.tryGetContext('mssqlAppSecretArn') ||
+      this.node.tryGetContext('mssqlSecretArn') ||
+      MSSQL_SECRET_ARN_PLACEHOLDER;
     const mssqlSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'MssqlConnSecret',
@@ -482,6 +497,18 @@ class ASearchStack extends cdk.Stack {
     const mssqlSandboxDatabase =
       this.node.tryGetContext('mssqlSandboxDatabase') ||
       MSSQL_SANDBOX_DATABASE_DEFAULT;
+    const madeiradbDatabase =
+      this.node.tryGetContext('madeiradbDatabase') || MADEIRADB_DATABASE_DEFAULT;
+    if (String(mssqlLiveDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlLiveDatabase must not be madeiradb (use a_search)',
+      );
+    }
+    if (String(mssqlSandboxDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlSandboxDatabase must not be madeiradb (use a_search_sandbox)',
+      );
+    }
 
     // FR-138: per-enabled-source provider credential secrets (context override
     // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
@@ -1197,6 +1224,7 @@ module.exports = {
   PROVIDER_PLAIN_DEFAULTS,
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
+  MADEIRADB_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
