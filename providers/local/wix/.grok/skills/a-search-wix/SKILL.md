@@ -55,7 +55,7 @@ callback (`signedInstance` verified). Mint short-lived access tokens with
 `{ grant_type: "client_credentials", client_id, client_secret, instance_id }`.
 
 - Adapter: `shared/shops/adapters/wix.js`
-- Token cache (memory TTL only): `src/token.js` — never log or vault access tokens
+- Token cache (memory TTL only): `src/token.js` - never log or vault access tokens
 - Webhook App Removed: `POST /webhooks/shop/wix` -> Shop suspended(`uninstalled`)
 - App id/secret: Secrets Manager `a-search/{env}/providers/wix/app`
 - Catalogue accepts per-call `{ siteId, accessToken }` overrides (env = selftest)
