@@ -235,3 +235,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest tip restating self-MRB keep-both GIVEUP + twin-close after that lesson already merged: FAIL-supersede citing the first PR/SKILL bullet
 - a-search harvest tip after FR-237 product+docs/mrb already on main restating vault instanceId + client_credentials + signedInstance (or the SKILL bullet): FAIL-supersede citing product/docs PR; do not re-fold
 - a-search harvest tip restating CONFLICTING SKILL.md checkout/cat-file UTF8 append after that lesson already on main: FAIL-supersede citing the first PR
+- Harvest tip that only restates the already-merged CONFLICTING SKILL.md checkout/cat-file UTF8 append lesson: FAIL-supersede citing the first PR (#2108)
