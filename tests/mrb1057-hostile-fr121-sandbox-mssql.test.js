@@ -23,7 +23,7 @@ describe('MRB-1057 FR-121 hostile', () => {
     assert.match(text, /Chosen option[\s\S]{0,80}separate database on the same instance/i);
     assert.match(text, /Rejected[\s\S]{0,80}schema inside `madeiradb`/i);
     assert.match(text, /Rejected[\s\S]{0,120}live read-only/i);
-    assert.match(text, /<sandbox-mssql-database>/);
+    assert.match(text, /a_search_sandbox/);
     assert.match(text, /Fail-closed/);
     assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
   });
@@ -34,11 +34,11 @@ describe('MRB-1057 FR-121 hostile', () => {
     assert.match(text, /separate database on the same instance/i);
   });
 
-  it('maintainer/.env.example comments FR-121 sandbox separate DB', () => {
+  it('maintainer/.env.example comments FR-251 sandbox separate DB', () => {
     const text = read('maintainer/.env.example');
-    assert.match(text, /FR-121/);
-    assert.match(text, /separate DB|separate database/i);
-    assert.match(text, /^MSSQL_DATABASE=madeiradb$/m);
+    assert.match(text, /FR-251|FR-121/);
+    assert.match(text, /a_search_sandbox|same instance/i);
+    assert.match(text, /^MSSQL_DATABASE=a_search$/m);
   });
 
   it('product fr121 pin file present', () => {

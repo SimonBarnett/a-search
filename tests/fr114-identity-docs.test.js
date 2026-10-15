@@ -20,14 +20,16 @@ const createSrc = path.join(
 );
 
 describe('FR-114 docs/identity.md', () => {
-  it('docs/identity.md exists and covers code format + open Partner question', () => {
+  it('docs/identity.md exists and covers code format + DECIDED partner rule (FR-250)', () => {
     assert.ok(fs.existsSync(doc), 'missing docs/identity.md');
     const text = fs.readFileSync(doc, 'utf8');
     assert.match(text, /\[0-9A-Z\]\{8\}|\^\[0-9A-Z\]\{8\}\$/);
     assert.match(text, /GenerateUniqueUserId/);
     assert.match(text, /Users\.user_id|user_id varchar\(8\)/);
     assert.match(text, /Partner/);
-    assert.match(text, /open question|disagreement|not authoritative/i);
+    assert.match(text, /DECIDED 2026-10-10/);
+    assert.match(text, /permissions/);
+    assert.match(text, /Historical snapshot|disagree/i);
     assert.match(text, /clubscan/);
     assert.match(text, /referrer/i);
     assert.match(text, /JWT|userId/);

@@ -35,6 +35,15 @@ const WORKER_LAMBDA_TIMEOUT_SEC = 60;
 const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
 
 /**
+ * FR-2139 / FR-240: shop-sync FIFO consumer. Catalogue pages can run long;
+ * visibility must be strictly greater than Lambda timeout (6x buffer).
+ */
+const SHOP_SYNC_LAMBDA_TIMEOUT_SEC = 300;
+const SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC = SHOP_SYNC_LAMBDA_TIMEOUT_SEC * 6;
+const SHOP_SYNC_FIFO_BASE = 'a-search-shop-sync.fifo';
+const SHOP_SYNC_MAX_RECEIVE_COUNT = 5;
+
+/**
  * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
  * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
  * maintainer, onboarding: 512MB.
@@ -174,11 +183,13 @@ function wireResultsBucketAccess(fn, bucket) {
   bucket.grantReadWrite(fn);
 }
 
-const MSSQL_LIVE_DATABASE = 'madeiradb';
-const MSSQL_SANDBOX_DATABASE_DEFAULT = '<sandbox-mssql-database>';
-/** Synth/deploy placeholder when -c mssqlSecretArn is omitted (never a real account). */
+/** FR-251: a-search owns a_search / a_search_sandbox; madeiradb is read-only. */
+const MSSQL_LIVE_DATABASE = 'a_search';
+const MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox';
+const MADEIRADB_DATABASE_DEFAULT = 'madeiradb';
+/** Synth/deploy placeholder when -c mssqlAppSecretArn / mssqlSecretArn is omitted. */
 const MSSQL_SECRET_ARN_PLACEHOLDER =
-  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-fr137-AbCdEf';
+  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-app-AbCdEf';
 
 /**
  * @param {string} [folder] registry src.folder
@@ -191,17 +202,23 @@ function isLocalProviderFolder(folder) {
 }
 
 /**
- * FR-137: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
+ * FR-137 / FR-251: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
  * Secret string JSON keys: SERVER, USER, PASSWORD (optional TRUSTED_CONNECTION / DOMAIN).
- * DATABASE is env-specific plain text (live madeiradb / sandbox placeholder from context).
+ * DATABASE is env-specific plain text (live a_search / sandbox a_search_sandbox).
+ * Synth fails closed if database is madeiradb.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
- * @param {{ database: string }} opts
+ * @param {{ database: string, madeiradbDatabase?: string }} opts
  */
 function wireMssqlSecretEnv(fn, secret, opts) {
   const database = opts && opts.database;
   if (!database) {
     throw new Error('wireMssqlSecretEnv: opts.database required');
+  }
+  if (String(database).toLowerCase() === 'madeiradb') {
+    throw new Error(
+      'wireMssqlSecretEnv: MSSQL_DATABASE=madeiradb forbidden (FR-251); use a_search / a_search_sandbox',
+    );
   }
   fn.addEnvironment(
     'MSSQL_SERVER',
@@ -218,6 +235,11 @@ function wireMssqlSecretEnv(fn, secret, opts) {
   fn.addEnvironment('MSSQL_DATABASE', database);
   fn.addEnvironment('MSSQL_ENCRYPT', 'true');
   fn.addEnvironment('MSSQL_TRUST_SERVER_CERTIFICATE', 'true');
+  fn.addEnvironment(
+    'MADEIRADB_DATABASE',
+    (opts && opts.madeiradbDatabase) || MADEIRADB_DATABASE_DEFAULT,
+  );
+  fn.addEnvironment('A_SEARCH_DB_ALLOWLIST', 'a_search,a_search_sandbox');
   secret.grantRead(fn);
 }
 
@@ -287,6 +309,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
   ],
+  // FR-179: enable wix (merchant app + selftest fallback) -> FR-138
+  wix: [
+    'WIX_CLIENT_ID',
+    'WIX_API_TOKEN',
+    'WIX_SITE_ID',
+    'WIX_STORE_URL',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -322,6 +351,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
+  },
+  // FR-179 merchant API base default
+  wix: {
+    WIX_API_BASE: 'https://www.wixapis.com',
   },
 };
 
@@ -460,10 +493,12 @@ class ASearchStack extends cdk.Stack {
     });
 
 
-    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlSecretArn=...).
-    // JSON keys SERVER/USER/PASSWORD; DATABASE is plain per env (FR-121 sandbox name).
+    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlAppSecretArn / mssqlSecretArn=...).
+    // JSON keys SERVER/USER/PASSWORD; DATABASE plain per env (FR-251 live a_search / sandbox a_search_sandbox).
     const mssqlSecretArn =
-      this.node.tryGetContext('mssqlSecretArn') || MSSQL_SECRET_ARN_PLACEHOLDER;
+      this.node.tryGetContext('mssqlAppSecretArn') ||
+      this.node.tryGetContext('mssqlSecretArn') ||
+      MSSQL_SECRET_ARN_PLACEHOLDER;
     const mssqlSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'MssqlConnSecret',
@@ -474,6 +509,18 @@ class ASearchStack extends cdk.Stack {
     const mssqlSandboxDatabase =
       this.node.tryGetContext('mssqlSandboxDatabase') ||
       MSSQL_SANDBOX_DATABASE_DEFAULT;
+    const madeiradbDatabase =
+      this.node.tryGetContext('madeiradbDatabase') || MADEIRADB_DATABASE_DEFAULT;
+    if (String(mssqlLiveDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlLiveDatabase must not be madeiradb (use a_search)',
+      );
+    }
+    if (String(mssqlSandboxDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlSandboxDatabase must not be madeiradb (use a_search_sandbox)',
+      );
+    }
 
     // FR-138: per-enabled-source provider credential secrets (context override
     // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
@@ -648,7 +695,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops connect + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -765,6 +812,12 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.GET],
       integration: entryIntegration('EntryAccountCommissionIntegration'),
     });
+    // FR-249: club revenue-share statement (JWT club role)
+    httpApi.addRoutes({
+      path: '/club/revenue-share',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryClubRevenueShareIntegration'),
+    });
     httpApi.addRoutes({
       path: '/account/stripe/link',
       methods: [apigwv2.HttpMethod.POST],
@@ -786,6 +839,15 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryStripeWebhookIntegration'),
     });
+    // FR-218: partner registration (mint DNS partner code + instructions)
+    httpApi.addRoutes({
+      path: '/partner/register',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartnerRegisterIntegration',
+        entry,
+      ),
+    });
     // FR-216: merchant shop connect (JWT) + provider callback (state nonce)
     httpApi.addRoutes({
       path: '/merchant/shops/connect',
@@ -802,6 +864,61 @@ class ASearchStack extends cdk.Stack {
         'EntryMerchantShopsCallbackIntegration',
         entry,
       ),
+    });
+    // FR-243: Magento Integration identity link
+    httpApi.addRoutes({
+      path: '/merchant/shops/magento/identity',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsMagentoIdentityIntegration',
+        entry,
+      ),
+    });
+    // FR-235 / #1349: list + delete own shops
+    httpApi.addRoutes({
+      path: '/merchant/shops',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsListIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}',
+      methods: [apigwv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsDeleteIntegration',
+        entry,
+      ),
+    });
+    // FR-236: Shopify webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/shopify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryShopifyShopWebhookIntegration'),
+    });
+    // FR-237: Wix App Removed webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/wix',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWixShopWebhookIntegration'),
+    });
+    // FR-229: shared login session mint + post-login redirect (public; JWT not required)
+    httpApi.addRoutes({
+      path: '/auth/session',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSessionIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/redirect',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryAuthRedirectIntegration'),
+    });
+    // FR-231: OAuth callback fail-closed without email|phone|contact (AL3)
+    httpApi.addRoutes({
+      path: '/auth/oauth/callback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthOAuthCallbackIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
@@ -884,6 +1001,95 @@ class ASearchStack extends cdk.Stack {
       schedule,
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
+
+    // FR-2139 / FR-240 follow-up: SQS FIFO a-search-shop-sync.fifo + DLQ + consumer.
+    // MessageGroupId=shopId; maxReceiveCount 5; visibility > Lambda timeout.
+    // FR-239 live transition will call onShopLive (enqueue); grant send to entry + maintainers now.
+    /** @param {string} fifoBase e.g. a-search-shop-sync.fifo */
+    const stagedFifoName = (fifoBase) => {
+      const raw = String(fifoBase || '');
+      if (!raw.endsWith('.fifo')) return stagedName(raw);
+      return `${stagedName(raw.slice(0, -'.fifo'.length))}.fifo`;
+    };
+    const shopSyncQueueName = stagedFifoName(SHOP_SYNC_FIFO_BASE);
+    const shopSyncDlqName = stagedFifoName('a-search-shop-sync-dlq.fifo');
+    const shopSyncDlq = new sqs.Queue(this, 'ShopSyncDeadLetterQueue', {
+      queueName: shopSyncDlqName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const shopSyncQueue = new sqs.Queue(this, 'ShopSyncFifoQueue', {
+      queueName: shopSyncQueueName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(
+        SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC,
+      ),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: shopSyncDlq,
+        maxReceiveCount: SHOP_SYNC_MAX_RECEIVE_COUNT,
+      },
+    });
+    entry.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerLive.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerSandbox.addEnvironment(
+      'SQS_SHOP_SYNC_URL',
+      shopSyncQueue.queueUrl,
+    );
+    shopSyncQueue.grantSendMessages(entry);
+    shopSyncQueue.grantSendMessages(maintainerLive);
+    shopSyncQueue.grantSendMessages(maintainerSandbox);
+
+    const shopSyncWorker = new lambda.Function(this, 'ShopSyncWorkerFunction', {
+      functionName: stagedName('a-search-shop-sync-worker'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'maintainer/src/shopSyncWorker.handler',
+      code: maintainerCode,
+      timeout: cdk.Duration.seconds(SHOP_SYNC_LAMBDA_TIMEOUT_SEC),
+      memorySize: HEAVY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_ENV: 'live',
+        SQS_SHOP_SYNC_URL: shopSyncQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'ShopSyncWorkerLogGroup'),
+    });
+    wireResultsBucketAccess(shopSyncWorker, resultsBucket);
+    wireMssqlSecretEnv(shopSyncWorker, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
+    shopSyncQueue.grantConsumeMessages(shopSyncWorker);
+    shopSyncWorker.addEventSource(
+      new SqsEventSource(shopSyncQueue, { batchSize: 1 }),
+    );
+
+    new cdk.CfnOutput(this, 'ShopSyncFifoQueueUrl', {
+      value: shopSyncQueue.queueUrl,
+      description: 'FR-2139/FR-240 SQS FIFO a-search-shop-sync.fifo',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncDeadLetterQueueUrl', {
+      value: shopSyncDlq.queueUrl,
+      description: 'FR-2139 DLQ for shop-sync FIFO (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
+      value: shopSyncWorker.functionName,
+    });
+
+    const shopSyncDlqAlarm = new cloudwatch.Alarm(this, 'ShopSyncDlqDepthAlarm', {
+      alarmName: stagedName('a-search-shop-sync-dlq-depth'),
+      alarmDescription:
+        'FR-2139: shop-sync DLQ ApproximateNumberOfMessagesVisible >= 1',
+      metric: shopSyncDlq.metricApproximateNumberOfMessagesVisible(),
+      threshold: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    shopSyncDlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
 
     // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
     // FR-132: stage onboarding/src + shared/ (handler path under staged root).
@@ -1119,6 +1325,7 @@ module.exports = {
   PROVIDER_PLAIN_DEFAULTS,
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
+  MADEIRADB_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
