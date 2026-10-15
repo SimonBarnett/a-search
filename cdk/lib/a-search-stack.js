@@ -835,6 +835,12 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryShopifyShopWebhookIntegration'),
     });
+    // FR-237: Wix App Removed webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/wix',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWixShopWebhookIntegration'),
+    });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
       path: '/auth/session',

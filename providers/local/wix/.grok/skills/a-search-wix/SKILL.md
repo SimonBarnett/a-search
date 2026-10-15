@@ -46,6 +46,22 @@ Pin: `tests/fr107-wix-worker.test.js`. Catalogue (FR-105) and normalize/upsert (
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
 (stay-dark; do not flip `enabled`). Pin: `tests/fr108-wix-selftest-probe.test.js`.
 
+## Merchant connect (FR-237)
+
+Auth model (current Wix Apps): store **instanceId** from the external install
+callback (`signedInstance` verified). Mint short-lived access tokens with
+
+`POST https://www.wixapis.com/oauth2/token` body
+`{ grant_type: "client_credentials", client_id, client_secret, instance_id }`.
+
+- Adapter: `shared/shops/adapters/wix.js`
+- Token cache (memory TTL only): `src/token.js` — never log or vault access tokens
+- Webhook App Removed: `POST /webhooks/shop/wix` -> Shop suspended(`uninstalled`)
+- App id/secret: Secrets Manager `a-search/{env}/providers/wix/app`
+- Catalogue accepts per-call `{ siteId, accessToken }` overrides (env = selftest)
+
+Pin: `tests/fr237-wix-connect.test.js`. Docs: `docs/fr/FR-237.md`.
+
 ## Env
 
-See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_STORE_URL`, `WIX_AFFILIATE_ID`, optional `WIX_API_BASE`). Queue env: `SQS_WIX_URL`.
+See `.env.example` (`MSSQL_*`, `WIX_SITE_ID`, `WIX_API_TOKEN`, `WIX_STORE_URL`, `WIX_AFFILIATE_ID`, optional `WIX_API_BASE`; merchant connect uses `WIX_APP_ID` / `WIX_APP_SECRET` from Secrets Manager). Queue env: `SQS_WIX_URL`.
