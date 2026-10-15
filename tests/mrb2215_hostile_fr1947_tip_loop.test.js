@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #2215 hostile pins for FR-1947 tip-loop close-one playbook.
+ * MRB #2215 hostile pins for FR-1947 tip-loop close-one playbook (extended FR-2314/2315).
  */
 
 const { describe, it } = require('node:test');
@@ -24,19 +24,23 @@ describe('MRB #2215 hostile FR-1947 tip-loop close', () => {
     const buf = fs.readFileSync(SKILL);
     assert.notEqual(buf[0], 0xef);
     const text = buf.toString('utf8');
-    assert.match(text, /ExistingPrUrl/);
-    assert.match(text, /gh pr close <N>|gh pr close \$\{?N\}?|one `gh pr close/);
-    assert.match(text, /never pipe a multi-number Where-Object list/);
-    assert.match(text, /too many arguments/);
-    assert.match(text, /exact title StartsWith/);
-    assert.match(text, /FR-1947/);
+    const line = text.split(/\r?\n/).find(
+      (l) => l.startsWith('- ') && l.includes('tip-loop close') && l.includes('ExistingPrUrl'),
+    );
+    assert.ok(line, 'tip-loop bullet');
+    assert.ok(line.includes('ExistingPrUrl'));
+    assert.ok(line.includes('gh pr close'));
+    assert.ok(line.includes('never pipe a multi-number Where-Object list'));
+    assert.ok(line.includes('too many arguments'));
+    assert.ok(line.includes('exact title StartsWith'));
+    assert.ok(line.includes('FR-1947'));
   });
 
-  it('fr1947 gate pins contiguous NEEDLE and no-BOM', () => {
+  it('fr1947 gate pins tip-loop CAST IRON and no-BOM', () => {
     const text = fs.readFileSync(GATE, 'utf8');
-    assert.match(text, /const NEEDLE/);
-    assert.match(text, /0xef/);
-    assert.match(text, /harvest-agent-skills/);
-    assert.match(text, /FR-1947/);
+    assert.ok(text.includes('0xef'));
+    assert.ok(text.includes('harvest-agent-skills'));
+    assert.ok(text.includes('FR-1947'));
+    assert.ok(text.includes('never a bare pull/N substring') || text.includes('FR-2314'));
   });
 });
