@@ -14,7 +14,7 @@ const docRel = path.join('docs', 'phase4-enablement-index.md');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 kijiji + FR-169 aliexpress. */
-const PHASE2_STUB_IDS = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const PHASE2_STUB_IDS = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
 
 /** Index still lists every FR-167..180 id (including already-enabled kelkoo). */
 const ENABLE_FR_BY_ID = {

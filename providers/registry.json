@@ -255,8 +255,8 @@
       "kind": "local",
       "folder": "providers/local/wix",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WIX_URL",
       "rateLimit": {

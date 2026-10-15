@@ -15,7 +15,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
-const OTHER_STAY_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const OTHER_STAY_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
