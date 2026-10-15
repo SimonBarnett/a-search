@@ -1,18 +1,18 @@
 'use strict';
 
 /**
- * Normalize Etsy Open API listing payloads → a-search products (FR-076).
+ * Normalize Etsy Open API listing payloads â†’ a-search products (FR-076).
  * Stay-dark: do not enable registry. search.js / worker wiring are out of scope
  * for this FR (search may already be present from FR-075).
  *
  * Field map:
- * - `listing_id` / `id` → `id`
- * - `title` → `title`
- * - `url` / `url_full` → `url` via FR-244 Rakuten/Awin affiliate wrap
- * - `images[0].url_570xN` / `image_url` → `imageUrl`
- * - `price.amount` / `price.divisor` → `price` (major units)
- * - `price.currency_code` → `currency`
- * - `description` / `shop_name` → `description`
+ * - `listing_id` / `id` â†’ `id`
+ * - `title` â†’ `title`
+ * - `url` / `url_full` â†’ `url` via FR-244 Rakuten/Awin affiliate wrap
+ * - `images[0].url_570xN` / `image_url` â†’ `imageUrl`
+ * - `price.amount` / `price.divisor` â†’ `price` (major units)
+ * - `price.currency_code` â†’ `currency`
+ * - `description` / `shop_name` â†’ `description`
  */
 
 const {
@@ -156,7 +156,7 @@ function listingsFromBody(body) {
 
 /**
  * Map an Etsy listing-search JSON body to products.
- * Missing/partial rows (no id+title) are skipped (no throw). Empty → [].
+ * Missing/partial rows (no id+title) are skipped (no throw). Empty â†’ [].
  *
  * @param {object} searchBody
  * @param {{
