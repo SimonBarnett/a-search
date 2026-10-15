@@ -20,7 +20,6 @@ const DEFAULT_ON = [
   'partnerize',
   'tradedoubler',
   'wix',
-
   'woocommerce',
 ];
 
