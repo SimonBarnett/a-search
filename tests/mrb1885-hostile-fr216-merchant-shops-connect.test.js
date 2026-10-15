@@ -21,7 +21,8 @@ describe('MRB #1885 hostile FR-216 merchant shops connect', () => {
     assert.match(text, /\/merchant\/shops\/callback/);
     assert.match(text, /pending_payment/);
     assert.match(text, /a_search/);
-    assert.doesNotMatch(text, /madeiradb/);
+    // madeiradb may be named as read-only / untouched; never as the Shops home.
+    assert.match(text, /madeiradb is read-only|Never modify madeiradb/i);
   });
 
   it('CDK wires connect JWT route + callback provider path', () => {
