@@ -10,9 +10,13 @@
 
 const { assertUserId } = require('./userId');
 
-/** Parameterised SELECT through the FR-251 mdb view (never dbo.Users directly). */
+/**
+ * Parameterised SELECT through the FR-251 mdb view (never dbo.Users directly).
+ * Returns the permissions column for JS token parse — NOT a boolean partner
+ * predicate. Do not treat "permissions IS NOT NULL" as partnerhood (MRB #2206).
+ */
 const isPartnerSql =
-  "SELECT 1 AS ok FROM mdb.Users WHERE user_id = @code AND permissions IS NOT NULL";
+  'SELECT permissions FROM mdb.Users WHERE user_id = @code';
 
 /**
  * Parse a madeiradb Users.permissions JSON-ish array string into tokens.
@@ -77,10 +81,7 @@ async function isPartnerFromDb(db, code, opts = {}) {
   if (!db || typeof db.query !== 'function') {
     throw new Error('isPartnerFromDb requires db.query');
   }
-  const result = await db.query(
-    'SELECT permissions FROM mdb.Users WHERE user_id = @code',
-    { code: id },
-  );
+  const result = await db.query(isPartnerSql, { code: id });
   const rows = Array.isArray(result)
     ? result
     : (result && result.recordset) || [];

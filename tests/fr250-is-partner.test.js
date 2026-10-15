@@ -78,6 +78,8 @@ describe('FR-250 isPartner permissions rule', () => {
   it('isPartnerSql targets mdb.Users; isPartnerFromDb caches and is read-only', async () => {
     assert.match(isPartnerSql, /mdb\.Users/);
     assert.match(isPartnerSql, /@code/);
+    assert.match(isPartnerSql, /SELECT\s+permissions/i);
+    assert.doesNotMatch(isPartnerSql, /permissions\s+IS\s+NOT\s+NULL/i);
     assert.doesNotMatch(isPartnerSql, /UPDATE|INSERT|DELETE/i);
 
     /** @type {string[]} */
