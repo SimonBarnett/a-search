@@ -19,6 +19,8 @@ const DEFAULT_ON = [
   'shopify',
   'partnerize',
   'tradedoubler',
+  'wix',
+
   'woocommerce',
 ];
 
