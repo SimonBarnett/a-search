@@ -20,6 +20,10 @@
     "pacing/",
     "selftest/",
     "mssql/",
-    "README.md"
+    "widgets/",
+    "auth/",
+    "components/",
+    "README.md",
+    "dns/"
   ]
 }
