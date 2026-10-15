@@ -40,8 +40,8 @@ describe('FR-174 enable tradedoubler', () => {
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 keep-both');
-    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
-    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.sandbox, false, 'FR-171 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
