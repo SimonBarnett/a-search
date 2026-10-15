@@ -28,7 +28,6 @@
     "README.md",
     "dns/",
     "merchantWizard.js",
-    "shops/",
     "notify/"
   ]
 }

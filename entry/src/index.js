@@ -44,6 +44,10 @@ const {
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
 const {
+  matchAccountPayoutsRoute,
+  handleAccountPayouts,
+} = require('./accountPayouts');
+const {
   matchWidgetsCreateRoute,
   handleWidgetsCreate,
 } = require('./widgetsCreate');
@@ -64,6 +68,7 @@ const SELFTEST_ROUTE = 'entry/selftest';
 const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
+const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
 const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
@@ -216,6 +221,7 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const payoutRoute = matchAccountPayoutsRoute(method, path);
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
   const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
@@ -226,10 +232,12 @@ async function handler(event, _context, deps = {}) {
       ? GO_ROUTE
       : isPartsRoute(method, path)
         ? PARTS_ROUTE
-        : widgetsRoute
-          ? WIDGETS_CREATE_ROUTE
-          : partnerRoute
-            ? PARTNER_REGISTER_ROUTE
+        : payoutRoute
+          ? ACCOUNT_PAYOUTS_ROUTE
+          : widgetsRoute
+            ? WIDGETS_CREATE_ROUTE
+            : partnerRoute
+              ? PARTNER_REGISTER_ROUTE
             : merchantRoute
               ? MERCHANT_SHOPS_ROUTE
               : cpRoute
@@ -248,6 +256,13 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPartsRoute(method, path)) {
       return await handleParts(event, deps);
+    }
+    // FR-222 payout/stripe handlers win over FR-208 ComponentsPiece 501 stubs
+    if (
+      payoutRoute === 'POST /account/payouts' ||
+      payoutRoute === 'POST /account/stripe/link'
+    ) {
+      return await handleAccountPayouts(event, deps);
     }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
@@ -625,6 +640,7 @@ module.exports = {
   handleSearch,
   handleParts,
   handleGo,
+  handleAccountPayouts,
   handleWidgetsCreate,
   handlePartnerRegister,
   handleMerchantShopsConnect,
@@ -637,6 +653,7 @@ module.exports = {
   isSelftestRoute,
   isPartsRoute,
   isGoRoute,
+  matchAccountPayoutsRoute,
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
