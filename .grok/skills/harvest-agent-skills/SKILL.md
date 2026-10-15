@@ -239,3 +239,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest tip restating complementary-meta FAIL-supersede close lesson after that bullet is on main: FAIL-supersede citing the first PR
 - a-search FR-240: shop sync SQS messages must never carry credentials (vault via Shop only); enqueue/consume only when subscriptionStatus=active (trialing unpaid); PartFeedKeys Kind=shop FeedKey=shopId; soft-delete Parts on suspend; CDK FIFO may defer until FR-239 live wiring when Out of scope says so
 - a-search harvest tip restating FR-238 Woo SSRF/wc-auth/key_permissions lesson after that bullet is on main: FAIL-supersede citing the first PR
+- a-search FR-241 unpaid/dunning: stack on FR-240 shopSync tip when open then remerge main after FR-240 merges; registry consecutiveUnpaidPeriods+notices+markNoticeSent; hard-delete Parts/PartFeedKeys/vault per shop; N2>=7d before delete; merchant login retained; active-only downloads
