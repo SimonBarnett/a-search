@@ -12,7 +12,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'bol'];
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks']; // GBP/UK hold removed bol/aliexpress/avantlink; floors 18
 const STAY_DARK_SAMPLE = ['webgains'];
 
 describe('FR-138 provider Secrets Manager CDK wiring', () => {

@@ -69,8 +69,8 @@ describe('mrb721 hostile FR-080 bol normalize', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const bol = registry.sources.find((s) => s.id === 'bol');
-    assert.equal(bol.enabled.live, true);
-    assert.equal(bol.enabled.sandbox, true);
+    assert.equal(bol.enabled.live, false);
+    assert.equal(bol.enabled.sandbox, false);
 
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
