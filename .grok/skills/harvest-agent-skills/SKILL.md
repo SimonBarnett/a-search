@@ -222,3 +222,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - GBP/UK market-hold MRB: disable via registry enabled false only (keep folders + id/path string literals); retarget floors to 2*enabled_count; skip win32 CDK synth FR#3717; merge main then --auto --squash; DONE without CI poll
 - a-search docs/mrb for open product tip: merge origin/main into docs pin and dependency FR tip when both behind; run hostile suite against the product tip tree; --auto --squash both; DONE without CI poll
 - EventBridge cannot set dynamic SQS FIFO MessageGroupId from S3 key alone: use a small enqueue Lambda that runs agentQueue.classify/fifoSendParams before the rclone-host dispatcher polls
+- docs/mrb superseding open harvest tip: git checkout origin/main -- SKILL.md then UTF8 append lesson bullet (never assign git-show multiline to a PowerShell string or the book collapses)
