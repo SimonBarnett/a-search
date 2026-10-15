@@ -77,7 +77,8 @@ async function handleClubRevenueShare(event, deps = {}) {
   const clubId = String((auth && (auth.clubId || auth.tenantId || auth.userId)) || '')
     .trim()
     .toUpperCase();
-  if (role && role !== 'club') {
+  // FR-249 / MRB #2204: fail closed unless JWT role is exactly club (empty role is not club).
+  if (role !== 'club') {
     return jsonResponse(403, { ok: false, error: 'forbidden_not_club' });
   }
   if (!clubId) {
