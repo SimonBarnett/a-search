@@ -65,7 +65,7 @@ describe('MRB-835 FR-083 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> normalizePart -> writeResults with pubref track', async () => {
+  it('worker run: queryParts -> normalizePart -> writeResults with camref+pubref track', async () => {
     const puts = [];
     const row = {
       Source: 'partnerize',
@@ -101,7 +101,7 @@ describe('MRB-835 FR-083 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'partnerize');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /pubref=pz-pub-hostile/);
+    assert.match(String(result.products[0].url), /camref=pz-pub-hostile&pubref=/);
     assert.equal(puts.length, 1);
   });
 

@@ -11,7 +11,7 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const FR_DOC = path.join(ROOT, 'docs', 'fr', 'FR-228.md');
 const AUTH_DOC = path.join(ROOT, 'docs', 'components-piece-auth.md');
-const MIGRATION = path.join(ROOT, 'db', 'migrations', '015_Merchants_OtpCodes.sql');
+const MIGRATION = path.join(ROOT, 'db', 'migrations', '016_Merchants_OtpCodes.sql');
 const STACK = path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js');
 const SHARED_PKG = path.join(ROOT, 'shared', 'package.json');
 
@@ -114,7 +114,7 @@ describe('FR-228 email magic/OTP + merchant SMS', () => {
     assert.match(auth, /SMS/i);
   });
 
-  it('migration 015 Merchants+OtpCodes targets a_search only', () => {
+  it('migration 016 Merchants+OtpCodes targets a_search only', () => {
     const sql = fs.readFileSync(MIGRATION, 'utf8');
     assert.match(sql, /Merchants/i);
     assert.match(sql, /OtpCodes/i);

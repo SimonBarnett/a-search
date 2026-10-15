@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * MRB #2009 hostile pins for FR-228 email/SMS OTP.
@@ -21,9 +21,9 @@ describe('mrb2009 hostile FR-228 email/SMS OTP', () => {
     assert.match(stack, /path:\s*'\/auth\/sms\/verify'/);
   });
 
-  it('migration 015 targets a_search only; never SystemOTPs / madeiradb writes', () => {
+  it('migration 016 targets a_search only; never SystemOTPs / madeiradb writes', () => {
     const sql = fs.readFileSync(
-      path.join(ROOT, 'db', 'migrations', '015_Merchants_OtpCodes.sql'),
+      path.join(ROOT, 'db', 'migrations', '016_Merchants_OtpCodes.sql'),
       'utf8',
     );
     assert.match(sql, /--\s*target:\s*a_search/);

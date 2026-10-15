@@ -30,6 +30,7 @@
     "dns/",
     "merchantWizard.js",
     "extension/",
-    "account/"
+    "account/",
+    "finance/"
   ]
 }
