@@ -5,6 +5,22 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
+// GBP/UK market hold: bol, aliexpress, avantlink off (FR-253..255).
+const DEFAULT_ON = [
+  'amazon',
+  'ebay',
+  'rakuten',
+  'cj',
+  'awin',
+  'impact',
+  'kelkoo',
+  'etsy',
+  'skimlinks',
+  'shopify',
+  'partnerize',
+  'tradedoubler',
+];
+
 describe('MRB #31 hostile: loadRegistry contract', () => {
   it('enabled() rejects envs other than live|sandbox', () => {
     assert.throws(() => enabled('prod'), /live|sandbox/);
@@ -30,26 +46,9 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
   });
 
   it("enabled('live') and enabled('sandbox') return the same default-on set", () => {
-    const live = [...enabled('live')].sort();
-    const sandbox = [...enabled('sandbox')].sort();
-    assert.deepEqual(live, sandbox);
-    // FR-167 kijiji + FR-169 aliexpress on the default-on set (both envs).
-    assert.deepEqual(live, [
-      'aliexpress',
-      'amazon',
-      'avantlink',
-      'awin',
-      'bol',
-      'cj',
-      'ebay',
-      'etsy',
-      'impact',
-      'kelkoo',
-      'partnerize',
-      'rakuten',
-      'shopify',
-      'skimlinks',
-      'tradedoubler',
-    ]);
+    const live = enabled('live');
+    const sandbox = enabled('sandbox');
+    assert.deepEqual([...live].sort(), [...DEFAULT_ON].sort());
+    assert.deepEqual([...sandbox].sort(), [...DEFAULT_ON].sort());
   });
 });

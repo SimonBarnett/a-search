@@ -19,15 +19,15 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1334 hostile FR-170 enable etsy', () => {
-  it('registry: etsy both envs true; bol also enabled (FR-171 keep-both)', () => {
+  it('registry: etsy both envs true; bol also enabled (GBP/UK hold bol)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('etsy').enabled.live, true);
     assert.equal(byId.get('etsy').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, true);
-    assert.equal(byId.get('bol').enabled.sandbox, true);
+    assert.equal(byId.get('bol').enabled.live, false);
+    assert.equal(byId.get('bol').enabled.sandbox, false);
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + ETSY_TRACKING_ID plain default', () => {
@@ -44,8 +44,8 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 30 primary queues/);
-    assert.match(fr143, /expected 30 DLQ depth alarms/);
+    assert.match(fr142, /expected 24 primary queues/);
+    assert.match(fr143, /expected 24 DLQ depth alarms/);
     assert.match(fr142, /'etsy'/);
     assert.match(fr142, /'skimlinks'/);
   });

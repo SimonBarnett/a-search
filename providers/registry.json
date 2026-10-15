@@ -87,8 +87,8 @@
       "kind": "live",
       "folder": "providers/live/aliexpress",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_ALIEXPRESS_URL",
       "rateLimit": {
@@ -115,8 +115,8 @@
       "kind": "live",
       "folder": "providers/live/bol",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_BOL_URL",
       "rateLimit": {
@@ -225,8 +225,8 @@
       "kind": "local",
       "folder": "providers/local/avantlink",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_AVANTLINK_URL",
       "rateLimit": {
