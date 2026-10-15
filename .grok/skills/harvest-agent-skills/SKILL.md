@@ -238,3 +238,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR-238: Woo connect requires HTTPS public host (SSRF); wc-auth user_id is FR-216 state; reject non-read key_permissions; vault consumer keys only (never echo); map keys_invalid/invalid_key_permissions/wc_probe_failed to HTTP 400
 - a-search harvest tip restating complementary-meta FAIL-supersede close lesson after that bullet is on main: FAIL-supersede citing the first PR
 - a-search FR-240: shop sync SQS messages must never carry credentials (vault via Shop only); enqueue/consume only when subscriptionStatus=active (trialing unpaid); PartFeedKeys Kind=shop FeedKey=shopId; soft-delete Parts on suspend; CDK FIFO may defer until FR-239 live wiring when Out of scope says so
+- Tip-loop meta harvest tips that only restate an already-merged CONFLICTING SKILL restatement FAIL-supersede lesson (#2121): FAIL-supersede citing the first PR; do not land N+1 copies
