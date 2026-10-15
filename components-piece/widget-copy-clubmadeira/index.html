@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Copy widget embed - clubmadeira.uk</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; color: #122; }
+    .card { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .ok { color: #0a7; font-weight: 600; }
+    .meta { color: #556; font-size: 0.9rem; }
+    .notice { background: #fff8e6; border: 1px solid #e6c200; padding: 0.75rem; border-radius: 4px; }
+    pre { background: #f4f6f8; padding: 1rem; overflow: auto; white-space: pre-wrap; }
+    label { margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Copy widget embed (clubs)</h1>
+  <p class="meta">clubmadeira.uk copy page for clubs. Same snippet rules as smartcatalogue.uk -- no host in the snippet; each copy mints a new widgetGuid via POST /widgets with createdVia clubmadeira.</p>
+
+  <div class="card">
+    <h2>Club instructions</h2>
+    <p>Paste the embed on your club site. Club TXT (club id) is still required on the host for click approval. Partner TXT is optional.</p>
+    <p class="meta">Also see smartcatalogue.uk partners page for Partner DNS codes.</p>
+  </div>
+
+  <div class="card">
+    <h2>Widget layout</h2>
+    <label><input type="radio" name="mode" value="horizontal" checked /> horizontal</label>
+    <label><input type="radio" name="mode" value="vertical" /> vertical</label>
+    <label><input type="radio" name="mode" value="fullscreen" /> fullscreen</label>
+    <p id="fsNotice" class="notice" hidden>
+      Full catalogue needs Upgrade (GBP 10/month) for the site; until then shows the top 10.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Copy embed code</h2>
+    <p class="meta">Calls POST /widgets with createdVia clubmadeira (anonymous OK).</p>
+    <button type="button" id="copyBtn">Copy</button>
+    <p id="err" class="meta" hidden></p>
+    <p id="guidLine" class="ok" hidden>widgetGuid: <code id="guid"></code></p>
+    <pre id="snippet" hidden></pre>
+  </div>
+
+  <script>
+    (function () {
+      var notice = document.getElementById('fsNotice');
+      var radios = document.querySelectorAll('input[name="mode"]');
+      function syncNotice() {
+        var mode = document.querySelector('input[name="mode"]:checked').value;
+        notice.hidden = mode !== 'fullscreen';
+      }
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].addEventListener('change', syncNotice);
+      }
+      syncNotice();
+
+      document.getElementById('copyBtn').addEventListener('click', function () {
+        var err = document.getElementById('err');
+        err.hidden = true;
+        var layout = document.querySelector('input[name="mode"]:checked').value;
+        fetch('/widgets', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ layout: layout, createdVia: 'clubmadeira' })
+        }).then(function (r) {
+          return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+        }).then(function (x) {
+          if (!x.ok || !x.j.snippet || !x.j.widgetGuid) {
+            err.textContent = (x.j && x.j.error) || ('http_' + x.status);
+            err.hidden = false;
+            return;
+          }
+          document.getElementById('guid').textContent = x.j.widgetGuid;
+          document.getElementById('guidLine').hidden = false;
+          var pre = document.getElementById('snippet');
+          pre.textContent = x.j.snippet;
+          pre.hidden = false;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(x.j.snippet).catch(function () {});
+          }
+        }).catch(function (e) {
+          err.textContent = String(e && e.message || e);
+          err.hidden = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
