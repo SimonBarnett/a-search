@@ -116,7 +116,8 @@ describe('FR-111 woocommerce MSSQL queryParts + worker', () => {
       stock: '12',
     });
     assert.match(String(out.products[0].url), /madeira-demo\.example\.invalid/);
-    assert.match(String(out.products[0].url), /sid=woo-aff-test/);
+    // FR-248 merchant: plain product URL (no affiliate sid stamp)
+    assert.doesNotMatch(String(out.products[0].url), /[?&]sid=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
