@@ -121,10 +121,12 @@ describe('FR-235 merchant shops registry', () => {
       providerShopId: 'g1',
       shopDomain: 'a.myshopify.com',
     });
+    // pending_payment -> suspended is legal (FR-236 uninstall before pay)
     assert.throws(
-      () => transitionShop(shops, row.shopId, 'suspended', { reason: 'payment' }),
+      () => transitionShop(shops, row.shopId, 'bogus_status', { reason: 'x' }),
       (err) => err instanceof ShopTransitionError,
     );
+    assert.ok(ALLOWED_TRANSITIONS.pending_payment.includes('suspended'));
     assert.throws(
       () => {
         shops.transition(row.shopId, 'cancelled', { reason: 'admin' });

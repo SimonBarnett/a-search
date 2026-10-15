@@ -54,6 +54,7 @@ function assertProvider(provider) {
  *   scopes: string[],
  *   status: string,
  *   suspendReason: string|null,
+ *   statusReason: string|null,
  *   credentialsSecretRef: string|null,
  *   stripeSubscriptionId: string|null,
  *   liveAt: string|null,
@@ -141,6 +142,7 @@ function createShopsRegistry() {
       scopes: Array.isArray(args.scopes) ? args.scopes.map(String) : [],
       status: 'pending_payment',
       suspendReason: null,
+      statusReason: null,
       credentialsSecretRef:
         args.credentialsSecretRef != null
           ? String(args.credentialsSecretRef)
@@ -189,13 +191,16 @@ function createShopsRegistry() {
     row.status = to;
     row.statusChangedAt = at;
     if (opts && opts.reason !== undefined) {
-      row.suspendReason = opts.reason == null ? null : String(opts.reason);
+      const reason = opts.reason == null ? null : String(opts.reason);
+      row.suspendReason = reason;
+      row.statusReason = reason;
     }
     if (to === 'live' && !row.liveAt) {
       row.liveAt = at;
     }
     if (to === 'cancelled' && row.suspendReason == null) {
       row.suspendReason = (opts && opts.reason) || 'admin';
+      row.statusReason = row.suspendReason;
     }
     logs.push({
       shopId: row.shopId,
@@ -205,6 +210,29 @@ function createShopsRegistry() {
       at,
     });
     return get(shopId);
+  }
+
+  /** FR-236 compat aliases */
+  function getByShopId(shopId) {
+    return get(shopId);
+  }
+
+  function getByProviderShopId(provider, providerShopId) {
+    const p = String(provider).toLowerCase();
+    const id = String(providerShopId);
+    const row = rows.find((r) => r.provider === p && r.providerShopId === id);
+    return row ? { ...row, scopes: row.scopes.slice() } : null;
+  }
+
+  function updateStatus(shopId, status, reason) {
+    return transition(shopId, status, { reason });
+  }
+
+  function deleteByShopId(shopId) {
+    const i = rows.findIndex((r) => r.shopId === String(shopId));
+    if (i < 0) return false;
+    rows.splice(i, 1);
+    return true;
   }
 
   function statusLog(shopId) {
@@ -252,8 +280,12 @@ function createShopsRegistry() {
     insert,
     upsertConnect,
     get,
+    getByShopId,
+    getByProviderShopId,
     setCredentialRef,
     transition,
+    updateStatus,
+    deleteByShopId,
     statusLog,
     listByMerchant,
     listPublic,

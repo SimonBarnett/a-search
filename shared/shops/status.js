@@ -8,7 +8,7 @@ const { ShopTransitionError } = require('./errors');
 
 /** @type {Record<string, string[]>} */
 const ALLOWED_TRANSITIONS = Object.freeze({
-  pending_payment: ['live', 'cancelled'],
+  pending_payment: ['live', 'suspended', 'cancelled'],
   live: ['suspended', 'cancelled'],
   suspended: ['live', 'cancelled'],
   cancelled: [],
