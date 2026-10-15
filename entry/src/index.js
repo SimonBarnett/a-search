@@ -52,6 +52,10 @@ const {
   handleWidgetsCreate,
 } = require('./widgetsCreate');
 const {
+  matchPartnerRegisterRoute,
+  handlePartnerRegister,
+} = require('./partnerRegister');
+const {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
@@ -66,6 +70,7 @@ const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
 const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 
 function jsonResponse(statusCode, payload) {
@@ -218,6 +223,7 @@ async function handler(event, _context, deps = {}) {
   const { method, path } = resolveHttp(event || {});
   const payoutRoute = matchAccountPayoutsRoute(method, path);
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
@@ -230,6 +236,8 @@ async function handler(event, _context, deps = {}) {
           ? ACCOUNT_PAYOUTS_ROUTE
           : widgetsRoute
             ? WIDGETS_CREATE_ROUTE
+            : partnerRoute
+              ? PARTNER_REGISTER_ROUTE
             : merchantRoute
               ? MERCHANT_SHOPS_ROUTE
               : cpRoute
@@ -268,6 +276,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
+    }
+    if (partnerRoute === 'POST /partner/register') {
+      return await handlePartnerRegister(event, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
@@ -631,6 +642,7 @@ module.exports = {
   handleGo,
   handleAccountPayouts,
   handleWidgetsCreate,
+  handlePartnerRegister,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
   validateSearchBody,
@@ -643,5 +655,6 @@ module.exports = {
   isGoRoute,
   matchAccountPayoutsRoute,
   matchWidgetsCreateRoute,
+  matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
 };
