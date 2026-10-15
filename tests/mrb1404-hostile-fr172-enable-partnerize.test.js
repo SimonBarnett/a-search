@@ -46,8 +46,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 24 primary queues/);
-    assert.match(fr143, /expected 24 DLQ depth alarms/);
+    assert.match(fr142, /expected 26 primary queues/);
+    assert.match(fr143, /expected 26 DLQ depth alarms/);
     assert.match(fr142, /'partnerize'/);
   });
 

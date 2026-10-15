@@ -309,6 +309,13 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
   ],
+  // FR-179: enable wix (merchant app + selftest fallback) -> FR-138
+  wix: [
+    'WIX_CLIENT_ID',
+    'WIX_API_TOKEN',
+    'WIX_SITE_ID',
+    'WIX_STORE_URL',
+  ],
 };
 
 /** Non-secret public defaults from `.env.example` (plain env, not Secrets Manager). */
@@ -344,6 +351,10 @@ const PROVIDER_PLAIN_DEFAULTS = {
   // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
+  },
+  // FR-179 merchant API base default
+  wix: {
+    WIX_API_BASE: 'https://www.wixapis.com',
   },
 };
 

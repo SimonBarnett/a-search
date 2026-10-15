@@ -79,8 +79,7 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       'webgains',
       'admitad',
       'flexoffers',
-            'wix',
-      'woocommerce',
+            'woocommerce',
     ]) {
       assert.ok(byId[id], `missing registry id ${id}`);
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
