@@ -650,7 +650,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-229 /auth/session|/auth/redirect + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -824,6 +824,12 @@ class ASearchStack extends cdk.Stack {
       path: '/auth/redirect',
       methods: [apigwv2.HttpMethod.GET],
       integration: entryIntegration('EntryAuthRedirectIntegration'),
+    });
+    // FR-231: OAuth callback fail-closed without email|phone|contact (AL3)
+    httpApi.addRoutes({
+      path: '/auth/oauth/callback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthOAuthCallbackIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
