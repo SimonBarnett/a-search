@@ -237,3 +237,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest tip restating CONFLICTING SKILL.md checkout/cat-file UTF8 append after that lesson already on main: FAIL-supersede citing the first PR
 - a-search FR-238: Woo connect requires HTTPS public host (SSRF); wc-auth user_id is FR-216 state; reject non-read key_permissions; vault consumer keys only (never echo); map keys_invalid/invalid_key_permissions/wc_probe_failed to HTTP 400
 - a-search harvest tip restating complementary-meta FAIL-supersede close lesson after that bullet is on main: FAIL-supersede citing the first PR
+- Harvest tip that only restates the complementary-meta FAIL-supersede close lesson after it is on main: FAIL-supersede citing the first PR (#2110)
