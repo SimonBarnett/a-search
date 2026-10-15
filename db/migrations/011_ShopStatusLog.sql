@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-235 / #1349: Shop status machine columns + ShopStatusLog + global unique shop.
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never apply these scripts to the legacy club database (FR-251).
 
