@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * docs/mrb-2038 hostile pin for harvest tip #2038
