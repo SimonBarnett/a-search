@@ -40,11 +40,8 @@ const {
   assertTargetHeader,
   listMigrationFiles,
 } = require('../scripts/db-migrate');
-const {
-  MSSQL_LIVE_DATABASE,
-  MSSQL_SANDBOX_DATABASE_DEFAULT,
-  wireMssqlSecretEnv,
-} = require('../cdk/lib/a-search-stack');
+
+const STACK_PATH = path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js');
 
 function walkFiles(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
@@ -59,19 +56,24 @@ function walkFiles(dir, out = []) {
 
 describe('FR-251 madeiradb read-only + a_search ownership', () => {
   it('CDK defaults live=a_search sandbox=a_search_sandbox; rejects madeiradb wire', () => {
-    assert.equal(MSSQL_LIVE_DATABASE, 'a_search');
-    assert.equal(MSSQL_SANDBOX_DATABASE_DEFAULT, 'a_search_sandbox');
-    const stackSrc = fs.readFileSync(
-      path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js'),
-      'utf8',
-    );
+    // Source pins (no aws-cdk-lib required — MRB #2209 / FR #3717 seat gap).
+    const stackSrc = fs.readFileSync(STACK_PATH, 'utf8');
     assert.match(stackSrc, /MSSQL_LIVE_DATABASE = 'a_search'/);
-    assert.doesNotMatch(
-      stackSrc,
-      /MSSQL_LIVE_DATABASE = 'madeiradb'/,
-    );
+    assert.match(stackSrc, /MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox'/);
+    assert.doesNotMatch(stackSrc, /MSSQL_LIVE_DATABASE = 'madeiradb'/);
     assert.match(stackSrc, /mssqlAppSecretArn/);
     assert.match(stackSrc, /MADEIRADB_DATABASE/);
+    assert.match(
+      stackSrc,
+      /MSSQL_DATABASE=madeiradb forbidden \(FR-251\)/,
+    );
+    let wireMssqlSecretEnv;
+    try {
+      ({ wireMssqlSecretEnv } = require('../cdk/lib/a-search-stack'));
+    } catch (err) {
+      if (err && err.code === 'MODULE_NOT_FOUND') return;
+      throw err;
+    }
     assert.throws(
       () =>
         wireMssqlSecretEnv(
@@ -93,6 +95,15 @@ describe('FR-251 madeiradb read-only + a_search ownership', () => {
     assert.throws(
       () => assertAsearchDatabase('madeiradb'),
       (err) => err instanceof MssqlConnectError && err.code === 'wrong_database',
+    );
+    // MRB #2209: allowlist must not re-enable madeiradb.
+    assert.throws(
+      () =>
+        assertAsearchDatabase('madeiradb', { allowlist: ['madeiradb', 'a_search'] }),
+      (err) =>
+        err instanceof MssqlConnectError &&
+        err.code === 'wrong_database' &&
+        /forbidden|FR-251/i.test(err.message),
     );
     assert.equal(assertAsearchDatabase('a_search'), 'a_search');
     await assert.rejects(

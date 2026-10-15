@@ -38,6 +38,14 @@ function parseAllowlist(raw) {
  */
 function assertAsearchDatabase(dbName, opts = {}) {
   const name = String(dbName || '').trim();
+  // FR-251 / MRB #2209: madeiradb is never an a-search writer target, even if
+  // someone puts it in A_SEARCH_DB_ALLOWLIST.
+  if (name.toLowerCase() === 'madeiradb') {
+    throw new MssqlConnectError(
+      'wrong_database',
+      'MSSQL database madeiradb forbidden (FR-251); use a_search / a_search_sandbox',
+    );
+  }
   const allow = opts.allowlist || DEFAULT_ALLOWLIST;
   if (!allow.includes(name)) {
     throw new MssqlConnectError(
