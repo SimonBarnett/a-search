@@ -132,8 +132,8 @@ describe('FR-099 avantlink selftestProbe + rateLimit', () => {
     );
     const row = registry.sources.find((s) => s.id === 'avantlink');
     assert.ok(row);
-    assert.equal(row.enabled.live, true);
-    assert.equal(row.enabled.sandbox, true);
+    assert.equal(row.enabled.live, false);
+    assert.equal(row.enabled.sandbox, false);
     assert.ok(row.rateLimit);
     assert.equal(typeof row.rateLimit.maxConcurrency, 'number');
     assert.ok(row.rateLimit.maxConcurrency > 0);
