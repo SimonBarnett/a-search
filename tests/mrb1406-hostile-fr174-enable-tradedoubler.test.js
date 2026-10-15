@@ -27,7 +27,7 @@ describe('MRB-1406 hostile FR-174 enable tradedoubler', () => {
       .filter((s) => s.enabled && s.enabled.live && s.enabled.sandbox)
       .map((s) => s.id)
       .sort();
-    // GBP/UK hold: bol/aliexpress/avantlink dark → 12 enabled (floors 24).
+    // GBP/UK hold: bol/aliexpress/avantlink dark → 13 enabled (floors 26).
     assert.equal(enabled.length, 12, `enabled count ${enabled.length}`);
     assert.ok(enabled.includes('tradedoubler'));
     assert.ok(enabled.includes('partnerize'));

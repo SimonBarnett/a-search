@@ -14,18 +14,22 @@
     "writeResults.js",
     "identity/",
     "intake/",
+    "partners/",
     "onboarding/",
     "links/",
     "mapping/",
     "pacing/",
+    "shops/",
     "selftest/",
     "mssql/",
     "widgets/",
-    "shops/",
     "auth/",
     "notify/",
     "components/",
     "README.md",
-    "dns/"
+    "dns/",
+    "merchantWizard.js",
+    "extension/",
+    "account/"
   ]
 }

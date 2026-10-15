@@ -44,14 +44,55 @@ const {
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
 const {
+  matchAccountPayoutsRoute,
+  handleAccountPayouts,
+} = require('./accountPayouts');
+const {
   matchWidgetsCreateRoute,
   handleWidgetsCreate,
 } = require('./widgetsCreate');
 const {
+  matchAccountCommissionRoute,
+  handleAccountCommission,
+} = require('./accountCommission');
+const {
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
+} = require('./clubRevenueShare');
+const {
+  matchAccountUpgradeRoute,
+  handleAccountUpgrade,
+} = require('./accountUpgrade');
+const {
+  matchWidgetsMutateRoute,
+  handleWidgetsMutate,
+} = require('./widgetsMutate');
+const {
+  matchPartnerRegisterRoute,
+  handlePartnerRegister,
+} = require('./partnerRegister');
+const {
   matchMerchantShopsRoute,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMerchantShops,
 } = require('./merchantShops');
+const {
+  matchShopifyWebhookRoute,
+  handleShopifyWebhook,
+} = require('./shopifyWebhooks');
+const {
+  matchWixWebhookRoute,
+  handleWixWebhook,
+} = require('./wixWebhooks');
+const {
+  matchLoginEntryRoute,
+  handleLoginEntry,
+} = require('./loginEntry');
+const {
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
+} = require('./oauthCallback');
 const {
   matchAuthEmailRoute,
   handleAuthEmailRequest,
@@ -67,9 +108,17 @@ const SELFTEST_ROUTE = 'entry/selftest';
 const PARTS_ROUTE = 'entry/GET /parts';
 const GO_ROUTE = 'entry/GET /go';
 const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
+const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
 const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
+const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
+const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
 const AUTH_EMAIL_ROUTE = 'entry/auth';
+const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
+const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
+const CLUB_REVENUE_SHARE_ROUTE = 'entry/club/revenue-share';
+const WIDGETS_MUTATE_ROUTE = 'entry/widgets/mutate';
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -219,9 +268,19 @@ async function defaultEnqueue(args) {
 async function handler(event, _context, deps = {}) {
   const report = deps.reportException || defaultReportException;
   const { method, path } = resolveHttp(event || {});
+  const payoutRoute = matchAccountPayoutsRoute(method, path);
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const partnerRoute = matchPartnerRegisterRoute(method, path);
   const merchantRoute = matchMerchantShopsRoute(method, path);
+  const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
+  const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const loginRoute = matchLoginEntryRoute(method, path);
+  const oauthRoute = matchOAuthCallbackRoute(method, path);
   const authRoute = matchAuthEmailRoute(method, path);
+  const commissionRoute = matchAccountCommissionRoute(method, path);
+  const upgradeRoute = matchAccountUpgradeRoute(method, path);
+  const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
+  const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -229,19 +288,35 @@ async function handler(event, _context, deps = {}) {
       ? GO_ROUTE
       : isPartsRoute(method, path)
         ? PARTS_ROUTE
-        : widgetsRoute
-          ? WIDGETS_CREATE_ROUTE
-          : merchantRoute
-            ? MERCHANT_SHOPS_ROUTE
-            : authRoute
-              ? AUTH_EMAIL_ROUTE
-              : cpRoute
-                ? `entry/${cpRoute}`
-                : isSelftestRoute(method, path)
-                  ? SELFTEST_ROUTE
-                  : isPerformanceRoute(method, path)
-                    ? PERF_ROUTE
-                    : ENTRY_ROUTE;
+        : payoutRoute
+          ? ACCOUNT_PAYOUTS_ROUTE
+          : widgetsRoute
+            ? WIDGETS_CREATE_ROUTE
+            : partnerRoute
+              ? PARTNER_REGISTER_ROUTE
+              : merchantRoute
+                ? MERCHANT_SHOPS_ROUTE
+                : authRoute
+                  ? AUTH_EMAIL_ROUTE
+                  : loginRoute
+                  ? LOGIN_ENTRY_ROUTE
+                  : oauthRoute
+                    ? OAUTH_CALLBACK_ROUTE
+                    : commissionRoute
+                      ? ACCOUNT_COMMISSION_ROUTE
+                      : upgradeRoute
+                        ? ACCOUNT_UPGRADE_ROUTE
+                        : clubRevenueShareRoute
+                          ? CLUB_REVENUE_SHARE_ROUTE
+                          : widgetsMutateRoute
+                            ? WIDGETS_MUTATE_ROUTE
+                            : cpRoute
+                              ? `entry/${cpRoute}`
+                              : isSelftestRoute(method, path)
+                                ? SELFTEST_ROUTE
+                                : isPerformanceRoute(method, path)
+                                  ? PERF_ROUTE
+                                  : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -252,9 +327,36 @@ async function handler(event, _context, deps = {}) {
     if (isPartsRoute(method, path)) {
       return await handleParts(event, deps);
     }
+    // FR-222 payout/stripe handlers win over FR-208 ComponentsPiece 501 stubs
+    if (
+      payoutRoute === 'POST /account/payouts' ||
+      payoutRoute === 'POST /account/stripe/link'
+    ) {
+      return await handleAccountPayouts(event, deps);
+    }
+    // #1344 extension account/widget mutate handlers win over FR-208 501 stubs
+    if (commissionRoute) {
+      return await handleAccountCommission(event, deps);
+    }
+    if (upgradeRoute) {
+      return await handleAccountUpgrade(event, deps);
+    }
+    // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
+    if (clubRevenueShareRoute) {
+      return await handleClubRevenueShare(event, deps);
+    }
+    if (widgetsMutateRoute) {
+      return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
+    }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
+    }
+    if (oauthRoute) {
+      return await handleOAuthCallback(event, oauthRoute, deps);
+    }
+    if (loginRoute) {
+      return await handleLoginEntry(event, loginRoute, deps);
     }
     if (cpRoute) {
       return await handleComponentsPieceStub(event, cpRoute);
@@ -265,6 +367,7 @@ async function handler(event, _context, deps = {}) {
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
     }
+
     if (authRoute === 'POST /auth/email/request') {
       return await handleAuthEmailRequest(event, deps);
     }
@@ -277,11 +380,30 @@ async function handler(event, _context, deps = {}) {
     if (authRoute === 'POST /auth/sms/verify') {
       return await handleAuthSmsVerify(event, deps);
     }
+
+    if (partnerRoute === 'POST /partner/register') {
+      return await handlePartnerRegister(event, deps);
+    }
+    if (shopifyWebhookRoute) {
+      return await handleShopifyWebhook(event, deps);
+    }
+    if (wixWebhookRoute) {
+      return await handleWixWebhook(event, deps);
+    }
+    if (
+      merchantRoute === 'GET /merchant/shops' ||
+      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+    ) {
+      return await handleMerchantShops(event, merchantRoute, deps);
+    }
     if (merchantRoute === 'POST /merchant/shops/connect') {
       return await handleMerchantShopsConnect(event, deps);
     }
     if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
       return await handleMerchantShopsCallback(event, deps);
+    }
+    if (merchantRoute === 'GET|POST /merchant/shops/magento/identity') {
+      return await handleMerchantShops(event, merchantRoute, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -637,9 +759,12 @@ module.exports = {
   handleSearch,
   handleParts,
   handleGo,
+  handleAccountPayouts,
   handleWidgetsCreate,
+  handlePartnerRegister,
   handleMerchantShopsConnect,
   handleMerchantShopsCallback,
+  handleMerchantShops,
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
@@ -648,6 +773,14 @@ module.exports = {
   isSelftestRoute,
   isPartsRoute,
   isGoRoute,
+  matchAccountPayoutsRoute,
   matchWidgetsCreateRoute,
+  matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
+  matchLoginEntryRoute,
+  handleLoginEntry,
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
 };
