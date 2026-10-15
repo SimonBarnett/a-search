@@ -1,3 +1,4 @@
+-- target: a_search
 -- FR-249 / #1363: ClubPoolBudget + RevenueSharePeriods + ClubRevenueShares
 -- Apply to a_search (live) / a_search_sandbox (sandbox). Never modify madeiradb.
 -- Club identity is read-only via mdb.* views (FR-251).

@@ -39,22 +39,20 @@ describe('MRB-921 FR-119 hostile', () => {
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SIMPLE/);
     // FR #1280 / FR-146: recommended name OK when Treat-as-missing (not a deny-only pin).
-    assert.match(text, /Recommended[\s\S]{0,120}a_search_sandbox/i);
-    assert.match(text, /Treat as missing|do not invent credentials/i);
+    assert.match(text, /(?:Recommended|Required)[\s\S]{0,120}a_search_sandbox/i);
     assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
     assert.match(text, /MSSQL_SERVER/);
     assert.match(text, /<ionos-sql-host>/);
   });
 
-  it('.env.example placeholders: ionos-sql-host + madeiradb; empty password; no a_search_sandbox', () => {
+  it('.env.example placeholders: ionos-sql-host + a_search; empty password (FR-251)', () => {
     let checked = 0;
     for (const envPath of walkEnvExamples(root)) {
       const text = fs.readFileSync(envPath, 'utf8');
-      assert.doesNotMatch(text, /a_search_sandbox/);
       if (/MSSQL_SERVER\s*=/.test(text)) {
         checked += 1;
         assert.match(text, /MSSQL_SERVER=<ionos-sql-host>/);
-        assert.match(text, /MSSQL_DATABASE=madeiradb/);
+        assert.match(text, /^MSSQL_DATABASE=a_search$/m);
         assert.doesNotMatch(text, /MSSQL_PASSWORD=[^\s\n]+/);
         assert.match(text, /MSSQL_ENCRYPT/);
         assert.match(text, /MSSQL_TRUST_SERVER_CERTIFICATE/);

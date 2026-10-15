@@ -51,24 +51,40 @@ Dotted names for agents/pins: Users.user_id, Catalog.UserId, Products.UserId, Me
 Almost all of these joins are **logical (no FK)** -- see FR-117 / data-model.
 Only `UserApiKeys.user_id` is a declared FK to `Users`.
 
-## Roles vs permissions vs Partner table (open question)
+## Roles vs permissions vs Partner table (DECIDED 2026-10-10)
 
 `Users.role` counts (as of 2026-10-08): merchant 244, community 14, partner 1,
-NULL 1. `Users.permissions` is a JSON-ish array string (e.g. values containing
-`partner` or `admin`).
+NULL 1. `Users.permissions` is a JSON-ish array string (e.g.
+`["partner","admin"]` or `['partner','admin']`).
 
-A **partner** appears in three places that **disagree**:
+### Historical snapshot (2026-10-08) -- three sources disagreed
 
 | Source | Example code | Notes |
 |--------|--------------|-------|
 | `Partner` table | `L7WDZWC8` (Approved=1) | 1 row |
 | `Users.role = 'partner'` | `GV2K0K7O` | Not present in `Partner` |
-| `permissions LIKE '%partner%'` | `L7WDZWC8` (role NULL), `GV2K0K7O`, plus two `role=community` users | Overlaps both |
+| `permissions` contains token `partner` | `L7WDZWC8` (role NULL), `GV2K0K7O`, plus two `role=community` users | Overlaps both |
 
-**Open question (needs Simon):** which of `Partner`, `Users.role`, or
-`permissions` is authoritative for "is this code a partner?" **a-search must
-not treat any single one as authoritative until that decision.** Do not write
-product logic that assumes they agree.
+### Authoritative rule (Simon 2026-10-10 15:00, corrected)
+
+A user is a **partner** iff `Users.permissions` parses to an array that
+**contains the exact token** `partner`. Do **not** use a raw
+`LIKE '%partner%'` substring match (that would false-positive on tokens such
+as `partnership`).
+
+- Shared helper: `shared/identity/isPartner.js` (`parsePermissions`,
+  `isPartner(user)`, `isPartnerFromDb(db, code)`, `isPartnerSql`).
+- a-search reads partner status **read-only** through the FR-251 `mdb.Users`
+  view over madeiradb. **a-search never writes** madeiradb `Partner`,
+  `Users.role`, or `Users.permissions` (FR-251 / #1365). Syncing those
+  derived copies is a DBA/Simon matter, not a-search product work.
+- `Users.role` remains a single descriptive value (`merchant` / `community` /
+  `partner` / NULL). It is **not** used for partner checks.
+- The `Partner` table is a legacy derived copy for madeiradb TVFs
+  (`dbo.clubs()`, `dbo.PartnerSites`) and clubmadeira pages. a-search product
+  code must not treat `Partner.Approved` as authoritative.
+- Future callers (FR-213, FR-248, FR-222, FR-200, #1344) must use
+  `isPartner` / `isPartnerFromDb`.
 
 ## Referrer = partner relationship (inferred)
 
