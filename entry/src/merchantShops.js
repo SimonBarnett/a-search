@@ -162,6 +162,15 @@ async function handleMerchantShopsConnect(event, deps = {}) {
         typeof parsed.shopDomain === 'string' ? parsed.shopDomain : undefined,
       adapterOpts: {
         session: parsed.session,
+        consumerKey:
+          typeof parsed.consumerKey === 'string'
+            ? parsed.consumerKey
+            : undefined,
+        consumerSecret:
+          typeof parsed.consumerSecret === 'string'
+            ? parsed.consumerSecret
+            : undefined,
+        httpRequest: deps.httpRequest,
         ...(deps.adapterOpts || {}),
       },
       nonces: deps.nonces || defaultNonces,
@@ -169,6 +178,50 @@ async function handleMerchantShopsConnect(event, deps = {}) {
       nowMs: deps.nowMs,
       callbackBaseUrl: deps.callbackBaseUrl,
     });
+
+    // FR-238 advanced paste: keys already validated in startConnect; finish Shop row.
+    const pasteKeys =
+      String(provider).toLowerCase() === 'woocommerce' &&
+      typeof parsed.consumerKey === 'string' &&
+      parsed.consumerKey &&
+      typeof parsed.consumerSecret === 'string' &&
+      parsed.consumerSecret;
+    if (pasteKeys) {
+      const subscribeBaseUrl =
+        deps.subscribeBaseUrl ||
+        (deps.env && deps.env.A_SEARCH_SUBSCRIBE_URL) ||
+        process.env.A_SEARCH_SUBSCRIBE_URL ||
+        'https://smartcatalogue.uk/wizard/subscribe';
+      const done = await completeConnect({
+        provider,
+        state: result.state,
+        req: {
+          body: {
+            user_id: result.state,
+            consumer_key: parsed.consumerKey,
+            consumer_secret: parsed.consumerSecret,
+            key_permissions: 'read',
+            key_id: 'paste',
+          },
+        },
+        adapterOpts: {
+          httpRequest: deps.httpRequest,
+          vault: deps.vault,
+          ...(deps.adapterOpts || {}),
+        },
+        nonces: deps.nonces || defaultNonces,
+        shops: deps.shops || defaultShops,
+        nowMs: deps.nowMs,
+        subscribeBaseUrl,
+      });
+      return jsonResponse(200, {
+        ok: true,
+        paste: true,
+        shop: done.shop,
+        redirectTo: done.redirectTo,
+      });
+    }
+
     return jsonResponse(200, {
       ok: true,
       state: result.state,
@@ -180,7 +233,11 @@ async function handleMerchantShopsConnect(event, deps = {}) {
     if (
       code === 'unknown_provider' ||
       code === 'provider_required' ||
-      code === 'invalid_shop_domain'
+      code === 'invalid_shop_domain' ||
+      code === 'wc_probe_failed' ||
+      code === 'keys_invalid' ||
+      code === 'keys_required' ||
+      code === 'invalid_key_permissions'
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }
@@ -207,7 +264,12 @@ async function handleMerchantShopsCallback(event, deps = {}) {
   if (parsed === null) {
     return jsonResponse(400, { ok: false, error: 'invalid_json' });
   }
-  const state = q.state || parsed.state;
+  // Woo /wc-auth POSTs user_id = FR-216 state (FR-238).
+  const state =
+    q.state ||
+    parsed.state ||
+    q.user_id ||
+    parsed.user_id;
   if (!state) {
     return jsonResponse(400, { ok: false, error: 'invalid_state' });
   }
@@ -257,7 +319,11 @@ async function handleMerchantShopsCallback(event, deps = {}) {
       code === 'code_required' ||
       code === 'instance_id_required' ||
       code === 'wix_app_credentials_missing' ||
-      code === 'shopify_app_credentials_missing'
+      code === 'shopify_app_credentials_missing' ||
+      code === 'invalid_key_permissions' ||
+      code === 'keys_required' ||
+      code === 'keys_invalid' ||
+      code === 'wc_probe_failed'
     ) {
       return jsonResponse(400, { ok: false, error: code });
     }
