@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-106 / #659: wix normalize + Parts upsert contract (stay dark).
+ * FR-106 / #659: wix normalize + Parts upsert contract (FR-179 enabled).
  */
 
 const { describe, it } = require('node:test');
@@ -31,7 +31,7 @@ const meta = {
   env: 'sandbox',
 };
 
-describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
+describe('FR-106 wix normalize + Parts upsert (FR-179 enabled)', () => {
   it('normalize fixture has required Parts fields', () => {
     assert.ok(fs.existsSync(DEFAULT_FIXTURE));
     const fixture = readDefaultFixture();
@@ -157,14 +157,16 @@ describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
     assert.match(MERGE_SQL, /PartsStaging/i);
   });
 
-  it('registry wix stays dark', () => {
+  it('registry wix enabled (FR-179 merchant); rateLimit floor intact', () => {
+    // FR #2451 / FR-179: wix is enabled as merchant; FR-179-enabled asserts are stale.
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'wix');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {

@@ -24,5 +24,6 @@ Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME
 | `012_PartFeedKeys_shop_kind.sql` | PartFeedKeys shop/kind |
 | `013_RevenueShare.sql` | Club revenue share (FR-249) |
 | `014_mdb_identity_views.sql` | `mdb.*` live views / sandbox tables (FR-251) |
+| `015_Merchants_OtpCodes.sql` | Merchants verified contact + OtpCodes hashed secrets (FR-228); never SystemOTPs |
 
 Every file starts with `-- target: a_search`.

@@ -29,10 +29,21 @@ One shared sign-in for merchants, partners, and clubs. Phase 5 has **no password
 
 ## Email magic link / OTP
 
-- Email-only path: user enters email, receives a **magic link** or **OTP**.
+- Email-only path (partners/clubs/returning logins): user enters email, receives a
+  **magic link** or **OTP** (FR-228: `POST /auth/email/request|verify`).
 - No password field; no password required.
 - Invalid/expired OTP or used magic link => AL3 error; user may request a new
   one.
+- Verified session JWT carries `contactVerified: true`.
+
+## Merchant SMS OTP
+
+- Merchant signup on smartcatalogue.uk verifies via **SMS OTP** (FR-228):
+  E.164 phone (UK `+44` default), 6-digit code, 10-minute TTL, max 5 attempts,
+  rate-limited sends. Injectable `shared/notify/smsSender.js`.
+- Codes stored hashed in `a_search.dbo.OtpCodes` (never madeiradb `SystemOTPs`).
+- Add-shop / merchant gates fail closed until contact is verified
+  (`contact_unverified`).
 
 ## Fail closed (contact)
 
@@ -41,10 +52,12 @@ One shared sign-in for merchants, partners, and clubs. Phase 5 has **no password
 | OAuth with email/phone/contact | Session OK; map to identity userId |
 | OAuth with no contact claims | Fail closed; no session |
 | Email magic/OTP verified | Session OK |
+| Merchant SMS OTP verified | Session OK |
 | Password login | Not offered in Phase 5 |
+| Unverified session on Add-shop | 403 contact_unverified |
 
 ## Out of scope (this doc)
 
 - Live OAuth app credentials (deploy-time)
-- SMS phone OTP productization
+- Live SNS/Twilio credentials in git
 - Stripe Connect (payouts FR-222)

@@ -695,7 +695,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + FR-228 auth email/SMS OTP + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -919,6 +919,27 @@ class ASearchStack extends cdk.Stack {
       path: '/auth/oauth/callback',
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryAuthOAuthCallbackIntegration'),
+    });
+    // FR-228: email magic/OTP + merchant SMS OTP (public; rate-limited in handler)
+    httpApi.addRoutes({
+      path: '/auth/email/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/email/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailVerifyIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsVerifyIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)

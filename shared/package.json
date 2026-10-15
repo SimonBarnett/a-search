@@ -1,35 +1,35 @@
 {
-    "name":  "@a-search/shared",
-    "version":  "0.0.1",
-    "private":  true,
-    "description":  "Shared a-search helpers (Lambda layer /opt/nodejs/a-search)",
-    "main":  "index.js",
-    "engines":  {
-                    "node":  "\u003e=20"
-                },
-    "files":  [
-                  "index.js",
-                  "assertEnv.js",
-                  "resultsPath.js",
-                  "writeResults.js",
-                  "identity/",
-                  "intake/",
-                  "partners/",
-                  "onboarding/",
-                  "links/",
-                  "mapping/",
-                  "pacing/",
-                  "shops/",
-                  "selftest/",
-                  "mssql/",
-                  "widgets/",
-                  "auth/",
-                  "components/",
-                  "README.md",
-                  "dns/",
-                  "merchantWizard.js",
-                  "notify/",
-                  "extension/",
-                  "account/"
-              ]
+  "name": "@a-search/shared",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared a-search helpers (Lambda layer /opt/nodejs/a-search)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "index.js",
+    "assertEnv.js",
+    "resultsPath.js",
+    "writeResults.js",
+    "identity/",
+    "intake/",
+    "partners/",
+    "onboarding/",
+    "links/",
+    "mapping/",
+    "pacing/",
+    "shops/",
+    "selftest/",
+    "mssql/",
+    "widgets/",
+    "auth/",
+    "notify/",
+    "components/",
+    "README.md",
+    "dns/",
+    "merchantWizard.js",
+    "extension/",
+    "account/"
+  ]
 }
