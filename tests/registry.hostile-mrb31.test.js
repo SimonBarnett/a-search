@@ -19,6 +19,8 @@ const DEFAULT_ON = [
   'shopify',
   'partnerize',
   'tradedoubler',
+  'wix',
+  'webgains',
 ];
 
 describe('MRB #31 hostile: loadRegistry contract', () => {
@@ -28,9 +30,9 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     assert.throws(() => enabled(undefined), /live|sandbox/);
   });
 
-  it('registry has exactly 20 shortlist sources with folder matching kind', () => {
+  it('registry has exactly 22 shortlist sources with folder matching kind', () => {
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 20);
+    assert.equal(sources.length, 22);
     for (const s of sources) {
       assert.ok(s.kind === 'live' || s.kind === 'local', s.id);
       assert.ok(
