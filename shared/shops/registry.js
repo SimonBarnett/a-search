@@ -58,6 +58,9 @@ function assertProvider(provider) {
  *   credentialsSecretRef: string|null,
  *   stripeSubscriptionId: string|null,
  *   subscriptionStatus: string|null,
+ *   subscriptionStatusAt: string|null,
+ *   consecutiveUnpaidPeriods: number,
+ *   notices: Record<string, string>,
  *   lastSyncResult: string|null,
  *   liveAt: string|null,
  *   statusChangedAt: string|null,
@@ -95,7 +98,13 @@ function createShopsRegistry() {
 
   function get(shopId) {
     const row = rows.find((r) => r.shopId === String(shopId));
-    return row ? { ...row, scopes: row.scopes.slice() } : null;
+    return row
+      ? {
+          ...row,
+          scopes: row.scopes.slice(),
+          notices: row.notices ? { ...row.notices } : {},
+        }
+      : null;
   }
 
   /**
@@ -151,6 +160,9 @@ function createShopsRegistry() {
           : null,
       stripeSubscriptionId: null,
       subscriptionStatus: null,
+      subscriptionStatusAt: null,
+      consecutiveUnpaidPeriods: 0,
+      notices: {},
       lastSyncResult: null,
       liveAt: null,
       statusChangedAt: at,
@@ -289,12 +301,45 @@ function createShopsRegistry() {
       throw err;
     }
     row.subscriptionStatus = status == null ? null : String(status);
+    const at =
+      (opts && opts.at) ||
+      new Date(
+        opts && opts.nowMs != null ? Number(opts.nowMs) : Date.now(),
+      ).toISOString();
+    row.subscriptionStatusAt = at;
     if (opts && opts.stripeSubscriptionId !== undefined) {
       row.stripeSubscriptionId =
         opts.stripeSubscriptionId == null
           ? null
           : String(opts.stripeSubscriptionId);
     }
+    return get(shopId);
+  }
+
+  /** FR-241: unpaid period counter (per shop). */
+  function setConsecutiveUnpaidPeriods(shopId, n) {
+    const row = rows.find((r) => r.shopId === String(shopId));
+    if (!row) {
+      const err = new Error('shop_not_found');
+      err.code = 'shop_not_found';
+      throw err;
+    }
+    row.consecutiveUnpaidPeriods = Math.max(0, Number(n) || 0);
+    return get(shopId);
+  }
+
+  /** FR-241: record N1/N2/N3 notice send time (ISO). */
+  function markNoticeSent(shopId, notice, atIso) {
+    const row = rows.find((r) => r.shopId === String(shopId));
+    if (!row) {
+      const err = new Error('shop_not_found');
+      err.code = 'shop_not_found';
+      throw err;
+    }
+    if (!row.notices || typeof row.notices !== 'object') {
+      row.notices = {};
+    }
+    row.notices[String(notice)] = String(atIso);
     return get(shopId);
   }
 
@@ -334,6 +379,8 @@ function createShopsRegistry() {
     listByMerchant,
     listPublic,
     setSubscriptionStatus,
+    setConsecutiveUnpaidPeriods,
+    markNoticeSent,
     recordSyncSummary,
   };
 }

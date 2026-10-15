@@ -195,6 +195,18 @@ function createPartFeedKeysStore() {
     return rows.map((r) => ({ ...r }));
   }
 
+  function deleteKey(Source, FeedKey, Env) {
+    const i = rows.findIndex(
+      (r) =>
+        r.Source === String(Source).toLowerCase() &&
+        r.FeedKey === String(FeedKey) &&
+        r.Env === String(Env),
+    );
+    if (i < 0) return false;
+    rows.splice(i, 1);
+    return true;
+  }
+
   return {
     upsertShopKey,
     get,
@@ -203,6 +215,7 @@ function createPartFeedKeysStore() {
     bumpBackoff,
     listDueShopKeys,
     listAll,
+    deleteKey,
   };
 }
 
@@ -258,6 +271,19 @@ function createPartsStore() {
     return result;
   }
 
+  function hardDeleteFeed(source, feedKey, env) {
+    const before = parts.length;
+    parts = parts.filter(
+      (p) =>
+        !(
+          String(p.Source) === String(source) &&
+          String(p.FeedKey) === String(feedKey) &&
+          String(p.Env) === String(env)
+        ),
+    );
+    return { deleted: before - parts.length };
+  }
+
   function softDeleteFeed(source, feedKey, env, now) {
     const at = (now instanceof Date ? now : new Date()).toISOString();
     let n = 0;
@@ -279,6 +305,7 @@ function createPartsStore() {
     mergeStaging,
     softDeleteMissing,
     softDeleteFeed,
+    hardDeleteFeed,
   };
 }
 
