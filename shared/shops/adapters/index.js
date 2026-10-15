@@ -7,13 +7,14 @@
 const fixture = require('./fixture');
 const shopify = require('./shopify');
 const wix = require('./wix');
+const woocommerce = require('./woocommerce');
 
 /** @type {Record<string, object>} */
 const ADAPTERS = {
   fixture,
   shopify,
   wix,
-  // Sibling FRs: woocommerce (FR-238), ...
+  woocommerce,
 };
 
 /**
