@@ -233,3 +233,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR-237 Wix connect: verify signedInstance before trust; vault instanceId credentials only (never access token); mint via oauth2 client_credentials with memory TTL; App Removed webhook suspends shop
 - a-search harvest meta tip that says keep a complementary open tip: if that tip was FAIL-superseded as product tip-loop, close the meta tip too; do not re-open both
 - a-search harvest tip restating self-MRB keep-both GIVEUP + twin-close after that lesson already merged: FAIL-supersede citing the first PR/SKILL bullet
+- Harvest tip that restates FR-237 Wix connect SKILL bullet already landed by docs/mrb: FAIL-supersede citing that pin; do not re-fold
