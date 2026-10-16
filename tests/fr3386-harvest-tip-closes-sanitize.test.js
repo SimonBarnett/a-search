@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const SKILL = path.join(__dirname, '..', '.grok', 'skills', 'harvest-agent-skills', 'SKILL.md');
-const NEEDLE = "a-search harvest tip / tip-loop PR bodies: never leave literal Closes #N or Closes #N/#M in session summaries (GitHub closingIssuesReferences); rewrite to prose or closing-keyword; before arming --auto --squash on harvest-lesson tips verify gh pr view --json closingIssuesReferences is empty (class of #3386 / #3376); Protect-HarvestBodyClosesKeywords in Invoke-BobiverseHarvest must run on the composed scripts path";
+const NEEDLE = "a-search harvest tip / tip-loop PR bodies: never leave literal Closes #N or Closes #N/#M in session summaries (GitHub closingIssuesReferences); rewrite to prose without Closes keywords; before arming --auto --squash on harvest-lesson tips verify gh pr view --json closingIssuesReferences is empty (class of #3386 / #3376); Protect-HarvestBodyClosesKeywords in Invoke-BobiverseHarvest must run on the composed scripts path";
 const PRIOR =
   'a-search harvest-lesson PR body that quotes product Closes #N-#M in session summary can link closingIssuesReferences';
 
