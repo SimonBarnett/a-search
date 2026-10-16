@@ -32,7 +32,7 @@ const track = {
   env: 'sandbox',
   envVars: {
     A_SEARCH_ENV: 'sandbox',
-    ETSY_TRACKING_ID: 'track-test',
+    ETSY_RAKUTEN_MID: 'mid-test', RAKUTEN_PUBLISHER_ID: 'pub-test',
   },
 };
 
@@ -58,7 +58,9 @@ describe('FR-076 etsy normalize', () => {
     assert.equal(products[0].title, 'Fixture Handmade Ceramic Mug');
     assert.equal(products[0].price, 18.5);
     assert.equal(products[0].currency, 'GBP');
-    assert.match(String(products[0].url), /example\.test\/etsy/);
+    assert.match(String(products[0].url), /linksynergy\.com\/deeplink/);
+    assert.match(String(products[0].url), /example\.test%2Fetsy|example\.test\/etsy/);
+    assert.match(String(products[0].url), /u1=U-ET/);
     assert.equal(products[0].description, 'Fixture listing A');
     assert.match(String(products[0].imageUrl), /etsy-10001/);
   });
