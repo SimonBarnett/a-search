@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR-219 / FR-232 prelude: POST /widgets -- mint widgetGuid + snippet.
- * Anonymous OK (smartcatalogue / clubmadeira copy pages). JWT optional later.
+ * FR-232 / FR-219: POST /widgets -- mint widgetGuid + snippet into Widgets registry.
+ * Anonymous OK (smartcatalogue / clubmadeira). Extension may send host (+ JWT later).
  */
 
 const {
@@ -10,6 +10,9 @@ const {
   createWidgetsRegistry,
   DEFAULT_WIDGET_JS_URL,
 } = require('../../shared/widgets/createWidget');
+const {
+  getDefaultCustomersStore,
+} = require('../../shared/components/customers');
 
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
 const defaultRegistry = createWidgetsRegistry();
@@ -66,12 +69,15 @@ async function handleWidgetsCreate(event, deps = {}) {
     env.A_SEARCH_WIDGET_JS_URL ||
     DEFAULT_WIDGET_JS_URL;
 
+  const store = deps.store || getDefaultCustomersStore();
+
   try {
     const created = createWidget({
       layout: String(layout || ''),
       createdVia: String(createdVia),
       host,
       createdByUserId: deps.userId || null,
+      store,
       registry: deps.registry || defaultRegistry,
       widgetJsUrl,
       nowMs: deps.nowMs,
@@ -86,7 +92,8 @@ async function handleWidgetsCreate(event, deps = {}) {
     if (
       code === 'invalid_layout' ||
       code === 'invalid_created_via' ||
-      code === 'invalid_widget_guid'
+      code === 'invalid_widget_guid' ||
+      code === 'host_required'
     ) {
       return jsonResponse(400, { error: code });
     }
