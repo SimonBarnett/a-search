@@ -26,7 +26,7 @@ describe('FR-024 EventBridge maintainer schedules', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     // Synthesized template should mention both maintainer rules/functions
-    const outDir = path.join(root, 'cdk.out');
+    const outDir = r.outDir;
     const templates = fs.existsSync(outDir)
       ? fs.readdirSync(outDir).filter((f) => f.endsWith('.template.json'))
       : [];

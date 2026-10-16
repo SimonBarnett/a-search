@@ -49,7 +49,7 @@ describe('FR-056c CDK impact onboarding Lambda live', () => {
   it('npm run synth exits 0; template has impact live function + A_SEARCH_ENV live', () => {
     const r = runCdkSynth(root, { timeout: 180_000 });
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
     const tpl = fs.readFileSync(templatePath, 'utf8');
     assert.match(tpl, /a-search-impact-onboarding-live/);

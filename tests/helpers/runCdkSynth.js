@@ -63,13 +63,34 @@ function envWithPinnedNode(nodeBin, base = process.env) {
   return { ...base, PATH: `${dir}${sep}${prev}` };
 }
 
+let synthSeq = 0;
+
+/**
+ * FR #3462: a private cdk.out-* directory so parallel synths do not share one lock.
+ * @param {string} root
+ * @returns {string}
+ */
+function allocateSynthOutDir(root) {
+  synthSeq += 1;
+  return path.join(root, `cdk.out-${process.pid}-${synthSeq}`);
+}
+
+/**
+ * @param {string} outDir
+ * @returns {string[]}
+ */
+function synthNpmArgs(outDir) {
+  return ['run', 'synth', '--', '--output', outDir];
+}
+
 /**
  * Run `npm run synth` with PATH pinned so stage-entry + cdk --app node use Node 20+.
  * @param {string} root repo root
- * @param {{ timeout?: number }} [opts]
- * @returns {import('node:child_process').SpawnSyncReturns<string> & { nodeBin?: string|null, skipped?: boolean }}
+ * @param {{ timeout?: number, outDir?: string }} [opts]
+ * @returns {import('node:child_process').SpawnSyncReturns<string> & { nodeBin?: string|null, skipped?: boolean, outDir?: string }}
  */
 function runCdkSynth(root, opts = {}) {
+  const outDir = opts.outDir || allocateSynthOutDir(root);
   const nodeBin = resolveNodeBin();
   if (!nodeBin) {
     return {
@@ -82,12 +103,13 @@ function runCdkSynth(root, opts = {}) {
       error: new Error('node too old for CDK synth'),
       nodeBin: null,
       skipped: true,
+      outDir,
     };
   }
   const timeout = opts.timeout ?? 180_000;
   const r = spawnSync(
     process.platform === 'win32' ? 'npm.cmd' : 'npm',
-    ['run', 'synth'],
+    synthNpmArgs(outDir),
     {
       cwd: root,
       encoding: 'utf8',
@@ -97,6 +119,7 @@ function runCdkSynth(root, opts = {}) {
     },
   );
   r.nodeBin = nodeBin;
+  r.outDir = outDir;
   return r;
 }
 
@@ -106,5 +129,7 @@ module.exports = {
   nodeMajor,
   resolveNodeBin,
   envWithPinnedNode,
+  allocateSynthOutDir,
+  synthNpmArgs,
   runCdkSynth,
 };

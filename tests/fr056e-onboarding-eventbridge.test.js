@@ -56,7 +56,7 @@ describe('FR-056e EventBridge rules for onboarding Lambdas', () => {
   it('npm run synth: template rules target onboarding function names', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
     const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const rules = Object.values(parsed.Resources || {}).filter(

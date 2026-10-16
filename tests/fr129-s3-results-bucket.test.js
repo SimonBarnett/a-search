@@ -27,11 +27,7 @@ describe('FR-129 CDK S3 results bucket', () => {
   it('npm run synth emits AWS::S3::Bucket + ResultsBucket outputs', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(
-      root,
-      'cdk.out',
-      'ASearchStack.template.json',
-    );
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const resources = tpl.Resources || {};

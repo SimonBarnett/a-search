@@ -38,7 +38,7 @@ describe('FR-058i awin SQS maxConcurrency', () => {
   it('npm run synth: awin event source mappings set MaximumConcurrency', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit template');
     const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const mappings = Object.entries(parsed.Resources || {}).filter(

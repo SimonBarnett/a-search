@@ -29,11 +29,7 @@ describe('FR-059l CDK API Gateway /selftest route', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
 
-    const templatePath = path.join(
-      root,
-      'cdk.out',
-      'ASearchStack.template.json',
-    );
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(
       fs.existsSync(templatePath),
       'synth must emit ASearchStack.template.json',

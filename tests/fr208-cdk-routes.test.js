@@ -93,18 +93,6 @@ describe('FR-208 CDK ComponentsPiece HTTP routes', () => {
       // Explicit seat opt-out; GitHub Actions test-and-synth owns the live pin.
       return;
     }
-    const templatePath = path.join(ROOT, 'cdk.out', 'ASearchStack.template.json');
-    // Reuse a completed template from a prior synth in this tree (assert routes only).
-    if (fs.existsSync(templatePath)) {
-      const tpl = fs.readFileSync(templatePath, 'utf8');
-      assert.match(tpl, /\/parts/);
-      assert.match(tpl, /\/go/);
-      assert.match(tpl, /\/widgets/);
-      assert.match(tpl, /\/w\/events/);
-      assert.match(tpl, /\/webhooks\/stripe/);
-      assert.match(tpl, /\/account\/commission/);
-      return;
-    }
     const { runCdkSynth } = require('./helpers/runCdkSynth');
     // Marchhare full synth often 15-19 min; junctioned deps can exceed 40+ min.
     const r = runCdkSynth(ROOT, { timeout: 1_200_000 });
@@ -120,6 +108,7 @@ describe('FR-208 CDK ComponentsPiece HTTP routes', () => {
       }
       assert.equal(r.status, 0, blob + '\nsignal=' + r.signal);
     }
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'cdk.out template missing after synth');
     const tpl = fs.readFileSync(templatePath, 'utf8');
     assert.match(tpl, /\/parts/);

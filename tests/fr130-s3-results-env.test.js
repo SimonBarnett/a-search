@@ -32,11 +32,7 @@ describe('FR-130 S3_RESULTS_BUCKET env + IAM grants', () => {
   it('synth template has S3_RESULTS_BUCKET env and scoped S3 IAM (no Resource *)', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(
-      root,
-      'cdk.out',
-      'ASearchStack.template.json',
-    );
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const resources = tpl.Resources || {};
 

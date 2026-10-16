@@ -29,7 +29,7 @@ describe('MRB #76 hostile: FR-024 maintainer schedules', () => {
   it('npm run synth exits 0; template has both maintainer names', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const outDir = path.join(root, 'cdk.out');
+    const outDir = r.outDir;
     const templates = fs
       .readdirSync(outDir)
       .filter((f) => f.endsWith('.template.json'));

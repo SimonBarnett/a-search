@@ -48,11 +48,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
 
-    const templatePath = path.join(
-      root,
-      'cdk.out',
-      'ASearchStack.template.json',
-    );
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(
       fs.existsSync(templatePath),
       'synth must emit ASearchStack.template.json',
