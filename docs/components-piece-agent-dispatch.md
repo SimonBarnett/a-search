@@ -28,7 +28,7 @@ S3 ObjectCreated ({env}/x/...)
 | host_created | `{customerNumber}/_host.json` | host |
 | widget_created | `{customerNumber}/{widgetGuid}/widget.json` | widget (+ host if site.md missing) |
 | widget_feedback | `.../feedback.json` | widget |
-| in_ready | `.../in.json` | widget (ingest) |
+| in_ready | `.../IN/{searchId}.json` | widget (ingest). Not legacy `in.json`, not `IN/.processing`, not `live.json`. |
 
 Agent outputs (`live.json`, `context.md`, `searches.json`, `site.md`, `top10.json`,
 `stats.json`, `last-run.json`, `in.processing.json`) **must not** enqueue. There is

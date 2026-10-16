@@ -9,7 +9,6 @@ const TRIGGER_SUFFIXES = Object.freeze({
   '_host.json': 'host_created',
   '/widget.json': 'widget_created',
   '/feedback.json': 'widget_feedback',
-  '/in.json': 'in_ready',
 });
 
 const NON_TRIGGER_BASENAMES = Object.freeze([
@@ -40,7 +39,22 @@ function classifyS3Key(s3Key) {
       break;
     }
   }
-  if (!eventType) return null;
+  if (!eventType) {
+    const inReady = key.match(
+      /^(live|sandbox)\/x\/([^/]+)\/([^/]+)\/IN\/([^/]+)\.json$/,
+    );
+    if (!inReady) return null;
+    const searchId = inReady[4];
+    if (!searchId || searchId.charAt(0) === '.') return null;
+    return {
+      eventType: 'in_ready',
+      env: inReady[1],
+      customerNumber: inReady[2],
+      widgetGuid: inReady[3],
+      host: null,
+      s3Key: key,
+    };
+  }
 
   const m = key.match(/^(live|sandbox)\/x\/([^/]+)(?:\/([^/]+))?\/[^/]+$/);
   if (!m) return null;

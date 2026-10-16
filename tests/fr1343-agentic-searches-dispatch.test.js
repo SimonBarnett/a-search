@@ -38,9 +38,10 @@ describe('#1343 Agentic Searches dispatch', () => {
       'widget_feedback',
     );
     assert.equal(
-      classifyS3Key(`sandbox/x/7/${GUID}/in.json`).eventType,
+      classifyS3Key(`sandbox/x/7/${GUID}/IN/search-1.json`).eventType,
       'in_ready',
     );
+    assert.equal(classifyS3Key(`sandbox/x/7/${GUID}/in.json`), null);
 
     for (const name of NON_TRIGGER_BASENAMES) {
       assert.equal(
@@ -73,7 +74,7 @@ describe('#1343 Agentic Searches dispatch', () => {
   });
 
   it('fifoSendParamsFromS3 sets body + group + dedup', () => {
-    const p = fifoSendParamsFromS3(`sandbox/x/9/${GUID}/in.json`, 'seq99');
+    const p = fifoSendParamsFromS3(`sandbox/x/9/${GUID}/IN/search-1.json`, 'seq99');
     assert.ok(p);
     assert.equal(p.MessageGroupId, 'sandbox/9/' + GUID);
     assert.match(p.MessageDeduplicationId, /^in_ready:sandbox\/x\/9\//);
@@ -115,7 +116,7 @@ describe('#1343 Agentic Searches dispatch', () => {
       env: 'sandbox',
       customerNumber: '1',
       widgetGuid: GUID,
-      s3Key: `sandbox/x/1/${GUID}/in.json`,
+      s3Key: `sandbox/x/1/${GUID}/IN/search-1.json`,
     });
     const body2 = buildQueueMessage({
       eventType: 'widget_feedback',
@@ -256,7 +257,7 @@ describe('#1343 Agentic Searches dispatch', () => {
     }
   });
 
-  it('CDK stack source pins FIFO queue + EventBridge enable + four suffixes', () => {
+  it('CDK stack source pins FIFO queue + EventBridge enable + IN wildcard', () => {
     const stack = fs.readFileSync(
       path.join(__dirname, '..', 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
@@ -269,7 +270,8 @@ describe('#1343 Agentic Searches dispatch', () => {
     assert.match(stack, /_host\.json/);
     assert.match(stack, /widget\.json/);
     assert.match(stack, /feedback\.json/);
-    assert.match(stack, /\/in\.json|in\.json/);
+    assert.match(stack, /wildcard:\s*'?\*\/IN\/\*\.json'?/);
+    assert.doesNotMatch(stack, /['"]in\.json['"]/);
     assert.match(stack, /AGENT_JOB_TIMEOUT_S|900/);
     assert.doesNotMatch(stack, /stats_changed/);
   });
