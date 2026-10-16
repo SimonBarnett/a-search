@@ -12,6 +12,8 @@ const {
 } = require('../../shared/shops/registry');
 const {
   createStripeEventStore,
+  createSqlStripeEventStore,
+  assertStripeEventsDatabase,
 } = require('../../shared/shops/stripeEvents');
 const {
   createShopInvoicesStore,
@@ -106,6 +108,62 @@ function matchStripeWebhookRoute(method, path) {
  * @param {object} event
  * @param {object} [deps]
  */
+/**
+ * Pick the StripeEvents store. Injected stores win (unit pins).
+ * When MSSQL_DATABASE is a_search or a_search_sandbox, use the SQL writer.
+ * a_search also purges rows older than 30 days. Any other database name
+ * fails closed (FR-251: never madeiradb).
+ * @param {object} deps
+ */
+function resolveStripeEvents(deps) {
+  if (deps && deps.stripeEvents) return deps.stripeEvents;
+  const env = (deps && deps.env) || process.env;
+  const database = String((env && env.MSSQL_DATABASE) || '').trim();
+  if (!database) return defaultEvents;
+  const name = assertStripeEventsDatabase(database);
+  const query =
+    deps && typeof deps.sqlQuery === 'function'
+      ? deps.sqlQuery
+      : (statement) => defaultSqlStripeEventsQuery(env, statement);
+  return createSqlStripeEventStore({ query, database: name });
+}
+
+/**
+ * Lazy mssql writer. Tests inject sqlQuery and never reach this.
+ * @param {Record<string, string|undefined>} env
+ * @param {{ sql: string, inputs: object }} statement
+ */
+async function defaultSqlStripeEventsQuery(env, statement) {
+  // eslint-disable-next-line global-require
+  const sql = require('mssql');
+  const pool = await sql.connect({
+    server: String(env.MSSQL_SERVER || '').trim(),
+    database: String(env.MSSQL_DATABASE || '').trim(),
+    user: String(env.MSSQL_USER || '').trim(),
+    password: env.MSSQL_PASSWORD == null ? '' : String(env.MSSQL_PASSWORD),
+    options: {
+      encrypt: String(env.MSSQL_ENCRYPT || 'true').toLowerCase() !== 'false',
+      trustServerCertificate:
+        String(env.MSSQL_TRUST_SERVER_CERTIFICATE || 'true').toLowerCase() !==
+        'false',
+    },
+  });
+  try {
+    const request = pool.request();
+    const inputs = (statement && statement.inputs) || {};
+    for (const [key, value] of Object.entries(inputs)) {
+      if (value instanceof Date) request.input(key, sql.DateTime2, value);
+      else if (typeof value === 'number') request.input(key, sql.Int, value);
+      else request.input(key, sql.NVarChar, value);
+    }
+    return request.query(statement.sql);
+  } finally {
+    if (typeof pool.close === 'function') {
+      await Promise.resolve(pool.close()).catch(() => {});
+    }
+  }
+}
+
 async function handleStripeWebhook(event, deps = {}) {
   const rawBody =
     event && event.isBase64Encoded
@@ -147,7 +205,7 @@ async function handleStripeWebhook(event, deps = {}) {
   const result = await applyMerchantShopStripeEvent({
     event: payload,
     shops: deps.shops || defaultShops,
-    events: deps.stripeEvents || defaultEvents,
+    events: resolveStripeEvents(deps),
     invoices: deps.shopInvoices || defaultInvoices,
     feedKeys: deps.feedKeys || defaultFeedKeys,
     queue: deps.shopSyncQueue || defaultQueue,
@@ -167,4 +225,5 @@ module.exports = {
   matchStripeWebhookRoute,
   handleStripeWebhook,
   verifyStripeSignature,
+  resolveStripeEvents,
 };

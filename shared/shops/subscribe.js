@@ -227,14 +227,19 @@ function mapSubscriptionStatus(stripeStatus) {
  *   log?: Function,
  * }} args
  */
+async function rememberStripeEvent(events, eventId, eventType, nowMs) {
+  if (!events || !eventId || typeof events.record !== 'function') return;
+  await Promise.resolve(events.record({ id: eventId, type: eventType, nowMs }));
+}
+
 async function applyMerchantShopStripeEvent(args) {
   const event = args.event || {};
   const eventId = String(event.id || '');
   const eventType = String(event.type || '');
   const log = args.log || (() => {});
 
-  if (args.events && eventId) {
-    if (args.events.has(eventId)) {
+  if (args.events && eventId && typeof args.events.has === 'function') {
+    if (await Promise.resolve(args.events.has(eventId))) {
       return { ok: true, duplicate: true, eventId };
     }
   }
@@ -251,9 +256,7 @@ async function applyMerchantShopStripeEvent(args) {
 
   // widget_upgrade never touches Shops
   if (product === ASE_PRODUCT_WIDGET) {
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs: args.nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, args.nowMs);
     return { ok: true, ignored: true, reason: 'widget_upgrade', eventId };
   }
 
@@ -284,32 +287,24 @@ async function applyMerchantShopStripeEvent(args) {
         nowMs: args.nowMs,
       });
     }
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs: args.nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, args.nowMs);
     return { ok: true, invoice: true, eventId };
   }
 
   if (product && product !== ASE_PRODUCT_SHOP) {
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs: args.nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, args.nowMs);
     return { ok: true, ignored: true, reason: 'other_product', eventId };
   }
 
   const shopId = String(meta.shopId || '');
   if (!shopId) {
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs: args.nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, args.nowMs);
     return { ok: true, ignored: true, reason: 'no_shopId', eventId };
   }
 
   const shop = args.shops.get(shopId);
   if (!shop) {
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs: args.nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, args.nowMs);
     return { ok: true, ignored: true, reason: 'shop_not_found', eventId };
   }
 
@@ -337,9 +332,7 @@ async function applyMerchantShopStripeEvent(args) {
         /* already terminal */
       }
     }
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, nowMs);
     return { ok: true, shopId, action: 'cancelled', eventId };
   }
 
@@ -430,9 +423,7 @@ async function applyMerchantShopStripeEvent(args) {
       }
     }
 
-    if (args.events && eventId) {
-      args.events.record({ id: eventId, type: eventType, nowMs });
-    }
+    await rememberStripeEvent(args.events, eventId, eventType, nowMs);
     return {
       ok: true,
       shopId,
@@ -442,9 +433,7 @@ async function applyMerchantShopStripeEvent(args) {
     };
   }
 
-  if (args.events && eventId) {
-    args.events.record({ id: eventId, type: eventType, nowMs });
-  }
+  await rememberStripeEvent(args.events, eventId, eventType, nowMs);
   return { ok: true, ignored: true, reason: 'unhandled_type', eventType, eventId };
 }
 
