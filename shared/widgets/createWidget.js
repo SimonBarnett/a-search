@@ -1,11 +1,16 @@
 'use strict';
 
 /**
- * FR-219 / FR-232 prelude: mint widgetGuid + embed snippet for copy pages.
- * Full Widgets SQL registry / bind is FR-232; in-memory store for mint tests.
+ * FR-232 / FR-219: mint widgetGuid + embed snippet.
+ * Prefer Customers/Widgets store (bind-at-mint when host set); optional
+ * createWidgetsRegistry remains for FR-219 list() pins.
  */
 
 const crypto = require('node:crypto');
+const {
+  createWidget: storeCreateWidget,
+  getDefaultCustomersStore,
+} = require('../components/customers');
 
 const WIDGET_GUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -81,7 +86,8 @@ function createWidgetsRegistry() {
  *   createdVia: string,
  *   host?: string,
  *   createdByUserId?: string|null,
- *   registry: ReturnType<typeof createWidgetsRegistry>,
+ *   registry?: ReturnType<typeof createWidgetsRegistry>,
+ *   store?: object,
  *   widgetJsUrl?: string,
  *   nowMs?: number,
  * }} args
@@ -99,25 +105,43 @@ function createWidget(args) {
     err.code = 'invalid_created_via';
     throw err;
   }
-  const widgetGuid = mintWidgetGuid();
-  const snippet = buildEmbedSnippet({
-    widgetGuid,
-    layout,
-    widgetJsUrl: args.widgetJsUrl,
-  });
-  const row = {
-    widgetGuid,
-    customerNumber: null,
-    host: args.host ? String(args.host) : null,
+
+  const store = args.store || getDefaultCustomersStore();
+  const row = storeCreateWidget(store, {
     layout,
     createdVia,
-    createdByUserId: args.createdByUserId != null ? String(args.createdByUserId) : null,
-    createdAt: args.nowMs != null ? Number(args.nowMs) : Date.now(),
-    boundAt: null,
-    status: 'active',
+    host: args.host,
+    createdByUserId: args.createdByUserId,
+  });
+
+  const snippet = buildEmbedSnippet({
+    widgetGuid: row.widgetGuid,
+    layout: row.layout,
+    widgetJsUrl: args.widgetJsUrl,
+  });
+
+  if (args.registry) {
+    args.registry.insert({
+      widgetGuid: row.widgetGuid,
+      customerNumber: row.customerNumber,
+      host: row.host,
+      layout: row.layout,
+      createdVia: row.createdVia,
+      createdByUserId: row.createdByUserId,
+      createdAt: args.nowMs != null ? Number(args.nowMs) : row.createdAt,
+      boundAt: row.boundAt,
+      status: row.status,
+    });
+  }
+
+  return {
+    widgetGuid: row.widgetGuid,
+    layout: row.layout,
+    snippet,
+    customerNumber: row.customerNumber,
+    host: row.host,
+    boundAt: row.boundAt,
   };
-  args.registry.insert(row);
-  return { widgetGuid, layout, snippet };
 }
 
 module.exports = {
