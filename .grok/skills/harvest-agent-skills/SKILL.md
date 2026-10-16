@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã˜ FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ FAIL-supersede).
 
-Branch `harvest/â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Âª` or `fix/â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Âª` -> PR to `main`.
+Branch `harvest/Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬` or `fix/Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã˜ **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã¡â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Â¥â”œÃ©â”¬Ã³ fetch â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã¡â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Â¥â”œÃ©â”¬Ã³ upsert â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã¡â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Â¥â”œÃ©â”¬Ã³ delete (not
+   `schedule.handler`** must orchestrate roll Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ fetch Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ upsert Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã˜ already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAâ”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬ÂªEXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã˜ fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÔö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ fix the fixture instead.
 
 ## Do not
 
@@ -213,7 +213,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson: do not land absolute never-close-tip-as-twin-of-docs/mrb; when docs/mrb folds SKILL.md the tip may close as twin of that pin (#1748/#1753); only refuse twin-close for tests-only pins that do not carry the lesson text
 - ComponentsPiece widget context pass: widgetGuid folder via widgetPath; fold feedback context/removal; SEARCH_QUERY_CAP_FREE=3 FULL=15; stack on FR-204 tip; non-main base MRB hand-close.
 - FR-225 docs-only MRB: merge origin/main when tip behind; pin Decision LOCKED fail-closed contact + magic/OTP + no Phase 5 passwords; leave FR-226/228 implement tips open
-- Stacked FR tip on non-default base: retarget to main so Closes links; when required-ci blocks on multi-hour Actions queue with local green unit tests, document admin-merge + file CI backlog intake; close parent tip as superseded.
 - Stacked FR tip on non-default base: retarget to main so Closes links; when required-ci blocks on multi-hour Actions queue with local green unit tests, arm gh pr merge --auto --squash (never --admin; FR #3948) and optionally file CI backlog intake; close parent tip as superseded.
 - FR-200 /go unapproved path: inject resolveTxt into shared/dns/hostTxtStatus; Club TXT a-search-club= required; Partner alone never unlocks; /ext/status shares the same cache; stack on FR-199 tip when Parts+/go not yet on main
 - ComponentsPiece in.json ingest: exclusive rename to in.processing.json then merge+cap+unlink; free live cap 10; stack on FR-205 tip; non-main base MRB hand-close.
