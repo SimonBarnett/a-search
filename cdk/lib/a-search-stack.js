@@ -276,7 +276,7 @@ const PROVIDER_CREDENTIAL_KEYS = {
   // FR-169: aliexpress enabled -> FR-138 secret wiring
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
-  etsy: ['ETSY_API_KEY'],
+  etsy: ['ETSY_API_KEY', 'ETSY_SHARED_SECRET'],
   // FR-171: bol enabled -> FR-138 secret wiring
   bol: ['BOL_API_KEY'],
   // FR-178: enable shopify merchant -> FR-138 secret wiring
@@ -346,7 +346,8 @@ const PROVIDER_PLAIN_DEFAULTS = {
     ALIEXPRESS_TRACKING_ID: 'a-search',
   },
   etsy: {
-    ETSY_TRACKING_ID: 'a-search',
+    ETSY_AFFILIATE_NETWORK: 'rakuten',
+    // ETSY_RAKUTEN_MID / RAKUTEN_PUBLISHER_ID from secrets; no plain publisher default
   },
   // FR-171
   bol: {

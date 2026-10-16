@@ -1,5 +1,6 @@
 # FR-139: Node 20 CI gate - npm test + npm run synth (vision S4 / release D1)
 # FR-2021: concurrency cancel-in-progress + path-aware synth skip for docs/harvest tips
+# FR-2611: docs/skills-only PRs skip heavy suite; required check test-and-synth still greens on ubuntu
 name: ci
 
 on:
@@ -14,12 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job id must stay test-and-synth (ruleset required-ci-3948 context).
-  test-and-synth:
-    # Self-hosted whiterabbit runner; fork PRs stay on GitHub-hosted runners.
-    runs-on: ${{ github.event.pull_request.head.repo.fork == true && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","a-search"]') }}
-    # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
-    timeout-minutes: 180
+  # Cheap path classify on GitHub-hosted runners (never queues on whiterabbit).
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      heavy: ${{ steps.detect.outputs.heavy }}
+      reason: ${{ steps.detect.outputs.reason }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,20 +31,73 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Detect heavy vs docs/skills-only
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            node scripts/ci-needs-heavy.js --event push --ref refs/heads/main
+            exit 0
+          fi
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          if [ -z "${BASE}" ] || [ -z "${HEAD}" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "reason=missing-pr-shas" >> "$GITHUB_OUTPUT"
+            echo "heavy=true reason=missing-pr-shas"
+            exit 0
+          fi
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD" || true)"
+          echo "changed_files<<"
+          echo "$CHANGED"
+          echo ">>"
+          printf '%s\n' "$CHANGED" | node scripts/ci-needs-heavy.js --event pull_request --stdin
+
+  # Job id must stay test-and-synth (ruleset required-ci-3948 context).
+  test-and-synth:
+    needs: classify
+    # Docs/skills-only: ubuntu-latest (no whiterabbit slot). Code/main: self-hosted (forks stay ubuntu).
+    runs-on: ${{ needs.classify.outputs.heavy != 'true' && 'ubuntu-latest' || (github.event.pull_request.head.repo.fork == true && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","a-search"]')) }}
+    # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
+    timeout-minutes: ${{ needs.classify.outputs.heavy == 'true' && 180 || 5 }}
+    steps:
+      - name: Docs/skills-only skip (FR-2611)
+        if: needs.classify.outputs.heavy != 'true'
+        run: |
+          echo "FR-2611: skipping heavy npm test/synth (${{ needs.classify.outputs.reason }})"
+          echo "Required check test-and-synth reports success without a whiterabbit job."
+
+      - name: Checkout
+        if: needs.classify.outputs.heavy == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        if: needs.classify.outputs.heavy == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
           cache: npm
 
       - name: Setup Python
+        if: needs.classify.outputs.heavy == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install
+        if: needs.classify.outputs.heavy == 'true'
         run: npm ci
 
       - name: Test
+        if: needs.classify.outputs.heavy == 'true'
         run: npm test
 
       - name: Detect CDK-relevant paths
+        if: needs.classify.outputs.heavy == 'true'
         id: need_synth
         shell: bash
         run: |
@@ -76,5 +130,5 @@ jobs:
           fi
 
       - name: Synth
-        if: steps.need_synth.outputs.synth == 'true'
+        if: needs.classify.outputs.heavy == 'true' && steps.need_synth.outputs.synth == 'true'
         run: npm run synth
