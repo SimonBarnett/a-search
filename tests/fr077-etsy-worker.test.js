@@ -33,8 +33,8 @@ const baseMsg = {
 
 const credEnv = {
   A_SEARCH_ENV: 'sandbox',
-  ETSY_API_KEY: 'fixture-key',
-  ETSY_TRACKING_ID: 'track-test',
+  ETSY_API_KEY: 'fixture-key', ETSY_SHARED_SECRET: 'test-secret',
+  ETSY_RAKUTEN_MID: 'mid-test', RAKUTEN_PUBLISHER_ID: 'pub-test',
   S3_RESULTS_BUCKET: 'test-results',
 };
 
