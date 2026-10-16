@@ -157,7 +157,7 @@ describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
     assert.match(MERGE_SQL, /PartsStaging/i);
   });
 
-  it('registry wix enabled after FR-179', () => {
+  it('registry wix enabled both envs (FR-179)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
