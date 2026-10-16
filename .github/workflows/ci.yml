@@ -16,7 +16,8 @@ concurrency:
 jobs:
   # Job id must stay test-and-synth (ruleset required-ci-3948 context).
   test-and-synth:
-    runs-on: ubuntu-latest
+    # Self-hosted whiterabbit runner; fork PRs stay on GitHub-hosted runners.
+    runs-on: ${{ github.event.pull_request.head.repo.fork == true && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","a-search"]') }}
     # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
     timeout-minutes: 180
     steps:
