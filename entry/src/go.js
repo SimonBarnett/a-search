@@ -8,17 +8,10 @@
 const { queryParams } = require('./performance');
 const { resolveGo, GoError } = require('../../shared/widgets/go');
 const {
-  MemoryCustomersStore,
+  getDefaultCustomersStore,
 } = require('../../shared/components/customers');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
-
-let defaultStore = null;
-
-function getDefaultStore() {
-  if (!defaultStore) defaultStore = new MemoryCustomersStore();
-  return defaultStore;
-}
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -77,7 +70,7 @@ async function handleGo(event, deps = {}) {
     return jsonResponse(500, { error: 'widget_root_unconfigured' });
   }
 
-  const store = deps.store || getDefaultStore();
+  const store = deps.store || getDefaultCustomersStore();
   const widgetEnv =
     deps.widgetEnv ||
     (envMap.A_SEARCH_WIDGET_ENV === 'live' ? 'live' : 'sandbox');
@@ -159,6 +152,6 @@ function isGoRoute(method, path) {
 module.exports = {
   handleGo,
   isGoRoute,
-  getDefaultStore,
+  getDefaultStore: getDefaultCustomersStore,
   isPrefetch,
 };
