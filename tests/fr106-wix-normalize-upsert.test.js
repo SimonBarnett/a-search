@@ -157,8 +157,7 @@ describe('FR-106 wix normalize + Parts upsert (FR-179 enabled)', () => {
     assert.match(MERGE_SQL, /PartsStaging/i);
   });
 
-  it('registry wix enabled (FR-179 merchant); rateLimit floor intact', () => {
-    // FR #2451 / FR-179: wix is enabled as merchant; stay-dark asserts are stale.
+  it('registry wix enabled both envs (FR-179)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
