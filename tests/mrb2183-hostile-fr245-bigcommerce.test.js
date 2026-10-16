@@ -59,4 +59,16 @@ describe('docs/mrb-2183 hostile FR-245 pins', () => {
     assert.match(t, /signed_payload_jwt|HS256/i);
     assert.match(t, /uninstalled|uninstall/i);
   });
+
+  it('a-search-bigcommerce skills have CAST IRON harvest to SimonBarnett/a-search', () => {
+    for (const rel of [
+      'providers/local/bigcommerce/.grok/skills/a-search-bigcommerce-onboarding/SKILL.md',
+      'providers/local/bigcommerce/.grok/skills/a-search-bigcommerce/SKILL.md',
+    ]) {
+      const text = read(rel);
+      assert.match(text, /CAST IRON/i);
+      assert.match(text, /-Repo SimonBarnett\/a-search/);
+      assert.match(text, /\/bob\/v1\/intake/);
+    }
+  });
 });
