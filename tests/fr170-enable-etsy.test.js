@@ -55,7 +55,8 @@ describe('FR-170 enable etsy', () => {
     assert.ok(keysBlock);
     assert.match(keysBlock[0], /\betsy\s*:/);
     assert.match(keysBlock[0], /ETSY_API_KEY/);
-    assert.match(text, /ETSY_TRACKING_ID:\s*'a-search'/);
+    assert.match(keysBlock[0], /ETSY_SHARED_SECRET/);
+    assert.match(text, /ETSY_AFFILIATE_NETWORK:\s*'rakuten'/);
     const fr = utf8NoBom('docs/fr/FR-170.md');
     assert.match(fr, /Decision \(LOCKED\)/);
     assert.match(fr, /etsy/);
@@ -106,7 +107,11 @@ describe('FR-170 enable etsy', () => {
           typeof envVars.ETSY_API_KEY === 'object',
         `ETSY_API_KEY must be Secrets Manager ref (${env})`,
       );
-      assert.equal(envVars.ETSY_TRACKING_ID, 'a-search');
+      assert.equal(envVars.ETSY_AFFILIATE_NETWORK, 'rakuten');
+      assert.ok(
+        envVars.ETSY_SHARED_SECRET,
+        `missing ETSY_SHARED_SECRET ${env}`,
+      );
       const qHit = queues.find(
         (q) =>
           q.Properties &&
