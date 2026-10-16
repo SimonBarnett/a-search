@@ -263,3 +263,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When fr142 or fr143 returns early because aws-cdk-lib is missing, still compare the asserted floor to 2 times the registry sources enabled in both envs before PASS.
 - When one local provider env example comment is fixed, scan every providers/local .env.example for the same stale line. Leave the provider that already has its own open PR.
 - When an a-search enable-provider test skips CDK synth on win32 with an explicit CI-runs-this comment, PASS if the non-synth registry, credential-key, and queue-floor pins are green; do not wait on queued test-and-synth.
+- On a re-offered FR-258 dispatcher review, fold origin/main once when the tip is behind, then re-run node --test for fr1343, mrb2075-hostile, fr3466, fr3479, and the fr106/108/142/143 floors. A harvest-only main delta is not a product conflict. Leave queued test-and-synth alone and arm auto-merge on the new SHA.
