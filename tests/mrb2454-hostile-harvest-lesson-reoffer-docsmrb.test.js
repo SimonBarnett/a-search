@@ -19,7 +19,7 @@ const SKILL = path.join(
 );
 
 const LESSON =
-  'Harvest-lesson re-offer: if tip already carries lesson+hostile, close any docs/mrb as twin (do not reopen); if tip lacks hostile and docs/mrb-N is already open, reuse that docs/mrb (do not open another); arm --auto --squash; ambient stay-dark CI is not a lesson FAIL (FR #3948).';
+  'Harvest-lesson re-offer: if tip already carries lesson+hostile, close any docs/mrb as twin (do not reopen); if tip lacks hostile and docs/mrb-N is already open, reuse that docs/mrb (do not open another); arm --auto --squash (FR #3948).';
 
 describe('docs/mrb-2454 hostile harvest-lesson re-offer docs/mrb rule', () => {
   it('SKILL.md contiguous re-offer tip-has-hostile vs reuse docs/mrb', () => {
