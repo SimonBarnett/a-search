@@ -77,7 +77,7 @@ function buildSiteMd(meta) {
     '## Skillbook rules',
     '',
     '1. Read this site.md before URI/widget maintain (FR-205+).',
-    '2. Use normalised in.json hits only; delete in.json after ingest into live.json.',
+    '2. Use normalised IN/{searchId}.json hits only; delete consumed IN files after ingest into live.json (FR-3344).',
     '3. Keep searches.json small and aimed at cheapest relevant queries.',
     '4. Roll top10.json from live parts (title, price, merchant, partNumber, score).',
     '5. If credentials are required, load them from the runtime secret store - never paste them here.',

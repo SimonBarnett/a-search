@@ -24,7 +24,7 @@ x:/{customerNumber}/
   {widgetGuid}/
     context.md                 # page-specific skill context
     searches.json              # queries the agent keeps for this widget
-    in.json                    # normalised inbound search results (consumed then deleted)
+    IN/                        # FR-3344: one JSON file per search (consumed then deleted)
     live.json                  # parts the widget serves
 ```
 
@@ -32,7 +32,7 @@ x:/{customerNumber}/
 
 `searches.json` shape: `{ queries: [{ q, intent, maxResults }] }`.
 
-`in.json` item: `{ id, title, price, currency, merchant, image, url, seenAt }`.
+`IN/{searchId}.json` item: `{ id, title, price, currency, merchant, image, url, seenAt }` (FR-3344; replaces single `in.json`).
 
 ## Contracts
 
