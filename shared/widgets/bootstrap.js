@@ -14,6 +14,7 @@ const {
   widgetDir,
   widgetFile,
 } = require('./widgetPath');
+const { ensureHostFolderMarker } = require('./hostFolderMeta');
 
 /**
  * Resolve a forward-slash key under an OS root.
@@ -52,15 +53,57 @@ function writeJsonIfAbsent(absPath, value) {
 }
 
 /**
+ * Injected S3 client for the zero-byte host folder marker (FR #3490 / FR-3373).
+ * `opts.s3` or `opts.putObject` (plus optional head / tagging). Absent means local only.
+ * @param {object} opts
+ * @returns {{ putObject: Function, headObject?: Function, putObjectTagging?: Function }|null}
+ */
+function markerClient(opts) {
+  const s3 = opts.s3;
+  if (s3 && typeof s3 === 'object' && typeof s3.putObject === 'function') {
+    return {
+      putObject: (args) => s3.putObject(args),
+      headObject:
+        typeof s3.headObject === 'function'
+          ? (args) => s3.headObject(args)
+          : undefined,
+      putObjectTagging:
+        typeof s3.putObjectTagging === 'function'
+          ? (args) => s3.putObjectTagging(args)
+          : undefined,
+    };
+  }
+  if (typeof opts.putObject === 'function') {
+    return {
+      putObject: opts.putObject,
+      headObject: opts.headObject,
+      putObjectTagging: opts.putObjectTagging,
+    };
+  }
+  return null;
+}
+
+/**
  * First sight of a host: create {env}/x/{customerNumber}/_host.json.
  * Does not write site.md (agent-owned, FR-204).
+ * When an S3 client is injected, also puts the zero-byte folder marker
+ * (userid metadata, hasdns/partnerid/hasupg tags) and returns a Promise.
+ * Local-only calls stay synchronous. The tree is not renamed to the host URL.
  * @param {{
  *   root: string,
  *   env: string,
  *   customerNumber: string|number,
  *   host: string,
+ *   userId?: string,
+ *   hasdns?: boolean|string|number,
+ *   partnerid?: string|null,
+ *   hasupg?: boolean|string|number,
+ *   putObject?: Function,
+ *   headObject?: Function,
+ *   putObjectTagging?: Function,
+ *   s3?: object,
  * }} opts
- * @returns {{ created: boolean, path: string }}
+ * @returns {{ created: boolean, path: string }|Promise<{ created: boolean, path: string, marker: object }>}
  */
 function bootstrapHost(opts) {
   if (!opts || typeof opts !== 'object') {
@@ -79,7 +122,21 @@ function bootstrapHost(opts) {
     createdAt: new Date().toISOString(),
   };
   const created = writeJsonIfAbsent(abs, doc);
-  return { created, path: abs };
+  const result = { created, path: abs };
+  const client = markerClient(opts);
+  if (!client) return result;
+  return ensureHostFolderMarker({
+    env: opts.env,
+    customerNumber: opts.customerNumber,
+    host,
+    userId: opts.userId,
+    hasdns: opts.hasdns,
+    partnerid: opts.partnerid,
+    hasupg: opts.hasupg,
+    putObject: client.putObject,
+    headObject: client.headObject,
+    putObjectTagging: client.putObjectTagging,
+  }).then((marker) => ({ ...result, marker }));
 }
 
 /**
