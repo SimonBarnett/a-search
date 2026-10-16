@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ FAIL-supersede).
 
-Branch `harvest/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` or `fix/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` -> PR to `main`.
+Branch `harvest/Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬` or `fix/Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó fetch ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó upsert ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó delete (not
+   `schedule.handler`** must orchestrate roll Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ fetch Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ upsert Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├íÔö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝┬ÑÔö£├®Ôö¼├│ delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ªEXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÔö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├│├ö├®┬╝Ôö╝├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬¬EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives Ôö£├ó├ú├åÔö£├Ñ├ö├ç├ûÔö£├ó├ö├ç├£Ôö£├®Ôö¼├│Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├ç├£Ôö¼┬╝Ôö£├áÔö¼├¡Ôö£├ó├ö├ç├£Ôö£├®Ôö¼┬╝Ôö£├ó├ú├åÔö£├®Ôö¼├│Ôö£├óÔö¼├│Ôö£├│├ö├®┬╝Ôö╝├¡Ôö£├®Ôö¼┬╝Ôö£├ó├ö├ç├£Ôö£├®Ôö¼├ÿ fix the fixture instead.
 
 ## Do not
 
@@ -241,10 +241,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest tip restating FR-238 Woo SSRF/wc-auth/key_permissions lesson after that bullet is on main: FAIL-supersede citing the first PR
 - a-search FR-241 unpaid/dunning: stack on FR-240 shopSync tip when open then remerge main after FR-240 merges; registry consecutiveUnpaidPeriods+notices+markNoticeSent; hard-delete Parts/PartFeedKeys/vault per shop; N2>=7d before delete; merchant login retained; active-only downloads
 - a-search FR-2139: CDK SQS FIFO a-search-shop-sync.fifo + DLQ maxReceiveCount 5 + shopSyncWorker (visibility 6x timeout); SQS_SHOP_SYNC_URL on entry/maintainers; FR-239 onShopLive remains live-transition caller
+- MRB shop-sync Lambda consumer: handler(event, context, deps) like schedule.js; never treat AWS context as deps; throw shop_sync_deps_unconfigured when overrides missing so FIFO retries/DLQ instead of empty-registry shop_not_found deletes.
 - a-search FR-2078: chrome.identity.launchWebAuthFlow against shared login (?extension=1&redirect_uri=); JWT session-only; logged-in bar commission/Stripe/Claim(club)/Upgrade/Create-clipboard; Edit dialog PATCH+feedback; pin fixtureJwt
 - a-search MRB docs/hostile: always run docs/mrb-N hostile suite green before gh pr merge; never merge a docs tip that fails its own pin; prefer assert.match on forbid prose (e.g. never-use partner_monthly) over assert.doesNotMatch for banned tokens that must remain documented (FR-2054 / context mrb-1869 #2052 red then #2053 fix)
 - a-search CI queue starvation (FR-2021): keep job id test-and-synth for required-ci-3948; add concurrency cancel-in-progress per PR/ref; path-aware skip npm run synth when PR touches only docs/skills/tests (always synth on main push and when cdk/providers/entry/maintainer/shared/package.json change); npm test still always runs
 - a-search MRB docs/mrb worktree: when git worktree add fails because branch docs/mrb-N-hostile is already checked out in a stale docs-mrb-a-search-N tree, use a unique local branch suffix -mh{seat} (git worktree add -B docs/mrb-N-hostile-mh{seat} <path> origin/pr-N) then push HEAD:docs/mrb-N-hostile; optionally Clear-BobiverseJobWorktrees for abandoned trees; never force-remove another seat marked worktree (FR-1955 / context MRB #1799)
 - a-search MRB tip-loop close after Invoke-BobiverseHarvest -ExistingPrUrl: close twins one `gh pr close <N>` at a time; select only PRs whose body cites Existing PR pull/N for this job or exact title StartsWith of the harvest lesson; never pipe a multi-number Where-Object list into one `gh pr close` (gh exits too many arguments and a loose filter nearly swept unrelated open tips; FR-1947 / context MRB #1871)
 - MRB product FAIL for extension login: pin redirect_uri allowlist (chromiumapp.org / chrome-extension:) before location.assign; assert escaped RegExp literals with chromiumapp\\\.org; put SW claim club gate on the one fix PR.
-- MRB shop-sync Lambda consumer: handler(event, context, deps) like schedule.js; never treat AWS context as deps; throw shop_sync_deps_unconfigured when overrides missing so FIFO retries/DLQ instead of empty-registry shop_not_found deletes.
+- MRB a-search FR-228: pin otpStore Decision LOCKED rate limits + migration 016 never madeiradb/SystemOTPs + shops 403 contact_unverified + JWT join-parts on docs/mrb-N; run tests with D:\Tools\node\node.exe (PATH node may be too old for --test)
