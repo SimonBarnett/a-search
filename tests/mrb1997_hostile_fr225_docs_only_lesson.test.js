@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * docs/mrb-1997 hostile pin for harvest tip #1997 (FR-225 docs-only MRB lesson).
