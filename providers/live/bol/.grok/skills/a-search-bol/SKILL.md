@@ -52,3 +52,5 @@ is a later FR while stay-dark).
 Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
 
 - Phase-2 bol stay-dark stack (search -> normalize -> worker -> selftest): already CAST IRON in this skill + `docs/phase2-providers.md` (`bolProductAPI.products`, BOL_TRACKING_ID / X-API-KEY). Relocated sources: bobiverse#3375, #3378-#3388.
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).

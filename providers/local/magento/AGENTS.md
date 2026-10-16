@@ -23,3 +23,5 @@ Provider CWD for registry id `magento` (`kind: local`). Merchant source (FR-243)
 - `src/catalog.js` / `src/normalize.js` / `src/upsert.js`
 - `src/worker.js` + `src/queryParts.js` + `src/selftestProbe.js`
 - Configurable products: **parent row with min price** (default; documented in skill).
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).
