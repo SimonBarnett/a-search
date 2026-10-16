@@ -8,18 +8,12 @@
 const { queryParams } = require('./performance');
 const { pageParts, PartsError } = require('../../shared/widgets/parts');
 const {
-  MemoryCustomersStore,
+  getDefaultCustomersStore,
 } = require('../../shared/components/customers');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 
-/** Process-local default store when deps.store omitted (tests inject). */
-let defaultStore = null;
 
-function getDefaultStore() {
-  if (!defaultStore) defaultStore = new MemoryCustomersStore();
-  return defaultStore;
-}
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -56,7 +50,7 @@ async function handleParts(event, deps = {}) {
     return jsonResponse(500, { error: 'widget_root_unconfigured' });
   }
 
-  const store = deps.store || getDefaultStore();
+  const store = deps.store || getDefaultCustomersStore();
   const widgetEnv =
     deps.widgetEnv ||
     (envMap.A_SEARCH_WIDGET_ENV === 'live' ? 'live' : 'sandbox');
@@ -102,5 +96,5 @@ function isPartsRoute(method, path) {
 module.exports = {
   handleParts,
   isPartsRoute,
-  getDefaultStore,
+  getDefaultStore: getDefaultCustomersStore,
 };
