@@ -106,8 +106,8 @@ starts the next wave:
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ªEXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA...EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives -- fix the fixture instead.
 
 ## Do not
 
