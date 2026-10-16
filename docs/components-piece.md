@@ -34,6 +34,8 @@ x:/{customerNumber}/
 
 `in.json` item: `{ id, title, price, currency, merchant, image, url, seenAt }`.
 
+Agent queue events (including `in_ready` on `IN/{searchId}.json`): see [agentic-searches-events.md](agentic-searches-events.md) (FR-3355). Legacy single-file inbound is retired.
+
 ## Contracts
 
 Minimal public contracts (host-keyed; not JWT `POST /search`):
