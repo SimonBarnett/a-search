@@ -1294,7 +1294,6 @@ class ASearchStack extends cdk.Stack {
       '_host.json',
       'widget.json',
       'feedback.json',
-      'in.json',
     ];
     for (const suffix of widgetAgentSuffixes) {
       const idSuffix = suffix.replace(/[^a-zA-Z0-9]/g, '');
@@ -1312,6 +1311,19 @@ class ASearchStack extends cdk.Stack {
         targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
       });
     }
+    new events.Rule(this, 'WidgetAgentS3_INjson', {
+      ruleName: stagedName('a-search-widget-agent-INjson'),
+      description: '#3479 S3 Object Created IN/*.json -> widget-agent enqueue',
+      eventPattern: {
+        source: ['aws.s3'],
+        detailType: ['Object Created'],
+        detail: {
+          bucket: { name: [resultsBucket.bucketName] },
+          object: { key: [{ wildcard: '*/IN/*.json' }] },
+        },
+      },
+      targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+    });
     new events.Rule(this, 'WidgetAgentSweepDaily', {
       ruleName: stagedName('a-search-widget-agent-sweep'),
       description: '#1343 daily sweep tick for widget-agent (expand per active widget)',
