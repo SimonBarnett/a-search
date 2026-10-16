@@ -74,7 +74,7 @@ describe('mrb719 hostile FR-078 etsy selftest', () => {
     fs.writeFileSync(tmp, '{"etsyProductAPI":{"results":[]}}\n', 'utf8');
     try {
       const result = await probeEtsySelftest({
-        env: { ETSY_API_KEY: 'k', A_SEARCH_ENV: 'sandbox' },
+        env: { ETSY_API_KEY: 'k', ETSY_SHARED_SECRET: 'test-secret', A_SEARCH_ENV: 'sandbox' },
         fixturePath: tmp,
       });
       assert.equal(result.ok, false);
