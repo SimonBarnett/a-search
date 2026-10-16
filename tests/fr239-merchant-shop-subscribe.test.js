@@ -446,15 +446,25 @@ describe('FR-239 merchant shop subscribe', () => {
         aSearchProduct: 'merchant_shop',
       },
     });
+    const raw = JSON.stringify(payload);
+    const secret = 'whsec_dispatch_test';
+    const ts = Math.floor(Date.now() / 1000);
+    const v1 = crypto
+      .createHmac('sha256', secret)
+      .update(`${ts}.${raw}`)
+      .digest('hex');
     const res = await handler(
       {
         requestContext: { http: { method: 'POST', path: '/webhooks/stripe' } },
         rawPath: '/webhooks/stripe',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'content-type': 'application/json',
+          'stripe-signature': `t=${ts},v1=${v1}`,
+        },
+        body: raw,
       },
       {},
-      { shops, stripeEvents: events },
+      { shops, stripeEvents: events, stripeWebhookSecret: secret, nowMs: Date.now() },
     );
     assert.equal(res.statusCode, 200);
     const body = JSON.parse(res.body);
@@ -489,5 +499,21 @@ describe('FR-239 merchant shop subscribe', () => {
       { stripeWebhookSecret: 'whsec_x', nowMs: Date.now() },
     );
     assert.equal(res.statusCode, 400);
+  });
+
+  it('handleStripeWebhook returns 400 when STRIPE_WEBHOOK_SECRET is unset', async () => {
+    const prev = process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    try {
+      const res = await handleStripeWebhook(
+        { headers: {}, body: '{"id":"evt_nosecret"}' },
+        { stripeWebhookSecret: '', env: {}, nowMs: Date.now() },
+      );
+      assert.equal(res.statusCode, 400);
+      assert.equal(JSON.parse(res.body).error, 'webhook_secret_missing');
+    } finally {
+      if (prev === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
+      else process.env.STRIPE_WEBHOOK_SECRET = prev;
+    }
   });
 });

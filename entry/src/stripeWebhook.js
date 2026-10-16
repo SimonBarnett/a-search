@@ -128,11 +128,13 @@ async function handleStripeWebhook(event, deps = {}) {
       ? deps.verifyStripeSignature
       : verifyStripeSignature;
 
-  if (secret) {
-    const ok = verify(rawBody, sig, secret, deps.nowMs);
-    if (!ok) {
-      return jsonResponse(400, { ok: false, error: 'invalid_signature' });
-    }
+  // Fail closed: a missing secret must not accept unsigned events (FR-239).
+  if (!secret) {
+    return jsonResponse(400, { ok: false, error: 'webhook_secret_missing' });
+  }
+  const ok = verify(rawBody, sig, secret, deps.nowMs);
+  if (!ok) {
+    return jsonResponse(400, { ok: false, error: 'invalid_signature' });
   }
 
   let payload;
