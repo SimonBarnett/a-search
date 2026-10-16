@@ -130,13 +130,15 @@ describe('FR-109 woocommerce REST catalogue client (stay dark)', () => {
     );
   });
 
-  it('registry woocommerce stays dark (enabled live/sandbox false)', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const { sources } = loadRegistry();
     const s = sources.find((x) => x.id === 'woocommerce');
     assert.ok(s, 'woocommerce in registry');
     assert.equal(s.kind, 'local');
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
+    assert.equal(s.merchantConnect, true);
   });
 
   it('buildProductsUrl + storeOriginFromUrl normalize origin', () => {

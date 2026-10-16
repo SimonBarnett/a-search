@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const workerPath = path.join(root, 'providers', 'local', 'wix', 'src', 'worker.js');
 
-const STILL_DARK = ['admitad', 'flexoffers', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -108,32 +108,32 @@ describe('FR-179 enable wix', () => {
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
 
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
+      function envOf(name) {
+        const fn = fns.find(
+          (res) => res.Properties && res.Properties.FunctionName === name,
+        );
+        assert.ok(fn, `missing Lambda ${name}`);
+        return fn.Properties.Environment.Variables || {};
+      }
 
-    for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-wix-worker-${env}`);
-      assert.ok(envVars.WIX_CLIENT_ID, `missing CLIENT_ID ${env}`);
-      const keyVal = String(envVars.WIX_CLIENT_ID);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.WIX_CLIENT_ID === 'object',
-        `WIX_CLIENT_ID must be Secrets Manager ref (${env})`,
-      );
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-wix-${env}`,
-      );
-      assert.ok(qHit, `missing queue a-search-wix-${env}`);
-    }
+      for (const env of ['live', 'sandbox']) {
+        const envVars = envOf(`a-search-wix-worker-${env}`);
+        assert.ok(envVars.WIX_CLIENT_ID, `missing CLIENT_ID ${env}`);
+        const keyVal = String(envVars.WIX_CLIENT_ID);
+        assert.ok(
+          keyVal.includes('resolve:secretsmanager') ||
+            keyVal.includes('Secret') ||
+            typeof envVars.WIX_CLIENT_ID === 'object',
+          `WIX_CLIENT_ID must be Secrets Manager ref (${env})`,
+        );
+        const qHit = queues.find(
+          (q) =>
+            q.Properties &&
+            typeof q.Properties.QueueName === 'string' &&
+            q.Properties.QueueName === `a-search-wix-${env}`,
+        );
+        assert.ok(qHit, `missing queue a-search-wix-${env}`);
+      }
 
     for (const dark of STILL_DARK) {
       const hit = fns.find(
@@ -144,6 +144,6 @@ describe('FR-179 enable wix', () => {
       );
       assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
     }
-    },
-  );
+  }
+);
 });

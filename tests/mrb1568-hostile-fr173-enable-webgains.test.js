@@ -24,7 +24,7 @@ describe('MRB-1568 FR-173 hostile', () => {
     const both = registry.sources.filter(
       (s) => s.enabled && s.enabled.live && s.enabled.sandbox,
     );
-    assert.equal(both.length, 14);
+    assert.equal(both.length, 15);
   });
 
   it('FR-173 Decision LOCKED ASCII; secrets-matrix lists WEBGAINS_API_KEY', () => {
@@ -47,11 +47,11 @@ describe('MRB-1568 FR-173 hostile', () => {
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 28 primary queues/);
+    assert.match(fr142, /expected 30 primary queues/);
     const fr143 = fs.readFileSync(
       path.join(root, 'tests', 'fr143-cw-retention-dlq-alarm.test.js'),
       'utf8',
     );
-    assert.match(fr143, /expected 28 DLQ depth alarms/);
+    assert.match(fr143, /expected 30 DLQ depth alarms/);
   });
 });

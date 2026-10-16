@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains']; // FR-179 wix + FR-173 webgains; GBP/UK hold bol/aliexpress/avantlink; worker floors 28 (exclude FR-2139 shop-sync .fifo)
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains', 'woocommerce']; // FR-179 wix + FR-173 webgains + FR-180 woocommerce; GBP/UK hold bol/aliexpress/avantlink; worker floors 30 (exclude FR-2139 shop-sync .fifo)
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
@@ -95,7 +95,7 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-173+FR-179: 28 worker primaries + 28 DLQs (14 enabled x live+sandbox).
+    // FR-173+FR-180+FR-179: 30 worker primaries + 30 DLQs (15 enabled x live+sandbox).
     // FR-2139 shop-sync FIFO + DLQ end in .fifo (not -dlq); exclude from worker floors.
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
@@ -103,8 +103,9 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       .filter((n) => !String(n).includes('.fifo'));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    assert.equal(primaries.length, 28, `expected 28 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 28, `expected 28 DLQs, got ${dlqs.length}`);
+    // FR-180+FR-179: 30 worker primaries (15 enabled). Exclude FR-2139 shop-sync .fifo.
+    assert.equal(primaries.length, 30, `expected 30 primary queues, got ${primaries.length}`);
+    assert.equal(dlqs.length, 30, `expected 30 DLQs, got ${dlqs.length}`);
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {

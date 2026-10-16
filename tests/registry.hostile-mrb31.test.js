@@ -21,6 +21,7 @@ const DEFAULT_ON = [
   'tradedoubler',
   'wix',
   'webgains',
+  'woocommerce',
 ];
 
 describe('MRB #31 hostile: loadRegistry contract', () => {

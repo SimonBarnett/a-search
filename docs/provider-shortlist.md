@@ -79,7 +79,7 @@ GBP shop connects).
 | `avantlink` | local | false (**HOLD**) | US outdoor/retail | Disable both envs FR-255; folder stays |
 | `shopify` | local | true | Merchant store catalogues (Madeira) | Admin API -> MSSQL Parts; enable per merchant |
 | `wix` | local | true | Merchant store catalogues (Madeira) | Enabled FR-179; Wix Stores API -> MSSQL Parts; no affiliate stamp |
-| `woocommerce` | local | false | Merchant store catalogues (Madeira) | WooCommerce REST -> MSSQL Parts |
+| `woocommerce` | local | true | Merchant store catalogues (Madeira) | Enabled FR-180; WooCommerce REST -> MSSQL Parts; no affiliate stamp |
 
 **This pass:** scaffold **all rows** (folder, `.env.example`, worker stub,
 queue name placeholder, registry entry). Defaults above set who is on at
@@ -117,7 +117,7 @@ flip only that id, pin others stay dark) - see
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
     { "id": "shopify", "kind": "local", "folder": "providers/local/shopify", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SHOPIFY_URL" },
     { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WIX_URL" },
-    { "id": "woocommerce", "kind": "local", "folder": "providers/local/woocommerce", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WOOCOMMERCE_URL" }
+    { "id": "woocommerce", "kind": "local", "folder": "providers/local/woocommerce", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_WOOCOMMERCE_URL" }
   ]
 }
 ```

@@ -3,7 +3,7 @@
 /**
  * WooCommerce local provider worker (FR-607 stub + FR-111 SqlClient SELECT).
  * Search reads MSSQL Parts (ingest is maintainer / FR-109..106) -> normalize -> writeResults.
- * Stay-dark: registry enabled stays false.
+ * Enabled both envs (FR-180); merchant class, no affiliate stamp.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]
@@ -44,7 +44,7 @@ function resolveWooCommerceProductUrl(rawUrl, envVars) {
     const abs = new URL(s);
     if (abs.protocol === 'http:' || abs.protocol === 'https:') return abs.toString();
   } catch {
-    // relative path - join store base
+    // relative path — join store base
   }
   const store = String((envVars && envVars.WOOCOMMERCE_STORE_URL) || '').trim();
   if (!store) {
@@ -54,8 +54,8 @@ function resolveWooCommerceProductUrl(rawUrl, envVars) {
     );
   }
   const base = store.endsWith('/') ? store : `${store}/`;
-  const path = s.startsWith('/') ? s.slice(1) : s;
-  return new URL(path, base).toString();
+  const pathPart = s.startsWith('/') ? s.slice(1) : s;
+  return new URL(pathPart, base).toString();
 }
 
 /**
@@ -64,7 +64,7 @@ function resolveWooCommerceProductUrl(rawUrl, envVars) {
  *   userId: string,
  *   env?: string,
  *   envVars: Record<string, string|undefined>,
- * }} [track] - required when row.Url is present
+ * }} [track] - used for store URL resolve when row.Url is present
  */
 function normalizePart(row, track) {
   const raw = {};
@@ -73,7 +73,7 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    // FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).
+    // FR-180 / FR-248 merchant: plain absolute shop URLs (no affiliate sid stamp).
     const envVars = (track && typeof track === 'object' && track.envVars) || {};
     url = resolveWooCommerceProductUrl(row.Url, envVars);
   }

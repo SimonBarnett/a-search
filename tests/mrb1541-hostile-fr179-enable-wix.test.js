@@ -2,7 +2,7 @@
 
 /**
  * MRB #1541 hostile pin: FR-179 enable wix merchant on main via fix #2260.
- * Floors 14 enabled x live+sandbox = 28 (keep-both wix+webgains); no affiliate sid; woocommerce stays dark.
+ * Floors 15 enabled x live+sandbox = 30 (keep-both webgains+woocommerce); no affiliate sid.
  */
 
 const { test } = require('node:test');
@@ -12,7 +12,7 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 
-test('mrb1541: wix enabled merchant both envs; floors 28; no AFFILIATE; woocommerce dark', () => {
+test('mrb1541: wix enabled merchant both envs; floors 30; no AFFILIATE; webgains+woocommerce on', () => {
   const reg = JSON.parse(
     fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
   );
@@ -25,17 +25,17 @@ test('mrb1541: wix enabled merchant both envs; floors 28; no AFFILIATE; woocomme
 
   const woo = reg.sources.find((s) => s.id === 'woocommerce');
   assert.ok(woo);
-  assert.equal(woo.enabled.live, false);
-  assert.equal(woo.enabled.sandbox, false);
+  assert.equal(woo.enabled.live, true);
+  assert.equal(woo.enabled.sandbox, true);
 
   const enabled = reg.sources.filter(
     (s) => s.enabled && s.enabled.live && s.enabled.sandbox,
   );
-  assert.equal(enabled.length, 14, `expected 14 enabled, got ${enabled.length}`);
+  assert.equal(enabled.length, 15, `expected 15 enabled, got ${enabled.length}`);
   assert.ok(enabled.some((s) => s.id === 'wix'));
   assert.ok(enabled.some((s) => s.id === 'webgains'));
   assert.ok(enabled.some((s) => s.id === 'shopify'));
-  assert.equal(enabled.some((s) => s.id === 'woocommerce'), false);
+  assert.ok(enabled.some((s) => s.id === 'woocommerce'));
 
   const stack = fs.readFileSync(
     path.join(root, 'cdk', 'lib', 'a-search-stack.js'),

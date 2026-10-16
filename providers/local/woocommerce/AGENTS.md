@@ -34,4 +34,4 @@ Provider CWD for registry id `woocommerce` (`kind: local`).
 - `src/worker.js` + `src/queryParts.js` - MSSQL Parts worker (FR-111)
 - `src/selftestProbe.js` - injectable Parts / `WOOCOMMERCE_CONSUMER_KEY` probe (FR-112)
 - `fixtures/products-ok.json` - recorded catalogue fixture
-- `.env.example` - placeholders (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_*`, `WOOCOMMERCE_AFFILIATE_ID`)
+- `.env.example` - placeholders (`WOOCOMMERCE_STORE_URL`, `WOOCOMMERCE_CONSUMER_*`; no affiliate stamp)

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #877 hostile pins for FR-111 woocommerce queryParts + worker (stay-dark).
+ * MRB #877 hostile pins for FR-111 woocommerce queryParts + worker (FR-180 enabled; no affiliate).
  */
 
 const { describe, it } = require('node:test');
@@ -28,18 +28,19 @@ const mssqlEnv = {
   MSSQL_PASSWORD: 'x',
   S3_RESULTS_BUCKET: 'test-results',
   WOOCOMMERCE_STORE_URL: 'https://madeira-demo.example.invalid',
-  WOOCOMMERCE_AFFILIATE_ID: 'aff-hostile',
 };
 
 describe('MRB-877 FR-111 hostile', () => {
-  it('registry woocommerce stay-dark both envs (CAST IRON)', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
+    assert.equal(row.class, 'merchant');
+    assert.equal(row.merchantConnect, true);
     assert.equal(row.queueEnv, 'SQS_WOOCOMMERCE_URL');
   });
 
@@ -64,7 +65,7 @@ describe('MRB-877 FR-111 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> writeResults with sid track + relative Url resolve', async () => {
+  it('worker run: queryParts -> writeResults with plain absolute Url (no sid)', async () => {
     const puts = [];
     const row = {
       Source: 'woocommerce',
@@ -101,8 +102,11 @@ describe('MRB-877 FR-111 hostile', () => {
     assert.equal(result.source, 'woocommerce');
     assert.equal(result.products.length, 1);
     assert.match(String(result.products[0].url), /example\.invalid/);
-    // FR-248 merchant: plain product URL (no affiliate sid stamp)
     assert.doesNotMatch(String(result.products[0].url), /[?&]sid=/);
+    assert.equal(
+      String(result.products[0].url),
+      'https://madeira-demo.example.invalid/product/sun-hat',
+    );
     assert.equal(puts.length, 1);
   });
 
@@ -133,6 +137,8 @@ describe('MRB-877 FR-111 hostile', () => {
     );
     assert.doesNotMatch(src, /not-wired/i);
     assert.doesNotMatch(src, /fetchCatalogPage|catalog\.js/);
+    assert.doesNotMatch(src, /buildTrackedUrl\(/);
+    assert.doesNotMatch(src, /WOOCOMMERCE_AFFILIATE_ID/);
     assert.match(src, /defaultQueryParts/);
     assert.match(src, /writeResults/);
   });
@@ -154,13 +160,14 @@ describe('MRB-877 FR-111 hostile', () => {
     assert.match(skill, /## Catalogue client \(FR-109\)/);
     assert.match(skill, /## Normalize \+ upsert \(FR-110\)/);
     assert.match(skill, /## Worker \+ queryParts \(FR-111\)/);
-    assert.match(skill, /stay dark|enabled.*false/i);
+    assert.match(skill, /FR-180|merchant|plain absolute/i);
+    assert.doesNotMatch(skill, /WOOCOMMERCE_AFFILIATE_ID/);
+    assert.doesNotMatch(skill, /stamp `WOOCOMMERCE_AFFILIATE_ID`/);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
     const envEx = fs.readFileSync(
       path.join(root, 'providers', 'local', 'woocommerce', '.env.example'),
       'utf8',
     );
-    // FR-248: merchants do not stamp affiliate ids
     assert.doesNotMatch(envEx, /WOOCOMMERCE_AFFILIATE_ID/);
     assert.match(envEx, /^WOOCOMMERCE_CONSUMER_KEY=\s*$/m);
     assert.match(envEx, /^MSSQL_PASSWORD=\s*$/m);

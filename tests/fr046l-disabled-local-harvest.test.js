@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const DISABLED_LOCAL = ['admitad', 'flexoffers', 'woocommerce'];
+const DISABLED_LOCAL = ['admitad', 'flexoffers'];
 
 function assertHarvestNeedles(text, label) {
   assert.match(text, /CAST IRON/i, `${label}: CAST IRON`);

@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains']; // FR-179 wix + FR-173 webgains; GBP/UK hold bol/aliexpress/avantlink; worker floors 28 (+ FR-2139 shop-sync alarm separate)
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains', 'woocommerce']; // FR-179 wix + FR-173 webgains + FR-180 woocommerce; GBP/UK hold bol/aliexpress/avantlink; worker floors 30 (+ FR-2139 shop-sync alarm separate)
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -87,7 +87,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
         // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
         !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // Worker DLQ alarms only (14 enabled x live+sandbox = 28). FR-2139 shop-sync DLQ alarm is extra.
+    // Worker DLQ alarms only (15 enabled x live+sandbox = 30). FR-2139 shop-sync DLQ alarm is extra.
     const workerDlqAlarms = alarms.filter((a) => {
       const name = (a.Properties && a.Properties.AlarmName) || '';
       const blob = JSON.stringify(a.Properties || {});
@@ -100,7 +100,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     assert.equal(
       workerDlqAlarms.length,
       28,
-      `expected 28 DLQ depth alarms, got ${workerDlqAlarms.length}`,
+      `expected 30 DLQ depth alarms, got ${workerDlqAlarms.length}`,
     );
 
     for (const id of ENABLED_IDS) {

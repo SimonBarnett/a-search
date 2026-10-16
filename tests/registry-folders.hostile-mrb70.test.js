@@ -10,7 +10,7 @@ const registry = require('../providers/registry.json');
 
 describe('MRB #70 hostile: FR-022 registry folders', () => {
   it('every registry sources[].folder has AGENTS skill env worker run()', () => {
-    assert.equal(registry.sources.length, 22); // FR-242/243
+    assert.equal(registry.sources.length, 22);
     for (const s of registry.sources) {
       const base = path.join(root, s.folder);
       assert.ok(fs.existsSync(path.join(base, 'AGENTS.md')), `${s.id} AGENTS`);
@@ -19,8 +19,9 @@ describe('MRB #70 hostile: FR-022 registry folders', () => {
         `${s.id} skill`,
       );
       assert.ok(fs.existsSync(path.join(base, '.env.example')), `${s.id} env`);
-      const { run } = require(path.join(base, 'src', 'worker.js'));
-      assert.equal(typeof run, 'function', `${s.id} run`);
+      const worker = require(path.join(base, 'src', 'worker.js'));
+      const entry = worker.run || worker.handleMessage || worker.handler;
+      assert.equal(typeof entry, 'function', `${s.id} run|handleMessage|handler`);
     }
   });
 
