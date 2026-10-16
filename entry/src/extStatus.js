@@ -8,17 +8,10 @@
 const { queryParams } = require('./performance');
 const { extStatus } = require('../../shared/dns/hostTxtStatus');
 const {
-  MemoryCustomersStore,
+  getDefaultCustomersStore,
 } = require('../../shared/components/customers');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
-
-let defaultStore = null;
-
-function getDefaultStore() {
-  if (!defaultStore) defaultStore = new MemoryCustomersStore();
-  return defaultStore;
-}
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -52,7 +45,7 @@ async function handleExtStatus(event, deps = {}) {
     return jsonResponse(400, { error: 'host_required' });
   }
 
-  const store = deps.store || getDefaultStore();
+  const store = deps.store || getDefaultCustomersStore();
   const negTtlS =
     deps.negTtlS != null
       ? Number(deps.negTtlS)
@@ -91,5 +84,5 @@ function isExtStatusRoute(method, path) {
 module.exports = {
   handleExtStatus,
   isExtStatusRoute,
-  getDefaultStore,
+  getDefaultStore: getDefaultCustomersStore,
 };

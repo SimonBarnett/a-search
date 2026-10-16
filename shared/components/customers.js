@@ -154,7 +154,8 @@ class MemoryCustomersStore {
       boundAt = new Date().toISOString();
     }
     const now = new Date().toISOString();
-    const widgetGuid = crypto.randomUUID();
+    // FR-232 rule 1: lowercase canonical RFC 4122 UUID
+    const widgetGuid = crypto.randomUUID().toLowerCase();
     const row = {
       widgetGuid,
       customerNumber,
@@ -175,7 +176,8 @@ class MemoryCustomersStore {
    * @returns {object|null}
    */
   getWidget(widgetGuid) {
-    const row = this.widgets.get(String(widgetGuid || ''));
+    const guid = String(widgetGuid || '').trim().toLowerCase();
+    const row = this.widgets.get(guid);
     return row ? { ...row } : null;
   }
 
@@ -185,7 +187,7 @@ class MemoryCustomersStore {
    * @returns {object}
    */
   bindWidget(input) {
-    const guid = String(input.widgetGuid || '');
+    const guid = String(input.widgetGuid || '').trim().toLowerCase();
     const row = this.widgets.get(guid);
     if (!row) {
       const err = new Error('widget_not_found');
@@ -284,8 +286,31 @@ function listActiveWidgets(store, customerNumber) {
   return store.listActiveWidgets(customerNumber);
 }
 
+/** Process-local default store shared by POST /widgets, GET /parts, GET /go (FR-232). */
+let defaultCustomersStore = null;
+
+/**
+ * @returns {MemoryCustomersStore}
+ */
+function getDefaultCustomersStore() {
+  if (!defaultCustomersStore) {
+    defaultCustomersStore = new MemoryCustomersStore();
+  }
+  return defaultCustomersStore;
+}
+
+/**
+ * Test helper: replace or clear the process-local default store.
+ * @param {MemoryCustomersStore|null} [store]
+ */
+function setDefaultCustomersStore(store) {
+  defaultCustomersStore = store || null;
+}
+
 module.exports = {
   MemoryCustomersStore,
+  getDefaultCustomersStore,
+  setDefaultCustomersStore,
   ensureCustomer,
   getCustomerByHost,
   updateCustomer,
