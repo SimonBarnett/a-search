@@ -14,7 +14,7 @@ const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 // Remaining stay-dark after FR-168; GBP/UK hold also keeps aliexpress/bol/avantlink dark.
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers', 'woocommerce'];
 const GBP_HOLD_DARK = ['aliexpress', 'bol', 'avantlink'];
 
 function utf8NoBom(rel) {
@@ -116,7 +116,7 @@ describe('FR-168 enable skimlinks', () => {
     }
 
     // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
-    for (const dark of ['webgains'].concat(GBP_HOLD_DARK)) {
+    for (const dark of ['admitad'].concat(GBP_HOLD_DARK)) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

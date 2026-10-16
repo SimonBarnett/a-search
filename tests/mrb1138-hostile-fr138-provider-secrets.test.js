@@ -20,7 +20,7 @@ const releaseGap = path.join(
 );
 
 const ENABLED = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'bol'];
-const STAY_DARK = ['webgains'];
+const STAY_DARK = ['admitad'];
 
 describe('MRB #1138 hostile FR-138 provider secrets', () => {
   it('product test uses in-process synth + stay-dark omission', () => {

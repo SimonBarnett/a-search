@@ -41,13 +41,13 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     assert.match(text, /PARTNERIZE_PUBLISHER_ID/);
   });
 
-  it('FR-142/143 pins use 30 primary/DLQ floors (12 enabled x 2)', () => {
+  it('FR-142/143 pins use 26 primary/DLQ floors (13 enabled x 2)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 26 primary queues/);
-    assert.match(fr143, /expected 26 DLQ depth alarms/);
+    assert.match(fr142, /expected 28 primary queues/);
+    assert.match(fr143, /expected 28 DLQ depth alarms/);
     assert.match(fr142, /'partnerize'/);
   });
 
@@ -62,8 +62,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const mrb668 = utf8NoBom(
       path.join('tests', 'mrb668-hostile-fr061-phase2-stay-dark.test.js'),
     );
-    assert.match(mrb668, /exactly 4 Phase-2 stub ids stay dark/); // FR-179: wix left the stub list
-    assert.match(mrb668, /stubs\.length,\s*4/);
+    assert.match(mrb668, /exactly 3 Phase-2 stub ids stay dark/);
+    assert.match(mrb668, /stubs\.length,\s*3/);
     const fr = utf8NoBom(path.join('docs', 'fr', 'FR-172.md'));
     assert.match(fr, /Decision\s*\(LOCKED\)/i);
     assert.match(fr, /partnerize/i);
