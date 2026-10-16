@@ -81,7 +81,7 @@ Per-source Secrets Manager JSON. Override:
 | shopify | worker | SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STORE_URL | Secrets Manager JSON (`a-search/{env}/providers/shopify/app` + selftest fallback) |
 | woocommerce | `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, `WOOCOMMERCE_STORE_URL` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180) |
 | avantlink | `AVANTLINK_API_KEY`, `AVANTLINK_API_TOKEN`, `AVANTLINK_FEED_TOKEN`, `AVANTLINK_PUBLISHER_ID`, `AVANTLINK_AFFILIATE_ID` | `a-search-avantlink-worker-{live,sandbox}` (FR-177) |
-| etsy | `ETSY_API_KEY` | `a-search-etsy-worker-{live,sandbox}` (FR-170); plain `ETSY_TRACKING_ID=a-search` |
+| etsy | `ETSY_API_KEY`, `ETSY_SHARED_SECRET` | `a-search-etsy-worker-{live,sandbox}` (FR-170/FR-244); plain `ETSY_AFFILIATE_NETWORK=rakuten`; mid/publisher from secrets (`ETSY_RAKUTEN_MID`, `RAKUTEN_PUBLISHER_ID`) |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
 | tradedoubler | `TRADEDOUBLER_API_KEY`, `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_FEED_TOKEN`, `TRADEDOUBLER_AFFILIATE_ID`, `TRADEDOUBLER_PUBLISHER_ID` | `a-search-tradedoubler-worker-{live,sandbox}` (FR-174) |
