@@ -96,6 +96,33 @@ Widget path uses `shared/widgets/go.js` `defaultStampUrl` -> `buildOutboundUrl`.
 
 ## SQL read-time rewriting (`dbo.Part2`) vs create-time tracking
 
-madeiradb `dbo.Part2` may rewrite affiliate URLs on SQL reads. **Do not tag
-twice** when a-search already applied `buildTrackedUrl` / `buildOutboundUrl`.
+madeiradb helper **`dbo.Part2`** reads `Products` and rewrites affiliate URLs
+when serving SQL results:
+
+| Source key | Rewrite |
+|------------|---------|
+| `paapi` | `tag=mymodelflying-21` -> `tag=mymodelflying-<lower(UserId)>-21` |
+| `awin` | append `&clickref=<UserId>` |
+
+**Do not tag twice.** If a-search already applied `buildTrackedUrl` / `buildOutboundUrl` (JWT
+`userId` + provider `.env` account) into S3/results JSON, do not also assume
+`Part2` will run on that JSON -- `Part2` is a **SQL** read path over `Products`.
+Conversely, rows that only ever surface through `Part2` may rely on that
+rewrite; workers writing `Products.AffiliateUrl` should leave placeholders
+compatible with `Part2` or document that a-search owns final tagging.
 madeiradb is read-only for a-search (FR-251).
+
+Full catalog/product map: [catalog-model.md](catalog-model.md) (FR-115).
+
+## Out of scope here
+
+- Wiring workers / normalize paths (FR-057c..h)
+- Other providers' `.env.example` account rows (later FR-057 slices)
+- Vision Success row (FR-057i)
+- Changing the JWT issuer
+
+## Etsy (FR-244)
+
+Etsy listing URLs are wrapped (not query-stamped) via `providers/live/etsy/src/affiliateUrl.js`:
+Rakuten Advertising deeplink by default (`u1` = tenantId); Awin `cread.php` when
+`ETSY_AFFILIATE_NETWORK=awin`. Clean query/fragment before wrap; fail closed if mid/publisher missing.
