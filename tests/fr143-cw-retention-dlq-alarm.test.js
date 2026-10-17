@@ -87,7 +87,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
         // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
         !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // keep-both shopify+tradedoubler+avantlink: 30 floors (12 enabled x live+sandbox)
+    // 13 enabled x live+sandbox; bigcommerce stay-dark adds no alarm
     assert.equal(alarms.length, 26, `expected 26 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {
