@@ -323,7 +323,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS — do not FAIL or open a fix PR for stale it() names alone
 - a-search skill mojibake restore that is 0 behind main and pins the five named lines as ASCII while keeping the AKIA placeholder and the GitGuardian em dash: PASS and auto-merge; do not fold main again and do not treat it as a twin of FR #2746.
 - a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes — never drop either provider.
-- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE — do not re-litigate prior PASS boards.
+- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE --- do not re-litigate prior PASS boards.
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI — do not invent product fixes for bulk-cancel reds.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
 - a-search re-offered harvest-lesson MRB that is a few commits behind: one tip-author origin/main fold, re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
@@ -339,3 +339,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, one origin/main fold plus the product pin suite green is the FIX; do not invent a synth-timeout product change.
 - a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
 - FIX assign for cancelled CI on open product PR: one behind-main fold, re-run claimed pin tests, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
+- Re-offered keep-both resolve helper MRB: one behind-main fold, re-run fr3708 pin + conflict markers, PASS @ new SHA, --auto, DONE.
