@@ -271,3 +271,16 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
 - a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
 - a-search FR #3495: local provider .env.example live-target comments name a_search (FR-251), matching wix wording; leave wix to its own tip
+- FR-234 MRB: memory WidgetStats + a_search migration + rollup no-agent-enqueue pins are enough to PASS while MSSQL adapter stays deferred
+- docs/mrb tips that bump fr142/fr143 floors while ENABLED_IDS length is unchanged are tip-loops: FAIL-supersede and land hostile pins on a clean fix PR without floor edits.
+- FR-234: pin widget event dedupe with injectable nowMs (wall-clock expiry deletes fixture-dated keys); stats.json rollup must never call the agent queue; Parts API stays tier-blind.
+- When FR-228 pins pass but authEmail still uses the in-memory otpStore, PASS the named endpoints and file a separate FR for the a_search.dbo.OtpCodes write path.
+- a-search enable-provider MRB: when a later keep-both tip already includes the older tip DEFAULT_ON set and Closes the same issue, FAIL-supersede the older CONFLICTING subset and do not fold it
+- MRB rematch after author-seat self-MRB GIVEUP: re-verify tip pins (webhook wire over 501 stub), one update-branch if behind, post PASS @ new head SHA, re-arm gh pr merge --auto, DONE without CI poll (FR #3948)
+- Release-blocker CI red with shared faults: fix the deterministic pin first (fr2021 timeout-minutes expression), then raise runCdkSynth timeout and tree-kill on ETIMEDOUT so orphan cdk cannot hold cdk.out; fold open per-synth-out PRs into the same tip rather than leaving twin heads
+- FR-234 MRB: pin index.js widgetEvents/widgetsStats before ComponentsPiece 501 stub and assert rollupStatsJson never calls agentQueue.enqueue (stats_changed is not a #1343 trigger)
+- FIX CI on a-search PASSed tips: if failures are Another CLI synthing to cdk.out, fold main for FR #3663 runCdkSynth per-output dirs; do not re-open MRB.
+- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms — not 27 (class of MRB #2075 FAIL then tip-fix)
+- FIX CI on a-search harvest tip: merge main for fr2021 timeout-minutes:[^\n]*\b180\b pin before re-arm; keep-both SKILL lesson bullets
+- FR-3355 MRB: PASS classify+events docs when components-piece tree still shows in.json if FR-3344 tip is still open; cite #3354 on drift line
+- After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
