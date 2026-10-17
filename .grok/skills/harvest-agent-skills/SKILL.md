@@ -253,7 +253,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB a-search FR-228: pin otpStore Decision LOCKED rate limits + migration 016 never madeiradb/SystemOTPs + shops 403 contact_unverified + JWT join-parts on docs/mrb-N; run tests with D:\Tools\node\node.exe (PATH node may be too old for --test)
 - FR-2611: docs/skills-only PRs need a cheap ubuntu classify job then test-and-synth on ubuntu exit-0; bare paths-ignore leaves required check missing and blocks auto-merge
 - FR-245 BigCommerce harvest tips that mix tip-0-behind arm --auto with stay-dark/JWT pins FAIL-supersede while product #2183 is still open; cite #2183 + bobiverse-bob-job-mrb; do not merge premature session receipts.
-- harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md — pin with fr2746 hostile ASCII test
+- harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md - pin with fr2746 hostile ASCII test
 - docs/mrb stacked on an open harvest-lesson tip: after light triage PASS, tip-fix CI on the docs/mrb head, arm auto-merge on the docs/mrb PR (lands lesson+hostile), and close the parent harvest tip citing the docs/mrb URL --- do not wait for the parent tip to merge first.
 - Re-offered Phase5 FR when open stack tip already Closes it: verify closingIssuesReferences + acceptance tests on tip, comment covering PR, DONE with that PR URL; never open a second implement PR
 - When a harvest-lesson tip keep-both merge doubles SKILL.md mojibake or edits unrelated queue-floor assertions, FAIL and close that tip. Land one ASCII-only bullet plus a BOM-free hostile pin from origin/main; do not merge the dirty head.
@@ -279,7 +279,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Release-blocker CI red with shared faults: fix the deterministic pin first (fr2021 timeout-minutes expression), then raise runCdkSynth timeout and tree-kill on ETIMEDOUT so orphan cdk cannot hold cdk.out; fold open per-synth-out PRs into the same tip rather than leaving twin heads
 - FR-234 MRB: pin index.js widgetEvents/widgetsStats before ComponentsPiece 501 stub and assert rollupStatsJson never calls agentQueue.enqueue (stats_changed is not a #1343 trigger)
 - FIX CI on a-search PASSed tips: if failures are Another CLI synthing to cdk.out, fold main for FR #3663 runCdkSynth per-output dirs; do not re-open MRB.
-- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms — not 27 (class of MRB #2075 FAIL then tip-fix)
+- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms - not 27 (class of MRB #2075 FAIL then tip-fix)
 - FIX CI on a-search harvest tip: merge main for fr2021 timeout-minutes:[^\n]*\b180\b pin before re-arm; keep-both SKILL lesson bullets
 - FR-3355 MRB: PASS classify+events docs when components-piece tree still shows in.json if FR-3344 tip is still open; cite #3354 on drift line
 - After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
@@ -300,11 +300,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB harvest-lesson re-offer: one update-branch when tip is far behind, re-verify pin + unique vs main, then PASS @ head SHA and leave existing auto-merge; never poll CI (FR #3948 / #3317)
 - Re-offered FR on closed-unmerged tip: Prefer ExistingPrUrl successor that Closes the FR issue; verify pins; DONE with that PR URL; never open a second implement PR.
 - FR-3459 MRB rematch: one origin/main fold then re-run skillbook-harvest (stay-dark enumeration + CAST IRON/intake/-Repo needles) before PASS @ head SHA
-- a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS — do not FAIL or open a fix PR for stale it() names alone
+- a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS - do not FAIL or open a fix PR for stale it() names alone
 - FR-3459 stay-dark harvest gate: after folding main, re-run skillbook-harvest; BigCommerce AGENTS must carry Report-BobiverseIntakeIssue or /bob/v1/intake, not prose via intake alone.
 - a-search docs/mrb hostile pin that is 0 behind origin/main and Refs an already-closed lesson issue: PASS and leave auto-merge; do not reopen the parent or fold main again.
-- a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes — never drop either provider.
-- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE — do not re-litigate prior PASS boards.
+- a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes - never drop either provider.
+- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE - do not re-litigate prior PASS boards.
 - a-search docs-only FR lock that is far behind main with no file conflicts: one origin/main fold as tip author, re-run the docs pin test, PASS and auto-merge; do not open a fix PR for the fold alone.
 - a-search FIX when tip is far behind and ort merges clean: one tip-author origin/main fold, re-run the product pin suite, push, DONE FIX with the PR URL; never poll CI.
-- FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI — do not invent product fixes for bulk-cancel reds.
+- FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI - do not invent product fixes for bulk-cancel reds.
