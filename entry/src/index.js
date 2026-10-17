@@ -113,6 +113,13 @@ const {
   matchOAuthCallbackRoute,
   handleOAuthCallback,
 } = require('./oauthCallback');
+const {
+  matchAuthEmailRoute,
+  handleAuthEmailRequest,
+  handleAuthEmailVerify,
+  handleAuthSmsRequest,
+  handleAuthSmsVerify,
+} = require('./authEmail');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -127,6 +134,7 @@ const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
 const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
+const AUTH_EMAIL_ROUTE = 'entry/auth';
 const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
 const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
 const CLUB_REVENUE_SHARE_ROUTE = 'entry/club/revenue-share';
@@ -291,6 +299,7 @@ async function handler(event, _context, deps = {}) {
   const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
+  const authRoute = matchAuthEmailRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
   const upgradeRoute = matchAccountUpgradeRoute(method, path);
   const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
@@ -314,25 +323,27 @@ async function handler(event, _context, deps = {}) {
                 ? MERCHANT_SHOPS_ROUTE
                 : stripeWebhookRoute
                   ? 'entry/POST /webhooks/stripe'
+                  : authRoute
+                  ? AUTH_EMAIL_ROUTE
                   : loginRoute
-                    ? LOGIN_ENTRY_ROUTE
-                    : oauthRoute
-                      ? OAUTH_CALLBACK_ROUTE
-                      : commissionRoute
-                        ? ACCOUNT_COMMISSION_ROUTE
-                        : upgradeRoute
-                          ? ACCOUNT_UPGRADE_ROUTE
-                          : clubRevenueShareRoute
-                            ? CLUB_REVENUE_SHARE_ROUTE
-                            : widgetsMutateRoute
-                              ? WIDGETS_MUTATE_ROUTE
-                              : cpRoute
-                                ? `entry/${cpRoute}`
-                                : isSelftestRoute(method, path)
-                                  ? SELFTEST_ROUTE
-                                  : isPerformanceRoute(method, path)
-                                    ? PERF_ROUTE
-                                    : ENTRY_ROUTE;
+                  ? LOGIN_ENTRY_ROUTE
+                  : oauthRoute
+                    ? OAUTH_CALLBACK_ROUTE
+                    : commissionRoute
+                      ? ACCOUNT_COMMISSION_ROUTE
+                      : upgradeRoute
+                        ? ACCOUNT_UPGRADE_ROUTE
+                        : clubRevenueShareRoute
+                          ? CLUB_REVENUE_SHARE_ROUTE
+                          : widgetsMutateRoute
+                            ? WIDGETS_MUTATE_ROUTE
+                            : cpRoute
+                              ? `entry/${cpRoute}`
+                              : isSelftestRoute(method, path)
+                                ? SELFTEST_ROUTE
+                                : isPerformanceRoute(method, path)
+                                  ? PERF_ROUTE
+                                  : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -394,6 +405,20 @@ async function handler(event, _context, deps = {}) {
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
     }
+
+    if (authRoute === 'POST /auth/email/request') {
+      return await handleAuthEmailRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/email/verify') {
+      return await handleAuthEmailVerify(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/request') {
+      return await handleAuthSmsRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/verify') {
+      return await handleAuthSmsVerify(event, deps);
+    }
+
     if (partnerRoute === 'POST /partner/register') {
       return await handlePartnerRegister(event, deps);
     }
