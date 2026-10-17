@@ -311,3 +311,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search re-offered FR-3611 CRLF skill-pin MRB on stranded ACK: one behind-main fold, re-run fr3611/mrb3633/mrb3609 pins, PASS @ new SHA and --auto, DONE immediately.
 - a-search harvest-lesson with hostile pin that is a few commits behind main and merges clean: one tip-author fold, re-run the contiguous pin, PASS and enable auto-merge; do not FAIL for ACCEPTABLE-drift wording about short-lived accessToken.
 - a-search FIX when tip is CONFLICTING at the harvest-agent-skills tail with empty HEAD and new main bullets: keep-both (take main bullets), tip-author fold, re-run CRLF pins, DONE FIX; never poll CI.
+- a-search FR when the Closes PR was closed unmerged and acceptance is still open: reopen that PR (or recreate from tip), one origin/main fold, re-run pins, DONE FR with the PR URL; never merge from the FR seat.
