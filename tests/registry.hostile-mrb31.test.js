@@ -31,7 +31,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
 
   it('registry has exactly 22 sources (FR-242/243 squarespace+magento) with folder matching kind', () => {
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 22);
+    assert.equal(sources.length, 23);
     for (const s of sources) {
       assert.ok(s.kind === 'live' || s.kind === 'local', s.id);
       assert.ok(
