@@ -371,3 +371,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When an a-search tip is MERGEABLE but test-and-synth fails a pin that main already rewrote, one origin/main fold is the FIX (CI failed on a main-fixed issue, FR #4649). Do not invent a tip-only patch.
 - Shop connect HTTP tests that mock verifyAuthorization must set contactVerified true, or assertContactVerified returns 403.
 - A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
+- MRB process-loop: MERGEABLE product tip merely behind — PASS @ current head and --auto; do not fold (FR #3827); Ecwid FR-246 unique on #2186
