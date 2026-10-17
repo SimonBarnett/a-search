@@ -45,7 +45,7 @@ describe('FR-056f CDK onboarding schedules', () => {
   it('npm run synth exits 0; template has onboarding schedule rules', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
     const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const rules = Object.values(parsed.Resources || {}).filter(
