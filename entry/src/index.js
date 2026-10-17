@@ -94,6 +94,10 @@ const {
   handleWixWebhook,
 } = require('./wixWebhooks');
 const {
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
+} = require('./stripeWebhook');
+const {
   matchBigCommerceWebhookRoute,
   handleBigCommerceWebhook,
 } = require('./bigcommerceWebhooks');
@@ -286,6 +290,7 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
   const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
@@ -311,7 +316,9 @@ async function handler(event, _context, deps = {}) {
               ? PARTNER_REGISTER_ROUTE
               : merchantRoute
                 ? MERCHANT_SHOPS_ROUTE
-                : authRoute
+                : stripeWebhookRoute
+                  ? 'entry/POST /webhooks/stripe'
+                  : authRoute
                   ? AUTH_EMAIL_ROUTE
                   : loginRoute
                   ? LOGIN_ENTRY_ROUTE
@@ -374,6 +381,10 @@ async function handler(event, _context, deps = {}) {
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
     }
+    // FR-239: shared Stripe webhook wins over FR-208 ComponentsPiece 501 stub
+    if (stripeWebhookRoute) {
+      return await handleStripeWebhook(event, deps);
+    }
     if (oauthRoute) {
       return await handleOAuthCallback(event, oauthRoute, deps);
     }
@@ -417,7 +428,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
-      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+      merchantRoute === 'DELETE /merchant/shops/{shopId}' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
     ) {
       return await handleMerchantShops(event, merchantRoute, deps);
     }
@@ -802,6 +815,8 @@ module.exports = {
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
   matchLoginEntryRoute,
   handleLoginEntry,
   matchOAuthCallbackRoute,
