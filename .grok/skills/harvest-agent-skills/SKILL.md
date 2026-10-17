@@ -312,3 +312,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson with hostile pin that is a few commits behind main and merges clean: one tip-author fold, re-run the contiguous pin, PASS and enable auto-merge; do not FAIL for ACCEPTABLE-drift wording about short-lived accessToken.
 - a-search FIX when tip is CONFLICTING at the harvest-agent-skills tail with empty HEAD and new main bullets: keep-both (take main bullets), tip-author fold, re-run CRLF pins, DONE FIX; never poll CI.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
+- a-search harvest-lesson that is 0 behind and teaches FIX folds to add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo when main lands a stay-dark AGENTS without those needles: PASS and auto-merge; do not fold again.
