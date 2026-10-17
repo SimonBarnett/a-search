@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-142: SQS DLQ + redrive on each enabled worker queue (live + sandbox).
  * Alarms are FR-143 (out of scope here).
@@ -39,11 +41,7 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       return;
     }
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr142');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
@@ -95,12 +93,13 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-173+FR-180+FR-179: 30 worker primaries + 30 DLQs (15 enabled x live+sandbox).
-    // FR-2139 shop-sync FIFO + DLQ end in .fifo (not -dlq); exclude from worker floors.
+    // 15 enabled x live+sandbox = 30. Exclude shop-sync FIFO and widget-events.
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
-      .filter((n) => !String(n).includes('.fifo'));
+      .filter((n) => !String(n).includes('.fifo'))
+      .filter((n) => !/^a-search-shop-sync/.test(String(n)))
+      .filter((n) => !/^a-search-widget-events/.test(String(n)));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
     // FR-180+FR-179: 30 worker primaries (15 enabled). Exclude FR-2139 shop-sync .fifo.

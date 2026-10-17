@@ -33,7 +33,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
 
   it('registry has exactly 22 shortlist sources with folder matching kind', () => {
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 22);
+    assert.equal(sources.length, 23);
     for (const s of sources) {
       assert.ok(s.kind === 'live' || s.kind === 'local', s.id);
       assert.ok(

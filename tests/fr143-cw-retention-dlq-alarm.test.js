@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-143: CloudWatch log retention (30d) on Lambdas + DLQ depth alarms
  * (ApproximateNumberOfMessagesVisible >= 1) to a placeholder SNS topic.
@@ -45,11 +47,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       return;
     }
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr143');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
@@ -92,8 +90,8 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       const name = (a.Properties && a.Properties.AlarmName) || '';
       const blob = JSON.stringify(a.Properties || {});
       return (
-        !/shop-sync|ShopSync/i.test(String(name)) &&
-        !/shop-sync/i.test(blob) &&
+        !/shop-sync|ShopSync|widget-events/i.test(String(name)) &&
+        !/shop-sync|widget-events/i.test(blob) &&
         (/-dlq/i.test(String(name)) || /-dlq/i.test(blob))
       );
     });

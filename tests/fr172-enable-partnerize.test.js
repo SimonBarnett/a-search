@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-172 / #1019: enable partnerize only; FR-138 secret wiring; others stay dark.
  */
@@ -75,11 +77,7 @@ describe('FR-172 enable partnerize', () => {
   it('synth: partnerize live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr172');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));

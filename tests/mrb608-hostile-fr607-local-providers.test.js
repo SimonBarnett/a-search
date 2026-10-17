@@ -12,8 +12,8 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const IDS = ['shopify', 'wix', 'woocommerce'];
-/** Still-dark Madeira stubs after FR-178 enables shopify. */
-const STILL_DISABLED = ['wix'];
+/** FR-178/179/180 enable shopify, wix, and woocommerce. No Madeira stub in IDS stays dark. */
+const STILL_DISABLED = [];
 
 function utf8NoBom(rel) {
   const p = path.join(root, rel);
@@ -33,7 +33,7 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
   it('registry keeps dark Madeira stubs disabled; shopify+woocommerce enabled as merchant (FR-178/FR-180)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 22);
+    assert.equal(sources.length, 23); // FR-242/243
     for (const id of IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);
@@ -46,9 +46,12 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
       assert.equal(s.enabled.live, false, `${id}.live`);
       assert.equal(s.enabled.sandbox, false, `${id}.sandbox`);
     }
+    for (const id of ['shopify', 'wix', 'woocommerce']) {
+      const row = sources.find((x) => x.id === id);
+      assert.equal(row.enabled.live, true, `${id}.live`);
+      assert.equal(row.enabled.sandbox, true, `${id}.sandbox`);
+    }
     const shopify = sources.find((x) => x.id === 'shopify');
-    assert.equal(shopify.enabled.live, true);
-    assert.equal(shopify.enabled.sandbox, true);
     assert.equal(shopify.class, 'merchant');
     assert.equal(shopify.merchantConnect, true);
   });
