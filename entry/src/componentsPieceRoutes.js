@@ -3,6 +3,7 @@
 /**
  * FR-208: route matchers + stubs for ComponentsPiece / extension account paths.
  * Real handlers land in FR-232 / #1344 / #1345 / FR-234. Until then: 501.
+ * #1345 owns POST /webhooks/stripe (entry/src/stripeWidgetUpgradeWebhook.js).
  */
 
 /**
