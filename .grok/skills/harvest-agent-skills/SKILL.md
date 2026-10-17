@@ -275,3 +275,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-234: pin widget event dedupe with injectable nowMs (wall-clock expiry deletes fixture-dated keys); stats.json rollup must never call the agent queue; Parts API stays tier-blind.
 - When FR-228 pins pass but authEmail still uses the in-memory otpStore, PASS the named endpoints and file a separate FR for the a_search.dbo.OtpCodes write path.
 - a-search enable-provider MRB: when a later keep-both tip already includes the older tip DEFAULT_ON set and Closes the same issue, FAIL-supersede the older CONFLICTING subset and do not fold it
+- MRB rematch after author-seat self-MRB GIVEUP: re-verify tip pins (webhook wire over 501 stub), one update-branch if behind, post PASS @ new head SHA, re-arm gh pr merge --auto, DONE without CI poll (FR #3948)
