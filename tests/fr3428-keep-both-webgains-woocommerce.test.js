@@ -45,5 +45,6 @@ describe('FR-3428 keep-both webgains and woocommerce', () => {
       'utf8',
     );
     assert.match(fr143, /expected 30 DLQ depth alarms/);
+    assert.match(fr143, /workerDlqAlarms\\.length,\\s*30/);
   });
 });
