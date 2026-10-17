@@ -5,6 +5,7 @@
  */
 
 const { createOtpStore } = require('../../shared/auth/otpStore');
+const { createAsearchOtpStore } = require('../../shared/auth/otpStoreSql');
 const { createMailSender } = require('../../shared/notify/mailSender');
 const { createSmsSender } = require('../../shared/notify/smsSender');
 const {
@@ -22,6 +23,13 @@ const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
 const defaultStore = createOtpStore();
 const defaultMailer = createMailSender();
 const defaultSms = createSmsSender();
+
+
+function storeFor(deps) {
+  if (deps && deps.store) return deps.store;
+  if (deps && typeof deps.query === 'function') return createAsearchOtpStore({ query: deps.query });
+  return defaultStore;
+}
 
 function jsonResponse(statusCode, payload) {
   return {
@@ -146,7 +154,7 @@ async function handleAuthEmailRequest(event, deps = {}) {
     const result = await requestEmailLogin({
       email: parsed.email,
       mode: parsed.mode,
-      store: deps.store || defaultStore,
+      store: storeFor(deps),
       mailer: deps.mailer || defaultMailer,
       pepper: pepperFromEnv(env),
       nowMs: deps.nowMs,
@@ -172,7 +180,7 @@ async function handleAuthEmailVerify(event, deps = {}) {
       email: parsed.email,
       code: parsed.code,
       magicToken: parsed.magicToken || parsed.token,
-      store: deps.store || defaultStore,
+      store: storeFor(deps),
       pepper: pepperFromEnv(env),
       resolveIdentity,
       mintSession: (claims) =>
@@ -202,7 +210,7 @@ async function handleAuthSmsRequest(event, deps = {}) {
   try {
     const result = await requestSmsLogin({
       phone: parsed.phone,
-      store: deps.store || defaultStore,
+      store: storeFor(deps),
       sms: deps.sms || defaultSms,
       pepper: pepperFromEnv(env),
       nowMs: deps.nowMs,
@@ -230,7 +238,7 @@ async function handleAuthSmsVerify(event, deps = {}) {
     const result = await verifySmsLogin({
       phone: parsed.phone,
       code: parsed.code,
-      store: deps.store || defaultStore,
+      store: storeFor(deps),
       pepper: pepperFromEnv(env),
       resolveIdentity,
       mintSession: (claims) =>
