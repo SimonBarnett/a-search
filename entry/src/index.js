@@ -98,6 +98,10 @@ const {
   handleEcwidWebhook,
 } = require('./ecwidWebhooks');
 const {
+  matchBigCommerceWebhookRoute,
+  handleBigCommerceWebhook,
+} = require('./bigcommerceWebhooks');
+const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
@@ -279,6 +283,7 @@ async function handler(event, _context, deps = {}) {
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
   const ecwidWebhookRoute = matchEcwidWebhookRoute(method, path);
+  const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
@@ -389,6 +394,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (ecwidWebhookRoute) {
       return await handleEcwidWebhook(event, deps);
+    }
+    if (bigcommerceWebhookRoute) {
+      return await handleBigCommerceWebhook(event, deps);
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
