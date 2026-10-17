@@ -27,5 +27,6 @@ Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME
 | `015_AmazonTrackingIds.sql` | Amazon per-tenant partner tags (FR-248 / #1362) |
 | `016_WidgetStats.sql` | WidgetStatsDaily + WidgetEventDedupe (FR-234 / #1348) |
 | `017_ShopInvoices_StripeEvents.sql` | ShopInvoices + StripeEvents idempotency (FR-239 / #1353) |
+| `018_Merchants_OtpCodes.sql` | Merchants verified contact + OtpCodes hashed secrets (FR-228); never SystemOTPs |
 
 Every file starts with `-- target: a_search`.
