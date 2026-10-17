@@ -299,3 +299,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX CI on a-search tips with sequential synth status-null at ~600s: fold origin/main even when runCdkSynth already has allocateSynthOutDir; tip may be far behind other main fixes.
 - MRB harvest-lesson re-offer: one update-branch when tip is far behind, re-verify pin + unique vs main, then PASS @ head SHA and leave existing auto-merge; never poll CI (FR #3948 / #3317)
 - Re-offered FR on closed-unmerged tip: Prefer ExistingPrUrl successor that Closes the FR issue; verify pins; DONE with that PR URL; never open a second implement PR.
+- MRB a-search FIFO floors: exclude shop-sync and widget-agent .fifo DLQ alarms from provider worker counts (fr142 .fifo filter + fr143 /^a-search-widget-agent/ exclude); close open IN/ in_ready twins as Duplicate of #1343 / fixed by PR #2075
