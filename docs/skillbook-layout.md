@@ -113,3 +113,16 @@ Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
 Out of scope for FR-046a: rewriting every existing provider file — those
 land via per-provider / onboarding FRs. This doc is the layout checklist.
+
+
+## Customer-tree agent CWD (ComponentsPiece)
+
+ComponentsPiece agents operate on the rclone-mounted customer tree (not a provider folder CWD).
+
+- **Host pass:** CWD = `{mount}\{env}\x\{customerNumber}\` - reads/writes `site.md`, `top10.json`; may read host `stats.json` (read-only; **not an agent trigger**).
+- **Widget pass:** CWD = `{mount}\{env}\x\{customerNumber}\{widgetGuid}\` - reads `..\site.md`, owns `widget.json`, `feedback.json`, `live.json`, `context.md`, `searches.json`; may update `..\top10.json`; may read widget `stats.json`.
+- Generic skill text: `.grok/skills/a-search-components-piece/SKILL.md` (FR-210). Per-host / per-widget skill context: `site.md` / `context.md`.
+- Dispatch: S3 ObjectCreated -> EventBridge -> SQS FIFO -> dispatcher -> pool; **no tokens while idle**.
+- Caps: agent write respects `LIVE_PART_CAP_FREE` / `LIVE_PART_CAP_FULL` (FR-233 / #1345). Parts API always serves `live.json`.
+
+See `docs/feature-request-components-piece-2026-10-09.md` Amendment 2026-10-10 and `docs/fr/FR-233.md`.

@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-165: explicit Lambda memorySize floors (entry 256, workers 256/512).
  */
@@ -45,11 +47,7 @@ describe('FR-165 Lambda memorySize floors', () => {
       HEAVY_LAMBDA_MEMORY_MB,
       isLocalProviderFolder,
     } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr165');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');

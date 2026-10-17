@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-106 / #659: wix normalize + Parts upsert contract (stay dark).
+ * FR-106 / #659: wix normalize + Parts upsert contract (FR-179 enabled).
  */
 
 const { describe, it } = require('node:test');
@@ -31,7 +31,7 @@ const meta = {
   env: 'sandbox',
 };
 
-describe('FR-106 wix normalize + Parts upsert (stay dark)', () => {
+describe('FR-106 wix normalize + Parts upsert (FR-179 enabled)', () => {
   it('normalize fixture has required Parts fields', () => {
     assert.ok(fs.existsSync(DEFAULT_FIXTURE));
     const fixture = readDefaultFixture();
