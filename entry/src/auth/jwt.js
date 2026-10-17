@@ -125,7 +125,12 @@ function verifyHs256(token, cfg) {
     throw new AuthError('missing_user_id_claim');
   }
   try {
-    return { userId: assertUserId(String(userId)) };
+    return {
+      userId: assertUserId(String(userId)),
+      // FR-228: merchant/partner gates require contactVerified from OTP/OAuth session.
+      contactVerified: payload.contactVerified === true,
+      contactChannel: payload.contactChannel,
+    };
   } catch (err) {
     if (err instanceof UserIdError) {
       throw new AuthError('invalid_user_id_claim', err.message);
@@ -135,12 +140,12 @@ function verifyHs256(token, cfg) {
 }
 
 /**
- * Verify Authorization Bearer JWT → { userId }.
+ * Verify Authorization Bearer JWT → { userId, contactVerified }.
  * Ignores opts.body entirely (never trusts a request-body user id).
  *
  * @param {string|undefined|null} authorizationHeader
  * @param {{ env?: Record<string, string|undefined>, body?: unknown }} [opts]
- * @returns {Promise<{ userId: string }>}
+ * @returns {Promise<{ userId: string, contactVerified: boolean, contactChannel?: string }>}
  */
 async function verifyAuthorization(authorizationHeader, opts = {}) {
   // Intentionally unused: body must never supply userId.
@@ -178,7 +183,11 @@ async function verifyAuthorization(authorizationHeader, opts = {}) {
       throw new AuthError('missing_user_id_claim');
     }
     try {
-      return { userId: assertUserId(String(payload.userId)) };
+      return {
+        userId: assertUserId(String(payload.userId)),
+        contactVerified: payload.contactVerified === true,
+        contactChannel: payload.contactChannel,
+      };
     } catch (err) {
       if (err instanceof UserIdError) {
         throw new AuthError('invalid_user_id_claim', err.message);

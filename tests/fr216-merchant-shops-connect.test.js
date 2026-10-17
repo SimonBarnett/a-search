@@ -201,7 +201,10 @@ describe('FR-216 merchant shops connect', () => {
     const deps = {
       nonces,
       shops,
-      verifyAuthorization: async () => ({ userId: 'merch001' }),
+      verifyAuthorization: async () => ({
+        userId: 'merch001',
+        contactVerified: true,
+      }),
       envName: 'sandbox',
       subscribeBaseUrl: 'https://smartcatalogue.uk/wizard/subscribe',
     };
