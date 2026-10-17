@@ -380,3 +380,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search MRB: when test-and-synth fails jwt-auth deepEqual on contactVerified but tests/jwt-auth.test.js and entry/src/auth/jwt.js match origin/main, that red is not a tip patch and not a fold. PASS the docs/mrb head (FR #4649).
 - a-search FIX: when jwt-auth fails with unexpected contactVerified:false and tip jwt.js/jwt-auth match origin/main, treat as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649); file intake for the main expectation update
 - a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false --- tests-only PASS closes ambient main red
+- a-search FIX CONFLICTING Agentic Searches tip: fold origin/main; resolve fr142/fr143 to main 30-floor + .fifo filter and keep tip widget-agent comment; if FR-228 connect stubs still 403 apply contactVerified:true even when sibling #3871 not yet merged
