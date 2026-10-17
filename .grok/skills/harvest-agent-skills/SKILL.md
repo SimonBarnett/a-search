@@ -328,3 +328,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search re-offered harvest-lesson MRB that is a few commits behind: one tip-author origin/main fold, re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
 - When a line-number skill pin fails after one main fold, retarget the stable needles by content and restore the ASCII span the pin still requires before PASS.
 - a-search stranded-ACK rematch on a harvest-lesson tip a few commits behind: one origin/main fold, re-run the hostile pin, PASS @ new SHA and re-arm squash auto-merge, DONE immediately.
+- a-search FIX when the tip is behind: merge origin/main with the tip author set before the merge so the commit has main as a parent, re-run the hostile pin, push, DONE FIX.
