@@ -373,3 +373,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
 - a-search MRB: after FR-228 assertContactVerified, shop connect HTTP test stubs that expect 200/400 must set contactVerified: true like fr216; keep fail-closed negatives elsewhere
 - a-search FIX: when test-and-synth fails npm run synth with status null at about 180s, fold origin/main if main already has runCdkSynth 600s tree-kill and per-synth output (#3665). That is CI failed on a main-fixed issue (FR #4649), not a tip-only patch.
+- a-search docs/mrb FIX: CI red only on ambient FR-236/237/238 connect 403 with MERGEABLE tip — DONE FIX at head without fold (FR #4649); re-arm --auto --squash
