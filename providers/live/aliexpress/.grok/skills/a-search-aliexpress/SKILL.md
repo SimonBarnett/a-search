@@ -53,3 +53,5 @@ See `.env.example`. Queue env: `SQS_ALIEXPRESS_URL`.
 Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
 
 - Phase-2 aliexpress search/normalize/worker/selftest stay-dark playbooks already live in this skill (Search / Normalize / Worker / Selftest + pacing) and `docs/phase2-providers.md`. Keep-both on fixture races (ProductAPI + shop_name). Relocated sources: bobiverse#3360, #3363, #3365, #3398, #3399.
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).
