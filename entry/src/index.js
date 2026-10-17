@@ -44,6 +44,14 @@ const {
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
 const {
+  matchWidgetEventsRoute,
+  handleWidgetEvents,
+} = require('./widgetEvents');
+const {
+  matchWidgetsStatsRoute,
+  handleWidgetsStats,
+} = require('./widgetsStats');
+const {
   matchAccountPayoutsRoute,
   handleAccountPayouts,
 } = require('./accountPayouts');
@@ -277,6 +285,8 @@ async function handler(event, _context, deps = {}) {
   const upgradeRoute = matchAccountUpgradeRoute(method, path);
   const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
   const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
+  const widgetEventsRoute = matchWidgetEventsRoute(method, path);
+  const widgetsStatsRoute = matchWidgetsStatsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -341,6 +351,13 @@ async function handler(event, _context, deps = {}) {
     }
     if (widgetsMutateRoute) {
       return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
+    }
+    // FR-234: widget events + stats win over FR-208 501 stubs
+    if (widgetEventsRoute) {
+      return await handleWidgetEvents(event, deps);
+    }
+    if (widgetsStatsRoute) {
+      return await handleWidgetsStats(event, deps);
     }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
