@@ -25,6 +25,7 @@ Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME
 | `013_RevenueShare.sql` | Club revenue share (FR-249) |
 | `014_mdb_identity_views.sql` | `mdb.*` live views / sandbox tables (FR-251) |
 | `015_AmazonTrackingIds.sql` | Amazon per-tenant partner tags (FR-248 / #1362) |
-| `017_ShopInvoices_StripeEvents.sql` | ShopInvoices + StripeEvents idempotency (FR-239 / #1353); 016 reserved by open sibling FR-228 OTP |
+| `016_WidgetStats.sql` | WidgetStatsDaily + WidgetEventDedupe (FR-234 / #1348) |
+| `017_ShopInvoices_StripeEvents.sql` | ShopInvoices + StripeEvents idempotency (FR-239 / #1353) |
 
 Every file starts with `-- target: a_search`.
