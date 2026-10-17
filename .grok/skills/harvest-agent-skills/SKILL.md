@@ -267,9 +267,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When one local provider env example comment is fixed, scan every providers/local .env.example for the same stale line. Leave the provider that already has its own open PR.
 - docs/mrb for a FAIL-superseded harvest parent: close the docs tip too citing parent FAIL-supersede + durable main playbook; do not merge a restatement tip-loop
 - When an a-search enable-provider test skips CDK synth on win32 with an explicit CI-runs-this comment, PASS if the non-synth registry, credential-key, and queue-floor pins are green; do not wait on queued test-and-synth.
+- a-search FR-248 MRB: when tip changes stamp param names, update older affiliate queryParts suites (fr083/089/092/098) in the same tip; also renumber migrations past open sibling NNN claims before PASS
 - When an in-process CDK test imports allocateSynthOutDir from helpers/runCdkSynth.js, the mrb1127 pin that forbids the string runCdkSynth fails. Keep the in-process app.synth and forbid runCdkSynth( calls instead of the helper path.
 - The harvest-agent-skills GitGuardian placeholder must be AWS doc AKIA...EXAMPLE with three ASCII dots. A pin that checks only that span can pass while older arrow mojibake remains on other bullets; file that remainder separately from issue 2746.
 - When a docs pin for a 0-behind harvest tip conflicts at the end of harvest-agent-skills, keep both the new ASCII bullet and the later main bullets, then re-run the pin test. Do not open a second docs pull that repeats a pin already on that tip.
+- Re-offer tips wrapping still-open first tip: FAIL-supersede citing first tip + Prefer ExistingPrUrl
 - a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
 - a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
 - a-search FR #3495: local provider .env.example live-target comments name a_search (FR-251), matching wix wording; leave wix to its own tip
@@ -354,3 +356,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A stranded MRB ACK on a CONFLICTING product tip still needs one origin/main keep-both fold and a new PASS SHA before DONE, even when an older PASS board names the previous head.
 - FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
 - FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
+- docs/mrb hostile pin when parent harvest tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash; pin-only delta.
