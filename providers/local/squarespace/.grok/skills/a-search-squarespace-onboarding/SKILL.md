@@ -20,3 +20,5 @@ Placeholders only in `.env.example`. App credentials live in Secrets Manager
 ## After enablement
 
 Flip `providers/registry.json` enabled flags, expand this stub, run selftestProbe.
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).
