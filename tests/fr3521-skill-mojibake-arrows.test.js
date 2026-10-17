@@ -41,7 +41,8 @@ describe('FR-3521 harvest-agent-skills mojibake arrows', () => {
     }
     const dash = lines.find((l) => l.includes('false positives') && l.includes('fix the fixture'));
     assert.ok(dash, 'GitGuardian false-positives bullet present');
-    assert.equal(dash.includes('\u2014'), true, 'GitGuardian bullet keeps the real em dash');
+    assert.equal(dash.includes('\u2014'), false, 'GitGuardian bullet stays ASCII so mrb1172 passes');
+    assert.equal([...dash].some((ch) => ch.charCodeAt(0) > 127), false);
     const akia = lines.find((l) => l.includes('AKIA'));
     assert.ok(akia, 'AKIA placeholder line present');
     assert.match(akia, /AKIA\.\.\.EXAMPLE/);
