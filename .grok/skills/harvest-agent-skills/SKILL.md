@@ -297,3 +297,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Exact-title harvest-lesson twins: FAIL-supersede the later tip citing the first open/merged tip; never merge both.
 - Re-offered FR with open Closes PR: verify closingIssuesReferences + re-run claimed pins, DONE with that PR URL; never open a second implement PR.
 - FIX CI on a-search tips with sequential synth status-null at ~600s: fold origin/main even when runCdkSynth already has allocateSynthOutDir; tip may be far behind other main fixes.
+- FIX CI on a-search harvest tips with sequential synth status-null at ~600s: fold origin/main even when allocateSynthOutDir already on tip; use unique -mh{seat} worktree when branch already checked out.
