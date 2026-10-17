@@ -1,0 +1,61 @@
+{
+  "data": [
+    {
+      "id": 77,
+      "name": "Madeira Ceramic Mug",
+      "type": "physical",
+      "sku": "MUG-MAD-01",
+      "description": "Glazed mug",
+      "price": 12.5,
+      "calculated_price": 12.5,
+      "is_visible": true,
+      "inventory_level": 8,
+      "custom_url": { "url": "/madeira-ceramic-mug/", "is_customized": false },
+      "primary_image": {
+        "url_standard": "https://cdn.example.com/mug.jpg"
+      },
+      "images": [],
+      "variants": []
+    },
+    {
+      "id": 88,
+      "name": "Sun Hat",
+      "type": "physical",
+      "sku": "HAT-SUN",
+      "description": "Wide brim",
+      "price": 20,
+      "calculated_price": 18,
+      "is_visible": true,
+      "inventory_level": 3,
+      "custom_url": { "url": "/sun-hat/", "is_customized": true },
+      "primary_image": {
+        "url_standard": "https://cdn.example.com/hat.jpg"
+      },
+      "images": [],
+      "variants": [{ "id": 901, "sku": "HAT-SUN-M", "price": 18, "inventory_level": 2 }]
+    },
+    {
+      "id": 99,
+      "name": "Hidden Draft",
+      "type": "physical",
+      "sku": "DRAFT",
+      "price": 1,
+      "calculated_price": 1,
+      "is_visible": false,
+      "inventory_level": 0,
+      "custom_url": { "url": "/hidden/", "is_customized": false },
+      "primary_image": null,
+      "images": [],
+      "variants": []
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "total": 3,
+      "count": 3,
+      "per_page": 250,
+      "current_page": 1,
+      "total_pages": 1
+    }
+  }
+}
