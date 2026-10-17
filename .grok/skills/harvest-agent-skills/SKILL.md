@@ -252,6 +252,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Enable-provider tip floors: after FR-2139 shop-sync FIFO, fr142 primary filter must exclude QueueName containing .fifo (shop-sync + shop-sync-dlq both counted as primaries otherwise: 2*enabled+2); fr143 alarm floor counts worker -dlq only (shop-sync DLQ alarm is +1). Always add the new id to ENABLED_IDS when bumping 2*N floors.
 - MRB product FAIL for extension login: pin redirect_uri allowlist (chromiumapp.org / chrome-extension:) before location.assign; assert escaped RegExp literals with chromiumapp\\\.org; put SW claim club gate on the one fix PR.
 - MRB a-search FR-228: pin otpStore Decision LOCKED rate limits + migration 016 never madeiradb/SystemOTPs + shops 403 contact_unverified + JWT join-parts on docs/mrb-N; run tests with D:\Tools\node\node.exe (PATH node may be too old for --test)
+- CONFLICTING harvest tip fix: branch from current origin/main, add only lesson+hostile, force-push; never git reset --soft origin/main on a dirty tip (deletes unrelated tip/main files from the PR)
 - FR-2611: docs/skills-only PRs need a cheap ubuntu classify job then test-and-synth on ubuntu exit-0; bare paths-ignore leaves required check missing and blocks auto-merge
 - FR-245 BigCommerce harvest tips that mix tip-0-behind arm --auto with stay-dark/JWT pins FAIL-supersede while product #2183 is still open; cite #2183 + bobiverse-bob-job-mrb; do not merge premature session receipts.
 - harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md - pin with fr2746 hostile ASCII test
@@ -356,4 +357,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A stranded MRB ACK on a CONFLICTING product tip still needs one origin/main keep-both fold and a new PASS SHA before DONE, even when an older PASS board names the previous head.
 - FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
 - FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
+- docs/mrb hostile pin when parent harvest tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash; pin-only delta.
 - Prior review-only PASS without push is not self-MRB; on CONFLICTING rematch this seat may fold once (FR #4649), push, PASS @ new SHA; later re-offers of that fold are self-MRB GIVEUP.
