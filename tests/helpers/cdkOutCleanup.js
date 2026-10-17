@@ -3,7 +3,8 @@
 /**
  * FR #3763: remove cdk.out-* dirs left by synth tests (named cdk.out-fr142 etc.
  * as well as private cdk.out-<pid>-<seq>). Plain `cdk.out` (no hyphen suffix)
- * is left alone. Set A_SEARCH_KEEP_CDK_OUT=1 to skip.
+ * is left alone. FR #3790: cdk.out-shared-* is the FR #3764 cross-batch cache
+ * and is not swept or registered. Set A_SEARCH_KEEP_CDK_OUT=1 to skip.
  */
 
 const fs = require('node:fs');
@@ -18,7 +19,10 @@ let exitHooked = false;
  * @returns {boolean}
  */
 function isCdkOutStar(name) {
-  return typeof name === 'string' && /^cdk\.out-/.test(name);
+  if (typeof name !== 'string') return false;
+  // FR #3790: shared synth cache must survive the batch sweep.
+  if (/^cdk\.out-shared-/.test(name)) return false;
+  return /^cdk\.out-/.test(name);
 }
 
 /**
