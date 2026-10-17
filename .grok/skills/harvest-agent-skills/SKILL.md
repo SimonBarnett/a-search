@@ -307,3 +307,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE — do not re-litigate prior PASS boards.
 - a-search docs-only FR lock that is far behind main with no file conflicts: one origin/main fold as tip author, re-run the docs pin test, PASS and auto-merge; do not open a fix PR for the fold alone.
 - a-search FIX when tip is far behind and ort merges clean: one tip-author origin/main fold, re-run the product pin suite, push, DONE FIX with the PR URL; never poll CI.
+- a-search harvest-lesson with hostile pin that is a few commits behind main and merges clean: one tip-author fold, re-run the contiguous pin, PASS and enable auto-merge; do not FAIL for ACCEPTABLE-drift wording about short-lived accessToken.
