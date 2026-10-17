@@ -94,6 +94,10 @@ const {
   handleWixWebhook,
 } = require('./wixWebhooks');
 const {
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
+} = require('./stripeWebhook');
+const {
   matchBigCommerceWebhookRoute,
   handleBigCommerceWebhook,
 } = require('./bigcommerceWebhooks');
@@ -105,6 +109,13 @@ const {
   matchOAuthCallbackRoute,
   handleOAuthCallback,
 } = require('./oauthCallback');
+const {
+  matchAuthEmailRoute,
+  handleAuthEmailRequest,
+  handleAuthEmailVerify,
+  handleAuthSmsRequest,
+  handleAuthSmsVerify,
+} = require('./authEmail');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 const ENTRY_ROUTE = 'entry/POST /search';
@@ -119,6 +130,7 @@ const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
 const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
 const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
 const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
+const AUTH_EMAIL_ROUTE = 'entry/auth';
 const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
 const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
 const CLUB_REVENUE_SHARE_ROUTE = 'entry/club/revenue-share';
@@ -278,9 +290,11 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
   const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
+  const authRoute = matchAuthEmailRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
   const upgradeRoute = matchAccountUpgradeRoute(method, path);
   const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
@@ -302,7 +316,11 @@ async function handler(event, _context, deps = {}) {
               ? PARTNER_REGISTER_ROUTE
               : merchantRoute
                 ? MERCHANT_SHOPS_ROUTE
-                : loginRoute
+                : stripeWebhookRoute
+                  ? 'entry/POST /webhooks/stripe'
+                  : authRoute
+                  ? AUTH_EMAIL_ROUTE
+                  : loginRoute
                   ? LOGIN_ENTRY_ROUTE
                   : oauthRoute
                     ? OAUTH_CALLBACK_ROUTE
@@ -363,6 +381,10 @@ async function handler(event, _context, deps = {}) {
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
     }
+    // FR-239: shared Stripe webhook wins over FR-208 ComponentsPiece 501 stub
+    if (stripeWebhookRoute) {
+      return await handleStripeWebhook(event, deps);
+    }
     if (oauthRoute) {
       return await handleOAuthCallback(event, oauthRoute, deps);
     }
@@ -378,6 +400,20 @@ async function handler(event, _context, deps = {}) {
     if (isPerformanceRoute(method, path)) {
       return await handlePerformance(event, deps);
     }
+
+    if (authRoute === 'POST /auth/email/request') {
+      return await handleAuthEmailRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/email/verify') {
+      return await handleAuthEmailVerify(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/request') {
+      return await handleAuthSmsRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/verify') {
+      return await handleAuthSmsVerify(event, deps);
+    }
+
     if (partnerRoute === 'POST /partner/register') {
       return await handlePartnerRegister(event, deps);
     }
@@ -392,7 +428,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
-      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+      merchantRoute === 'DELETE /merchant/shops/{shopId}' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
     ) {
       return await handleMerchantShops(event, merchantRoute, deps);
     }
@@ -777,6 +815,8 @@ module.exports = {
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
   matchLoginEntryRoute,
   handleLoginEntry,
   matchOAuthCallbackRoute,
