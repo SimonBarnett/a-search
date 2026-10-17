@@ -44,6 +44,14 @@ const {
   handleComponentsPieceStub,
 } = require('./componentsPieceRoutes');
 const {
+  matchWidgetEventsRoute,
+  handleWidgetEvents,
+} = require('./widgetEvents');
+const {
+  matchWidgetsStatsRoute,
+  handleWidgetsStats,
+} = require('./widgetsStats');
+const {
   matchAccountPayoutsRoute,
   handleAccountPayouts,
 } = require('./accountPayouts');
@@ -85,6 +93,10 @@ const {
   matchWixWebhookRoute,
   handleWixWebhook,
 } = require('./wixWebhooks');
+const {
+  matchBigCommerceWebhookRoute,
+  handleBigCommerceWebhook,
+} = require('./bigcommerceWebhooks');
 const {
   matchLoginEntryRoute,
   handleLoginEntry,
@@ -266,12 +278,15 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
   const upgradeRoute = matchAccountUpgradeRoute(method, path);
   const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
   const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
+  const widgetEventsRoute = matchWidgetEventsRoute(method, path);
+  const widgetsStatsRoute = matchWidgetsStatsRoute(method, path);
   const cpRoute = matchComponentsPieceRoute(method, path);
   const route = isExtStatusRoute(method, path)
     ? EXT_STATUS_ROUTE
@@ -337,6 +352,13 @@ async function handler(event, _context, deps = {}) {
     if (widgetsMutateRoute) {
       return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
     }
+    // FR-234: widget events + stats win over FR-208 501 stubs
+    if (widgetEventsRoute) {
+      return await handleWidgetEvents(event, deps);
+    }
+    if (widgetsStatsRoute) {
+      return await handleWidgetsStats(event, deps);
+    }
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
@@ -364,6 +386,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (wixWebhookRoute) {
       return await handleWixWebhook(event, deps);
+    }
+    if (bigcommerceWebhookRoute) {
+      return await handleBigCommerceWebhook(event, deps);
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||

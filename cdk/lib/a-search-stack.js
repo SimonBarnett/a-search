@@ -904,6 +904,24 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
     });
+    // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopWebhookIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/uninstall',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration(
+        'EntryBigCommerceShopUninstallWebhookIntegration',
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopLoadWebhookIntegration'),
+    });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
       path: '/auth/session',
@@ -1076,6 +1094,75 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
       value: shopSyncWorker.functionName,
+    });
+
+    // FR-234: SQS standard a-search-widget-events + DLQ + aggregator + hourly rollup.
+    const widgetEventsDlq = new sqs.Queue(this, 'WidgetEventsDeadLetterQueue', {
+      queueName: stagedName('a-search-widget-events-dlq'),
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetEventsQueue = new sqs.Queue(this, 'WidgetEventsQueue', {
+      queueName: stagedName('a-search-widget-events'),
+      visibilityTimeout: cdk.Duration.seconds(180),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetEventsDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    entry.addEnvironment('SQS_WIDGET_EVENTS_URL', widgetEventsQueue.queueUrl);
+    widgetEventsQueue.grantSendMessages(entry);
+    const widgetEventsAggregator = new lambda.Function(
+      this,
+      'WidgetEventsAggregatorFunction',
+      {
+        functionName: stagedName('a-search-widget-events-aggregator'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetEventsAggregator.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(30),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetEventsAggregatorLogGroup'),
+      },
+    );
+    widgetEventsQueue.grantConsumeMessages(widgetEventsAggregator);
+    widgetEventsAggregator.addEventSource(
+      new SqsEventSource(widgetEventsQueue, { batchSize: 100 }),
+    );
+    const widgetStatsRollup = new lambda.Function(
+      this,
+      'WidgetStatsRollupFunction',
+      {
+        functionName: stagedName('a-search-widget-stats-rollup'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetStatsRollup.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(60),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetStatsRollupLogGroup'),
+      },
+    );
+    wireResultsBucketAccess(widgetStatsRollup, resultsBucket);
+    new events.Rule(this, 'WidgetStatsRollupSchedule', {
+      ruleName: stagedName('a-search-widget-stats-rollup'),
+      description: 'FR-234 hourly stats.json rollup (no agent enqueue)',
+      schedule: events.Schedule.rate(cdk.Duration.hours(1)),
+      targets: [new targets.LambdaFunction(widgetStatsRollup)],
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsQueueUrl', {
+      value: widgetEventsQueue.queueUrl,
+      description: 'FR-234 SQS a-search-widget-events',
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsDeadLetterQueueUrl', {
+      value: widgetEventsDlq.queueUrl,
+      description: 'FR-234 DLQ for widget-events',
     });
 
     const shopSyncDlqAlarm = new cloudwatch.Alarm(this, 'ShopSyncDlqDepthAlarm', {
