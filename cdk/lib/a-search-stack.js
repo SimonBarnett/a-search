@@ -904,6 +904,24 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
     });
+    // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopWebhookIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/uninstall',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration(
+        'EntryBigCommerceShopUninstallWebhookIntegration',
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopLoadWebhookIntegration'),
+    });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
       path: '/auth/session',
@@ -1113,7 +1131,12 @@ class ASearchStack extends cdk.Stack {
     );
     widgetEventsQueue.grantConsumeMessages(widgetEventsAggregator);
     widgetEventsAggregator.addEventSource(
-      new SqsEventSource(widgetEventsQueue, { batchSize: 100 }),
+      // batchSize > 10 requires maxBatchingWindow (aws-cdk-lib ValidationError
+      // MaximumBatchSizeInclusiveGiven); 5s << 180s queue visibility timeout.
+      new SqsEventSource(widgetEventsQueue, {
+        batchSize: 100,
+        maxBatchingWindow: cdk.Duration.seconds(5),
+      }),
     );
     const widgetStatsRollup = new lambda.Function(
       this,
