@@ -24,6 +24,7 @@
     "mssql/",
     "widgets/",
     "auth/",
+    "notify/",
     "components/",
     "README.md",
     "dns/",
