@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-206 / #1194: ingest in.json into live.json then delete (tier cap + exclude).
+ * FR-206 / #1194 + FR-3344: ingest IN/*.json into live.json then delete (tier cap + exclude).
  */
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
@@ -13,13 +13,15 @@ const { readLiveArray } = require('../shared/widgets/parts');
 const {
   LIVE_PART_CAP_FREE,
   LIVE_PART_CAP_FULL,
+  IN_DIR_NAME,
   livePartCap,
   mapInItem,
   selectWithinCap,
   runIngestPass,
+  writeInSearchFile,
 } = require('../shared/widgets/agentIngest');
 
-describe('FR-206 ComponentsPiece agent in.json ingest', () => {
+describe('FR-206 ComponentsPiece agent IN/ folder ingest', () => {
   /** @type {string} */
   let root;
   const env = 'sandbox';
@@ -40,9 +42,14 @@ describe('FR-206 ComponentsPiece agent in.json ingest', () => {
   }
 
   function writeIn(parts) {
-    const p = path.join(widgetDir(), 'in.json');
-    fs.writeFileSync(p, `${JSON.stringify(parts, null, 2)}\n`, 'utf8');
-    return p;
+    return writeInSearchFile({
+      root,
+      env,
+      customerNumber,
+      widgetGuid,
+      searchId: 'batch',
+      parts,
+    });
   }
 
   it('caps: free=10 full=500; mapInItem requires id', () => {
@@ -72,7 +79,7 @@ describe('FR-206 ComponentsPiece agent in.json ingest', () => {
     );
   });
 
-  it('25 incoming free widget -> live length 10; in.json gone; re-run unchanged', () => {
+  it('25 incoming free widget -> live length 10; IN/*.json gone; re-run unchanged', () => {
     bootstrapWidget({
       root,
       env,
@@ -105,10 +112,15 @@ describe('FR-206 ComponentsPiece agent in.json ingest', () => {
     assert.equal(first.liveLength, 10, 'fail-when: free live exceeds 10');
     assert.equal(first.inGone, true);
     assert.equal(fs.existsSync(path.join(widgetDir(), 'in.json')), false);
-    assert.equal(
-      fs.existsSync(path.join(widgetDir(), 'in.processing.json')),
-      false,
-    );
+    const inDir = path.join(widgetDir(), IN_DIR_NAME);
+    const readyLeft = fs.existsSync(inDir)
+      ? fs.readdirSync(inDir).filter((n) => n.endsWith('.json'))
+      : [];
+    assert.deepEqual(readyLeft, []);
+    const processing = path.join(inDir, '.processing');
+    if (fs.existsSync(processing)) {
+      assert.deepEqual(fs.readdirSync(processing), []);
+    }
 
     const livePath = path.join(widgetDir(), 'live.json');
     const afterFirst = readLiveArray(livePath);
@@ -125,7 +137,7 @@ describe('FR-206 ComponentsPiece agent in.json ingest', () => {
       layout: 'horizontal',
     });
     assert.equal(second.skipped, true);
-    assert.equal(second.reason, 'no_in_json');
+    assert.equal(second.reason, 'no_in');
     assert.deepEqual(readLiveArray(livePath), afterFirst);
   });
 
@@ -198,16 +210,17 @@ describe('FR-206 ComponentsPiece agent in.json ingest', () => {
     assert.equal(r.liveLength, 25);
   });
 
-  it('docs/fr/FR-206.md Decision LOCKED ASCII', () => {
+  it('docs/fr/FR-206.md Decision LOCKED ASCII (FR-3344 IN/)', () => {
     const p = path.join(__dirname, '..', 'docs', 'fr', 'FR-206.md');
     const buf = fs.readFileSync(p);
     assert.notEqual(buf[0], 0xef);
     for (const b of buf) assert.ok(b < 128, 'FR-206.md must be ASCII');
     const text = buf.toString('utf8');
     assert.match(text, /##\s*Decision\s*\(?LOCKED\)?/i);
-    assert.match(text, /in\.processing\.json/);
+    assert.match(text, /IN\/\.processing/);
     assert.match(text, /LIVE_PART_CAP_FREE|live part cap/i);
     assert.match(text, /exclude/);
     assert.match(text, /widgetGuid/);
+    assert.match(text, /FR-3344/);
   });
 });

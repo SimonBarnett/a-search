@@ -96,7 +96,7 @@ function round4(n) {
 describe('FR-212 ComponentsPiece JSON contracts', () => {
   it('fixture files exist under tests/fixtures/components-piece/', () => {
     for (const name of [
-      'in.json',
+      path.join('IN', 'search-sample.json'),
       'live.free.json',
       'live.full.json',
       'searches.json',
@@ -113,10 +113,10 @@ describe('FR-212 ComponentsPiece JSON contracts', () => {
     }
   });
 
-  it('in.json items have required fields and no secret keys', () => {
-    const doc = readJson('in.json');
+  it('IN/search-sample.json items have required fields and no secret keys', () => {
+    const doc = readJson(path.join('IN', 'search-sample.json'));
     assert.ok(Array.isArray(doc) && doc.length >= 1);
-    assertNoForbiddenKeys(doc, 'in.json');
+    assertNoForbiddenKeys(doc, 'IN/search-sample.json');
     doc.forEach((item, i) => assertInItem(item, `in[${i}]`));
   });
 

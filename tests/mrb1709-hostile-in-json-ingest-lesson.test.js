@@ -1,18 +1,16 @@
 'use strict';
 
 /**
- * MRB #1709 hostile pin: ComponentsPiece in.json ingest playbook
- * contiguous ASCII in harvest-agent-skills.
+ * MRB #1709 / FR-3344 hostile pin: ComponentsPiece IN/ folder ingest playbook
  */
-
-const test = require('node:test');
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const ROOT = path.join(__dirname, '..');
 const SKILL = path.join(
-  ROOT,
+  __dirname,
+  '..',
   '.grok',
   'skills',
   'harvest-agent-skills',
@@ -20,18 +18,13 @@ const SKILL = path.join(
 );
 
 const NEEDLE =
-  'ComponentsPiece in.json ingest: exclusive rename to in.processing.json then merge+cap+unlink; free live cap 10; stack on FR-205 tip; non-main base MRB hand-close.';
+  'ComponentsPiece IN/ folder ingest (FR-3344): writers use writeInSearchFile one JSON per searchId; agent moves IN/*.json to IN/.processing then merge+cap+unlink; free live cap 10; never merge searches into a single in.json.';
 
-test('mrb1709: in.json ingest lesson contiguous ASCII in harvest-agent-skills', () => {
-  const raw = fs.readFileSync(SKILL);
-  assert.notEqual(raw[0], 0xef, 'SKILL.md must be UTF-8 without BOM');
-  const text = raw.toString('utf8');
-  assert.ok(text.includes(NEEDLE), 'in.json ingest harvest lesson must stay contiguous');
-  assert.ok(text.includes('in.processing.json'), 'must cite in.processing.json');
-  assert.ok(text.includes('free live cap 10'), 'must cite free live cap 10');
-  assert.doesNotMatch(
-    NEEDLE,
-    /[\u2014\u2013\u00e2]/,
-    'lesson needle must be ASCII (no em/en-dash)',
-  );
+test('mrb1709: IN/ folder ingest lesson contiguous ASCII in harvest-agent-skills', () => {
+  const buf = fs.readFileSync(SKILL);
+  assert.notEqual(buf[0], 0xef, 'UTF-8 no BOM');
+  const text = buf.toString('utf8');
+  assert.ok(text.includes(NEEDLE), 'IN/ folder ingest harvest lesson must stay contiguous');
+  assert.ok(text.includes('IN/.processing'), 'must cite IN/.processing');
+  assert.ok(text.includes('writeInSearchFile'), 'must cite writeInSearchFile');
 });
