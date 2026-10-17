@@ -7,6 +7,8 @@
  * This test:
  * - enumerates entry / maintainer / endpoint / enabled registry providers
  * - requires CAST IRON on each CWD AGENTS.md (+ primary skill where present)
+ * - FR #3459: stay-dark providers are in the same gate. Their AGENTS.md and
+ *   every a-search-* SKILL.md need CAST IRON, intake, and -Repo SimonBarnett/a-search.
  * - pins full harvest needles on foundation fixtures (root AGENTS, harvest skill,
  *   skillbook-layout) so removing them fails CI
  */
@@ -59,6 +61,20 @@ function enabledSources() {
   return registry.sources.filter(isSourceEnabled);
 }
 
+function stayDarkSources() {
+  return registry.sources.filter((s) => !isSourceEnabled(s));
+}
+
+function providerSkillBooks(folder) {
+  const dir = path.join(root, folder, '.grok', 'skills');
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((name) => name.startsWith('a-search-'))
+    .map((name) => path.join(folder, '.grok', 'skills', name, 'SKILL.md'))
+    .filter((rel) => fs.existsSync(path.join(root, rel)));
+}
+
 describe('FR-046b skillbook-harvest', () => {
   it('foundation fixtures keep full harvest needles', () => {
     assertFullNeedles('AGENTS.md');
@@ -104,6 +120,18 @@ describe('FR-046b skillbook-harvest', () => {
       );
       assertCastIron(agents);
       assertCastIron(skill);
+    }
+  });
+
+  it('enumerates stay-dark provider AGENTS and a-search skills', () => {
+    const dark = stayDarkSources();
+    assert.ok(dark.length > 0, 'expected stay-dark registry sources');
+    for (const s of dark) {
+      assert.ok(s.folder, `source ${s.id} needs folder`);
+      assertFullNeedles(path.join(s.folder, 'AGENTS.md'));
+      const books = providerSkillBooks(s.folder);
+      assert.ok(books.length > 0, `${s.id} needs an a-search skill`);
+      for (const rel of books) assertFullNeedles(rel);
     }
   });
 
