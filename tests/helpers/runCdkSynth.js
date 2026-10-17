@@ -221,16 +221,34 @@ const TIMEOUT_MARKER = '[runCdkSynth] FR-3663 timeout';
  * timeout kills the whole tree while the root is still alive.
  * @param {{ command: string, args: string[], timeout: number }} spec
  */
+function quoteWinArg(value) {
+  const text = String(value);
+  if (!/[\s"]/.test(text)) return text;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 function superviseMain(spec) {
   const isWin = process.platform === 'win32';
-  const child = spawn(spec.command, spec.args, {
-    stdio: 'inherit',
-    // POSIX: own process group so killProcessTree can SIGKILL -pid.
-    detached: !isWin,
-    // Windows: .cmd/.bat cannot be spawned without a shell (Node >= 18.20.2).
-    shell: isWin && /\.(cmd|bat)$/i.test(spec.command),
-    windowsHide: true,
-  });
+  const needsCmdShell = isWin && /\.(cmd|bat)$/i.test(spec.command);
+  // Windows: .cmd/.bat cannot be spawned without a shell (Node >= 18.20.2).
+  // shell:true concatenates unquoted, so "C:\\Program Files\\nodejs\\npm.cmd"
+  // and a temp outDir under AppData\\Local become 'C:\\Program' is not recognized.
+  // cmd /s strips one outer quote pair; the inner quotes keep paths with spaces.
+  const cmdLine = needsCmdShell
+    ? `"${[quoteWinArg(spec.command), ...spec.args.map(quoteWinArg)].join(' ')}"`
+    : '';
+  const child = needsCmdShell
+    ? spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', cmdLine], {
+        stdio: 'inherit',
+        windowsHide: true,
+        windowsVerbatimArguments: true,
+      })
+    : spawn(spec.command, spec.args, {
+        stdio: 'inherit',
+        // POSIX: own process group so killProcessTree can SIGKILL -pid.
+        detached: !isWin,
+        windowsHide: true,
+      });
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
