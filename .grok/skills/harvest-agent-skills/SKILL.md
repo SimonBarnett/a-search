@@ -334,3 +334,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
 - After FR-3764, the cdk.out exit-cleanup pin must call runCdkSynth with opts.fresh. A tree-kill that empties the grandchild marker is a mid-write truncate; one settle read distinguishes that from a live orphan.
 - When a docs/mrb tip is re-offered after its parent harvest tip MERGED, one origin/main fold plus the hostile pin green is enough to PASS; cancelled-only CI is not product debt.
+- cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
