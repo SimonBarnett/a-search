@@ -1,4 +1,4 @@
-﻿# docs/mrb-82 — hostile pins for FR-028 harvest honesty box
+# docs/mrb-82 — hostile pins for FR-028 harvest honesty box
 
 - Root `AGENTS.md` CAST IRON + intake with `-Repo SimonBarnett/a-search`
 - `.grok/skills/harvest-agent-skills/SKILL.md` frontmatter `github: https://github.com/SimonBarnett/a-search`
