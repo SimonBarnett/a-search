@@ -279,3 +279,19 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB rematch after author-seat self-MRB GIVEUP: re-verify tip pins (webhook wire over 501 stub), one update-branch if behind, post PASS @ new head SHA, re-arm gh pr merge --auto, DONE without CI poll (FR #3948)
 - Release-blocker CI red with shared faults: fix the deterministic pin first (fr2021 timeout-minutes expression), then raise runCdkSynth timeout and tree-kill on ETIMEDOUT so orphan cdk cannot hold cdk.out; fold open per-synth-out PRs into the same tip rather than leaving twin heads
 - FR-234 MRB: pin index.js widgetEvents/widgetsStats before ComponentsPiece 501 stub and assert rollupStatsJson never calls agentQueue.enqueue (stats_changed is not a #1343 trigger)
+- FIX CI on a-search PASSed tips: if failures are Another CLI synthing to cdk.out, fold main for FR #3663 runCdkSynth per-output dirs; do not re-open MRB.
+- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms — not 27 (class of MRB #2075 FAIL then tip-fix)
+- FIX CI on a-search harvest tip: merge main for fr2021 timeout-minutes:[^\n]*\b180\b pin before re-arm; keep-both SKILL lesson bullets
+- FR-3355 MRB: PASS classify+events docs when components-piece tree still shows in.json if FR-3344 tip is still open; cite #3354 on drift line
+- After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
+- FIX CI keep-both enable tips: fold main for FR #3663 per-synth --output without rewriting fr142/fr143 floors the tip owns
+- MRB fold/tip-fix on open product tip: git -c user.name/email keep tip author only; never reviewing-seat nick (FR #2604 self-MRB)
+- a-search merchant onboarding skillbooks need the full CAST IRON harvest block (not only the main provider SKILL); MRB FAIL with one tip-fix PR when the stub shipped without it
+- FR-239 rematch: one behind-main fold then PASS @ new head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
+- MRB behind-main re-offer on a long-lived FR tip: one origin/main fold then re-run fr245+hostile+fr142/143 floor pins (26 while provider stay-dark) before PASS @ head SHA and gh pr merge --auto; never re-bump floors for a dark merchantConnect source
+- When MRB of an ASCII/mojibake SKILL tip finds a sibling open issue for remaining non-ASCII outside the pinned span, keep that remainder issue open (do not twin-close) and note ACCEPTABLE drift on the board
+- FR-3373 MRB rematch: one origin/main fold then re-run fr3373 + mrb3391-hostile + fr3490 bootstrap marker pins before PASS @ head SHA and gh pr merge --auto
+- FR-2230 MRB rematch: one origin/main fold then re-run fr2230+mrb2251+fr1410+mrb2213 BOM pins and a docs/**/*.md EF-BB-BF inventory before PASS @ head SHA
+- FR-1345 MRB rematch: one origin/main fold then re-run fr1345 + mrb3621 stripe webhook wire + FR-206 ingest pins before PASS @ head SHA
+- a-search harvest-lesson MRB on harvest-agent-skills: CONFLICTING tip vs main both appending Harvested-lessons bullets resolves with keep-both then PASS @ head SHA
+- Never git add/commit harvest SKILL.md until check_conflict_markers.py exits 0; stop the pipeline if keep-both resolve assert fails.
