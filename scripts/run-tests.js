@@ -9,6 +9,7 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { sweepCdkOutDirs } = require('../tests/helpers/cdkOutCleanup');
 
 const root = path.join(__dirname, '..');
 const testsRoot = path.join(root, 'tests');
@@ -40,9 +41,15 @@ for (let i = 0; i < files.length; i += BATCH) {
     cwd: root,
     env: process.env,
   });
+  // FR #3763: named cdk.out-fr* from in-process App.synth() outlive the batch.
+  const swept = sweepCdkOutDirs(root);
+  if (swept.length > 0) {
+    console.log(`run-tests: swept ${swept.length} cdk.out-* dir(s): ${swept.join(', ')}`);
+  }
   if (result.status !== 0) {
     failed = result.status === null ? 1 : result.status;
     break;
   }
 }
+sweepCdkOutDirs(root);
 process.exit(failed);
