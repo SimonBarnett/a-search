@@ -284,3 +284,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-3355 MRB: PASS classify+events docs when components-piece tree still shows in.json if FR-3344 tip is still open; cite #3354 on drift line
 - After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
 - FIX CI keep-both enable tips: fold main for FR #3663 per-synth --output without rewriting fr142/fr143 floors the tip owns
+- FR-3459 MRB rematch: one origin/main fold then re-run skillbook-harvest (stay-dark enumeration + CAST IRON/intake/-Repo needles) before PASS @ head SHA
