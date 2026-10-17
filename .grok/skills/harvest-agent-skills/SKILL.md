@@ -329,3 +329,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a line-number skill pin fails after one main fold, retarget the stable needles by content and restore the ASCII span the pin still requires before PASS.
 - a-search stranded-ACK rematch on a harvest-lesson tip a few commits behind: one origin/main fold, re-run the hostile pin, PASS @ new SHA and re-arm squash auto-merge, DONE immediately.
 - a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
+- a-search FR #3611: harvest SKILL hostile pins must use includes() or newline-normalize before assert.match; do not PASS when the pin suite is red on CRLF files
+- FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI --- do not invent product fixes for bulk-cancel reds.
