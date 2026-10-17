@@ -3,9 +3,11 @@
 /**
  * FR-365: pin Node >= 18/20 on PATH for CDK `npm run synth` child processes.
  * Marchhare often has Node 8 first on PATH (`Cannot find module 'node:fs'`).
- * FR #3462: private --output dir per synth.
+ * FR #3462: private --output dir per synth (allocateSynthOutDir / opts.fresh).
  * FR #3663: default timeout 600s; on timeout kill the whole process tree
  * (shell-only kill left orphan cdk holding cdk.out locks).
+ * FR #3764: default runCdkSynth reuses one shared cdk.out-shared-* per stack
+ * config (synth once, read-only reuse across test files / batches).
  */
 
 const fs = require('node:fs');
@@ -71,6 +73,9 @@ function envWithPinnedNode(nodeBin, base = process.env) {
 
 let synthSeq = 0;
 
+/** Default shared cache key for the stock ASearchStack synth (FR #3764). */
+const DEFAULT_SHARED_SYNTH_KEY = 'default';
+
 /**
  * FR #3462: a private cdk.out-* directory so parallel synths do not share one lock.
  * @param {string} root
@@ -79,6 +84,32 @@ let synthSeq = 0;
 function allocateSynthOutDir(root) {
   synthSeq += 1;
   return path.join(root, `cdk.out-${process.pid}-${synthSeq}`);
+}
+
+/**
+ * FR #3764: stable shared output dir for one stack config (survives test batches).
+ * @param {string} root
+ * @param {string} [key]
+ * @returns {string}
+ */
+function sharedSynthOutDir(root, key = DEFAULT_SHARED_SYNTH_KEY) {
+  const safe = String(key || DEFAULT_SHARED_SYNTH_KEY)
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || DEFAULT_SHARED_SYNTH_KEY;
+  return path.join(root, `cdk.out-shared-${safe}`);
+}
+
+/**
+ * @param {string} outDir
+ * @returns {boolean}
+ */
+function synthArtifactReady(outDir) {
+  if (!outDir) return false;
+  try {
+    return fs.existsSync(path.join(outDir, 'ASearchStack.template.json'));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -214,12 +245,38 @@ function spawnSyncTreeKill(command, args, opts) {
 
 /**
  * Run `npm run synth` with PATH pinned so stage-entry + cdk --app node use Node 20+.
+ * FR #3764: unless opts.outDir or opts.fresh, reuse cdk.out-shared-* when ready.
  * @param {string} root repo root
- * @param {{ timeout?: number, outDir?: string }} [opts]
- * @returns {import('node:child_process').SpawnSyncReturns<string> & { nodeBin?: string|null, skipped?: boolean, outDir?: string }}
+ * @param {{ timeout?: number, outDir?: string, fresh?: boolean, cacheKey?: string }} [opts]
+ * @returns {import('node:child_process').SpawnSyncReturns<string> & { nodeBin?: string|null, skipped?: boolean, outDir?: string, reused?: boolean }}
  */
 function runCdkSynth(root, opts = {}) {
-  const outDir = opts.outDir || allocateSynthOutDir(root);
+  let outDir;
+  let reused = false;
+  if (opts.outDir) {
+    outDir = opts.outDir;
+  } else if (opts.fresh) {
+    outDir = allocateSynthOutDir(root);
+  } else {
+    outDir = sharedSynthOutDir(root, opts.cacheKey || DEFAULT_SHARED_SYNTH_KEY);
+    if (synthArtifactReady(outDir)) {
+      reused = true;
+      return {
+        status: 0,
+        stdout: '',
+        stderr: '',
+        pid: 0,
+        output: [null, '', ''],
+        signal: null,
+        error: null,
+        nodeBin: resolveNodeBin(),
+        skipped: false,
+        reused: true,
+        outDir,
+      };
+    }
+  }
+
   const nodeBin = resolveNodeBin();
   if (!nodeBin) {
     return {
@@ -232,6 +289,7 @@ function runCdkSynth(root, opts = {}) {
       error: new Error('node too old for CDK synth'),
       nodeBin: null,
       skipped: true,
+      reused: false,
       outDir,
     };
   }
@@ -248,19 +306,52 @@ function runCdkSynth(root, opts = {}) {
   });
   r.nodeBin = nodeBin;
   r.outDir = outDir;
+  r.reused = reused;
   return r;
+}
+
+/**
+ * FR #3764: in-process default ASearchStack synth once into the shared out dir.
+ * @param {string} root
+ * @param {{ fresh?: boolean, outDir?: string, cacheKey?: string, stackProps?: object }} [opts]
+ * @returns {{ outDir: string, reused: boolean }}
+ */
+function ensureDefaultStackSynth(root, opts = {}) {
+  let outDir;
+  if (opts.outDir) {
+    outDir = opts.outDir;
+  } else if (opts.fresh) {
+    outDir = allocateSynthOutDir(root);
+  } else {
+    outDir = sharedSynthOutDir(root, opts.cacheKey || DEFAULT_SHARED_SYNTH_KEY);
+    if (synthArtifactReady(outDir)) {
+      return { outDir, reused: true };
+    }
+  }
+  // Lazy require so non-CDK unit tests do not load aws-cdk-lib.
+  const cdk = require('aws-cdk-lib');
+  const { ASearchStack } = require(path.join(root, 'cdk', 'lib', 'a-search-stack'));
+  fs.mkdirSync(outDir, { recursive: true });
+  const app = new cdk.App({ outdir: outDir });
+  new ASearchStack(app, 'ASearchStack', opts.stackProps);
+  app.synth();
+  return { outDir, reused: false };
 }
 
 module.exports = {
   MIN_MAJOR,
   DEFAULT_SYNTH_TIMEOUT_MS,
+  DEFAULT_SHARED_SYNTH_KEY,
   candidateNodeBins,
   nodeMajor,
   resolveNodeBin,
   envWithPinnedNode,
   allocateSynthOutDir,
+  sharedSynthOutDir,
+  synthArtifactReady,
   synthNpmArgs,
   killProcessTree,
   spawnSyncTreeKill,
   runCdkSynth,
+  ensureDefaultStackSynth,
 };
