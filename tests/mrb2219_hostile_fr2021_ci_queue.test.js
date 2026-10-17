@@ -24,7 +24,8 @@ describe('MRB #2219 hostile FR-2021 CI queue starvation', () => {
     const text = fs.readFileSync(CI, 'utf8');
     assert.match(text, /^\s*test-and-synth:\s*$/m);
     assert.match(text, /cancel-in-progress:\s*true/);
-    assert.match(text, /if:\s*steps\.need_synth\.outputs\.synth == 'true'/);
+    // FR-2611 (#3133) prefixes the gate with the classify heavy check.
+    assert.match(text, /if:[^\n]*steps\.need_synth\.outputs\.synth == 'true'/);
     assert.match(text, /reason=main-push/);
     assert.match(text, /reason=docs-harvest-or-tests-only/);
     assert.match(
@@ -32,8 +33,10 @@ describe('MRB #2219 hostile FR-2021 CI queue starvation', () => {
       /cdk\/\|providers\/\|entry\/\|maintainer\/\|shared\/\|components-piece\//,
     );
     assert.match(text, /package\(-lock\)\?\\?\.json/);
-    // npm test is unconditional (no if: on Test step before Detect).
-    assert.match(text, /- name: Test\r?\n\s+run: npm test/);
+    // npm test is not gated on need_synth (FR-2611 heavy gate allowed).
+    const m = text.match(/- name: Test\r?\n((?:\s+if:[^\n]*\r?\n)?)\s+run: npm test/);
+    assert.ok(m, 'Test step runs npm test');
+    assert.doesNotMatch(m[1], /need_synth/);
   });
 
   it('SKILL has FR-2021 lesson; no conflict markers; prior tip-loop/docs-mrb tips remain', () => {
