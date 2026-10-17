@@ -25,8 +25,7 @@ describe('MRB #1127 hostile FR-136 entry JWT secrets', () => {
     const p = fs.readFileSync(product, 'utf8');
     assert.match(p, /wireEntryJwtSecrets/);
     assert.match(p, /JWT_ISSUER/);
-    assert.match(p, /new cdk\.App/);
-    assert.match(p, /app\.synth\(\)/);
+    assert.match(p, /ensureDefaultStackSynth/);
     assert.doesNotMatch(p, /runCdkSynth\(/);
   });
 
