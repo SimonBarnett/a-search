@@ -6,6 +6,9 @@
  * FR #3462: private --output dir per synth.
  * FR #3663: default timeout 600s; on timeout kill the whole process tree
  * (shell-only kill left orphan cdk holding cdk.out locks).
+ * #3665 follow-up: no event-loop busy-wait (close never fired, so every synth
+ * waited the full 600s). The wait is now a real spawnSync of a node supervisor.
+ * Private cdk.out-* dirs are removed at process exit.
  */
 
 const fs = require('node:fs');
@@ -90,48 +93,151 @@ function synthNpmArgs(outDir) {
 }
 
 /**
- * Kill pid and descendants. Windows: taskkill /T. Unix: process group then pid.
+ * Descendant pids of rootPid (children first-level, then deeper), POSIX only.
+ * Snapshot taken while the root is still alive so re-parented orphans are not
+ * lost. Linux: /proc; elsewhere: `ps -A -o pid= -o ppid=`.
+ * @param {number} rootPid
+ * @returns {number[]}
+ */
+function listDescendants(rootPid) {
+  if (!rootPid || rootPid <= 0 || process.platform === 'win32') return [];
+  /** @type {Map<number, number[]>} */
+  const kids = new Map();
+  const add = (pid, ppid) => {
+    if (!Number.isFinite(pid) || !Number.isFinite(ppid)) return;
+    if (!kids.has(ppid)) kids.set(ppid, []);
+    kids.get(ppid).push(pid);
+  };
+  let haveTable = false;
+  try {
+    for (const ent of fs.readdirSync('/proc')) {
+      if (!/^\d+$/.test(ent)) continue;
+      try {
+        const stat = fs.readFileSync(`/proc/${ent}/stat`, 'utf8');
+        // pid (comm) state ppid ... ; comm may contain spaces/parens.
+        const rest = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+        add(Number(ent), Number(rest[1]));
+        haveTable = true;
+      } catch {
+        /* process exited mid-scan */
+      }
+    }
+  } catch {
+    /* no /proc (macOS) */
+  }
+  if (!haveTable) {
+    const r = spawnSync('ps', ['-A', '-o', 'pid=', '-o', 'ppid='], { encoding: 'utf8' });
+    for (const line of String(r.stdout || '').split('\n')) {
+      const m = line.trim().match(/^(\d+)\s+(\d+)$/);
+      if (m) add(Number(m[1]), Number(m[2]));
+    }
+  }
+  const out = [];
+  const seen = new Set([rootPid]);
+  const queue = [rootPid];
+  while (queue.length) {
+    const cur = queue.shift();
+    for (const k of kids.get(cur) || []) {
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+      queue.push(k);
+    }
+  }
+  return out;
+}
+
+/**
+ * Kill pid and descendants (FR #3663). Windows: taskkill /T /F (walks the
+ * tree while the root is alive). POSIX: SIGKILL the process group (root is
+ * spawned detached => group leader) plus every descendant found by
+ * listDescendants, so a descendant that called setsid() cannot escape.
  * @param {number} pid
  */
 function killProcessTree(pid) {
   if (!pid || pid <= 0) return;
   if (process.platform === 'win32') {
-    spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], {
+    spawnSync('taskkill', ['/T', '/F', '/PID', String(pid)], {
       windowsHide: true,
       encoding: 'utf8',
     });
     return;
   }
-  try {
-    process.kill(-pid, 'SIGKILL');
-  } catch {
+  const kill = (target) => {
     try {
-      process.kill(pid, 'SIGKILL');
+      process.kill(target, 'SIGKILL');
     } catch {
-      /* already gone */
+      /* already gone / not ours */
     }
-  }
+  };
+  // Snapshot descendants before the root dies (orphans re-parent to init).
+  const first = listDescendants(pid);
+  kill(-pid);
+  kill(pid);
+  for (const d of first) kill(d);
+  // Second sweep: anything forked between snapshot and kill.
+  for (const d of listDescendants(pid)) kill(d);
 }
 
+const SUPERVISE_FLAG = '--fr3663-supervise';
+const TIMEOUT_EXIT_CODE = 124;
+const TIMEOUT_MARKER = '[runCdkSynth] FR-3663 timeout';
+
 /**
- * Brief sleep without busy-spinning the event loop forever (sync helper).
- * @param {number} ms
+ * Supervisor body (runs in its own node process; its event loop is free, so
+ * exit and timer events fire normally). Spawns the real command with stdio
+ * inherited (output flows straight into the parent's spawnSync pipes), and on
+ * timeout kills the whole tree while the root is still alive.
+ * @param {{ command: string, args: string[], timeout: number }} spec
  */
-function sleepMs(ms) {
-  const n = Math.max(1, Math.min(ms, 200));
-  try {
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, n);
-  } catch {
-    spawnSync(process.execPath, ['-e', `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,${n})`], {
-      timeout: n + 50,
-      windowsHide: true,
-    });
-  }
+function superviseMain(spec) {
+  const isWin = process.platform === 'win32';
+  // Windows: .cmd/.bat need shell:true (Node >= 18.20.2). Quote the command so
+  // paths with spaces (e.g. C:\Program Files\nodejs\npm.cmd) are not split.
+  const useShell = isWin && /\.(cmd|bat)$/i.test(spec.command);
+  const command = useShell ? '"' + spec.command + '"' : spec.command;
+  const child = spawn(command, spec.args, {
+    stdio: 'inherit',
+    // POSIX: own process group so killProcessTree can SIGKILL -pid.
+    detached: !isWin,
+    shell: useShell,
+    windowsHide: true,
+  });
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    process.stderr.write(
+      `\n${TIMEOUT_MARKER} after ${spec.timeout}ms; killing process tree pid=${child.pid}\n`,
+    );
+    killProcessTree(child.pid);
+    // Do not wait on stragglers; parent treats this exit code as ETIMEDOUT.
+    setTimeout(() => process.exit(TIMEOUT_EXIT_CODE), 200).unref();
+  }, spec.timeout);
+  child.on('error', (err) => {
+    clearTimeout(timer);
+    process.stderr.write(`[runCdkSynth] spawn error: ${err && err.message}\n`);
+    process.exit(127);
+  });
+  child.on('exit', (code, sig) => {
+    clearTimeout(timer);
+    if (timedOut) {
+      process.exit(TIMEOUT_EXIT_CODE);
+      return;
+    }
+    if (sig) {
+      process.stderr.write(`[runCdkSynth] child killed by ${sig}\n`);
+      process.exit(1);
+      return;
+    }
+    process.exit(code == null ? 1 : code);
+  });
 }
 
 /**
- * Spawn + wait with wall timeout; on timeout kill the whole tree (FR #3663).
- * Prefer shell:false so the npm process is the direct child (Unix process group).
+ * Run command synchronously with a wall timeout; on timeout kill the whole
+ * process tree (FR #3663). Does NOT block the event loop waiting on async
+ * events (the #3665 busy-wait bug): the blocking wait is a real spawnSync of a
+ * small node supervisor that owns the timer and the tree kill.
  * @param {string} command
  * @param {string[]} args
  * @param {{ cwd: string, env: NodeJS.ProcessEnv, timeout: number }} opts
@@ -139,77 +245,68 @@ function sleepMs(ms) {
  */
 function spawnSyncTreeKill(command, args, opts) {
   const timeout = opts.timeout;
-  const isWin = process.platform === 'win32';
-  const child = spawn(command, args, {
+  const spec = JSON.stringify({ command, args, timeout });
+  const r = spawnSync(process.execPath, [__filename, SUPERVISE_FLAG, spec], {
     cwd: opts.cwd,
     env: opts.env,
-    // Windows: npm.cmd needs no shell when invoked with .cmd path; shell:false
-    // keeps taskkill able to target the npm tree. Unix: detached => process group.
-    shell: false,
-    detached: !isWin,
+    encoding: 'utf8',
     windowsHide: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 64 * 1024 * 1024,
+    // Backstop only: the supervisor enforces `timeout` itself.
+    timeout: timeout + 60_000,
+    killSignal: 'SIGKILL',
   });
-
-  let stdout = '';
-  let stderr = '';
-  if (child.stdout) {
-    child.stdout.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => {
-      stdout += chunk;
-    });
-  }
-  if (child.stderr) {
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', (chunk) => {
-      stderr += chunk;
-    });
-  }
-
-  let settled = false;
-  let status = null;
-  let signal = null;
-  /** @type {Error|null} */
-  let error = null;
-  child.on('error', (err) => {
-    error = err;
-    settled = true;
-  });
-  child.on('close', (code, sig) => {
-    status = code;
-    signal = sig;
-    settled = true;
-  });
-
-  const deadline = Date.now() + timeout;
-  while (!settled && Date.now() < deadline) {
-    sleepMs(50);
-  }
-
-  if (!settled) {
-    killProcessTree(child.pid);
-    const graceUntil = Date.now() + 5000;
-    while (!settled && Date.now() < graceUntil) {
-      sleepMs(50);
-    }
+  const stdout = r.stdout || '';
+  const stderr = r.stderr || '';
+  let error = r.error || null;
+  let status = r.status;
+  let signal = r.signal;
+  const supervisorTimedOut =
+    status === TIMEOUT_EXIT_CODE && stderr.includes(TIMEOUT_MARKER);
+  if (supervisorTimedOut || (error && error.code === 'ETIMEDOUT')) {
     const err = new Error(
-      `spawnSyncTreeKill timed out after ${timeout}ms; killed process tree pid=${child.pid}`,
+      `spawnSyncTreeKill timed out after ${timeout}ms; killed process tree`,
     );
     err.code = 'ETIMEDOUT';
     error = err;
-    if (status == null) status = null;
-    if (signal == null) signal = 'SIGTERM';
+    status = null;
+    signal = 'SIGTERM';
   }
-
   return {
     status,
     signal,
     stdout,
     stderr,
     error,
-    pid: child.pid,
+    pid: r.pid,
     output: [null, stdout, stderr],
   };
+}
+
+/** Dirs allocated by runCdkSynth in this process; removed on exit (#3462/#3496). */
+const allocatedOutDirs = new Set();
+let cleanupHooked = false;
+
+function cleanupSynthOutDirs() {
+  if (process.env.A_SEARCH_KEEP_CDK_OUT === '1') return;
+  for (const dir of allocatedOutDirs) {
+    // Only ever our own cdk.out-<pid>-<seq> dirs.
+    if (!/^cdk\.out-\d+-\d+$/.test(path.basename(dir))) continue;
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+    } catch {
+      /* best effort */
+    }
+  }
+  allocatedOutDirs.clear();
+}
+
+function trackOutDir(dir) {
+  allocatedOutDirs.add(dir);
+  if (!cleanupHooked) {
+    cleanupHooked = true;
+    process.on('exit', cleanupSynthOutDirs);
+  }
 }
 
 /**
@@ -220,6 +317,8 @@ function spawnSyncTreeKill(command, args, opts) {
  */
 function runCdkSynth(root, opts = {}) {
   const outDir = opts.outDir || allocateSynthOutDir(root);
+  // Remove our private cdk.out-* at process exit (callers read it in-test).
+  if (!opts.outDir) trackOutDir(outDir);
   const nodeBin = resolveNodeBin();
   if (!nodeBin) {
     return {
@@ -261,6 +360,12 @@ module.exports = {
   allocateSynthOutDir,
   synthNpmArgs,
   killProcessTree,
+  listDescendants,
   spawnSyncTreeKill,
+  cleanupSynthOutDirs,
   runCdkSynth,
 };
+
+if (require.main === module && process.argv[2] === SUPERVISE_FLAG) {
+  superviseMain(JSON.parse(process.argv[3]));
+}
