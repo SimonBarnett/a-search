@@ -328,6 +328,14 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search re-offered harvest-lesson MRB that is a few commits behind: one tip-author origin/main fold, re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
 - When a line-number skill pin fails after one main fold, retarget the stable needles by content and restore the ASCII span the pin still requires before PASS.
 - a-search stranded-ACK rematch on a harvest-lesson tip a few commits behind: one origin/main fold, re-run the hostile pin, PASS @ new SHA and re-arm squash auto-merge, DONE immediately.
+- a-search FIX fold must be a real merge commit with origin/main as a parent. Resetting the merge commit soft and recommitting drops the second parent and leaves the tip behind; merge again with the tip author set before the merge.
 - a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
+- When the unique fix is an ASCII replacement of one mojibake bullet, the behind-main fold keeps the tip ASCII lines and drops the main copy of that same bullet; do not keep-both or the pin fails.
+- When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
+- After FR-3764, the cdk.out exit-cleanup pin must call runCdkSynth with opts.fresh. A tree-kill that empties the grandchild marker is a mid-write truncate; one settle read distinguishes that from a live orphan.
+- When a docs/mrb tip is re-offered after its parent harvest tip MERGED, one origin/main fold plus the hostile pin green is enough to PASS; cancelled-only CI is not product debt.
+- cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
+- When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, one origin/main fold plus the product pin suite green is the FIX; do not invent a synth-timeout product change.
+- a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
 - a-search FR #3611: harvest SKILL hostile pins must use includes() or newline-normalize before assert.match; do not PASS when the pin suite is red on CRLF files
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI --- do not invent product fixes for bulk-cancel reds.
