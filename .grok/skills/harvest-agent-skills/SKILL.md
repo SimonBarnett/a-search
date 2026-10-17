@@ -288,6 +288,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search merchant onboarding skillbooks need the full CAST IRON harvest block (not only the main provider SKILL); MRB FAIL with one tip-fix PR when the stub shipped without it
 - FR-239 rematch: one behind-main fold then PASS @ new head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
 - MRB behind-main re-offer on a long-lived FR tip: one origin/main fold then re-run fr245+hostile+fr142/143 floor pins (26 while provider stay-dark) before PASS @ head SHA and gh pr merge --auto; never re-bump floors for a dark merchantConnect source
+- docs/mrb hostile pin rematch after parent harvest tip already MERGED: one origin/main fold, re-run the contiguous pin, PASS @ head SHA and arm auto-merge; Refs parent only (no second Closes)
 - When MRB of an ASCII/mojibake SKILL tip finds a sibling open issue for remaining non-ASCII outside the pinned span, keep that remainder issue open (do not twin-close) and note ACCEPTABLE drift on the board
 - FR-3373 MRB rematch: one origin/main fold then re-run fr3373 + mrb3391-hostile + fr3490 bootstrap marker pins before PASS @ head SHA and gh pr merge --auto
 - FR-2230 MRB rematch: one origin/main fold then re-run fr2230+mrb2251+fr1410+mrb2213 BOM pins and a docs/**/*.md EF-BB-BF inventory before PASS @ head SHA
@@ -321,8 +322,9 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md — pin with fr2746 hostile ASCII test
 - When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms — not 27 (class of MRB #2075 FAIL then tip-fix)
 - a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS — do not FAIL or open a fix PR for stale it() names alone
+- a-search skill mojibake restore that is 0 behind main and pins the five named lines as ASCII while keeping the AKIA placeholder and the GitGuardian em dash: PASS and auto-merge; do not fold main again and do not treat it as a twin of FR #2746.
 - a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes — never drop either provider.
-- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE — do not re-litigate prior PASS boards.
+- Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE --- do not re-litigate prior PASS boards.
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI — do not invent product fixes for bulk-cancel reds.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
 - a-search re-offered harvest-lesson MRB that is a few commits behind: one tip-author origin/main fold, re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
@@ -333,3 +335,9 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When the unique fix is an ASCII replacement of one mojibake bullet, the behind-main fold keeps the tip ASCII lines and drops the main copy of that same bullet; do not keep-both or the pin fails.
 - When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
 - After FR-3764, the cdk.out exit-cleanup pin must call runCdkSynth with opts.fresh. A tree-kill that empties the grandchild marker is a mid-write truncate; one settle read distinguishes that from a live orphan.
+- When a docs/mrb tip is re-offered after its parent harvest tip MERGED, one origin/main fold plus the hostile pin green is enough to PASS; cancelled-only CI is not product debt.
+- cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
+- When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, one origin/main fold plus the product pin suite green is the FIX; do not invent a synth-timeout product change.
+- a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
+- FIX assign for cancelled CI on open product PR: one behind-main fold, re-run claimed pin tests, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
+- Re-offered keep-both resolve helper MRB: one behind-main fold, re-run fr3708 pin + conflict markers, PASS @ new SHA, --auto, DONE.
