@@ -358,3 +358,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
 - FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
 - docs/mrb hostile pin when parent harvest tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash; pin-only delta.
+- When ci.yml changes cancel-in-progress from true to PR-only event_name expression, update fr2021 + mrb2219 pins and FR-2021 Decision in the same tip; tip-owned pin debt does not require a behind-main fold (FR #4649).
