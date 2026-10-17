@@ -288,6 +288,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search merchant onboarding skillbooks need the full CAST IRON harvest block (not only the main provider SKILL); MRB FAIL with one tip-fix PR when the stub shipped without it
 - FR-239 rematch: one behind-main fold then PASS @ new head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
 - MRB behind-main re-offer on a long-lived FR tip: one origin/main fold then re-run fr245+hostile+fr142/143 floor pins (26 while provider stay-dark) before PASS @ head SHA and gh pr merge --auto; never re-bump floors for a dark merchantConnect source
+- docs/mrb hostile pin rematch after parent harvest tip already MERGED: one origin/main fold, re-run the contiguous pin, PASS @ head SHA and arm auto-merge; Refs parent only (no second Closes)
 - When MRB of an ASCII/mojibake SKILL tip finds a sibling open issue for remaining non-ASCII outside the pinned span, keep that remainder issue open (do not twin-close) and note ACCEPTABLE drift on the board
 - FR-3373 MRB rematch: one origin/main fold then re-run fr3373 + mrb3391-hostile + fr3490 bootstrap marker pins before PASS @ head SHA and gh pr merge --auto
 - FR-2230 MRB rematch: one origin/main fold then re-run fr2230+mrb2251+fr1410+mrb2213 BOM pins and a docs/**/*.md EF-BB-BF inventory before PASS @ head SHA
