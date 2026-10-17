@@ -98,6 +98,10 @@ const {
   handleEcwidWebhook,
 } = require('./ecwidWebhooks');
 const {
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
+} = require('./stripeWebhook');
+const {
   matchBigCommerceWebhookRoute,
   handleBigCommerceWebhook,
 } = require('./bigcommerceWebhooks');
@@ -283,6 +287,7 @@ async function handler(event, _context, deps = {}) {
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
   const ecwidWebhookRoute = matchEcwidWebhookRoute(method, path);
+  const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
   const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
@@ -307,25 +312,27 @@ async function handler(event, _context, deps = {}) {
               ? PARTNER_REGISTER_ROUTE
               : merchantRoute
                 ? MERCHANT_SHOPS_ROUTE
-                : loginRoute
-                  ? LOGIN_ENTRY_ROUTE
-                  : oauthRoute
-                    ? OAUTH_CALLBACK_ROUTE
-                    : commissionRoute
-                      ? ACCOUNT_COMMISSION_ROUTE
-                      : upgradeRoute
-                        ? ACCOUNT_UPGRADE_ROUTE
-                        : clubRevenueShareRoute
-                          ? CLUB_REVENUE_SHARE_ROUTE
-                          : widgetsMutateRoute
-                            ? WIDGETS_MUTATE_ROUTE
-                            : cpRoute
-                              ? `entry/${cpRoute}`
-                              : isSelftestRoute(method, path)
-                                ? SELFTEST_ROUTE
-                                : isPerformanceRoute(method, path)
-                                  ? PERF_ROUTE
-                                  : ENTRY_ROUTE;
+                : stripeWebhookRoute
+                  ? 'entry/POST /webhooks/stripe'
+                  : loginRoute
+                    ? LOGIN_ENTRY_ROUTE
+                    : oauthRoute
+                      ? OAUTH_CALLBACK_ROUTE
+                      : commissionRoute
+                        ? ACCOUNT_COMMISSION_ROUTE
+                        : upgradeRoute
+                          ? ACCOUNT_UPGRADE_ROUTE
+                          : clubRevenueShareRoute
+                            ? CLUB_REVENUE_SHARE_ROUTE
+                            : widgetsMutateRoute
+                              ? WIDGETS_MUTATE_ROUTE
+                              : cpRoute
+                                ? `entry/${cpRoute}`
+                                : isSelftestRoute(method, path)
+                                  ? SELFTEST_ROUTE
+                                  : isPerformanceRoute(method, path)
+                                    ? PERF_ROUTE
+                                    : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -368,6 +375,10 @@ async function handler(event, _context, deps = {}) {
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
     }
+    // FR-239: shared Stripe webhook wins over FR-208 ComponentsPiece 501 stub
+    if (stripeWebhookRoute) {
+      return await handleStripeWebhook(event, deps);
+    }
     if (oauthRoute) {
       return await handleOAuthCallback(event, oauthRoute, deps);
     }
@@ -400,7 +411,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
-      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+      merchantRoute === 'DELETE /merchant/shops/{shopId}' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
     ) {
       return await handleMerchantShops(event, merchantRoute, deps);
     }
@@ -785,6 +798,8 @@ module.exports = {
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
   matchLoginEntryRoute,
   handleLoginEntry,
   matchOAuthCallbackRoute,
