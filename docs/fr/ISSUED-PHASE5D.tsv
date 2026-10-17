@@ -1,0 +1,4 @@
+fr	issue	title	url
+FR-232	#1346	Widget identity widgetGuid minted at embed-code creation	https://github.com/SimonBarnett/a-search/issues/1346
+FR-233	#1347	Docs lock widgetGuid tree, upgrade-dependent live.json, agent dispatch + CWD	https://github.com/SimonBarnett/a-search/issues/1347
+FR-234	#1348	Widget events endpoint records views impressions clicks; stats.json for agent and extension	https://github.com/SimonBarnett/a-search/issues/1348
