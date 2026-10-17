@@ -181,8 +181,8 @@
       "kind": "local",
       "folder": "providers/local/webgains",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WEBGAINS_URL",
       "rateLimit": {
@@ -288,8 +288,8 @@
       "kind": "local",
       "folder": "providers/local/woocommerce",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WOOCOMMERCE_URL",
       "rateLimit": {
