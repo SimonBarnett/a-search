@@ -1133,7 +1133,12 @@ class ASearchStack extends cdk.Stack {
     );
     widgetEventsQueue.grantConsumeMessages(widgetEventsAggregator);
     widgetEventsAggregator.addEventSource(
-      new SqsEventSource(widgetEventsQueue, { batchSize: 100 }),
+      // batchSize > 10 requires maxBatchingWindow (aws-cdk-lib ValidationError
+      // MaximumBatchSizeInclusiveGiven); 5s << 180s queue visibility timeout.
+      new SqsEventSource(widgetEventsQueue, {
+        batchSize: 100,
+        maxBatchingWindow: cdk.Duration.seconds(5),
+      }),
     );
     const widgetStatsRollup = new lambda.Function(
       this,
