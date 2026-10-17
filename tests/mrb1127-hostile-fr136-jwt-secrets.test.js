@@ -20,13 +20,15 @@ const releaseGap = path.join(
 );
 
 describe('MRB #1127 hostile FR-136 entry JWT secrets', () => {
-  it('product test uses in-process synth + JWT_* pins', () => {
+  it('product test uses ensureDefaultStackSynth + JWT_* pins', () => {
     assert.equal(fs.existsSync(product), true);
     const p = fs.readFileSync(product, 'utf8');
     assert.match(p, /wireEntryJwtSecrets/);
     assert.match(p, /JWT_ISSUER/);
     assert.match(p, /ensureDefaultStackSynth/);
-    assert.doesNotMatch(p, /runCdkSynth\(/);
+    assert.match(p, /helpers\/runCdkSynth/);
+    assert.doesNotMatch(p, /new cdk\.App\s*\(/);
+    assert.doesNotMatch(p, /app\.synth\(\)/);
   });
 
   it('stack resolveEntryJwtSecret + wireEntryJwtSecrets contiguous', () => {
