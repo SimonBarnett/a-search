@@ -286,6 +286,12 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'SHOPIFY_ACCESS_TOKEN',
     'SHOPIFY_STORE_URL',
   ],
+  // FR-180: enable woocommerce merchant
+  woocommerce: [
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+    'WOOCOMMERCE_STORE_URL',
+  ],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
@@ -301,6 +307,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'AVANTLINK_FEED_TOKEN',
     'AVANTLINK_PUBLISHER_ID',
     'AVANTLINK_AFFILIATE_ID',
+  ],
+    // FR-173: enable webgains
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
   ],
   // FR-172: enable partnerize
   partnerize: [
@@ -696,7 +710,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + FR-228 auth email/SMS OTP + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -892,6 +906,23 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-239: per-shop subscribe (Checkout) + cancel_at_period_end
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/subscribe',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsSubscribeIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/cancel',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCancelIntegration',
+        entry,
+      ),
+    });
     // FR-236: Shopify webhooks
     httpApi.addRoutes({
       path: '/webhooks/shop/shopify',
@@ -903,6 +934,24 @@ class ASearchStack extends cdk.Stack {
       path: '/webhooks/shop/wix',
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
+    });
+    // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopWebhookIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/uninstall',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration(
+        'EntryBigCommerceShopUninstallWebhookIntegration',
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopLoadWebhookIntegration'),
     });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
@@ -920,6 +969,27 @@ class ASearchStack extends cdk.Stack {
       path: '/auth/oauth/callback',
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryAuthOAuthCallbackIntegration'),
+    });
+    // FR-228: email magic/OTP + merchant SMS OTP (public; rate-limited in handler)
+    httpApi.addRoutes({
+      path: '/auth/email/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/email/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailVerifyIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsVerifyIntegration'),
     });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
@@ -1076,6 +1146,80 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
       value: shopSyncWorker.functionName,
+    });
+
+    // FR-234: SQS standard a-search-widget-events + DLQ + aggregator + hourly rollup.
+    const widgetEventsDlq = new sqs.Queue(this, 'WidgetEventsDeadLetterQueue', {
+      queueName: stagedName('a-search-widget-events-dlq'),
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetEventsQueue = new sqs.Queue(this, 'WidgetEventsQueue', {
+      queueName: stagedName('a-search-widget-events'),
+      visibilityTimeout: cdk.Duration.seconds(180),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetEventsDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    entry.addEnvironment('SQS_WIDGET_EVENTS_URL', widgetEventsQueue.queueUrl);
+    widgetEventsQueue.grantSendMessages(entry);
+    const widgetEventsAggregator = new lambda.Function(
+      this,
+      'WidgetEventsAggregatorFunction',
+      {
+        functionName: stagedName('a-search-widget-events-aggregator'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetEventsAggregator.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(30),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetEventsAggregatorLogGroup'),
+      },
+    );
+    widgetEventsQueue.grantConsumeMessages(widgetEventsAggregator);
+    widgetEventsAggregator.addEventSource(
+      // batchSize > 10 requires maxBatchingWindow (aws-cdk-lib ValidationError
+      // MaximumBatchSizeInclusiveGiven); 5s << 180s queue visibility timeout.
+      new SqsEventSource(widgetEventsQueue, {
+        batchSize: 100,
+        maxBatchingWindow: cdk.Duration.seconds(5),
+      }),
+    );
+    const widgetStatsRollup = new lambda.Function(
+      this,
+      'WidgetStatsRollupFunction',
+      {
+        functionName: stagedName('a-search-widget-stats-rollup'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetStatsRollup.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(60),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetStatsRollupLogGroup'),
+      },
+    );
+    wireResultsBucketAccess(widgetStatsRollup, resultsBucket);
+    new events.Rule(this, 'WidgetStatsRollupSchedule', {
+      ruleName: stagedName('a-search-widget-stats-rollup'),
+      description: 'FR-234 hourly stats.json rollup (no agent enqueue)',
+      schedule: events.Schedule.rate(cdk.Duration.hours(1)),
+      targets: [new targets.LambdaFunction(widgetStatsRollup)],
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsQueueUrl', {
+      value: widgetEventsQueue.queueUrl,
+      description: 'FR-234 SQS a-search-widget-events',
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsDeadLetterQueueUrl', {
+      value: widgetEventsDlq.queueUrl,
+      description: 'FR-234 DLQ for widget-events',
     });
 
     const shopSyncDlqAlarm = new cloudwatch.Alarm(this, 'ShopSyncDlqDepthAlarm', {

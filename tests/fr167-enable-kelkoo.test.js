@@ -9,13 +9,14 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
-const OTHER_STAY_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
+const OTHER_STAY_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -62,7 +63,7 @@ describe('FR-167 enable provider kijiji', () => {
     assert.match(keysBlock[0], /KELKOO_API_KEY/);
     assert.match(keysBlock[0], /KELKOO_PUBLISHER_ID/);
     assert.match(text, /PROVIDER_PLAIN_DEFAULTS[\s\S]*kelkoo[\s\S]*KELKOO_COUNTRY/);
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       assert.doesNotMatch(
         keysBlock[0],
         new RegExp(`\\b${dark}\\b`),
@@ -74,10 +75,7 @@ describe('FR-167 enable provider kijiji', () => {
   it('synth includes a-search-kelkoo live/sandbox queues and workers', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out');
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -119,7 +117,7 @@ describe('FR-167 enable provider kijiji', () => {
     }
 
     // Sibling stay-dark: no worker
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
