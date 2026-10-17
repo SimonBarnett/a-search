@@ -62,6 +62,12 @@ describe('FR-3663 / #3665 spawnSyncTreeKill does not busy-wait', () => {
     assert.notEqual(r.status, 0);
   });
 
+  it('Windows supervisor quotes .cmd when shell is used', () => {
+    const text = fs.readFileSync(HELPER, 'utf8');
+    assert.match(text, /const useShell = isWin/);
+    assert.match(text, /command = useShell \? .". \+ spec\.command/);
+  });
+
   it('helper has no event-loop busy-wait', () => {
     const text = fs.readFileSync(HELPER, 'utf8');
     assert.doesNotMatch(text, /while\s*\(\s*!settled/);

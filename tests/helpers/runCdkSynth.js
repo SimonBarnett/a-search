@@ -192,12 +192,15 @@ const TIMEOUT_MARKER = '[runCdkSynth] FR-3663 timeout';
  */
 function superviseMain(spec) {
   const isWin = process.platform === 'win32';
-  const child = spawn(spec.command, spec.args, {
+  // Windows: .cmd/.bat need shell:true (Node >= 18.20.2). Quote the command so
+  // paths with spaces (e.g. C:\Program Files\nodejs\npm.cmd) are not split.
+  const useShell = isWin && /\.(cmd|bat)$/i.test(spec.command);
+  const command = useShell ? '"' + spec.command + '"' : spec.command;
+  const child = spawn(command, spec.args, {
     stdio: 'inherit',
     // POSIX: own process group so killProcessTree can SIGKILL -pid.
     detached: !isWin,
-    // Windows: .cmd/.bat cannot be spawned without a shell (Node >= 18.20.2).
-    shell: isWin && /\.(cmd|bat)$/i.test(spec.command),
+    shell: useShell,
     windowsHide: true,
   });
   let timedOut = false;
