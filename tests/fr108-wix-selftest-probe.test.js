@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-108: wix selftestProbe + registry rateLimit (stay-dark).
+ * FR-108: wix selftestProbe + registry rateLimit (enabled after FR-179).
  */
 
 const { describe, it } = require('node:test');
