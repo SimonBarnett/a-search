@@ -286,3 +286,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX CI keep-both enable tips: fold main for FR #3663 per-synth --output without rewriting fr142/fr143 floors the tip owns
 - FR-239 rematch: one behind-main fold then PASS @ new head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
 - MRB behind-main re-offer on a long-lived FR tip: one origin/main fold then re-run fr245+hostile+fr142/143 floor pins (26 while provider stay-dark) before PASS @ head SHA and gh pr merge --auto; never re-bump floors for a dark merchantConnect source
+- a-search harvest-lesson MRB on harvest-agent-skills: CONFLICTING tip vs main both appending Harvested-lessons bullets resolves with keep-both then PASS @ head SHA
