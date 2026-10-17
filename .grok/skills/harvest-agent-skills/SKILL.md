@@ -325,3 +325,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI — do not invent product fixes for bulk-cancel reds.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
 - a-search re-offered harvest-lesson MRB that is a few commits behind: one tip-author origin/main fold, re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
+- a-search harvest-lesson tip a few commits behind that conflicts at the skill tail: keep both the new bullet and main siblings, ASCII hyphens, PASS and auto-merge.
