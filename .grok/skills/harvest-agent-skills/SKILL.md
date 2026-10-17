@@ -355,3 +355,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A stranded MRB ACK on a CONFLICTING product tip still needs one origin/main keep-both fold and a new PASS SHA before DONE, even when an older PASS board names the previous head.
 - FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
 - FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
+- Re-offer of a tip this same seat already folded and PASS-boarded: ACK then GIVEUP self-MRB (FR #2604) even when tip is MERGEABLE; a sibling seat re-verifies.
