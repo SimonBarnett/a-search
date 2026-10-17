@@ -306,3 +306,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes — never drop either provider.
 - Re-offered ASCII/mojibake SKILL fix: one behind-main fold, re-run fr2746 pin + conflict markers, PASS @ new SHA, --auto, DONE — do not re-litigate prior PASS boards.
 - a-search docs-only FR lock that is far behind main with no file conflicts: one origin/main fold as tip author, re-run the docs pin test, PASS and auto-merge; do not open a fix PR for the fold alone.
+- a-search FIX when tip is far behind and ort merges clean: one tip-author origin/main fold, re-run the product pin suite, push, DONE FIX with the PR URL; never poll CI.
