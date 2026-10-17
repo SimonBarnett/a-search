@@ -13,7 +13,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix']; // FR-179 wix; GBP/UK hold bol/aliexpress/avantlink; floors 26
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix']; // FR-179 wix; GBP/UK hold bol/aliexpress/avantlink; floors 26 (13 x live+sandbox)
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -84,10 +84,11 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       (res) =>
         res &&
         res.Type === 'AWS::CloudWatch::Alarm' &&
-        // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
-        !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
+        // #2139 / #1343: shop-sync + widget-agent FIFO DLQ alarms are not provider worker alarms
+        !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')) &&
+        !/^a-search-widget-agent/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // 13 enabled x live+sandbox; bigcommerce stay-dark adds no alarm
+    // 13 enabled x live+sandbox = 26 provider worker DLQ depth alarms (fr142 .fifo floor); bigcommerce stay-dark adds no alarm
     assert.equal(alarms.length, 26, `expected 26 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {

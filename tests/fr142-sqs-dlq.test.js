@@ -99,7 +99,8 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
-      // #2139 shop-sync FIFO (+DLQ) is not a provider worker queue
+      // #2139 shop-sync FIFO (+DLQ) and #1343 widget-agent FIFO are not provider worker queues
+      .filter((n) => !String(n).includes('.fifo'))
       .filter((n) => !/^a-search-shop-sync/.test(String(n)))
       // FR-234 / #1348 widget-events (+DLQ) is not a provider worker queue
       .filter((n) => !/^a-search-widget-events/.test(String(n)));
