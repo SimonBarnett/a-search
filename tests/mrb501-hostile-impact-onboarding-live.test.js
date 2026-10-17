@@ -30,7 +30,7 @@ describe('MRB #501 hostile Impact onboarding live', () => {
     const r = runCdkSynth(root, { timeout: 180_000 });
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const parsed = JSON.parse(
-      fs.readFileSync(path.join(root, 'cdk.out', 'ASearchStack.template.json'), 'utf8'),
+      fs.readFileSync(path.join(r.outDir, 'ASearchStack.template.json'), 'utf8'),
     );
     const fns = Object.values(parsed.Resources || {}).filter(
       (res) => res.Type === 'AWS::Lambda::Function',

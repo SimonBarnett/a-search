@@ -116,7 +116,7 @@ describe('MRB #1094 hostile FR-131 stage maintainer asset', () => {
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const tpl = JSON.parse(
       fs.readFileSync(
-        path.join(root, 'cdk.out', 'ASearchStack.template.json'),
+        path.join(r.outDir, 'ASearchStack.template.json'),
         'utf8',
       ),
     );
