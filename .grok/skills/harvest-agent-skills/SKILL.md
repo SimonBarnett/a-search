@@ -271,3 +271,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
 - a-search FR #3495: local provider .env.example live-target comments name a_search (FR-251), matching wix wording; leave wix to its own tip
 - docs/mrb tips that bump fr142/fr143 floors while ENABLED_IDS length is unchanged are tip-loops: FAIL-supersede and land hostile pins on a clean fix PR without floor edits.
+- When a docs/mrb harvest tip is behind again after one fold, PASS at the existing head and leave the armed squash auto-merge; do not fold a second time.
