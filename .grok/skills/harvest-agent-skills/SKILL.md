@@ -296,3 +296,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Never git add/commit harvest SKILL.md until check_conflict_markers.py exits 0; stop the pipeline if keep-both resolve assert fails.
 - Exact-title harvest-lesson twins: FAIL-supersede the later tip citing the first open/merged tip; never merge both.
 - Re-offered FR with open Closes PR: verify closingIssuesReferences + re-run claimed pins, DONE with that PR URL; never open a second implement PR.
+- FIX CI on a-search tips with sequential synth status-null at ~600s: fold origin/main even when runCdkSynth already has allocateSynthOutDir; tip may be far behind other main fixes.
