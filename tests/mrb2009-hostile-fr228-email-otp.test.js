@@ -52,7 +52,7 @@ describe('MRB #2009 hostile FR-228 email magic/OTP + merchant SMS', () => {
     assert.match(fr, /max 3 sends\s*\/\s*15 min/i);
     assert.match(fr, /10\s*\/\s*day/i);
     assert.match(fr, /60s resend cooldown/i);
-    assert.match(fr, /016_Merchants_OtpCodes\.sql/);
+    assert.match(fr, /017_Merchants_OtpCodes\.sql/);
     assert.match(fr, /contact_unverified/);
     assert.match(fr, /never madeiradb|Never.*madeiradb/i);
   });
@@ -130,7 +130,7 @@ describe('MRB #2009 hostile FR-228 email magic/OTP + merchant SMS', () => {
       ROOT,
       'db',
       'migrations',
-      '016_Merchants_OtpCodes.sql',
+      '017_Merchants_OtpCodes.sql',
     );
     const sql = fs.readFileSync(sqlPath, 'utf8');
     const first = sql

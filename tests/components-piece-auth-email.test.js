@@ -11,7 +11,7 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const FR_DOC = path.join(ROOT, 'docs', 'fr', 'FR-228.md');
 const AUTH_DOC = path.join(ROOT, 'docs', 'components-piece-auth.md');
-const MIGRATION = path.join(ROOT, 'db', 'migrations', '016_Merchants_OtpCodes.sql');
+const MIGRATION = path.join(ROOT, 'db', 'migrations', '017_Merchants_OtpCodes.sql');
 const STACK = path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js');
 const SHARED_PKG = path.join(ROOT, 'shared', 'package.json');
 
