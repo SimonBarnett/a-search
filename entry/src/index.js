@@ -86,6 +86,10 @@ const {
   handleWixWebhook,
 } = require('./wixWebhooks');
 const {
+  matchStripeWebhookRoute,
+  handleStripeWidgetUpgradeWebhook,
+} = require('./stripeWidgetUpgradeWebhook');
+const {
   matchLoginEntryRoute,
   handleLoginEntry,
 } = require('./loginEntry');
@@ -266,6 +270,7 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const commissionRoute = matchAccountCommissionRoute(method, path);
@@ -329,6 +334,10 @@ async function handler(event, _context, deps = {}) {
     }
     if (upgradeRoute) {
       return await handleAccountUpgrade(event, deps);
+    }
+    // #1345 Stripe widget_upgrade webhook wins over FR-208 ComponentsPiece 501 stub
+    if (stripeWebhookRoute) {
+      return await handleStripeWidgetUpgradeWebhook(event, deps);
     }
     // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
     if (clubRevenueShareRoute) {
