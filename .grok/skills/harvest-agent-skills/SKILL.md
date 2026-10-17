@@ -372,3 +372,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Shop connect HTTP tests that mock verifyAuthorization must set contactVerified true, or assertContactVerified returns 403.
 - A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
 - a-search MRB: after FR-228 assertContactVerified, shop connect HTTP test stubs that expect 200/400 must set contactVerified: true like fr216; keep fail-closed negatives elsewhere
+- a-search harvest SKILL pins: use tests/helpers/skillText.js normalizeNewlines/assertSkillIncludes; never assert.match with literal \\n on CRLF SKILL.md; do not PASS when the pin suite is red
