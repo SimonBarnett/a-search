@@ -332,4 +332,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
 - When the unique fix is an ASCII replacement of one mojibake bullet, the behind-main fold keeps the tip ASCII lines and drops the main copy of that same bullet; do not keep-both or the pin fails.
 - When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
+- After FR-3764, the cdk.out exit-cleanup pin must call runCdkSynth with opts.fresh. A tree-kill that empties the grandchild marker is a mid-write truncate; one settle read distinguishes that from a live orphan.
 - When a docs/mrb tip is re-offered after its parent harvest tip MERGED, one origin/main fold plus the hostile pin green is enough to PASS; cancelled-only CI is not product debt.
