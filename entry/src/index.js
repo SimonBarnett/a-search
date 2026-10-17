@@ -98,6 +98,9 @@ const {
   handleStripeWidgetUpgradeWebhook,
 } = require('./stripeWidgetUpgradeWebhook');
 const {
+  handleStripeWebhook,
+} = require('./stripeWebhook');
+const {
   matchBigCommerceWebhookRoute,
   handleBigCommerceWebhook,
 } = require('./bigcommerceWebhooks');
@@ -307,25 +310,27 @@ async function handler(event, _context, deps = {}) {
               ? PARTNER_REGISTER_ROUTE
               : merchantRoute
                 ? MERCHANT_SHOPS_ROUTE
-                : loginRoute
-                  ? LOGIN_ENTRY_ROUTE
-                  : oauthRoute
-                    ? OAUTH_CALLBACK_ROUTE
-                    : commissionRoute
-                      ? ACCOUNT_COMMISSION_ROUTE
-                      : upgradeRoute
-                        ? ACCOUNT_UPGRADE_ROUTE
-                        : clubRevenueShareRoute
-                          ? CLUB_REVENUE_SHARE_ROUTE
-                          : widgetsMutateRoute
-                            ? WIDGETS_MUTATE_ROUTE
-                            : cpRoute
-                              ? `entry/${cpRoute}`
-                              : isSelftestRoute(method, path)
-                                ? SELFTEST_ROUTE
-                                : isPerformanceRoute(method, path)
-                                  ? PERF_ROUTE
-                                  : ENTRY_ROUTE;
+                : stripeWebhookRoute
+                  ? 'entry/POST /webhooks/stripe'
+                  : loginRoute
+                    ? LOGIN_ENTRY_ROUTE
+                    : oauthRoute
+                      ? OAUTH_CALLBACK_ROUTE
+                      : commissionRoute
+                        ? ACCOUNT_COMMISSION_ROUTE
+                        : upgradeRoute
+                          ? ACCOUNT_UPGRADE_ROUTE
+                          : clubRevenueShareRoute
+                            ? CLUB_REVENUE_SHARE_ROUTE
+                            : widgetsMutateRoute
+                              ? WIDGETS_MUTATE_ROUTE
+                              : cpRoute
+                                ? `entry/${cpRoute}`
+                                : isSelftestRoute(method, path)
+                                  ? SELFTEST_ROUTE
+                                  : isPerformanceRoute(method, path)
+                                    ? PERF_ROUTE
+                                    : ENTRY_ROUTE;
   try {
     if (isExtStatusRoute(method, path)) {
       return await handleExtStatus(event, deps);
@@ -350,9 +355,17 @@ async function handler(event, _context, deps = {}) {
     if (upgradeRoute) {
       return await handleAccountUpgrade(event, deps);
     }
-    // #1345 Stripe widget_upgrade webhook wins over FR-208 ComponentsPiece 501 stub
+    // #1345 widget_upgrade wins; other Stripe events fall through to FR-239
     if (stripeWebhookRoute) {
-      return await handleStripeWidgetUpgradeWebhook(event, deps);
+      const upgrade = await handleStripeWidgetUpgradeWebhook(event, deps);
+      let skipped = false;
+      try {
+        skipped = JSON.parse(upgrade.body || '{}').skipped === 'not_widget_upgrade';
+      } catch (err) {
+        skipped = false;
+      }
+      if (!skipped) return upgrade;
+      return await handleStripeWebhook(event, deps);
     }
     // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
     if (clubRevenueShareRoute) {
@@ -401,7 +414,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
-      merchantRoute === 'DELETE /merchant/shops/{shopId}'
+      merchantRoute === 'DELETE /merchant/shops/{shopId}' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
     ) {
       return await handleMerchantShops(event, merchantRoute, deps);
     }
@@ -786,6 +801,8 @@ module.exports = {
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
   matchMerchantShopsRoute,
+  matchStripeWebhookRoute,
+  handleStripeWebhook,
   matchLoginEntryRoute,
   handleLoginEntry,
   matchOAuthCallbackRoute,

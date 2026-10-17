@@ -28,8 +28,7 @@ describe('MRB #1138 hostile FR-138 provider secrets', () => {
     const p = fs.readFileSync(product, 'utf8');
     assert.match(p, /wireProviderSecretEnv/);
     assert.match(p, /PROVIDER_CREDENTIAL_KEYS/);
-    assert.match(p, /new cdk\.App/);
-    assert.match(p, /app\.synth\(\)/);
+    assert.match(p, /ensureDefaultStackSynth/);
     assert.match(p, /stay-dark|STAY_DARK/);
     assert.match(p, /GetSecretValue/);
   });

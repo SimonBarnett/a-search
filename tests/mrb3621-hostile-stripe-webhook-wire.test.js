@@ -91,8 +91,9 @@ describe('mrb3621 hostile: stripe widget_upgrade webhook wire', () => {
       }),
     };
     const skip = await handler(shopEvent, {}, { customersStore: store });
-    assert.equal(skip.statusCode, 200);
-    assert.equal(JSON.parse(skip.body).skipped, 'not_widget_upgrade');
+    assert.equal(skip.statusCode, 400);
+    assert.equal(JSON.parse(skip.body).error, 'webhook_secret_missing');
+    assert.equal(store.getCustomerByHost('wire.example').upgradeStatus, 'active');
     setDefaultCustomersStore(null);
   });
 });
