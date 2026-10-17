@@ -378,4 +378,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search product MRB rematch: MERGEABLE tip 1 behind with prior PASS boards --- re-verify claimed pins at head, PASS @ current SHA without fold (FR #4649), re-arm --auto --squash, DONE PASS
 - a-search FIX: a CONFLICTING harvest-agent-skills tip still gets one origin/main fold (FR #4649). Keep both tail bullets, the new lesson and the main line it collided with. Do not drop main because the lesson itself says not to fold a MERGEABLE tip.
 - a-search MRB: when test-and-synth fails jwt-auth deepEqual on contactVerified but tests/jwt-auth.test.js and entry/src/auth/jwt.js match origin/main, that red is not a tip patch and not a fold. PASS the docs/mrb head (FR #4649).
-- a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false — tests-only PASS closes ambient main red
+- a-search FIX: when jwt-auth fails with unexpected contactVerified:false and tip jwt.js/jwt-auth match origin/main, treat as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649); file intake for the main expectation update
+- a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false --- tests-only PASS closes ambient main red
