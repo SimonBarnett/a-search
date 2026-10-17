@@ -84,7 +84,7 @@ describe('FR-3663 / #3665 spawnSyncTreeKill does not busy-wait', () => {
       const script = `
 const fs = require('fs');
 const { runCdkSynth } = require(${JSON.stringify(HELPER)});
-const r = runCdkSynth(${JSON.stringify(root)}, { timeout: 120000 });
+const r = runCdkSynth(${JSON.stringify(root)}, { timeout: 120000, fresh: true });
 if (r.status !== 0) { console.error(r.stderr); process.exit(2); }
 if (!fs.existsSync(require('path').join(r.outDir, 'ASearchStack.template.json'))) process.exit(3);
 console.log('OUTDIR=' + r.outDir);
