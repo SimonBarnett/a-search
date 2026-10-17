@@ -59,7 +59,7 @@ describe('FR-056b CDK awin onboarding Lambda sandbox', () => {
   it('npm run synth exits 0; template has sandbox function + A_SEARCH_ENV sandbox', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(root, 'cdk.out', 'ASearchStack.template.json');
+    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit ASearchStack.template.json');
     const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     const fns = Object.values(parsed.Resources || {}).filter(

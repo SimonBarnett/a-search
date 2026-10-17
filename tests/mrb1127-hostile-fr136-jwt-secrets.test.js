@@ -27,7 +27,7 @@ describe('MRB #1127 hostile FR-136 entry JWT secrets', () => {
     assert.match(p, /JWT_ISSUER/);
     assert.match(p, /new cdk\.App/);
     assert.match(p, /app\.synth\(\)/);
-    assert.doesNotMatch(p, /runCdkSynth/);
+    assert.doesNotMatch(p, /runCdkSynth\(/);
   });
 
   it('stack resolveEntryJwtSecret + wireEntryJwtSecrets contiguous', () => {
