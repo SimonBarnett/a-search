@@ -277,3 +277,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search enable-provider MRB: when a later keep-both tip already includes the older tip DEFAULT_ON set and Closes the same issue, FAIL-supersede the older CONFLICTING subset and do not fold it
 - MRB rematch after author-seat self-MRB GIVEUP: re-verify tip pins (webhook wire over 501 stub), one update-branch if behind, post PASS @ new head SHA, re-arm gh pr merge --auto, DONE without CI poll (FR #3948)
 - Release-blocker CI red with shared faults: fix the deterministic pin first (fr2021 timeout-minutes expression), then raise runCdkSynth timeout and tree-kill on ETIMEDOUT so orphan cdk cannot hold cdk.out; fold open per-synth-out PRs into the same tip rather than leaving twin heads
+- On an MRB re-offer after someone else folded main, re-verify pins at the new head SHA, PASS @ that SHA, leave the armed auto-merge method, no second fold when 0 behind.
