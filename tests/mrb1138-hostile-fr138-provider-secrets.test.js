@@ -20,16 +20,18 @@ const releaseGap = path.join(
 );
 
 const ENABLED = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'aliexpress', 'etsy', 'skimlinks', 'bol'];
-const STAY_DARK = ['webgains'];
+const STAY_DARK = ['admitad'];
 
 describe('MRB #1138 hostile FR-138 provider secrets', () => {
-  it('product test uses in-process synth + stay-dark omission', () => {
+  it('product test uses ensureDefaultStackSynth + stay-dark omission', () => {
     assert.equal(fs.existsSync(product), true);
     const p = fs.readFileSync(product, 'utf8');
     assert.match(p, /wireProviderSecretEnv/);
     assert.match(p, /PROVIDER_CREDENTIAL_KEYS/);
-    assert.match(p, /new cdk\.App/);
-    assert.match(p, /app\.synth\(\)/);
+    assert.match(p, /ensureDefaultStackSynth/);
+    assert.match(p, /helpers\/runCdkSynth/);
+    assert.doesNotMatch(p, /new cdk\.App\s*\(/);
+    assert.doesNotMatch(p, /app\.synth\(\)/);
     assert.match(p, /stay-dark|STAY_DARK/);
     assert.match(p, /GetSecretValue/);
   });

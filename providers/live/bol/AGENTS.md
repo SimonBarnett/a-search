@@ -18,3 +18,5 @@ Provider CWD for registry id `bol` (`kind: live`).
 
 - `src/worker.js` — `run(msg)` stub
 - `.env.example` — placeholders
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).

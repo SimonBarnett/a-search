@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-142: SQS DLQ + redrive on each enabled worker queue (live + sandbox).
  * Alarms are FR-143 (out of scope here).
@@ -13,7 +15,7 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix']; // FR-179 wix; GBP/UK hold bol/aliexpress/avantlink; floors 26
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains', 'woocommerce']; // FR-179 wix + FR-173 webgains + FR-180 woocommerce; GBP/UK hold bol/aliexpress/avantlink; worker floors 30 (exclude FR-2139 shop-sync .fifo)
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
@@ -39,11 +41,7 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       return;
     }
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr142');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
@@ -95,17 +93,18 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-167..177: 28 primaries + 28 DLQs (14 enabled x live+sandbox)
+    // 15 enabled x live+sandbox = 30. Exclude shop-sync FIFO and widget-events.
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
-      // #2139 shop-sync FIFO (+DLQ) is not a provider worker queue
-      .filter((n) => !/^a-search-shop-sync/.test(String(n)));
+      .filter((n) => !String(n).includes('.fifo'))
+      .filter((n) => !/^a-search-shop-sync/.test(String(n)))
+      .filter((n) => !/^a-search-widget-events/.test(String(n)));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    // FR-167+FR-168+FR-169: 18 primaries + 18 DLQs (9 enabled x live+sandbox)
-    assert.equal(primaries.length, 26, `expected 26 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 26, `expected 26 DLQs, got ${dlqs.length}`);
+    // FR-180+FR-179: 30 worker primaries (15 enabled). Exclude FR-2139 shop-sync .fifo.
+    assert.equal(primaries.length, 30, `expected 30 primary queues, got ${primaries.length}`);
+    assert.equal(dlqs.length, 30, `expected 30 DLQs, got ${dlqs.length}`);
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {
