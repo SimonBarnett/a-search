@@ -106,8 +106,8 @@ starts the next wave:
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAâ”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬ÂªEXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives â”œÃ¢Ã£Ã†â”œÃ¥Ã”Ã‡Ã–â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã³â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã‡Ãœâ”¬Â¼â”œÃ â”¬Ã­â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Â¼â”œÃ¢Ã£Ã†â”œÃ©â”¬Ã³â”œÃ¢â”¬Ã³â”œÃ³Ã”Ã©Â¼â”¼Ã­â”œÃ©â”¬Â¼â”œÃ¢Ã”Ã‡Ãœâ”œÃ©â”¬Ã˜ fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA...EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives -- fix the fixture instead.
 
 ## Do not
 
