@@ -349,3 +349,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Harvest-lesson re-offer tip unique vs main (wrap still-open first tip FAIL-supersede + Prefer ExistingPrUrl): one origin/main fold, re-run contiguous pin, PASS @ new SHA, re-arm --auto --squash (FR #3948 / FR #3317).
 - Before PASS, check local branches named for this seat; a matching product commit is self-MRB even when the commit author is the shared repo identity.
 - a-search Ecwid tip CONFLICTING with main Stripe entry routes: keep-both require+match for ecwidWebhooks and stripeWebhook, one fold, re-run fr246+mrb2186, PASS @ new SHA, re-arm --auto (FR #3948).
+- MRB process-loop: CLOSED already-covered harvest rematch tip under FR #3317; do not file another skill tip for that close
