@@ -352,3 +352,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A prior fold commit that is an ancestor of the assigned PR tip is self-MRB for that seat even when the commit author is the shared repo identity.
 - Resolve a worktree skill conflict with an absolute path. A relative path uses the seat CWD, so git add can commit unresolved conflict markers; strip them in a follow-up commit and run check_conflict_markers before PASS.
 - A stranded MRB ACK on a CONFLICTING product tip still needs one origin/main keep-both fold and a new PASS SHA before DONE, even when an older PASS board names the previous head.
+- MRB process-loop rematch: FR #3610 twin-close guard tip needs one keep-both fold via absolute-path resolve_harvest_skill_keep_both.py, re-run fr3610 pin, PASS @ new SHA, --auto, DONE
