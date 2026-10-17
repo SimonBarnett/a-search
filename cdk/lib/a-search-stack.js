@@ -1349,14 +1349,14 @@ class ASearchStack extends cdk.Stack {
     // #1343 / FR-258: ComponentsPiece widget-agent FIFO + enqueue Lambda + EventBridge rules
     const AGENT_JOB_TIMEOUT_S = 900;
     const widgetAgentDlq = new sqs.Queue(this, 'WidgetAgentDeadLetterQueue', {
-      queueName: stagedName('a-search-widget-agent-dlq.fifo'),
+      queueName: stagedFifoName('a-search-widget-agent-dlq.fifo'),
       fifo: true,
       contentBasedDeduplication: false,
       retentionPeriod: cdk.Duration.days(14),
       encryption: sqs.QueueEncryption.SQS_MANAGED,
     });
     const widgetAgentQueue = new sqs.Queue(this, 'WidgetAgentQueue', {
-      queueName: stagedName('a-search-widget-agent.fifo'),
+      queueName: stagedFifoName('a-search-widget-agent.fifo'),
       fifo: true,
       contentBasedDeduplication: false,
       visibilityTimeout: cdk.Duration.seconds(AGENT_JOB_TIMEOUT_S + 60),

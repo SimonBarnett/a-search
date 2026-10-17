@@ -68,6 +68,11 @@ describe('mrb2075 hostile FR-258 agentic searches', () => {
     );
     assert.match(stack, /a-search-widget-agent\.fifo/);
     assert.match(stack, /a-search-widget-agent-dlq\.fifo/);
+    // Stage suffix must keep .fifo last (a-search-widget-agent-dev.fifo), not stagedName(...fifo-dev)
+    assert.match(stack, /queueName:\s*stagedFifoName\('a-search-widget-agent\.fifo'\)/);
+    assert.match(stack, /queueName:\s*stagedFifoName\('a-search-widget-agent-dlq\.fifo'\)/);
+    assert.doesNotMatch(stack, /queueName:\s*stagedName\('a-search-widget-agent\.fifo'\)/);
+    assert.doesNotMatch(stack, /queueName:\s*stagedName\('a-search-widget-agent-dlq\.fifo'\)/);
     assert.match(stack, /eventBridgeEnabled:\s*true/);
     assert.match(stack, /maxReceiveCount:\s*5/);
   });
