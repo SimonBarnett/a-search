@@ -376,3 +376,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX: when test-and-synth fails npm run synth with status null at about 180s, fold origin/main if main already has runCdkSynth 600s tree-kill and per-synth output (#3665). That is CI failed on a main-fixed issue (FR #4649), not a tip-only patch.
 - a-search docs/mrb FIX: CI red only on ambient FR-236/237/238 connect 403 with MERGEABLE tip --- DONE FIX at head without fold (FR #4649); re-arm --auto --squash
 - a-search product MRB rematch: MERGEABLE tip 1 behind with prior PASS boards --- re-verify claimed pins at head, PASS @ current SHA without fold (FR #4649), re-arm --auto --squash, DONE PASS
+- a-search MRB: when test-and-synth fails jwt-auth deepEqual on contactVerified but tests/jwt-auth.test.js and entry/src/auth/jwt.js match origin/main, that red is not a tip patch and not a fold. PASS the docs/mrb head (FR #4649).
