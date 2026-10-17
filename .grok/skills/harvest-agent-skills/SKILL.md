@@ -261,3 +261,15 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - On win32, a-search CDK synth pins may skip when aws-cdk-lib is absent; treat that skip as environment when the test says CI runs the pin, and do not FAIL the MRB for it.
 - When an a-search harvest-lesson tip re-encodes harvest-agent-skills punctuation into a further mojibake pass, restore those lines from origin/main bytes and insert only the new lesson bullet on one fix PR; strip a UTF-8 BOM from the hostile test; do not open a second issue when #2746 already tracks the underlying placeholder mojibake.
 - When fr142 or fr143 returns early because aws-cdk-lib is missing, still compare the asserted floor to 2 times the registry sources enabled in both envs before PASS.
+- When one local provider env example comment is fixed, scan every providers/local .env.example for the same stale line. Leave the provider that already has its own open PR.
+- docs/mrb for a FAIL-superseded harvest parent: close the docs tip too citing parent FAIL-supersede + durable main playbook; do not merge a restatement tip-loop
+- When an a-search enable-provider test skips CDK synth on win32 with an explicit CI-runs-this comment, PASS if the non-synth registry, credential-key, and queue-floor pins are green; do not wait on queued test-and-synth.
+- When an in-process CDK test imports allocateSynthOutDir from helpers/runCdkSynth.js, the mrb1127 pin that forbids the string runCdkSynth fails. Keep the in-process app.synth and forbid runCdkSynth( calls instead of the helper path.
+- The harvest-agent-skills GitGuardian placeholder must be AWS doc AKIA...EXAMPLE with three ASCII dots. A pin that checks only that span can pass while older arrow mojibake remains on other bullets; file that remainder separately from issue 2746.
+- When a docs pin for a 0-behind harvest tip conflicts at the end of harvest-agent-skills, keep both the new ASCII bullet and the later main bullets, then re-run the pin test. Do not open a second docs pull that repeats a pin already on that tip.
+- a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
+- a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
+- a-search FR #3495: local provider .env.example live-target comments name a_search (FR-251), matching wix wording; leave wix to its own tip
+- FR-234 MRB: memory WidgetStats + a_search migration + rollup no-agent-enqueue pins are enough to PASS while MSSQL adapter stays deferred
+- docs/mrb tips that bump fr142/fr143 floors while ENABLED_IDS length is unchanged are tip-loops: FAIL-supersede and land hostile pins on a clean fix PR without floor edits.
+- FR-234: pin widget event dedupe with injectable nowMs (wall-clock expiry deletes fixture-dated keys); stats.json rollup must never call the agent queue; Parts API stays tier-blind.
