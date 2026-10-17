@@ -344,3 +344,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX assign for cancelled CI on open product PR: one behind-main fold, re-run claimed pin tests, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
 - Re-offered keep-both resolve helper MRB: one behind-main fold, re-run fr3708 pin + conflict markers, PASS @ new SHA, --auto, DONE.
 - MRB CONFLICTING runCdkSynth with FR-3764 shared cache vs FR-3763 registerCdkOutDir: keep-both reuse path without registering shared dirs for delete (FR #3790), re-run fr3764+fr3462+fr3763+fr3790 pins, PASS @ head SHA --auto
+- Re-offered a-search harvest-skill MRB behind main: one origin/main fold (keep-both SKILL), re-run fr3386+mrb1756 pins, PASS @ new SHA, re-arm gh pr merge --auto --merge (FR #3948); leave bobiverse Protect flat-script gap #4419 OPEN as out-of-scope ACCEPTABLE drift.
