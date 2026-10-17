@@ -99,7 +99,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     });
     assert.equal(
       workerDlqAlarms.length,
-      28,
+      30,
       `expected 30 DLQ depth alarms, got ${workerDlqAlarms.length}`,
     );
 
