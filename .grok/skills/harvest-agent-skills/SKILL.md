@@ -273,3 +273,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR-234 MRB: memory WidgetStats + a_search migration + rollup no-agent-enqueue pins are enough to PASS while MSSQL adapter stays deferred
 - docs/mrb tips that bump fr142/fr143 floors while ENABLED_IDS length is unchanged are tip-loops: FAIL-supersede and land hostile pins on a clean fix PR without floor edits.
 - a-search FR #3611: harvest SKILL hostile pins must use includes() or newline-normalize before assert.match; do not PASS when the pin suite is red on CRLF files
+- FR-234: pin widget event dedupe with injectable nowMs (wall-clock expiry deletes fixture-dated keys); stats.json rollup must never call the agent queue; Parts API stays tier-blind.
