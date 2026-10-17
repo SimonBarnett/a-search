@@ -238,7 +238,7 @@ describe('FR-237 Wix shop connect', () => {
     const shops = createShopsRegistry();
     const vault = createCredentialsVault();
     const deps = {
-      verifyAuthorization: async () => ({ userId: 'MERCH001' }),
+      verifyAuthorization: async () => ({ userId: 'MERCH001', contactVerified: true }),
       nonces,
       shops,
       adapterOpts: { clientId: APP_ID, clientSecret: SECRET, vault },
