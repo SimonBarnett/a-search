@@ -337,3 +337,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
 - When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, one origin/main fold plus the product pin suite green is the FIX; do not invent a synth-timeout product change.
 - a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
+- A re-offered FIX whose test-and-synth is still queued but the tip is behind main gets one origin/main fold and a pin re-run, then DONE; do not wait for the queued run.
