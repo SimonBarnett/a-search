@@ -1,7 +1,7 @@
 # AGENTS - a-search bigcommerce (local)
 
 > **CAST IRON RULE - HARVEST AND FILE EVERYTHING (read this first, every time).**
-> File gaps to SimonBarnett/a-search via intake. Never commit OAuth secrets.
+> File gaps to SimonBarnett/a-search via intake (Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search or POST https://irc.ntsa.uk/bob/v1/intake). Never commit OAuth secrets.
 
 Provider CWD for registry id `bigcommerce` (`kind: local`). Merchant source (FR-245).
 
