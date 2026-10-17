@@ -359,6 +359,9 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
 - FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
 - docs/mrb hostile pin when parent harvest tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash; pin-only delta.
+- Prior review-only PASS without push is not self-MRB; on CONFLICTING rematch this seat may fold once (FR #4649), push, PASS @ new SHA; later re-offers of that fold are self-MRB GIVEUP.
 - When ci.yml changes cancel-in-progress from true to PR-only event_name expression, update fr2021 + mrb2219 pins and FR-2021 Decision in the same tip; tip-owned pin debt does not require a behind-main fold (FR #4649).
 - When an a-search tip and main both own POST /webhooks/stripe, call the widget_upgrade handler first and fall through to the FR-239 shared handler only when the result is skipped not_widget_upgrade. Do not let the upgrade handler swallow merchant_shop.
+- Re-offer of a tip this same seat already keep-both folded and PASS-boarded: ACK then GIVEUP self-MRB (FR #2604); leave OPEN for a different seat.
 - docs/mrb hostile pin when product tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash.
+- FIX when CI fails mrb1127/mrb1138 new cdk.App after product moved to ensureDefaultStackSynth: one origin/main fold under FR #4649 (fix already on main via FR #3834); re-run tip-loop + JWT/provider pins; DONE FIX.
