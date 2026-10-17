@@ -300,3 +300,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB harvest-lesson re-offer: one update-branch when tip is far behind, re-verify pin + unique vs main, then PASS @ head SHA and leave existing auto-merge; never poll CI (FR #3948 / #3317)
 - Re-offered FR on closed-unmerged tip: Prefer ExistingPrUrl successor that Closes the FR issue; verify pins; DONE with that PR URL; never open a second implement PR.
 - FR-3459 MRB rematch: one origin/main fold then re-run skillbook-harvest (stay-dark enumeration + CAST IRON/intake/-Repo needles) before PASS @ head SHA
+- a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS; do not FAIL for stale it() names alone.
