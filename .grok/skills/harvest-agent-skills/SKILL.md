@@ -330,3 +330,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search stranded-ACK rematch on a harvest-lesson tip a few commits behind: one origin/main fold, re-run the hostile pin, PASS @ new SHA and re-arm squash auto-merge, DONE immediately.
 - a-search FIX fold must be a real merge commit with origin/main as a parent. Resetting the merge commit soft and recommitting drops the second parent and leaves the tip behind; merge again with the tip author set before the merge.
 - a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
+- a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
