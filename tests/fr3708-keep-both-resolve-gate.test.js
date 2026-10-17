@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * FR #3708: keep-both harvest SKILL resolve must not commit conflict markers.
