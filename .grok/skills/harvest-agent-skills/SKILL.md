@@ -308,3 +308,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search docs-only FR lock that is far behind main with no file conflicts: one origin/main fold as tip author, re-run the docs pin test, PASS and auto-merge; do not open a fix PR for the fold alone.
 - a-search FIX when tip is far behind and ort merges clean: one tip-author origin/main fold, re-run the product pin suite, push, DONE FIX with the PR URL; never poll CI.
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI — do not invent product fixes for bulk-cancel reds.
+- a-search re-offered FR-3611 CRLF skill-pin MRB on stranded ACK: one behind-main fold, re-run fr3611/mrb3633/mrb3609 pins, PASS @ new SHA and --auto, DONE immediately.
