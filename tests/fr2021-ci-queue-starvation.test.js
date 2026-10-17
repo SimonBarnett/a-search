@@ -30,7 +30,8 @@ describe('FR-2021 CI queue starvation gate', () => {
     assert.match(text, /need_synth|Detect CDK-relevant paths/);
     assert.match(text, /synth=false|docs-harvest-or-tests-only/);
     assert.match(text, /npm run synth/);
-    assert.match(text, /timeout-minutes:\s*180/);
+    // FR #3133 / #2611: heavy=180 else 5 via expression (not a bare "180" line).
+    assert.match(text, /timeout-minutes:[^\n]*\b180\b/);
     assert.match(text, /node-version:\s*['"]?20['"]?/);
     assert.match(text, /\bnpm ci\b/);
     assert.match(text, /\bnpm test\b/);
