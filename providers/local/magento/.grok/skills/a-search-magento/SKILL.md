@@ -24,3 +24,5 @@ description: >
 ## Adapter
 
 `shared/shops/adapters/magento.js` registered as `magento`.
+
+CAST IRON: file gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search (POST https://irc.ntsa.uk/bob/v1/intake).
