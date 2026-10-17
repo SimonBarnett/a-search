@@ -1,4 +1,4 @@
-﻿# Endpoint: accept search (LOCKED shape)
+# Endpoint: accept search (LOCKED shape)
 
 Processing is offline. This call validates JWT + body, assigns `searchId`,
 and enqueues one SQS message per **enabled** registry source. The **user
