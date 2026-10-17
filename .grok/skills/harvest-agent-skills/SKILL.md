@@ -269,3 +269,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a docs pin for a 0-behind harvest tip conflicts at the end of harvest-agent-skills, keep both the new ASCII bullet and the later main bullets, then re-run the pin test. Do not open a second docs pull that repeats a pin already on that tip.
 - a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
 - a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
+- Harvest twin cleanup after Invoke-BobiverseHarvest: close only the PR number from that harvest url, and only when it carries the harvest-lesson label; never close by a guessed nearby number (class of #3610 / mistaken close of product tip #3608).
