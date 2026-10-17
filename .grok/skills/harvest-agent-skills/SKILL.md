@@ -343,3 +343,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX assign for cancelled CI on open product PR: one behind-main fold, re-run claimed pin tests, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
 - Re-offered keep-both resolve helper MRB: one behind-main fold, re-run fr3708 pin + conflict markers, PASS @ new SHA, --auto, DONE.
 - Harvest twin cleanup after Invoke-BobiverseHarvest: close only the PR number from that harvest url, and only when it carries the harvest-lesson label; never close by a guessed nearby number (class of #3610 / mistaken close of product tip #3608).
+- MRB CONFLICTING runCdkSynth with FR-3764 shared cache vs FR-3763 registerCdkOutDir: keep-both reuse path without registering shared dirs for delete (FR #3790), re-run fr3764+fr3462+fr3763+fr3790 pins, PASS @ head SHA --auto
