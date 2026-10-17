@@ -165,6 +165,7 @@ describe('FR-106 wix normalize + Parts upsert (FR-179 enabled)', () => {
     assert.ok(s);
     assert.equal(s.enabled.live, true);
     assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {
