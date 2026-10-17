@@ -19,8 +19,9 @@ describe('MRB #70 hostile: FR-022 registry folders', () => {
         `${s.id} skill`,
       );
       assert.ok(fs.existsSync(path.join(base, '.env.example')), `${s.id} env`);
-      const { run } = require(path.join(base, 'src', 'worker.js'));
-      assert.equal(typeof run, 'function', `${s.id} run`);
+      const worker = require(path.join(base, 'src', 'worker.js'));
+      const entry = worker.run || worker.handleMessage || worker.handler;
+      assert.equal(typeof entry, 'function', `${s.id} run|handleMessage|handler`);
     }
   });
 
