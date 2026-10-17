@@ -286,6 +286,12 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'SHOPIFY_ACCESS_TOKEN',
     'SHOPIFY_STORE_URL',
   ],
+  // FR-180: enable woocommerce merchant
+  woocommerce: [
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+    'WOOCOMMERCE_STORE_URL',
+  ],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
@@ -301,6 +307,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'AVANTLINK_FEED_TOKEN',
     'AVANTLINK_PUBLISHER_ID',
     'AVANTLINK_AFFILIATE_ID',
+  ],
+    // FR-173: enable webgains
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
   ],
   // FR-172: enable partnerize
   partnerize: [

@@ -13,7 +13,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const IDS = ['shopify', 'wix', 'woocommerce'];
 /** Still-dark Madeira stubs after FR-178 enables shopify. */
-const STILL_DISABLED = ['woocommerce']; // FR-179 enabled wix
+const STILL_DISABLED = ['wix'];
 
 function utf8NoBom(rel) {
   const p = path.join(root, rel);
@@ -30,10 +30,10 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #608 hostile FR-607 Madeira local providers', () => {
-  it('registry keeps dark Madeira stubs disabled; shopify enabled as merchant (FR-178)', () => {
+  it('registry keeps dark Madeira stubs disabled; shopify+woocommerce enabled as merchant (FR-178/FR-180)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 22); // FR-242/243
+    assert.equal(sources.length, 22);
     for (const id of IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);
