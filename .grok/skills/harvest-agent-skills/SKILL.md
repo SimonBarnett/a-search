@@ -331,3 +331,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX fold must be a real merge commit with origin/main as a parent. Resetting the merge commit soft and recommitting drops the second parent and leaves the tip behind; merge again with the tip author set before the merge.
 - a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
 - When the unique fix is an ASCII replacement of one mojibake bullet, the behind-main fold keeps the tip ASCII lines and drops the main copy of that same bullet; do not keep-both or the pin fails.
+- When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
