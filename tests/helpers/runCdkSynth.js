@@ -9,11 +9,13 @@
  * #3665 follow-up: no event-loop busy-wait (close never fired, so every synth
  * waited the full 600s). The wait is now a real spawnSync of a node supervisor.
  * Private cdk.out-* dirs are removed at process exit.
+ * FR #3763: register cdk.out-* (named + private) for process-exit cleanup.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
+const { registerCdkOutDir } = require('./cdkOutCleanup');
 
 const MIN_MAJOR = 18;
 
@@ -314,6 +316,8 @@ function trackOutDir(dir) {
  */
 function runCdkSynth(root, opts = {}) {
   const outDir = opts.outDir || allocateSynthOutDir(root);
+  // FR #3763: track named cdk.out-fr* as well as private cdk.out-<pid>-<seq>.
+  registerCdkOutDir(outDir);
   // Remove our private cdk.out-* at process exit (callers read it in-test).
   if (!opts.outDir) trackOutDir(outDir);
   const nodeBin = resolveNodeBin();
@@ -361,6 +365,7 @@ module.exports = {
   spawnSyncTreeKill,
   cleanupSynthOutDirs,
   runCdkSynth,
+  registerCdkOutDir,
 };
 
 if (require.main === module && process.argv[2] === SUPERVISE_FLAG) {
