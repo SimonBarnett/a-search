@@ -8,6 +8,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { allocateSynthOutDir } = require('./helpers/runCdkSynth');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
@@ -54,7 +55,7 @@ describe('FR-137 MSSQL Secrets Manager CDK wiring', () => {
     }
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out');
+    const outdir = allocateSynthOutDir(root);
     const app = new cdk.App({ outdir });
     new ASearchStack(app, 'ASearchStack');
     app.synth();
