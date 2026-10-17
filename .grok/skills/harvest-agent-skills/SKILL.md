@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book - FAIL-supersede).
 
-Branch `harvest/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` or `fix/├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├óÔé¼┼í├âÔÇÜ├é┬ª` -> PR to `main`.
+Branch `harvest/...` or `fix/...` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) - **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó fetch ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó upsert ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬á├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├â┬ó├óÔé¼┼¥├é┬ó delete (not
+   `schedule.handler`** must orchestrate roll -> fetch -> upsert -> delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,7 +99,7 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ├âãÆ├åÔÇÖ├âÔÇÜ├é┬ó├âãÆ├é┬ó├â┬ó├óÔÇÜ┬¼├à┬í├âÔÇÜ├é┬¼├âãÆ├é┬ó├â┬ó├óÔé¼┼í├é┬¼├âÔÇÜ├é┬Ø already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill - already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
