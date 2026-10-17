@@ -83,7 +83,7 @@ async function requestEmailLogin(args) {
     throw err;
   }
 
-  args.store.assertCanSend({ channel: 'email', destination: email, nowMs });
+  await args.store.assertCanSend({ channel: 'email', destination: email, nowMs });
 
   let secret;
   let magicToken;
@@ -99,14 +99,14 @@ async function requestEmailLogin(args) {
     secret = sixDigitCode();
   }
 
-  args.store.put({
+  await args.store.put({
     channel: 'email',
     destination: email,
     kind: mode,
     secretHash: hashSecret(pepper, secret),
     nowMs,
   });
-  args.store.recordSend({ channel: 'email', destination: email, nowMs });
+  await args.store.recordSend({ channel: 'email', destination: email, nowMs });
 
   const subject =
     mode === 'magic' ? 'Your a-search magic link' : 'Your a-search login code';
@@ -156,7 +156,7 @@ async function verifyEmailLogin(args) {
     throw err;
   }
   const kind = args.magicToken ? 'magic' : 'otp';
-  args.store.consume({
+  await args.store.consume({
     channel: 'email',
     destination: email,
     secret: String(secret),
@@ -195,16 +195,16 @@ async function requestSmsLogin(args) {
     throw err;
   }
 
-  args.store.assertCanSend({ channel: 'sms', destination: phone, nowMs });
+  await args.store.assertCanSend({ channel: 'sms', destination: phone, nowMs });
   const code = sixDigitCode();
-  args.store.put({
+  await args.store.put({
     channel: 'sms',
     destination: phone,
     kind: 'otp',
     secretHash: hashSecret(pepper, code),
     nowMs,
   });
-  args.store.recordSend({ channel: 'sms', destination: phone, nowMs });
+  await args.store.recordSend({ channel: 'sms', destination: phone, nowMs });
 
   await args.sms.send({
     to: phone,
@@ -235,7 +235,7 @@ async function verifySmsLogin(args) {
     err.code = 'otp_code_required';
     throw err;
   }
-  args.store.consume({
+  await args.store.consume({
     channel: 'sms',
     destination: phone,
     secret: String(args.code),
