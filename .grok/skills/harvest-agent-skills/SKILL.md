@@ -268,3 +268,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - The harvest-agent-skills GitGuardian placeholder must be AWS doc AKIA...EXAMPLE with three ASCII dots. A pin that checks only that span can pass while older arrow mojibake remains on other bullets; file that remainder separately from issue 2746.
 - When a docs pin for a 0-behind harvest tip conflicts at the end of harvest-agent-skills, keep both the new ASCII bullet and the later main bullets, then re-run the pin test. Do not open a second docs pull that repeats a pin already on that tip.
 - a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
+- a-search FR #3459: skillbook harvest gate enumerates stay-dark registry providers; each AGENTS.md and a-search-* SKILL.md needs CAST IRON, intake URL, and -Repo SimonBarnett/a-search
