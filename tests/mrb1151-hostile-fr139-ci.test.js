@@ -25,7 +25,8 @@ describe('MRB #1151 hostile FR-139 GitHub Actions CI', () => {
     assert.match(yml, /npm ci/);
     assert.match(yml, /npm test/);
     assert.match(yml, /npm run synth/);
-    assert.match(yml, /timeout-minutes:\s*180/);
+    // FR-2611: heavy-path expression keeps 180 (docs-only path is 5).
+    assert.match(yml, /timeout-minutes:[^\n]*\b180\b/);
   });
 
   it('tools/validate-vision-pack.py is vendored for FR-055 Actions pins', () => {
