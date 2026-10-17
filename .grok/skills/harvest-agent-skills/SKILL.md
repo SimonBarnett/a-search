@@ -367,3 +367,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX when CI fails mrb1127/mrb1138 new cdk.App after product moved to ensureDefaultStackSynth: one origin/main fold under FR #4649 (fix already on main via FR #3834); re-run tip-loop + JWT/provider pins; DONE FIX.
 - When covering PR Closes FR issues but was closed unmerged, FR seat reopens the PR (or opens a replacement from the same branch), folds if CONFLICTING, comments the covering URL on the issues, DONE FR with that URL; never merge from FR seat.
 - When an a-search tip is MERGEABLE but test-and-synth fails a pin that main already rewrote, one origin/main fold is the FIX (CI failed on a main-fixed issue, FR #4649). Do not invent a tip-only patch.
+- FIX CI red only on stale mrb1127/mrb1138 while MERGEABLE+behind: one origin/main fold (FR #4649 CI-on-main), re-run claimed pin + those two hostiles, push, --auto, DONE FIX; do not fold for behind alone
