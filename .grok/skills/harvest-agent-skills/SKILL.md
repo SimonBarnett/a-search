@@ -301,3 +301,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Re-offered FR on closed-unmerged tip: Prefer ExistingPrUrl successor that Closes the FR issue; verify pins; DONE with that PR URL; never open a second implement PR.
 - FR-3459 MRB rematch: one origin/main fold then re-run skillbook-harvest (stay-dark enumeration + CAST IRON/intake/-Repo needles) before PASS @ head SHA
 - a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS — do not FAIL or open a fix PR for stale it() names alone
+- MRB behind-main fold: if git push of the fold is rejected, do not DONE on the pre-fold SHA; retry the push and DONE only after headRefOid matches the fold commit.
