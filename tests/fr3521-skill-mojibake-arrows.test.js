@@ -3,7 +3,8 @@
 /**
  * FR #3521: restore five mojibake lines in harvest-agent-skills to ASCII.
  * Do not touch the AKIA placeholder (issue 2746) or the real em dash on the
- * harvested GitGuardian bullet.
+ * harvested GitGuardian bullet. Line numbers for the em dash / AKIA span move
+ * when main appends lessons; find those by content.
  */
 
 const { describe, it } = require('node:test');
@@ -38,10 +39,12 @@ describe('FR-3521 harvest-agent-skills mojibake arrows', () => {
       assert.equal(line, expected, `line ${num}`);
       assert.equal([...line].some((ch) => ch.charCodeAt(0) > 127), false);
     }
-    const dash = lines[255];
-    assert.equal(dash.includes('\u2014'), true, 'line 256 keeps the real em dash');
-    const akia = `${lines[108]}\n${lines[109]}`;
-    assert.match(akia, /AKIA/);
-    assert.equal(lines[108].includes('...EXAMPLE') || lines[108].includes('AKIA'), true);
+    const dash = lines.find((l) => l.includes('false positives') && l.includes('fix the fixture'));
+    assert.ok(dash, 'GitGuardian false-positives bullet present');
+    assert.equal(dash.includes('\u2014'), true, 'GitGuardian bullet keeps the real em dash');
+    const akia = lines.find((l) => l.includes('AKIA'));
+    assert.ok(akia, 'AKIA placeholder line present');
+    assert.match(akia, /AKIA\.\.\.EXAMPLE/);
+    assert.equal([...akia].some((ch) => ch.charCodeAt(0) > 127), false, 'AKIA span stays ASCII');
   });
 });
