@@ -285,3 +285,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
 - FIX CI keep-both enable tips: fold main for FR #3663 per-synth --output without rewriting fr142/fr143 floors the tip owns
 - FR-239 rematch: one behind-main fold then PASS @ new head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
+- FR-1345 MRB rematch: one origin/main fold then re-run fr1345 + mrb3621 stripe webhook wire + FR-206 ingest pins before PASS @ head SHA
