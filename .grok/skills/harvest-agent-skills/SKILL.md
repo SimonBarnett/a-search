@@ -313,3 +313,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX when tip is CONFLICTING at the harvest-agent-skills tail with empty HEAD and new main bullets: keep-both (take main bullets), tip-author fold, re-run CRLF pins, DONE FIX; never poll CI.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
 - a-search CDK synth CI cost: default-stack tests must share one cdk.out-shared-* via runCdkSynth / ensureDefaultStackSynth (reuse when ASearchStack.template.json exists); keep allocateSynthOutDir / opts.fresh for FR #3462 and custom-context synths.
+- MRB shared-synth FR: tip 0 behind with fr3764 reuse pin + fr3462 private-dir pin + mrb3665 timeout pin is enough to PASS without a separate docs/mrb when ensureDefaultStackSynth and opts.fresh/outDir gates are already covered.
