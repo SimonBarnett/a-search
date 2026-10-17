@@ -41,7 +41,7 @@ describe('FR-004 entry JWT verify', () => {
     JWT_SECRET: FIXTURE_HS256_KEY,
   };
 
-  it('fixture token valid → userId', async () => {
+  it('fixture token valid → userId; missing contact claim is contactVerified false (FR-228)', async () => {
     const token = signHs256({
       userId: 'ABC12345',
       iss: ISSUER,
@@ -50,7 +50,29 @@ describe('FR-004 entry JWT verify', () => {
       iat: Math.floor(Date.now() / 1000),
     });
     const result = await verifyAuthorization(`Bearer ${token}`, { env });
-    assert.deepEqual(result, { userId: 'ABC12345' });
+    assert.deepEqual(result, {
+      userId: 'ABC12345',
+      contactVerified: false,
+      contactChannel: undefined,
+    });
+  });
+
+  it('FR-228 contactVerified true and contactChannel when the fixture mints them', async () => {
+    const token = signHs256({
+      userId: 'ABC12345',
+      contactVerified: true,
+      contactChannel: 'email',
+      iss: ISSUER,
+      aud: AUDIENCE,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
+    });
+    const result = await verifyAuthorization(`Bearer ${token}`, { env });
+    assert.deepEqual(result, {
+      userId: 'ABC12345',
+      contactVerified: true,
+      contactChannel: 'email',
+    });
   });
 
   it('missing token → unauthorized', async () => {
@@ -100,7 +122,11 @@ describe('FR-004 entry JWT verify', () => {
       env,
       body: { userId: 'BODYUSR1' },
     });
-    assert.deepEqual(result, { userId: 'JWTUSER1' });
+    assert.deepEqual(result, {
+      userId: 'JWTUSER1',
+      contactVerified: false,
+      contactChannel: undefined,
+    });
   });
 
   it('bad signature → unauthorized', async () => {
