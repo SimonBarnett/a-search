@@ -381,3 +381,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX: when jwt-auth fails with unexpected contactVerified:false and tip jwt.js/jwt-auth match origin/main, treat as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649); file intake for the main expectation update
 - a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false --- tests-only PASS closes ambient main red
 - a-search FIX CONFLICTING Agentic Searches tip: fold origin/main; resolve fr142/fr143 to main 30-floor + .fifo filter and keep tip widget-agent comment; if FR-228 connect stubs still 403 apply contactVerified:true even when sibling #3871 not yet merged
+- a-search product FIX: when CI fails only ambient FR-236/237/238 connect 403 while tip FR product suite is green and MERGEABLE, DONE FIX at head without fold (FR #4649)
