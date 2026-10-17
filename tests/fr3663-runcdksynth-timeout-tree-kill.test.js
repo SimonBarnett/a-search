@@ -72,7 +72,16 @@ setInterval(() => {}, 1000);
         windowsHide: true,
       });
       const after = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8') : '';
-      assert.equal(after, before, 'orphan grandchild must not keep updating marker after tree kill');
+      if (after !== before) {
+        // tree-kill can land inside writeFileSync and leave a truncated marker.
+        // A live grandchild rewrites every 100ms, so one more settle must stay put.
+        spawnSync(process.execPath, ['-e', 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,400)'], {
+          timeout: 600,
+          windowsHide: true,
+        });
+        const later = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8') : '';
+        assert.equal(later, after, 'orphan grandchild must not keep updating marker after tree kill');
+      }
     } finally {
       try {
         if (fs.existsSync(marker)) fs.unlinkSync(marker);
