@@ -314,3 +314,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE — skillbook-harvest will fail otherwise.
 - a-search CDK synth CI cost: default-stack tests must share one cdk.out-shared-* via runCdkSynth / ensureDefaultStackSynth (reuse when ASearchStack.template.json exists); keep allocateSynthOutDir / opts.fresh for FR #3462 and custom-context synths.
 - MRB shared-synth FR: tip 0 behind with fr3764 reuse pin + fr3462 private-dir pin + mrb3665 timeout pin is enough to PASS without a separate docs/mrb when ensureDefaultStackSynth and opts.fresh/outDir gates are already covered.
+- FIX cancelled-only on PASSed+auto-merge tip: one origin/main fold, push, DONE — do not invent product fixes for bulk-cancel reds.
