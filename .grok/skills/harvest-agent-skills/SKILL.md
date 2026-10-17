@@ -366,3 +366,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - docs/mrb hostile pin when product tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash.
 - FIX when CI fails mrb1127/mrb1138 new cdk.App after product moved to ensureDefaultStackSynth: one origin/main fold under FR #4649 (fix already on main via FR #3834); re-run tip-loop + JWT/provider pins; DONE FIX.
 - When covering PR Closes FR issues but was closed unmerged, FR seat reopens the PR (or opens a replacement from the same branch), folds if CONFLICTING, comments the covering URL on the issues, DONE FR with that URL; never merge from FR seat.
+- FIX on CONFLICTING docs/mrb tip: one origin/main keep-both fold (FR #4649), re-run contiguous hostile pins, push, DONE FIX; CANCELLED test-and-synth is bulk-cancel not product red.
