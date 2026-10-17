@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-156: optional -c stage= suffix on function/queue/bucket-related names
  * and ASearchStack id. Default (empty stage) keeps production names.
@@ -63,11 +65,7 @@ describe('FR-156 stack stage suffix', () => {
   it('synth without stage: default physical names unchanged', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr156-default');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const tpl = JSON.parse(
       fs.readFileSync(path.join(outdir, 'ASearchStack.template.json'), 'utf8'),
     );
