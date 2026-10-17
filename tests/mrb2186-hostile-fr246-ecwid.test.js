@@ -35,6 +35,14 @@ describe('docs/mrb-2186 hostile FR-246 pins', () => {
     assert.match(doc, /X-Ecwid-Webhook-Signature/);
     assert.match(doc, /stay-dark/);
   });
+
+  it('ecwid onboarding SKILL has CAST IRON harvest block', () => {
+    const skill = read('providers/local/ecwid/.grok/skills/a-search-ecwid-onboarding/SKILL.md');
+    assert.match(skill, /CAST IRON harvest/);
+    assert.match(skill, /SimonBarnett\/a-search/);
+    assert.match(skill, /Never put tokens/);
+  });
+
   it('fr246 suite asserts pending_payment + form token + signature', () => {
     const t = read('tests/fr246-ecwid-connect.test.js');
     assert.match(t, /pending_payment/);
