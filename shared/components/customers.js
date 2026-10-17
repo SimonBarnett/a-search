@@ -93,9 +93,17 @@ class MemoryCustomersStore {
   }
 
   /**
-   * Patch customer flags (approval / club / partner) for FR-199/200 tests.
+   * Patch customer flags (approval / club / partner / #1345 upgrade cache).
    * @param {string} host
-   * @param {{ approved?: boolean, clubId?: string|null, partnerId?: string|null }} patch
+   * @param {{
+   *   approved?: boolean,
+   *   clubId?: string|null,
+   *   partnerId?: string|null,
+   *   dnsCheckedAt?: string|null,
+   *   upgradeStatus?: string,
+   *   upgradeSubscriptionId?: string|null,
+   *   upgradeCheckedAt?: string|null,
+   * }} patch
    * @returns {object}
    */
   updateCustomer(host, patch = {}) {
@@ -125,10 +133,43 @@ class MemoryCustomersStore {
           ? null
           : String(patch.dnsCheckedAt).trim();
     }
+    if (patch.upgradeStatus !== undefined) {
+      const st = String(patch.upgradeStatus || '').trim();
+      if (!UPGRADE_STATUS.has(st)) {
+        const err = new Error('invalid_upgrade_status');
+        err.code = 'invalid_upgrade_status';
+        throw err;
+      }
+      row.upgradeStatus = st;
+    }
+    if (patch.upgradeSubscriptionId !== undefined) {
+      row.upgradeSubscriptionId =
+        patch.upgradeSubscriptionId == null ||
+        String(patch.upgradeSubscriptionId).trim() === ''
+          ? null
+          : String(patch.upgradeSubscriptionId).trim();
+    }
+    if (patch.upgradeCheckedAt !== undefined) {
+      row.upgradeCheckedAt =
+        patch.upgradeCheckedAt == null ||
+        String(patch.upgradeCheckedAt).trim() === ''
+          ? null
+          : String(patch.upgradeCheckedAt).trim();
+    }
     row.updatedAt = new Date().toISOString();
     this.byHost.set(key, row);
     this.byNumber.set(row.customerNumber, row);
     return { ...row };
+  }
+
+  /**
+   * @param {string} customerNumber
+   * @returns {object|null}
+   */
+  getCustomerByNumber(customerNumber) {
+    const n = String(customerNumber || '').trim();
+    const row = this.byNumber.get(n);
+    return row ? { ...row } : null;
   }
 
   /**
@@ -247,6 +288,14 @@ function getCustomerByHost(store, host) {
 
 /**
  * @param {MemoryCustomersStore} store
+ * @param {string} customerNumber
+ */
+function getCustomerByNumber(store, customerNumber) {
+  return store.getCustomerByNumber(customerNumber);
+}
+
+/**
+ * @param {MemoryCustomersStore} store
  * @param {string} host
  * @param {object} patch
  */
@@ -313,6 +362,7 @@ module.exports = {
   setDefaultCustomersStore,
   ensureCustomer,
   getCustomerByHost,
+  getCustomerByNumber,
   updateCustomer,
   createWidget,
   getWidget,
