@@ -351,3 +351,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search Ecwid tip CONFLICTING with main Stripe entry routes: keep-both require+match for ecwidWebhooks and stripeWebhook, one fold, re-run fr246+mrb2186, PASS @ new SHA, re-arm --auto (FR #3948).
 - A prior fold commit that is an ancestor of the assigned PR tip is self-MRB for that seat even when the commit author is the shared repo identity.
 - Resolve a worktree skill conflict with an absolute path. A relative path uses the seat CWD, so git add can commit unresolved conflict markers; strip them in a follow-up commit and run check_conflict_markers before PASS.
+- MRB process-loop: absolute-path worktree skill resolve lesson already MERGED via #3820; do not file a twin tip
