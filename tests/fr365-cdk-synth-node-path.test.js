@@ -57,7 +57,7 @@ describe('FR-365 CDK synth Node PATH pin', () => {
           'expected Program Files node to lack node:fs (fixture for this FR)',
         );
       }
-      const r = runCdkSynth(root, { timeout: 180_000 });
+      const r = runCdkSynth(root);
       assert.equal(
         r.status,
         0,
