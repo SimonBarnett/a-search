@@ -33,7 +33,7 @@ describe('MRB #608 hostile FR-607 Madeira local providers', () => {
   it('registry keeps dark Madeira stubs disabled; shopify enabled as merchant (FR-178)', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 22); // FR-242/243
+    assert.equal(sources.length, 23); // FR-242/243
     for (const id of IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, id);

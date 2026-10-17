@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-143: CloudWatch log retention (30d) on Lambdas + DLQ depth alarms
  * (ApproximateNumberOfMessagesVisible >= 1) to a placeholder SNS topic.
@@ -45,11 +47,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       return;
     }
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr143');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
@@ -87,7 +85,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
         // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
         !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // keep-both shopify+tradedoubler+avantlink: 30 floors (12 enabled x live+sandbox)
+    // 13 enabled x live+sandbox; bigcommerce stay-dark adds no alarm
     assert.equal(alarms.length, 26, `expected 26 DLQ depth alarms, got ${alarms.length}`);
 
     for (const id of ENABLED_IDS) {
