@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR-112: woocommerce selftestProbe + registry rateLimit (stay-dark).
+ * FR-112: woocommerce selftestProbe + registry rateLimit (enabled FR-180).
  */
 
 const { describe, it } = require('node:test');
@@ -126,14 +126,16 @@ describe('FR-112 woocommerce selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; enabled stays false', () => {
+  it('registry rateLimit present; enabled true both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
+    assert.equal(row.class, 'merchant');
+    assert.equal(row.merchantConnect, true);
     assert.ok(row.rateLimit);
     assert.equal(row.rateLimit.maxConcurrency, 1);
     assert.equal(row.rateLimit.minIntervalMs, 250);

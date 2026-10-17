@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-170 / #1017: enable etsy only; FR-138 secret wiring; others stay dark.
  */
@@ -13,7 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -73,11 +75,7 @@ describe('FR-170 enable etsy', () => {
   it('synth: etsy live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr170');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -121,7 +119,7 @@ describe('FR-170 enable etsy', () => {
       assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
