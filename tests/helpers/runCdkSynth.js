@@ -6,11 +6,13 @@
  * FR #3462: private --output dir per synth.
  * FR #3663: default timeout 600s; on timeout kill the whole process tree
  * (shell-only kill left orphan cdk holding cdk.out locks).
+ * FR #3763: register cdk.out-* (named + private) for process-exit cleanup.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
+const { registerCdkOutDir } = require('./cdkOutCleanup');
 
 const MIN_MAJOR = 18;
 
@@ -220,6 +222,8 @@ function spawnSyncTreeKill(command, args, opts) {
  */
 function runCdkSynth(root, opts = {}) {
   const outDir = opts.outDir || allocateSynthOutDir(root);
+  // FR #3763: track named cdk.out-fr* as well as private cdk.out-<pid>-<seq>.
+  registerCdkOutDir(outDir);
   const nodeBin = resolveNodeBin();
   if (!nodeBin) {
     return {
@@ -263,4 +267,5 @@ module.exports = {
   killProcessTree,
   spawnSyncTreeKill,
   runCdkSynth,
+  registerCdkOutDir,
 };
