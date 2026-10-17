@@ -9,7 +9,12 @@ const { queryParams } = require('./performance');
 const { resolveGo, GoError } = require('../../shared/widgets/go');
 const {
   getDefaultCustomersStore,
+  getCustomerByHost,
 } = require('../../shared/components/customers');
+const {
+  getDefaultWidgetStatsStore,
+} = require('../../shared/events/memoryWidgetStatsStore');
+const { recordServerClick } = require('../../shared/events/ingestBatch');
 
 const JSON_HEADERS = { 'content-type': 'application/json' };
 
@@ -88,6 +93,21 @@ async function handleGo(event, deps = {}) {
         : envMap.EXT_STATUS_NEG_TTL_S != null
           ? Number(envMap.EXT_STATUS_NEG_TTL_S)
           : undefined;
+    const recordClick =
+      typeof deps.recordClick === 'function'
+        ? deps.recordClick
+        : (args) => {
+            const cust = getCustomerByHost(store, args.host || query.host);
+            recordServerClick({
+              statsStore: deps.statsStore || getDefaultWidgetStatsStore(),
+              env: widgetEnv,
+              customerNumber: cust ? cust.customerNumber : '',
+              widgetGuid: args.widgetGuid || query.widgetGuid,
+              partNumber: args.partNumber || args.part || query.part,
+              clickId: args.clickId,
+              tenantId: cust && cust.clubId != null ? cust.clubId : null,
+            });
+          };
     const result = await resolveGo({
       root,
       env: widgetEnv,
@@ -97,7 +117,7 @@ async function handleGo(event, deps = {}) {
       cid: query.cid,
       store,
       stampUrl: deps.stampUrl,
-      recordClick: deps.recordClick,
+      recordClick,
       prefetch: isPrefetch(event),
       signupUrl,
       resolveTxt: deps.resolveTxt,

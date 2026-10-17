@@ -51,7 +51,132 @@ function buildGoUrl(apiBase, q) {
   params.push('host=' + encodeURIComponent(q.host));
   params.push('widgetGuid=' + encodeURIComponent(q.widgetGuid));
   params.push('part=' + encodeURIComponent(q.part));
+  // FR-234: pass client clickId so /go can dedupe with POST /w/events
+  if (q.cid != null && String(q.cid) !== '') {
+    params.push('cid=' + encodeURIComponent(String(q.cid)));
+  }
   return path + '?' + params.join('&');
+}
+
+/**
+ * FR-234: random 128-bit id as base64url (~22 chars). No cookies / storage.
+ * @returns {string}
+ */
+function newEventId() {
+  var bytes = new Uint8Array(16);
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.getRandomValues === 'function'
+  ) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (var i = 0; i < 16; i++) bytes[i] = (Math.random() * 256) | 0;
+  }
+  var bin = '';
+  for (var j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
+  var b64 =
+    typeof btoa === 'function'
+      ? btoa(bin)
+      : Buffer.from(bytes).toString('base64');
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+/**
+ * FR-234: create a page-scoped event batcher (sendBeacon / fetch keepalive).
+ * @param {{
+ *   apiBase: string,
+ *   host: string,
+ *   pageViewId?: string,
+ *   sendBeacon?: Function,
+ *   fetch?: Function,
+ *   now?: Function,
+ *   wd?: boolean,
+ * }} opts
+ */
+function createEventBatcher(opts) {
+  opts = opts || {};
+  var queue = [];
+  var pageViewId = opts.pageViewId || newEventId();
+  var flushed = false;
+
+  function enqueue(ev) {
+    queue.push(ev);
+    if (queue.length >= 20) flush();
+  }
+
+  function flush() {
+    if (!queue.length) return { skipped: true };
+    var body = JSON.stringify({
+      v: 1,
+      host: opts.host,
+      pageViewId: pageViewId,
+      sentAt: (opts.now || function () { return new Date().toISOString(); })(),
+      wd: opts.wd ? 1 : undefined,
+      events: queue.splice(0, queue.length),
+    });
+    var url =
+      String(opts.apiBase || '').replace(/\/$/, '') + '/w/events';
+    var beacon = opts.sendBeacon;
+    if (typeof beacon === 'function') {
+      try {
+        beacon(url, body);
+        return { ok: true, via: 'sendBeacon' };
+      } catch (e) {
+        /* fall through */
+      }
+    }
+    var fetchFn = opts.fetch;
+    if (typeof fetchFn === 'function') {
+      fetchFn(url, {
+        method: 'POST',
+        body: body,
+        keepalive: true,
+        headers: { 'content-type': 'text/plain' },
+      });
+      return { ok: true, via: 'fetch' };
+    }
+    return { ok: false };
+  }
+
+  function trackView(widgetGuid) {
+    enqueue({
+      type: 'view',
+      widgetGuid: widgetGuid,
+      partNumber: null,
+      clickId: null,
+      at: new Date().toISOString(),
+    });
+  }
+
+  function trackPartImpression(widgetGuid, partNumber) {
+    enqueue({
+      type: 'part_impression',
+      widgetGuid: widgetGuid,
+      partNumber: partNumber,
+      clickId: null,
+      at: new Date().toISOString(),
+    });
+  }
+
+  function trackClick(widgetGuid, partNumber, clickId) {
+    enqueue({
+      type: 'click',
+      widgetGuid: widgetGuid,
+      partNumber: partNumber,
+      clickId: clickId || newEventId(),
+      at: new Date().toISOString(),
+    });
+    return clickId;
+  }
+
+  return {
+    pageViewId: pageViewId,
+    enqueue: enqueue,
+    flush: flush,
+    trackView: trackView,
+    trackPartImpression: trackPartImpression,
+    trackClick: trackClick,
+  };
 }
 
 /**
@@ -236,10 +361,19 @@ async function clickGo(widgetEl, partKey, deps) {
     deps.apiBase != null
       ? String(deps.apiBase)
       : widgetEl.getAttribute('data-api-base') || '';
+  var clickId =
+    deps.clickId != null && String(deps.clickId) !== ''
+      ? String(deps.clickId)
+      : newEventId();
+  if (deps.eventBatcher && typeof deps.eventBatcher.trackClick === 'function') {
+    deps.eventBatcher.trackClick(guid, part, clickId);
+    if (typeof deps.eventBatcher.flush === 'function') deps.eventBatcher.flush();
+  }
   var goUrl = buildGoUrl(apiBase, {
     host: host,
     widgetGuid: guid,
     part: part,
+    cid: clickId,
   });
   var res = await deps.fetch(goUrl, { method: 'GET', credentials: 'omit' });
   if (!res || !res.ok) {
@@ -460,6 +594,8 @@ var api = {
   DEFAULT_N: DEFAULT_N,
   buildPartsUrl: buildPartsUrl,
   buildGoUrl: buildGoUrl,
+  newEventId: newEventId,
+  createEventBatcher: createEventBatcher,
   resolveLayout: resolveLayout,
   partsHtml: partsHtml,
   renderPage: renderPage,
