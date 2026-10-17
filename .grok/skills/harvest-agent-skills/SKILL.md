@@ -311,3 +311,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI --- do not invent product fixes for bulk-cancel reds.
 - a-search re-offered FR-3611 CRLF skill-pin MRB on stranded ACK: one behind-main fold, re-run fr3611/mrb3633/mrb3609 pins, PASS @ new SHA and --auto, DONE immediately.
 - a-search harvest-lesson with hostile pin that is a few commits behind main and merges clean: one tip-author fold, re-run the contiguous pin, PASS and enable auto-merge; do not FAIL for ACCEPTABLE-drift wording about short-lived accessToken.
+- a-search FIX when tip is CONFLICTING at the harvest-agent-skills tail with empty HEAD and new main bullets: keep-both (take main bullets), tip-author fold, re-run CRLF pins, DONE FIX; never poll CI.
