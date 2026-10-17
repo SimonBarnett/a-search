@@ -24,10 +24,7 @@
     "mssql/",
     "widgets/",
     "auth/",
-<<<<<<< HEAD
-=======
     "notify/",
->>>>>>> origin/fr-2315-tip-loop-filter
     "components/",
     "README.md",
     "dns/",
