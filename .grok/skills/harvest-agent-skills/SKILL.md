@@ -266,6 +266,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When an a-search harvest-lesson tip re-encodes harvest-agent-skills punctuation into a further mojibake pass, restore those lines from origin/main bytes and insert only the new lesson bullet on one fix PR; strip a UTF-8 BOM from the hostile test; do not open a second issue when #2746 already tracks the underlying placeholder mojibake.
 - a-search FR-2230: extend the no-BOM gate from docs/mrb/ to every docs markdown file recursively; strip EF BB BF on docs-root tips (endpoint-search.md, legacy mrb-*.md); write docs with UTF8Encoding(false) or Path.write_text, never WinPS Set-Content -Encoding utf8
 - When fr142 or fr143 returns early because aws-cdk-lib is missing, still compare the asserted floor to 2 times the registry sources enabled in both envs before PASS.
+- When an a-search harvest-lesson tip is 0 behind main, adds one ASCII lesson line, and already contains its hostile pin test, PASS and arm gh pr merge --auto --squash; do not open a second docs/mrb PR that repeats that pin.
 - When one local provider env example comment is fixed, scan every providers/local .env.example for the same stale line. Leave the provider that already has its own open PR.
 - docs/mrb for a FAIL-superseded harvest parent: close the docs tip too citing parent FAIL-supersede + durable main playbook; do not merge a restatement tip-loop
 - When an a-search enable-provider test skips CDK synth on win32 with an explicit CI-runs-this comment, PASS if the non-synth registry, credential-key, and queue-floor pins are green; do not wait on queued test-and-synth.
@@ -368,3 +369,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX when CI fails mrb1127/mrb1138 new cdk.App after product moved to ensureDefaultStackSynth: one origin/main fold under FR #4649 (fix already on main via FR #3834); re-run tip-loop + JWT/provider pins; DONE FIX.
 - When covering PR Closes FR issues but was closed unmerged, FR seat reopens the PR (or opens a replacement from the same branch), folds if CONFLICTING, comments the covering URL on the issues, DONE FR with that URL; never merge from FR seat.
 - When an a-search tip is MERGEABLE but test-and-synth fails a pin that main already rewrote, one origin/main fold is the FIX (CI failed on a main-fixed issue, FR #4649). Do not invent a tip-only patch.
+- Shop connect HTTP tests that mock verifyAuthorization must set contactVerified true, or assertContactVerified returns 403.
+- A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
+- a-search MRB: after FR-228 assertContactVerified, shop connect HTTP test stubs that expect 200/400 must set contactVerified: true like fr216; keep fail-closed negatives elsewhere
