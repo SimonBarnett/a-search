@@ -95,12 +95,14 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-167..177: 28 primaries + 28 DLQs (14 enabled x live+sandbox)
+    // FR-167..177: 26 primaries + 26 DLQs (13 enabled x live+sandbox)
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
       // #2139 shop-sync FIFO (+DLQ) is not a provider worker queue
-      .filter((n) => !/^a-search-shop-sync/.test(String(n)));
+      .filter((n) => !/^a-search-shop-sync/.test(String(n)))
+      // FR-234 / #1348 widget-events (+DLQ) is not a provider worker queue
+      .filter((n) => !/^a-search-widget-events/.test(String(n)));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
     // FR-167+FR-168+FR-169: 18 primaries + 18 DLQs (9 enabled x live+sandbox)
