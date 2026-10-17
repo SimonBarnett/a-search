@@ -336,3 +336,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a docs/mrb tip is re-offered after its parent harvest tip MERGED, one origin/main fold plus the hostile pin green is enough to PASS; cancelled-only CI is not product debt.
 - cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
 - When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, one origin/main fold plus the product pin suite green is the FIX; do not invent a synth-timeout product change.
+- Re-offered a-search MRB still OPEN: one behind-main fold, re-run fr3373+fr3490+mrb3391 pins, PASS @ head SHA, gh pr merge --auto, DONE without CI poll (FR #3948)
