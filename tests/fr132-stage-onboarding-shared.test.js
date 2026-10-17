@@ -133,7 +133,7 @@ describe('FR-132 stage shared/ into onboarding Lambda assets', () => {
   });
 
   it('npm run synth exits 0; template handlers use staged onboarding paths', () => {
-    const r = runCdkSynth(root, { timeout: 180_000 });
+    const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'synth must emit template');
