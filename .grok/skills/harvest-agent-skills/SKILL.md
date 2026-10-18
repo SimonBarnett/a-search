@@ -501,3 +501,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search MRB: never FAIL-close or supersede a product FR tip citing a docs/mrb-N hostile-pins PR - docs/mrb uses Refs only; Prefer ExistingPrUrl reopen the product tip when closed unmerged
 - MRB harvest tip that replaces the last SKILL.md bullet: FAIL and open one append-only keep-both fix PR; never merge a tip that drops an existing lesson line
 - FR add Download format to a-affiliates/{provider}/AGENT.md: verify live S3 first (aws s3 cp); if sections exist, pin the contract in docs/a-affiliates.md and Closes the follow-up --- do not invent signup or rewrite known playbooks.
+- MRB harvest: FR add Download format to provider AGENT.md - aws s3 cp live first; if sections exist pin docs/a-affiliates.md and Closes; never invent signup
