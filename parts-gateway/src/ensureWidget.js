@@ -2,12 +2,22 @@
 
 /**
  * FR #3968: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
+ * GUID marker metadata on widget.json: uri, seen, clicks, since, lastmod,
+ * annotated, init. Prefer Referer path for uri (see pageUri.js).
+ * Seed writes bump GUID + host lastmod; publish host folder event on new GUID.
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
 const { normalizeHost } = require('../../shared/components/customers');
-const { widgetFileKey } = require('./aClubsKeys');
+const {
+  safeHostFolderName,
+  touchLastmod,
+  isoLastmod,
+} = require('../../shared/widgets/hostFolderMeta');
+const { widgetFileKey, hostMarkerKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent } = require('./s3Store');
+const { publishFolderEvent } = require('./publishFolderEvent');
+const { resolvePageUri } = require('./pageUri');
 
 /**
  * @param {{
@@ -16,10 +26,20 @@ const { headOrNull, putIfAbsent } = require('./s3Store');
  *   customerNumber: string,
  *   layout?: string,
  *   createdVia?: string,
+ *   referer?: string,
+ *   pageUri?: string,
+ *   uri?: string,
  *   headObject: Function,
  *   putObject: Function,
+ *   getObject?: Function,
+ *   copyObject?: Function,
+ *   getObjectTagging?: Function,
+ *   putObjectTagging?: Function,
+ *   sendMessage?: Function,
+ *   folderEventsQueueUrl?: string,
+ *   now?: Date|string|number,
  * }} opts
- * @returns {Promise<{ created: boolean, layout: string }>}
+ * @returns {Promise<{ created: boolean, layout: string, uri: string, metadata: object }>}
  */
 async function ensureAclubsWidget(opts) {
   if (!opts || typeof opts !== 'object') {
@@ -48,8 +68,26 @@ async function ensureAclubsWidget(opts) {
     Key: widgetKey,
   });
   if (existing) {
-    return { created: false, layout };
+    const md = existing.Metadata || existing.metadata || {};
+    return {
+      created: false,
+      layout,
+      uri: String(md.uri || ''),
+      metadata: md,
+    };
   }
+
+  const createdAt = isoLastmod(opts.now);
+  const uri = resolvePageUri(opts);
+  const metadata = {
+    uri: uri || '',
+    seen: '0',
+    clicks: '0',
+    since: createdAt,
+    lastmod: createdAt,
+    annotated: '0',
+    init: '0',
+  };
 
   const widgetDoc = {
     widgetGuid: guid,
@@ -57,7 +95,8 @@ async function ensureAclubsWidget(opts) {
     customerNumber,
     layout,
     createdVia,
-    createdAt: new Date().toISOString(),
+    createdAt,
+    uri: uri || undefined,
   };
 
   const w = await putIfAbsent({
@@ -65,6 +104,7 @@ async function ensureAclubsWidget(opts) {
     Key: widgetKey,
     Body: `${JSON.stringify(widgetDoc, null, 2)}\n`,
     ContentType: 'application/json; charset=utf-8',
+    Metadata: metadata,
   });
 
   await putIfAbsent({
@@ -81,7 +121,34 @@ async function ensureAclubsWidget(opts) {
     ContentType: 'application/json; charset=utf-8',
   });
 
-  return { created: w.created, layout };
+  if (w.created) {
+    const s3Touch = {
+      headObject: opts.headObject,
+      getObject: opts.getObject,
+      copyObject: opts.copyObject,
+      putObject: opts.putObject,
+      getObjectTagging: opts.getObjectTagging,
+      putObjectTagging: opts.putObjectTagging,
+      now: opts.now,
+    };
+    // Seed writes bump GUID lastmod and host lastmod.
+    const bumped = await touchLastmod({ Key: widgetKey, ...s3Touch });
+    Object.assign(metadata, bumped.metadata);
+    await touchLastmod({ Key: hostMarkerKey(host), ...s3Touch });
+
+    if (typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
+      await publishFolderEvent({
+        sendMessage: opts.sendMessage,
+        queueUrl: opts.folderEventsQueueUrl,
+        hostkey: safeHostFolderName(host),
+        host,
+        createdAt,
+        reason: `guid:${guid}`,
+      });
+    }
+  }
+
+  return { created: w.created, layout, uri, metadata };
 }
 
 module.exports = {
