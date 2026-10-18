@@ -433,3 +433,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Behind tips that fail only mrb1061 for LOCKED -- FR-124 / FR-3948: fold origin/main when #3970 supersede is already on main; no tip-owned pin rewrite needed.
 - APartsGateway CORS must hardcode allowOrigins ['*'] without resolveCorsOrigins (FR-153 rejects star); host from Origin only (origin_required); Prefer Referer for GUID uri; touchLastmod/setInit via S3 metadata REPLACE self-copy
 - When a MERGED FR is reopened with Simon scope comments after merge, ship one successor PR that covers the reopen gap list plus every later comment (do not DONE the old merged PR URL while acceptance still fails on main).
+- After FR-3949 marketplace-only queue floors, supersede meta-pins like fr3428 that still assert expected 30 primary queues / webgains+woocommerce in fr142 ENABLED_IDS; keep registry keep-both asserts
