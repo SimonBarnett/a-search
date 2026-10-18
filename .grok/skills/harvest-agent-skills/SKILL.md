@@ -384,3 +384,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search product FIX: when CI fails only ambient FR-236/237/238 connect 403 while tip FR product suite is green and MERGEABLE, DONE FIX at head without fold (FR #4649)
 - a-search FR re-offer: when issue CLOSED and covering PR MERGED with Closes, DONE FR Prefer ExistingPrUrl with that PR URL --- do not open a second implement PR
 - a-search FR: when covering implement PR is CLOSED unmerged but branch still has Closes, Prefer ExistingPrUrl reopen that PR, re-arm --auto, DONE FR with its URL --- never open a second implement PR
+- a-search harvest-lesson MRB: unique re-offer bullet (non-author seat + 0 behind -> re-verify and DONE PASS; tip-fix mojibake only when skill dirty) PASS at MERGEABLE head without behind fold (FR #4649)
