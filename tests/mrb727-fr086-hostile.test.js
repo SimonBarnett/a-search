@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-727 FR-086 hostile', () => {
-  it('registry webgains stay-dark both envs (CAST IRON)', () => {
+  it('registry webgains enabled both envs (FR-173)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'webgains');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
     assert.equal(wg.kind, 'local');
     assert.equal(wg.queueEnv, 'SQS_WEBGAINS_URL');
   });
@@ -162,7 +162,7 @@ describe('MRB-727 FR-086 hostile', () => {
       'utf8',
     );
     assert.match(skill, /FR-086|queryParts/);
-    assert.match(skill, /enabled\.live\s*=\s*false|stay-dark|stay dark/i);
+    assert.match(skill, /enabled.*true|FR-173/i);
     assert.match(agents, /queryParts|FR-086/);
   });
 

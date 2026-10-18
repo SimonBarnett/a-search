@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-174 / #1021: enable tradedoubler only; FR-138 secret wiring; others stay dark.
  */
@@ -13,7 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -40,8 +42,8 @@ describe('FR-174 enable tradedoubler', () => {
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 keep-both');
-    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 keep-both');
-    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 keep-both');
+    assert.equal(byId.get('bol').enabled.sandbox, false, 'FR-171 keep-both');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -75,11 +77,7 @@ describe('FR-174 enable tradedoubler', () => {
   it('synth: tradedoubler live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr174');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));

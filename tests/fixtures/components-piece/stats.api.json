@@ -1,0 +1,37 @@
+{
+  "host": "shop.example",
+  "from": "2026-09-14",
+  "to": "2026-10-14",
+  "totals": {
+    "views": 400,
+    "partImpressions": 320,
+    "clicks": 16,
+    "ctr": 0.04
+  },
+  "widgets": [
+    {
+      "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "layout": "horizontal",
+      "views": 400,
+      "partImpressions": 320,
+      "clicks": 16,
+      "ctr": 0.04,
+      "daily": [
+        {
+          "day": "2026-10-14",
+          "views": 100,
+          "clicks": 4
+        }
+      ],
+      "parts": [
+        {
+          "partNumber": "p-1",
+          "title": "Part 1",
+          "impressions": 160,
+          "clicks": 8,
+          "ctr": 0.05
+        }
+      ]
+    }
+  ]
+}

@@ -56,7 +56,7 @@ describe('mrb714 hostile FR-075 etsy search', () => {
       DEFAULT_API_BASE,
       assertEtsyCreds,
     } = require(searchPath);
-    const creds = assertEtsyCreds({ ETSY_API_KEY: 'k' });
+    const creds = assertEtsyCreds({ ETSY_API_KEY: 'k', ETSY_SHARED_SECRET: 'test-secret' });
     const url = buildListingsSearchUrl(creds, 'mug');
     assert.match(url, /\/application\/listings\/active/);
     assert.match(url, /keywords=mug/);
@@ -74,17 +74,22 @@ describe('mrb714 hostile FR-075 etsy search', () => {
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!/\u00c3|\u00e2\u20ac/.test(skill));
-    assert.match(skill, /## Search path \(FR-075\)/);
+    assert.match(skill, /## Search path \(FR-075/);
     assert.doesNotMatch(skill, /Live etsy API client lands in a later FR/);
     const env = fs.readFileSync(envPath, 'utf8');
     assert.ok(!env.includes('\ufffd'));
     assert.match(env, /^ETSY_API_KEY=$/m);
+    assert.match(env, /^ETSY_SHARED_SECRET=$/m);
   });
 
   it('ETSY_KEYSTRING alias accepted by assertEtsyCreds', () => {
     const { assertEtsyCreds, readEtsyCreds } = require(searchPath);
-    const c = assertEtsyCreds({ ETSY_KEYSTRING: 'alias-key' });
-    assert.equal(c.apiKey, 'alias-key');
+    const c = assertEtsyCreds({
+      ETSY_KEYSTRING: 'alias-key',
+      ETSY_SHARED_SECRET: 'sec',
+    });
+    assert.equal(c.apiKey, 'alias-key:sec');
     assert.equal(readEtsyCreds({}).apiKey, '');
   });
 });
+

@@ -26,6 +26,7 @@ Results land in S3 and are visible on the SQL host via an rclone mapped drive.
 - [Product result schema](docs/result-schema.md) (FR-042)
 - [Parts maintainer](docs/parts-maintainer.md)
 - [ComponentsPiece architecture](docs/components-piece.md) (FR-195 -- widgetGuid storage, Parts/Click contracts, trust boundaries; docs lock)
+- [ComponentsPiece merchant / partner / Stripe](docs/components-piece-merchant.md) (FR-214 / #1219 -- wizard, taxonomy, Stripe products; docs lock)
 - [Provider shortlist](docs/provider-shortlist.md)
 - [Phase-2 providers](docs/phase2-providers.md) (FR-061 -- stay-dark until credentials)
 - [Phase-3 enable one provider](docs/phase3-enable-provider.md) (FR-126 -- ritual template; does not enable anyone)

@@ -22,8 +22,6 @@ exist. Completing a client + fixtures does **not** enable the source.
 | `admitad` | local | `providers/local/admitad` |
 | `flexoffers` | local | `providers/local/flexoffers` |
 | `avantlink` | local | `providers/local/avantlink` |
-| `shopify` | local | `providers/local/shopify` |
-| `wix` | local | `providers/local/wix` |
 | `woocommerce` | local | `providers/local/woocommerce` |
 
 ## Already enabled (out of Phase-2 stay-dark)
@@ -32,8 +30,8 @@ exist. Completing a client + fixtures does **not** enable the source.
 `enabled.live/sandbox=true` from Phase 1. Do not flip enabled ids false as part of
 Phase-2 docs work.
 
-Also enabled for both envs: **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-169** `aliexpress`, **FR-170** `etsy`, **FR-172** `partnerize`, **FR-174** `tradedoubler`.
-Remaining rows in the stay-dark table above stay false until their own enable FR.
+Also enabled for both envs: **FR-167** `kelkoo`, **FR-168** `skimlinks`, **FR-170** `etsy`, **FR-172** `partnerize`, **FR-174** `tradedoubler`, **FR-178** `shopify`, **FR-179** `wix`.
+GBP/UK hold keeps `bol` / `aliexpress` / `avantlink` dark (folders stay). Remaining stay-dark table rows stay false until their own enable FR.
 
 ## When to enable
 

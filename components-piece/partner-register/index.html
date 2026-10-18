@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Partner registration - DNS code</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #122; }
+    .card { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .ok { color: #0a7; font-weight: 600; }
+    .meta { color: #556; font-size: 0.9rem; }
+    code { background: #f4f6f8; padding: 0.1rem 0.3rem; }
+    label { display: block; margin: 0.5rem 0; }
+    button { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Partner registration</h1>
+  <p class="meta">Issues your Partner DNS code and points at smartcatalogue.uk instructions (Chrome extension enabled on that host).</p>
+
+  <div class="card">
+    <h2>Register</h2>
+    <label>Email (optional)
+      <input id="email" type="email" placeholder="you@agency.example" />
+    </label>
+    <button type="button" id="go">Get partner code</button>
+    <p id="err" class="meta" hidden></p>
+  </div>
+
+  <div class="card" id="result" hidden>
+    <h2>Your partner DNS code</h2>
+    <p class="ok"><code id="code"></code></p>
+    <p id="instructions"></p>
+    <p class="meta">Instructions: <a id="link" href="https://smartcatalogue.uk/partners">smartcatalogue.uk/partners</a></p>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('go');
+      var err = document.getElementById('err');
+      var result = document.getElementById('result');
+      btn.addEventListener('click', function () {
+        err.hidden = true;
+        var email = document.getElementById('email').value || undefined;
+        var body = email ? JSON.stringify({ email: email }) : '{}';
+        fetch('/partner/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: body
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (x) {
+            if (!x.ok || !x.j.partnerCode) {
+              err.textContent = (x.j && x.j.error) || 'register_failed';
+              err.hidden = false;
+              return;
+            }
+            document.getElementById('code').textContent = x.j.partnerCode;
+            document.getElementById('instructions').textContent = x.j.instructions || '';
+            var a = document.getElementById('link');
+            a.href = x.j.instructionsUrl || 'https://smartcatalogue.uk/partners';
+            result.hidden = false;
+          }).catch(function (e) {
+            err.textContent = String(e && e.message || e);
+            err.hidden = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

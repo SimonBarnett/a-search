@@ -72,7 +72,7 @@ function normalizeBolProduct(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['BOL_TRACKING_ID'],
+      source: 'bol',
     });
   }
 

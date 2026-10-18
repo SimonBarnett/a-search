@@ -1,0 +1,40 @@
+{
+  "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "generatedAt": "2026-10-14T13:00:00.000Z",
+  "windows": {
+    "7d": {
+      "views": 100,
+      "partImpressions": 80,
+      "clicks": 4,
+      "ctr": 0.04
+    },
+    "30d": {
+      "views": 400,
+      "partImpressions": 320,
+      "clicks": 16,
+      "ctr": 0.04
+    }
+  },
+  "parts": [
+    {
+      "partNumber": "p-1",
+      "partId": "src-1",
+      "impressions7d": 40,
+      "clicks7d": 2,
+      "impressions30d": 160,
+      "clicks30d": 8,
+      "ctr30d": 0.05,
+      "lastClickAt": "2026-10-14T12:00:03.000Z"
+    },
+    {
+      "partNumber": "p-2",
+      "partId": "src-2",
+      "impressions7d": 0,
+      "clicks7d": 0,
+      "impressions30d": 0,
+      "clicks30d": 0,
+      "ctr30d": 0,
+      "lastClickAt": null
+    }
+  ]
+}

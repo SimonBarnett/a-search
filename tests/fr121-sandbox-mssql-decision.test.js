@@ -25,7 +25,7 @@ describe('FR-121 sandbox MSSQL decision', () => {
     // Isolation table sandbox column no longer bare UNKNOWN.
     assert.match(
       text,
-      /\| MSSQL \|[\s\S]{0,120}madeiradb[\s\S]{0,200}separate/i,
+      /\| MSSQL \|[\s\S]{0,120}a_search[\s\S]{0,200}(?:sandbox|madeiradb|read-only)/i,
     );
     assert.doesNotMatch(
       text,
@@ -39,21 +39,19 @@ describe('FR-121 sandbox MSSQL decision', () => {
     assert.match(text, /ops/i);
   });
 
-  it('does not invent a_search_sandbox as a committed real database name', () => {
+  it('FR-251 locks sandbox DB name a_search_sandbox; env examples default live a_search', () => {
     const text = read('docs/environments.md');
+    assert.match(text, /a_search_sandbox/);
     assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
-    // Placeholder form is OK; literal invented name as the locked DB is not.
-    assert.doesNotMatch(
-      text,
-      /Sandbox database name:\s*`a_search_sandbox`/i,
-    );
     for (const envPath of walkEnvExamples(root)) {
       const env = fs.readFileSync(envPath, 'utf8');
-      assert.doesNotMatch(
-        env,
-        /MSSQL_DATABASE=a_search_sandbox/,
-        path.relative(root, envPath),
-      );
+      if (/^MSSQL_DATABASE=/m.test(env)) {
+        assert.match(
+          env,
+          /^MSSQL_DATABASE=a_search$/m,
+          path.relative(root, envPath),
+        );
+      }
     }
   });
 

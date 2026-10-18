@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['WEBGAINS_CAMPAIGN_ID'],
-      accountQueryMap: { WEBGAINS_CAMPAIGN_ID: 'wgcampaignid' },
+      source: 'webgains',
     });
   }
 

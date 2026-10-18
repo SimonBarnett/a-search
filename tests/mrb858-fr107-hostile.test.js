@@ -32,14 +32,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-858 FR-107 hostile', () => {
-  it('registry wix stay-dark both envs (CAST IRON)', () => {
+  it('registry wix enabled both envs per FR-179 (CAST IRON)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'wix');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.equal(row.queueEnv, 'SQS_WIX_URL');
   });
 
@@ -101,7 +101,8 @@ describe('MRB-858 FR-107 hostile', () => {
     assert.equal(result.source, 'wix');
     assert.equal(result.products.length, 1);
     assert.match(String(result.products[0].url), /wixsite\.com|madeira-demo/);
-    assert.match(String(result.products[0].url), /sid=aff-hostile/);
+    // FR-248 merchant: plain product URL (no affiliate sid stamp)
+    assert.doesNotMatch(String(result.products[0].url), /[?&]sid=/);
     assert.equal(puts.length, 1);
   });
 
@@ -146,13 +147,14 @@ describe('MRB-858 FR-107 hostile', () => {
     assert.match(skill, /## Catalogue client \(FR-105\)/);
     assert.match(skill, /## Normalize \+ upsert \(FR-106\)/);
     assert.match(skill, /## Worker \+ queryParts \(FR-107\)/);
-    assert.match(skill, /stay dark|enabled.*false/i);
+    assert.match(skill, /Enabled: live=true, sandbox=true \(FR-179/);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(skill));
     const envEx = fs.readFileSync(
       path.join(root, 'providers', 'local', 'wix', '.env.example'),
       'utf8',
     );
-    assert.match(envEx, /^WIX_AFFILIATE_ID=\s*$/m);
+    // FR-248: merchants do not stamp affiliate ids
+    assert.doesNotMatch(envEx, /WIX_AFFILIATE_ID/);
     assert.match(envEx, /^WIX_API_TOKEN=\s*$/m);
     assert.match(envEx, /^MSSQL_PASSWORD=\s*$/m);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(envEx));

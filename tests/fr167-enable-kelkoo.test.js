@@ -9,13 +9,14 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 /** Remaining Phase-2 stay-dark ids after FR-167 enables kijiji. */
-const OTHER_STAY_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const OTHER_STAY_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -40,10 +41,11 @@ describe('FR-167 enable provider kijiji', () => {
     assert.equal(kk.enabled.sandbox, true, 'kelkoo.sandbox');
     assert.equal(kk.kind, 'live');
     assert.equal(kk.queueEnv, 'SQS_KELKOO_URL');
-    for (const id of ['skimlinks', 'aliexpress']) {
-      assert.equal(byId.get(id).enabled.live, true, `${id}.live`);
-      assert.equal(byId.get(id).enabled.sandbox, true, `${id}.sandbox`);
-    }
+    // FR-168 skimlinks stays on; GBP/UK hold (FR-254) keeps aliexpress dark.
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'skimlinks.live');
+    assert.equal(byId.get('skimlinks').enabled.sandbox, true, 'skimlinks.sandbox');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'GBP hold aliexpress.live');
+    assert.equal(byId.get('aliexpress').enabled.sandbox, false, 'GBP hold aliexpress.sandbox');
     for (const id of OTHER_STAY_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -61,7 +63,7 @@ describe('FR-167 enable provider kijiji', () => {
     assert.match(keysBlock[0], /KELKOO_API_KEY/);
     assert.match(keysBlock[0], /KELKOO_PUBLISHER_ID/);
     assert.match(text, /PROVIDER_PLAIN_DEFAULTS[\s\S]*kelkoo[\s\S]*KELKOO_COUNTRY/);
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       assert.doesNotMatch(
         keysBlock[0],
         new RegExp(`\\b${dark}\\b`),
@@ -73,10 +75,7 @@ describe('FR-167 enable provider kijiji', () => {
   it('synth includes a-search-kelkoo live/sandbox queues and workers', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out');
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -118,7 +117,7 @@ describe('FR-167 enable provider kijiji', () => {
     }
 
     // Sibling stay-dark: no worker
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
@@ -127,14 +126,22 @@ describe('FR-167 enable provider kijiji', () => {
       );
       assert.equal(hit, undefined, `${dark} must stay without worker`);
     }
-    for (const on of ['skimlinks', 'aliexpress']) {
+    const skim = fns.find(
+      (res) =>
+        res.Properties &&
+        typeof res.Properties.FunctionName === 'string' &&
+        res.Properties.FunctionName.includes('-skimlinks-worker-'),
+    );
+    assert.ok(skim, 'skimlinks worker must remain after concurrent enable fold');
+    // GBP/UK hold: aliexpress workers must be absent (folder retained).
+    for (const hold of ['aliexpress', 'bol', 'avantlink']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${on}-worker-`),
+          res.Properties.FunctionName.includes(`-${hold}-worker-`),
       );
-      assert.ok(hit, `${on} worker must remain after concurrent enable fold`);
+      assert.equal(hit, undefined, `GBP hold ${hold} must not have worker`);
     }
   });
 

@@ -66,8 +66,6 @@ This template is for remaining stay-dark -> enable moves.
 | `admitad` | local |
 | `flexoffers` | local |
 | `avantlink` | local |
-| `shopify` | local |
-| `wix` | local |
 | `woocommerce` | local |
 
 ## Related

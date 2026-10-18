@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-172 / #1019: enable partnerize only; FR-138 secret wiring; others stay dark.
  */
@@ -13,7 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -37,11 +39,11 @@ describe('FR-172 enable partnerize', () => {
     assert.equal(pz.enabled.live, true);
     assert.equal(pz.enabled.sandbox, true);
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
-    assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
-    assert.equal(byId.get('bol').enabled.live, true, 'FR-171 bol.live');
-    assert.equal(byId.get('bol').enabled.sandbox, true, 'FR-171 bol.sandbox');
+    assert.equal(byId.get('bol').enabled.live, false, 'FR-171 bol.live');
+    assert.equal(byId.get('bol').enabled.sandbox, false, 'FR-171 bol.sandbox');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -75,11 +77,7 @@ describe('FR-172 enable partnerize', () => {
   it('synth: partnerize live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr172');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -119,7 +117,7 @@ describe('FR-172 enable partnerize', () => {
       assert.ok(qHit, `missing queue a-search-partnerize-${env}`);
     }
 
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

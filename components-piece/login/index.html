@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search shared login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 28rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .btn { display: block; width: 100%; margin: 0.4rem 0; padding: 0.6rem; border: 1px solid #333; background: #fff; cursor: pointer; text-align: left; }
+    .or { text-align: center; color: #556; margin: 1rem 0; }
+    input[type=email] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+    .meta { color: #556; font-size: 0.85rem; }
+  </style>
+</head>
+<body data-login-stack="shared">
+  <h1>Sign in</h1>
+  <p class="meta">FR-229 shared login for merchants, partners, and clubs. Role attaches after identity.</p>
+  <p class="meta">Mocks: docs/mocks/components-piece-auth (AL1-AL3). No password in Phase 5.</p>
+  <label for="intent">Continue as</label>
+  <select id="intent" name="intent">
+    <option value="merchant">Merchant</option>
+    <option value="partner">Partner</option>
+    <option value="club">Club</option>
+  </select>
+  <button type="button" class="btn">Continue with X</button>
+  <button type="button" class="btn">Continue with GitHub</button>
+  <button type="button" class="btn">Continue with Facebook</button>
+  <button type="button" class="btn">Continue with Google</button>
+  <button type="button" class="btn">Continue with Instagram</button>
+  <div class="or">or</div>
+  <label for="email">Email</label>
+  <input id="email" type="email" placeholder="you@example.com" />
+  <button type="button" class="btn" style="margin-top:0.5rem">Email me a magic link / OTP</button>
+  <p class="meta">POST /auth/session mints one shared stack; GET /auth/redirect resolves post-login path.</p>
+  <p class="meta" id="ext-note" hidden>Chrome extension login (#2078): after identity, redirect to redirect_uri with #access_token=&lt;JWT&gt; (chrome.identity.launchWebAuthFlow).</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search || '');
+      if (params.get('extension') !== '1') return;
+      var note = document.getElementById('ext-note');
+      if (note) note.hidden = false;
+      var intentEl = document.getElementById('intent');
+      if (intentEl && params.get('intent')) intentEl.value = params.get('intent');
+      var redirectUri = params.get('redirect_uri') || '';
+      function isAllowedExtensionRedirectUri(uri) {
+        // MRB #2224: never open-redirect JWT to arbitrary hosts.
+        try {
+          var u = new URL(String(uri || ''));
+          if (u.protocol === 'chrome-extension:') return true;
+          if (u.protocol === 'https:' && /\.chromiumapp\.org$/i.test(u.hostname)) return true;
+          return false;
+        } catch (e) {
+          return false;
+        }
+      }
+      document.querySelectorAll('.btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!redirectUri || !isAllowedExtensionRedirectUri(redirectUri)) return;
+          // Production IdP / OAuth callback should land here with a real JWT.
+          // Local UAT: set window.A_SEARCH_EXT_FIXTURE_JWT before click.
+          var jwt = window.A_SEARCH_EXT_FIXTURE_JWT || '';
+          if (!jwt || jwt.indexOf('.') < 0) return;
+          var dest = redirectUri + (redirectUri.indexOf('#') >= 0 ? '&' : '#') +
+            'access_token=' + encodeURIComponent(jwt) + '&token_type=Bearer';
+          location.assign(dest);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

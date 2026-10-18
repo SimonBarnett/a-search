@@ -59,7 +59,7 @@ describe('MRB-763 FR-089 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> normalizePart -> writeResults with tduid track', async () => {
+  it('worker run: queryParts -> normalizePart -> writeResults with a+epi track', async () => {
     const puts = [];
     const row = {
       Source: 'tradedoubler',
@@ -95,7 +95,7 @@ describe('MRB-763 FR-089 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'tradedoubler');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /tduid=td-aff-hostile/);
+    assert.match(String(result.products[0].url), /[?&]a=td-aff-hostile&epi=/);
     assert.equal(puts.length, 1);
   });
 

@@ -19,25 +19,30 @@ function utf8NoBom(rel) {
 }
 
 describe('MRB #1334 hostile FR-170 enable etsy', () => {
-  it('registry: etsy both envs true; bol also enabled (FR-171 keep-both)', () => {
+  it('registry: etsy both envs true; bol also enabled (GBP/UK hold bol)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     assert.equal(byId.get('etsy').enabled.live, true);
     assert.equal(byId.get('etsy').enabled.sandbox, true);
-    assert.equal(byId.get('bol').enabled.live, true);
-    assert.equal(byId.get('bol').enabled.sandbox, true);
+    assert.equal(byId.get('bol').enabled.live, false);
+    assert.equal(byId.get('bol').enabled.sandbox, false);
   });
 
-  it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + ETSY_TRACKING_ID plain default', () => {
+  it('stack wires PROVIDER_CREDENTIAL_KEYS.etsy + FR-244 affiliate plain default', () => {
     const text = utf8NoBom(path.join('cdk', 'lib', 'a-search-stack.js'));
     assert.match(text, /PROVIDER_CREDENTIAL_KEYS[\s\S]*etsy[\s\S]*ETSY_API_KEY/);
     assert.match(
       text,
-      /PROVIDER_PLAIN_DEFAULTS[\s\S]*etsy[\s\S]*ETSY_TRACKING_ID/,
+      /PROVIDER_CREDENTIAL_KEYS[\s\S]*etsy[\s\S]*ETSY_SHARED_SECRET/,
+    );
+    assert.match(
+      text,
+      /PROVIDER_PLAIN_DEFAULTS[\s\S]*etsy[\s\S]*ETSY_AFFILIATE_NETWORK/,
     );
   });
+
 
   it('FR-142/143 pins use 26 primary/DLQ floors (FR-167..172)', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));

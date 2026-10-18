@@ -94,8 +94,8 @@ describe('FR-060b provider onboarding skillbooks', () => {
       assert.equal(s.enabled.sandbox, false, `${id} must stay dark sandbox`);
     }
     const ae = sources.find((x) => x.id === 'aliexpress');
-    assert.equal(ae.enabled.live, true, 'FR-169 enables aliexpress live');
-    assert.equal(ae.enabled.sandbox, true, 'FR-169 enables aliexpress sandbox');
+    assert.equal(ae.enabled.live, false, 'GBP/UK hold disables aliexpress live');
+    assert.equal(ae.enabled.sandbox, false, 'GBP/UK hold disables aliexpress sandbox');
     const kk = sources.find((x) => x.id === 'kelkoo');
     assert.equal(kk.enabled.live, true, 'FR-167 enables kelkoo live');
     assert.equal(kk.enabled.sandbox, true, 'FR-167 enables kelkoo sandbox');
@@ -103,8 +103,8 @@ describe('FR-060b provider onboarding skillbooks', () => {
     assert.equal(et.enabled.live, true, 'FR-170 enables etsy live');
     assert.equal(et.enabled.sandbox, true, 'FR-170 enables etsy sandbox');
     const bl = sources.find((x) => x.id === 'bol');
-    assert.equal(bl.enabled.live, true, 'FR-171 enables bol live');
-    assert.equal(bl.enabled.sandbox, true, 'FR-171 enables bol sandbox');
+    assert.equal(bl.enabled.live, false, 'GBP/UK hold disables bol live');
+    assert.equal(bl.enabled.sandbox, false, 'GBP/UK hold disables bol sandbox');
     const sk = sources.find((x) => x.id === 'skimlinks');
     assert.equal(sk.enabled.live, true, 'FR-168 enables skimlinks live');
     assert.equal(sk.enabled.sandbox, true, 'FR-168 enables skimlinks sandbox');
