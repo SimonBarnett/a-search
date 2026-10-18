@@ -526,3 +526,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX when FR #4277 host-brief gate lands: update fr4246 (and other) fake reviewHost fixtures to return non-empty club/audience/affiliateOpportunities or drain returns retry instead of host_processed.
 - FIX on a PR already CLOSED as superseded by a Closes successor: ACK, verify covering tip still open with Closes, DONE FIX with the assigned PR URL, do not reopen
 - Harvest-lesson CONFLICTING tip: one origin/main keep-both fold then PASS; if tip races CONFLICTING again leave --auto armed and DONE PASS without a second fold (FR #3948)
+- FIX CONFLICTING harvest tip: one origin/main keep-both fold of tip lesson plus new main bullets, push, re-arm gh pr merge --auto --squash, DONE FIX without CI poll
