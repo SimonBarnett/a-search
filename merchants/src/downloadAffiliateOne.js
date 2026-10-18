@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR #4008: affiliate feed download used by the dual-bucket weekly Lambda.
- * Adapted from FR #3999 patterns so ONE weekly job can cover a-merchants +
- * a-affiliates. Never overwrites an existing dated parts file for that day.
+ * DEPRECATED (FR #4269): scheduled dual-bucket job now requires
+ * affiliates/src/downloadOne (placeholders + flat dated keys). Kept only for
+ * historical reference / local experiments --- do not wire from runWeekly.
  */
 
 const SLUG_RE = /^[a-z0-9._-]+$/;

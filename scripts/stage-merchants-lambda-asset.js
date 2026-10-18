@@ -1,10 +1,12 @@
 'use strict';
 
 /**
- * FR #4008: stage merchants weekly Lambda zip contents.
+ * FR #4008 / #4269: stage merchants daily Lambda zip contents.
  * Layout:
  *   merchants/src/**
+ *   affiliates/src/** (downloadOne reused for a-affiliates)
  *   shared/merchants/**
+ *   shared/affiliates/**
  *   node_modules/@aws-sdk/client-s3 (when present)
  */
 
@@ -25,15 +27,29 @@ function stageMerchantsLambdaAsset(repoRoot, opts) {
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
 
-  const affSrc = path.join(root, 'merchants', 'src');
-  fs.cpSync(affSrc, path.join(outDir, 'merchants', 'src'), {
+  const merchSrc = path.join(root, 'merchants', 'src');
+  fs.cpSync(merchSrc, path.join(outDir, 'merchants', 'src'), {
     recursive: true,
   });
+
+  const affiliatesSrc = path.join(root, 'affiliates', 'src');
+  if (fs.existsSync(affiliatesSrc)) {
+    fs.cpSync(affiliatesSrc, path.join(outDir, 'affiliates', 'src'), {
+      recursive: true,
+    });
+  }
 
   const sharedFrom = path.join(root, 'shared', 'merchants');
   const sharedTo = path.join(outDir, 'shared', 'merchants');
   fs.mkdirSync(path.dirname(sharedTo), { recursive: true });
   fs.cpSync(sharedFrom, sharedTo, { recursive: true });
+
+  const sharedAffFrom = path.join(root, 'shared', 'affiliates');
+  if (fs.existsSync(sharedAffFrom)) {
+    const sharedAffTo = path.join(outDir, 'shared', 'affiliates');
+    fs.mkdirSync(path.dirname(sharedAffTo), { recursive: true });
+    fs.cpSync(sharedAffFrom, sharedAffTo, { recursive: true });
+  }
 
   const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
   if (fs.existsSync(sdkSrc)) {
