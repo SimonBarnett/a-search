@@ -16,24 +16,26 @@ const PRIVATE_IPV4 =
   /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})\b/;
 
 describe('MRB-960 FR-122 hostile', () => {
-  it('environments.md: A/B/C options table + Chosen option PENDING + ops checklist', () => {
+  it('environments.md: A/B/C options table + Chosen option LOCKED C + ops checklist', () => {
     const text = fs.readFileSync(path.join(root, 'docs', 'environments.md'), 'utf8');
     assert.match(text, /## Network path \(FR-122\)/);
     assert.match(text, /\|\s*A\s*\|\s*Fixed egress allowlist/i);
     assert.match(text, /\|\s*B\s*\|\s*VPN\b/);
     assert.match(text, /\|\s*C\s*\|\s*On-box only/i);
-    assert.match(text, /Chosen option[\s:*]*PENDING/);
+    assert.match(text, /Chosen option[\s:*]*\*\*LOCKED C\*\*/);
+    assert.match(text, /walrus/i);
     assert.match(text, /\*\*Ops checklist\*\*/);
-    assert.match(text, /Pick exactly one of A \/ B \/ C/);
+    assert.match(text, /LOCKED C/);
     assert.match(text, /Least-privilege login/);
     assert.match(text, /never[\s\S]{0,100}firewall[\s\S]{0,80}git/i);
   });
 
-  it('vision.md UNKNOWN notes FR-122 decision surface LOCKED with choice PENDING', () => {
+  it('vision.md notes FR-122 decision surface LOCKED with Chosen option LOCKED C', () => {
     const text = fs.readFileSync(path.join(root, 'docs', 'vision.md'), 'utf8');
     assert.match(text, /FR-122/);
     assert.match(text, /decision surface LOCKED/i);
-    assert.match(text, /PENDING/);
+    assert.match(text, /LOCKED C/);
+    assert.match(text, /walrus/i);
     assert.match(text, /environments\.md/);
   });
 
