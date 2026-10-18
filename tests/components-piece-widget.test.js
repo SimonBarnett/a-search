@@ -122,7 +122,7 @@ function mockFetch(handler) {
 }
 
 describe('FR-201 ComponentsPiece widget JS', () => {
-  it('buildPartsUrl includes host widgetGuid offset n and optional uri', () => {
+  it('buildPartsUrl includes widgetGuid offset n and optional pageUri; no host', () => {
     const u = buildPartsUrl('https://api.example', {
       host: 'shop.example',
       widgetGuid: '11111111-1111-4111-8111-111111111111',
@@ -131,11 +131,11 @@ describe('FR-201 ComponentsPiece widget JS', () => {
       uri: '/guides/boots',
     });
     assert.match(u, /^https:\/\/api\.example\/parts\?/);
-    assert.match(u, /host=shop\.example/);
+    assert.equal(/[?&]host=/.test(u), false);
     assert.match(u, /widgetGuid=11111111-1111-4111-8111-111111111111/);
     assert.match(u, /offset=0/);
     assert.match(u, /n=3/);
-    assert.match(u, /uri=%2Fguides%2Fboots/);
+    assert.match(u, /pageUri=%2Fguides%2Fboots/);
   });
 
   it('resolveLayout prefers API layout over data-mode', () => {
@@ -183,7 +183,8 @@ describe('FR-201 ComponentsPiece widget JS', () => {
     assert.equal(fetchFn.calls.length, 2);
     assert.match(fetchFn.calls[0].url, /widgetGuid=aaaaaaaa/);
     assert.match(fetchFn.calls[1].url, /widgetGuid=bbbbbbbb/);
-    assert.match(fetchFn.calls[0].url, /uri=%2Fpage/);
+    assert.match(fetchFn.calls[0].url, /pageUri=%2Fpage/);
+    assert.equal(/[?&]host=/.test(fetchFn.calls[0].url), false);
     assert.equal(byGuid.get(g1).getAttribute('data-mode'), 'horizontal');
     assert.equal(byGuid.get(g2).getAttribute('data-mode'), 'fullscreen');
     assert.match(byGuid.get(g1).innerHTML, /data-part="P1"/);

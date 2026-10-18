@@ -14,13 +14,14 @@ var GO_BOUND_ATTR = 'data-a-search-go-bound';
 var DEFAULT_N = 10;
 
 /**
+ * FR #3968: host comes from Origin header on the gateway --- do not send ?host=.
  * @param {string} apiBase
  * @param {{
- *   host: string,
  *   widgetGuid: string,
  *   offset?: number,
  *   n?: number,
  *   uri?: string,
+ *   pageUri?: string,
  * }} q
  * @returns {string}
  */
@@ -28,12 +29,17 @@ function buildPartsUrl(apiBase, q) {
   var base = apiBase == null ? '' : String(apiBase).replace(/\/$/, '');
   var path = base + '/parts';
   var params = [];
-  params.push('host=' + encodeURIComponent(q.host));
   params.push('widgetGuid=' + encodeURIComponent(q.widgetGuid));
   params.push('offset=' + encodeURIComponent(String(q.offset == null ? 0 : q.offset)));
   params.push('n=' + encodeURIComponent(String(q.n == null ? DEFAULT_N : q.n)));
-  if (q.uri != null && String(q.uri) !== '') {
-    params.push('uri=' + encodeURIComponent(String(q.uri)));
+  var pagePath =
+    q.pageUri != null && String(q.pageUri) !== ''
+      ? String(q.pageUri)
+      : q.uri != null && String(q.uri) !== ''
+        ? String(q.uri)
+        : '';
+  if (pagePath) {
+    params.push('pageUri=' + encodeURIComponent(pagePath));
   }
   return path + '?' + params.join('&');
 }
@@ -267,6 +273,13 @@ function resolveLayout(apiLayout, dataMode) {
 function renderPage(el, page, fallbackMode) {
   var layout = resolveLayout(page && page.layout, fallbackMode);
   el.setAttribute('data-mode', layout);
+  var initRaw = page && page.init;
+  if (initRaw === 0 || initRaw === '0') {
+    el.setAttribute('data-state', 'searching');
+    el.innerHTML = '<div class="searching-msg">Searching</div>';
+    el.removeAttribute('data-next-offset');
+    return;
+  }
   var parts = page && Array.isArray(page.parts) ? page.parts : [];
   if (!parts.length) {
     el.setAttribute('data-state', 'empty');
@@ -302,11 +315,11 @@ function renderPage(el, page, fallbackMode) {
  */
 async function fetchPartsPage(opts) {
   var url = buildPartsUrl(opts.apiBase, {
-    host: opts.host,
     widgetGuid: opts.widgetGuid,
     offset: opts.offset,
     n: opts.n,
     uri: opts.uri,
+    pageUri: opts.pageUri,
   });
   var res = await opts.fetch(url, { method: 'GET', credentials: 'omit' });
   if (!res || !res.ok) {
@@ -467,12 +480,16 @@ async function pageFullscreen(el, deps) {
   var page = await fetchPartsPage({
     fetch: deps.fetch,
     apiBase: deps.apiBase,
-    host: host,
     widgetGuid: guid,
     offset: Number(next),
     n: deps.n != null ? deps.n : DEFAULT_N,
     uri: uri,
+    pageUri: uri,
   });
+  if (page && (page.init === 0 || page.init === '0')) {
+    renderPage(el, page, el.getAttribute('data-mode'));
+    return page;
+  }
   var layout = resolveLayout(page.layout, el.getAttribute('data-mode'));
   el.setAttribute('data-mode', layout);
   var html = partsHtml(page.parts || []);
@@ -537,11 +554,11 @@ async function mountWidget(el, deps) {
     var page = await fetchPartsPage({
       fetch: deps.fetch,
       apiBase: apiBase,
-      host: host,
       widgetGuid: guid,
       offset: 0,
       n: deps.n != null ? deps.n : DEFAULT_N,
       uri: uri,
+      pageUri: uri,
     });
     renderPage(el, page, fallbackMode);
     return { skipped: false, page: page };

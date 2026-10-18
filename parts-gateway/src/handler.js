@@ -2,7 +2,7 @@
 
 /**
  * FR #3968: standalone parts-gateway Lambda --- GET /parts via a-clubs S3.
- * No MSSQL, no VPC, no secrets.
+ * No MSSQL, no VPC, no secrets. Host from Origin only.
  */
 
 const { pagePartsAclubs, PartsError } = require('./pageParts');
@@ -63,17 +63,15 @@ function jsonResponse(statusCode, payload) {
  * @param {object} [deps]
  */
 function buildS3Fns(deps = {}) {
-  if (
-    deps.headObject &&
-    deps.putObject &&
-    deps.getObject
-  ) {
+  if (deps.headObject && deps.putObject && deps.getObject) {
     return {
       headObject: deps.headObject,
       putObject: deps.putObject,
       getObject: deps.getObject,
       listObjectsV2: deps.listObjectsV2,
       putObjectTagging: deps.putObjectTagging,
+      getObjectTagging: deps.getObjectTagging,
+      copyObject: deps.copyObject,
     };
   }
 
@@ -88,6 +86,8 @@ function buildS3Fns(deps = {}) {
     GetObjectCommand,
     ListObjectsV2Command,
     PutObjectTaggingCommand,
+    GetObjectTaggingCommand,
+    CopyObjectCommand,
   } = loadS3Sdk();
   const client =
     deps.s3Client ||
@@ -106,6 +106,10 @@ function buildS3Fns(deps = {}) {
       client.send(new ListObjectsV2Command({ Bucket: bucket, ...input })),
     putObjectTagging: (input) =>
       client.send(new PutObjectTaggingCommand({ Bucket: bucket, ...input })),
+    getObjectTagging: (input) =>
+      client.send(new GetObjectTaggingCommand({ Bucket: bucket, ...input })),
+    copyObject: (input) =>
+      client.send(new CopyObjectCommand({ Bucket: bucket, ...input })),
   };
 }
 
@@ -118,19 +122,46 @@ async function handlePartsGateway(event, deps = {}) {
   const headers = headerMap(event);
   const s3 = buildS3Fns(deps);
 
+  let sendMessage = deps.sendMessage;
+  const folderEventsQueueUrl =
+    deps.folderEventsQueueUrl || process.env.A_CLUBS_FOLDER_EVENTS_QUEUE_URL;
+  if (!sendMessage && folderEventsQueueUrl) {
+    try {
+      // eslint-disable-next-line global-require
+      const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+      const sqs =
+        deps.sqsClient ||
+        new SQSClient({
+          region:
+            process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2',
+        });
+      sendMessage = (input) => sqs.send(new SendMessageCommand(input));
+    } catch {
+      sendMessage = undefined;
+    }
+  }
+
   try {
     const page = await pagePartsAclubs({
-      host: query.host,
+      // host from Origin only --- query.host ignored
       widgetGuid: query.widgetGuid,
       offset: query.offset,
       n: query.n,
       origin: headers.origin,
+      referer: headers.referer,
+      pageUri: query.pageUri || query.uri,
+      uri: query.uri,
       headObject: s3.headObject,
       putObject: s3.putObject,
       getObject: s3.getObject,
       listObjectsV2: s3.listObjectsV2,
       putObjectTagging: s3.putObjectTagging,
+      getObjectTagging: s3.getObjectTagging,
+      copyObject: s3.copyObject,
       mint: deps.mint,
+      sendMessage,
+      folderEventsQueueUrl,
+      now: deps.now,
     });
     return jsonResponse(200, page);
   } catch (err) {
@@ -144,13 +175,11 @@ async function handlePartsGateway(event, deps = {}) {
       code === 'widget_guid_required' ||
       code === 'invalid_widget_guid' ||
       code === 'host_required' ||
+      code === 'origin_required' ||
       code === 'invalid_offset_or_n' ||
       code === 'invalid_host_folder_name'
     ) {
       return jsonResponse(400, { error: code });
-    }
-    if (code === 'widget_host_mismatch') {
-      return jsonResponse(403, { error: code, parts: [], nextOffset: null });
     }
     if (code === 'mint_exhausted' || code === 'mint_bad_checksum') {
       return jsonResponse(500, { error: code });
