@@ -2,11 +2,13 @@
 
 /**
  * Default AWS SQS SendMessage for entry fan-out (FR-032).
- * Tests inject sendMessage or a mock SQS client; production uses @aws-sdk/client-sqs.
+ * FR-3950: kind:local (DB-backed) sources resolve SQS_DB_BACKED_* (one queue);
+ * kind:live keep per-source queueEnv. Tests inject sendMessage or a mock SQS client.
  */
 
 const { loadRegistry } = require('../../providers/loadRegistry');
 const { resolveQueueUrl } = require('../../providers/resolveQueueUrl');
+const { queueEnvForSource } = require('./dbBackedQueue');
 
 /**
  * @param {{
@@ -40,11 +42,19 @@ function createSqsSendMessage(opts = {}) {
     }
     const { sources } = load();
     const entry = (sources || []).find((s) => s && s.id === payload.source);
-    if (!entry || !entry.queueEnv) {
-      throw new Error(`registry missing queueEnv for source ${payload.source}`);
+    if (!entry) {
+      throw new Error(`registry missing source ${payload.source}`);
+    }
+    let queueEnv;
+    try {
+      queueEnv = queueEnvForSource(entry);
+    } catch (err) {
+      throw new Error(
+        `registry missing queueEnv for source ${payload.source}: ${err.message}`,
+      );
     }
     const queueUrl = resolve({
-      queueEnv: entry.queueEnv,
+      queueEnv,
       env: payload.env,
       envVars,
     });

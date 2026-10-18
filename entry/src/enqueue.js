@@ -3,6 +3,8 @@
 /**
  * Fan-out enqueue (FR-006): one SQS SendMessage per enabled registry source.
  * body.sources intersects enabled(env); cannot turn on a disabled id.
+ * FR-3950: DB-backed (kind:local) messages still one-per-source payload, but
+ * createSqsSendMessage routes them to the single SQS_DB_BACKED_* queue URL.
  */
 
 const { enabled: registryEnabled } = require('../../providers/loadRegistry');
