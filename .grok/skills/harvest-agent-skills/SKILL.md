@@ -447,3 +447,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search MRB re-offer with CI red after enable-floor FIX: check remaining tip-owned hostiles (mrb2227 still pinned SqsEventSource); supersede on tip to match fr2139 FR-3949 no-consumer-Lambda, PASS @ new SHA without fold (FR #4649), leave --auto.
 - Harvest tip that re-appends an exact main Harvested-lessons bullet (period-only delta): CLOSED-duplicate, do not merge
 - FR #3968 successor MRB: run real npm ci + npm run synth:parts-gateway and paste APartsGateway resource list before PASS; unit pins alone are not enough when the PR body requires synth
+- FR #3968 successor MRB: run real npm ci + npm run synth:parts-gateway and paste APartsGateway resource list before PASS; unit pins alone are not enough when the PR body requires synth.
