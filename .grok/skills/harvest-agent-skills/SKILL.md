@@ -509,3 +509,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB redqueen grok reviewers: LocalSystem cannot use Admin DPAPI auth even with USERPROFILE/HOME/GROK_HOME; require -Credential or service.password when -GrokCli; pin FAKE_ password tests and gitignore service.password; leave MERGEABLE behind tip without fold.
 - Redqueen grok review must be async spawn: spawnSync blocks the event loop so the next S3/SQS write fails ECONNABORTED, and receive VisibilityTimeout must exceed the reviewer timeout with a ChangeMessageVisibility heartbeat plus a retry on ECONNABORTED/ECONNRESET/EPIPE/ETIMEDOUT.
 - Redqueen grok under LocalSystem: use dedicated -GrokHome with SYSTEM+Administrators ACL (not Admin profile USERPROFILE); grok honours GROK_HOME; Access is denied on auth.json was ACL not DPAPI.
+- docs/mrb hostile pins may stack the product commits but use Refs only; leave the product PR open so its Closes line still lands.
