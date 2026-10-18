@@ -471,3 +471,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Wix HTML embeds Origin as {dots-as-hyphens}.filesusr.com — decode by hyphen→dot for hosts without literal hyphens; require consistent X-Parent-Origin when the club domain has hyphens; never create a-clubs/{filesusr}/ folders
 - MRB parts-gateway Wix embed: fold origin/main once when behind, run fr4107+fr3968 together, PASS @ head SHA then gh pr merge --auto without waiting for live redeploy
 - Affiliate marker missing_feedurl: allow normalize/merge without feedurl/feedid when laststatus=missing_feedurl; keep feedurl_or_feedid_required for create/update.
+- normalizeAffiliateMeta may omit feedurl/feedid only when laststatus=missing_feedurl; other paths still throw feedurl_or_feedid_required
