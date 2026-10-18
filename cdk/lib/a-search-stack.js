@@ -68,7 +68,7 @@ function lambdaLogGroup(scope, id) {
   });
 }
 const { loadRegistry } = require('../../providers/loadRegistry');
-const { queueName } = require('../../providers/queueName');
+const { queueName, queueDlqName } = require('../../providers/queueName');
 const {
   stageEntryLambdaAsset,
 } = require('../../scripts/stage-entry-lambda-asset');
@@ -390,7 +390,7 @@ function applyProviderPlainDefaults(fn, sourceId, env) {
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
- * Queue names match providers/queueName.js: a-search-{source}-{env}.
+ * Queue names match providers/queueName.js: a-search-provider-{source}-{env}.fifo (FR #4039).
  *
  * FR-149: explicit no-VPC - Lambdas use default AWS networking (no ec2.Vpc / NAT / SG in this stack).
  * MSSQL reachability is ops fixed-egress allowlist (FR-122 option A) documented in docs/deploy.md.
@@ -415,6 +415,12 @@ class ASearchStack extends cdk.Stack {
     });
     /** @param {string} base */
     const stagedName = (base) => withStageSuffix(base, nameSuffix);
+    /** @param {string} fifoBase e.g. a-search-provider-ebay-live.fifo */
+    const stagedFifoName = (fifoBase) => {
+      const raw = String(fifoBase || '');
+      if (!raw.endsWith('.fifo')) return stagedName(raw);
+      return `${stagedName(raw.slice(0, -'.fifo'.length))}.fifo`;
+    };
 
     // FR-155: cost allocation tags on all taggable stack resources.
     // Env from -c stage= / -c env= (default "default"); Project always a-search.
@@ -541,18 +547,25 @@ class ASearchStack extends cdk.Stack {
       );
 
       for (const env of envs) {
-        const qName = stagedName(queueName(src.id, env));
+        // FR #4039: FIFO a-search-provider-{name}-{env}.fifo (+ DLQ .fifo).
+        // Keeps MessageGroupId=<provider> on send; reservedConcurrency 1 remains.
+        const qName = stagedFifoName(queueName(src.id, env));
+        const dlqName = stagedFifoName(queueDlqName(src.id, env));
         const envPascal = env === 'live' ? 'Live' : 'Sandbox';
         // FR-142: sibling DLQ + redrive so poison messages leave the worker queue
         // FR-162: SQS-managed SSE on primary + DLQ (no CMK per queue)
         const dlq = new sqs.Queue(this, `${pascal}${envPascal}DeadLetterQueue`, {
-          queueName: `${qName}-dlq`,
+          queueName: dlqName,
+          fifo: true,
+          contentBasedDeduplication: false,
           retentionPeriod: cdk.Duration.days(14),
           encryption: sqs.QueueEncryption.SQS_MANAGED,
         });
         // FR-164: visibilityTimeout > worker Lambda timeout (6x buffer)
         const queue = new sqs.Queue(this, `${pascal}${envPascal}Queue`, {
           queueName: qName,
+          fifo: true,
+          contentBasedDeduplication: false,
           visibilityTimeout: cdk.Duration.seconds(
             WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
           ),
@@ -1093,12 +1106,6 @@ class ASearchStack extends cdk.Stack {
     // FR-2139 / FR-240: SQS FIFO a-search-shop-sync.fifo + DLQ (no consumer Lambda).
     // MessageGroupId=shopId; maxReceiveCount 5; visibility sized for future consumer.
     // FR-239 live transition will call onShopLive (enqueue); grant send to entry only.
-    /** @param {string} fifoBase e.g. a-search-shop-sync.fifo */
-    const stagedFifoName = (fifoBase) => {
-      const raw = String(fifoBase || '');
-      if (!raw.endsWith('.fifo')) return stagedName(raw);
-      return `${stagedName(raw.slice(0, -'.fifo'.length))}.fifo`;
-    };
     const shopSyncQueueName = stagedFifoName(SHOP_SYNC_FIFO_BASE);
     const shopSyncDlqName = stagedFifoName('a-search-shop-sync-dlq.fifo');
     const shopSyncDlq = new sqs.Queue(this, 'ShopSyncDeadLetterQueue', {

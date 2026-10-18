@@ -14,7 +14,7 @@ describe('hostile MRB #246 FR-036', () => {
     const r = runCdkSynth(root);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const tpl = fs.readFileSync(path.join(r.outDir, 'ASearchStack.template.json'), 'utf8');
-    assert.match(tpl, /a-search-amazon-live/);
+    assert.match(tpl, /a-search-provider-amazon-live\.fifo/);
     assert.match(tpl, /a-search-ebay-sandbox/);
     assert.match(tpl, /a-search-amazon-worker-live/);
     assert.match(tpl, /AWS::Lambda::EventSourceMapping/);
