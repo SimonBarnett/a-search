@@ -61,6 +61,7 @@ class PartsGatewayStack extends cdk.Stack {
       userName: 'a-search-redqueen-annotator',
     });
     folderEventsQueue.grantConsumeMessages(redqueenUser);
+    // FR #4122: object annotations on folder markers (Put/Get/List/DeleteObjectAnnotation).
     redqueenUser.addToPolicy(
       new iam.PolicyStatement({
         sid: 'RedqueenAClubsAnnotate',
@@ -69,6 +70,10 @@ class PartsGatewayStack extends cdk.Stack {
           's3:PutObject',
           's3:ListBucket',
           's3:GetObjectTagging',
+          's3:PutObjectAnnotation',
+          's3:GetObjectAnnotation',
+          's3:ListObjectAnnotations',
+          's3:DeleteObjectAnnotation',
         ],
         resources: [
           `arn:aws:s3:::${A_CLUBS_BUCKET}`,

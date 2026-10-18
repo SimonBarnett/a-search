@@ -96,9 +96,9 @@ After merge, Bob installs on redqueen and verifies against test host
 | Principal | Permissions |
 |-----------|-------------|
 | Parts-gateway Lambda | `sqs:SendMessage` on the FIFO only; S3 R/W on `a-clubs` |
-| `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 Get/Put/List + `s3:PutObjectAnnotation` / `GetObjectAnnotation` / `ListObjectAnnotations` on `a-clubs` only |
+| `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 `GetObject` / `PutObject` / `ListBucket` / `GetObjectTagging` plus object-annotation actions `s3:PutObjectAnnotation` / `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:DeleteObjectAnnotation` on `arn:aws:s3:::a-clubs` and `arn:aws:s3:::a-clubs/*` (FR #4122) |
 
-Never use root keys.
+Never use root keys. Redeploy **APartsGateway** after #4122 so the annotator user policy is live before installing the redqueen queue service.
 
 ## Related
 
