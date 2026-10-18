@@ -67,7 +67,11 @@ describe('MRB #35 hostile: FR-004 JWT verify', () => {
         JWT_HS256_SECRET: FIXTURE_SECRET,
       },
     });
-    assert.deepEqual(result, { userId: 'ALIAS001' });
+    assert.deepEqual(result, {
+      userId: 'ALIAS001',
+      contactVerified: false,
+      contactChannel: undefined,
+    });
   });
 
   it('.env.example still JWT_*/A_SEARCH_ENV only after reconcile', () => {
