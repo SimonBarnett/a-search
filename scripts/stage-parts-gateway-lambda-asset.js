@@ -5,9 +5,10 @@
  * Layout:
  *   parts-gateway/src/**
  *   shared/identity/**
- *   shared/widgets/hostFolderMeta.js + widgetPath.js + parts.js (PartsError)
+ *   shared/widgets/hostFolderMeta.js + widgetPath.js
  *   shared/components/customers.js (normalizeHost)
- *   node_modules/@aws-sdk/client-s3 (when present)
+ *   shared/aClubs/**
+ *   node_modules/@aws-sdk/client-s3 + client-sqs (when present)
  */
 
 const fs = require('node:fs');
@@ -65,8 +66,6 @@ function stagePartsGatewayLambdaAsset(repoRoot, opts) {
         fs.cpSync(from, path.join(sdkDest, name), { recursive: true });
       }
     }
-    // Copy smithy / credential deps lightly when present (Lambda runtime may
-    // still need a fuller tree --- deploy uses npm bundle via asset).
     const nm = path.join(root, 'node_modules');
     for (const name of [
       '@smithy',

@@ -1,9 +1,8 @@
 'use strict';
 
 /**
- * FR #3987: publish host folder events to SQS FIFO (injectable).
- * Sent for every new host and every new GUID so redqueen can annotate GUIDs
- * under already-annotated hosts without a separate GUID event type.
+ * FR #3968: publish host folder events to SQS FIFO (injectable).
+ * Sent for every new host and every new GUID so redqueen can annotate.
  */
 
 const {

@@ -3,6 +3,7 @@
 /**
  * FR #3968: ensure a-clubs/{hostkey}/ marker with Madeira userid metadata.
  * customerNumber metadata === userid (documented choice; no sequential counter).
+ * Sets lastmod on create; publishes folder event when newly created.
  */
 
 const { normalizeHost } = require('../../shared/components/customers');
@@ -10,6 +11,7 @@ const {
   safeHostFolderName,
   buildHostTagSet,
   parseHostTagSet,
+  isoLastmod,
 } = require('../../shared/widgets/hostFolderMeta');
 const {
   mintUniqueUserId,
@@ -28,6 +30,7 @@ const { publishFolderEvent } = require('./publishFolderEvent');
  *   mint?: () => string,
  *   sendMessage?: Function,
  *   folderEventsQueueUrl?: string,
+ *   now?: Date|string|number,
  * }} opts
  * @returns {Promise<{
  *   created: boolean,
@@ -67,9 +70,17 @@ async function ensureAclubsHost(opts) {
       customerNumber: customerNumber || userid,
       metadata: {
         userid,
-        host,
-        hostkey,
+        host: md.host || host,
+        hostkey: md.hostkey || hostkey,
         customerNumber: customerNumber || userid,
+        email: md.email == null ? '' : String(md.email),
+        passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
+        stripeaccountid:
+          md.stripeaccountid == null ? '' : String(md.stripeaccountid),
+        stripecustomerid:
+          md.stripecustomerid == null ? '' : String(md.stripecustomerid),
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
+        ...(md.annotated != null ? { annotated: String(md.annotated) } : {}),
       },
       tags: { hasdns: false, partnerid: '', hasupg: false },
     };
@@ -96,8 +107,7 @@ async function ensureAclubsHost(opts) {
     throw err;
   }
 
-  // customerNumber === userid (FR #3968: no sequential in-memory counter)
-  const createdAtForMeta = new Date().toISOString();
+  const createdAtForMeta = isoLastmod(opts.now);
   const metadata = {
     userid,
     host,
@@ -105,6 +115,11 @@ async function ensureAclubsHost(opts) {
     customerNumber: userid,
     lastmod: createdAtForMeta,
     annotated: '0',
+    // Claim/onboarding fills these later (setHostCredentials / setHostStripe).
+    email: '',
+    passwordhash: '',
+    stripeaccountid: '',
+    stripecustomerid: '',
   };
   const tagSet = buildHostTagSet({ hasdns: 0, partnerid: '', hasupg: 0 });
   const tagging = tagSet
@@ -143,6 +158,13 @@ async function ensureAclubsHost(opts) {
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
         customerNumber: String(md.customerNumber || uid),
+        email: md.email == null ? '' : String(md.email),
+        passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
+        stripeaccountid:
+          md.stripeaccountid == null ? '' : String(md.stripeaccountid),
+        stripecustomerid:
+          md.stripecustomerid == null ? '' : String(md.stripecustomerid),
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
       },
       tags: parseHostTagSet(tagSet),
     };
@@ -161,7 +183,7 @@ async function ensureAclubsHost(opts) {
       queueUrl: opts.folderEventsQueueUrl,
       hostkey,
       host,
-      createdAt: metadata.lastmod || new Date().toISOString(),
+      createdAt: metadata.lastmod,
       reason: 'host',
     });
   }

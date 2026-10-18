@@ -8,14 +8,43 @@ Lambdas.
 
 | Resource | Notes |
 |----------|--------|
-| HTTP API | `GET /parts` + CORS (`-c corsOrigins=`) |
+| HTTP API | `GET /parts` + CORS `allowOrigins: ['*']` (GET+OPTIONS; credentials false) |
 | Node 20 Lambda | `parts-gateway/src/handler.handler` |
-| IAM | `s3:GetObject` / `PutObject` / `ListBucket` / Head + tagging on `arn:aws:s3:::a-clubs` and `a-clubs/*` only |
+| IAM | `s3:GetObject` / `PutObject` / `ListBucket` / tagging on `arn:aws:s3:::a-clubs` and `a-clubs/*` only |
+| SQS FIFO `a-clubs-new-folders.fifo` | SSE-SQS; visibility 90s; `MessageGroupId=hostkey` |
+| SQS FIFO DLQ `a-clubs-new-folders-dlq.fifo` | maxReceiveCount 5 |
+| IAM user `a-search-redqueen-annotator` | consume queue + S3 Get/Put/List on `a-clubs` |
+
+This stack hardcodes CORS `allowOrigins: ['*']`. It does **not** call
+`resolveCorsOrigins` (that helper rejects `*` for `ASearchStack` FR-153).
 
 The Lambda expects the **existing** bucket `a-clubs` in the deploy account. It
 auto-creates `a-clubs/{hostkey}/` (Madeira checksum userid metadata;
-`customerNumber` === `userid`) and `a-clubs/{hostkey}/{guid}/` seeded files on
-first request.
+`customerNumber` === `userid`, plus `lastmod`, empty `email` / `passwordhash` /
+`stripeaccountid` / `stripecustomerid`) and `a-clubs/{hostkey}/{guid}/` seeded
+files on first request.
+
+**Host** comes from the `Origin` header only (`?host=` is ignored). Missing or
+unparseable Origin returns `400` `origin_required`.
+
+**GUID folder marker** (zero-byte `a-clubs/{hostkey}/{guid}/`): `uri`, `seen=0`,
+`clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`. `widget.json` is a plain
+seed file (no GUID folder metadata). `uri` prefers the `Referer` path; else
+`pageUri` / `uri` query. Documented choice: Referer first.
+
+Host claim helpers (shared `hostFolderMeta.js`): `setHostCredentials` (scrypt
+hash format `scrypt$N$r$p$saltHex$hashHex`; Madeira auth not vendored here) and
+`setHostStripe({accountId, customerId})`. `GET /parts` never returns email,
+passwordhash, or Stripe ids.
+
+`GET /parts` returns `init` (`0` or `1`). When `{guid}/IN/` has candidates and
+`init` is `0`, the gateway promotes them into `live.json` and sets `init=1`
+(via shared `setInit` on the GUID folder marker, which also bumps `lastmod`).
+
+Folder events: on **new host** and **new GUID**, the gateway sends
+`{hostkey, host, createdAt}` to `a-clubs-new-folders.fifo`
+(`MessageGroupId=hostkey`). Env `A_CLUBS_FOLDER_EVENTS_QUEUE_URL`. Gateway
+Lambda has `grantSendMessages` only.
 
 ## Synth / deploy
 
@@ -29,20 +58,21 @@ npx cdk synth --app "node cdk/bin/parts-gateway.js" APartsGateway \
 
 npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
   -c requireDeployEnv=true \
-  -c account=620257466932 -c region=eu-west-2 \
-  -c corsOrigins=https://your-club-host.example
+  -c account=620257466932 -c region=eu-west-2
 ```
 
 `cdk diff` for this app should show **only** new APartsGateway resources.
+No `-c corsOrigins=` is required (CORS is hardcoded `*`).
 
 ## Smoke
 
 ```bash
-curl -sS "$PartsGatewayApiUrl/parts?host=example.com&widgetGuid=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+curl -sS -H "Origin: https://example.com" \
+  "$PartsGatewayApiUrl/parts?widgetGuid=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
 ```
 
-Repeat the same URL --- response stays 200 (idempotent). A mismatched `Origin`
-header yields `403` `widget_host_mismatch`.
+Repeat the same URL --- response stays 200 (idempotent). Missing `Origin`
+yields `400` `origin_required`. Widget shows "Searching" while `init` is `0`.
 
 Bob deploys after MRB PASS + merge (fleet playbook).
 
