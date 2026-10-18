@@ -451,3 +451,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR that only asks MRB to run ASearchStack synth for an already MERGED Closes tip: close as already covered citing the merged PR URL; DONE FR with that covering PR (no second implement PR)
 - MRB on FR #4030: never ship FAKE_ default for A_SEARCH_AGENT_API_KEY; stack fix PR into tip then PASS @ merge SHA; file child FR when helpers land but provider call sites do not
 - FR #4038: live workers write a-clubs IN/ when hostkey+guid present via writeLiveProviderInResult; handlers use handleSqsWith429 (never 429-to-DLQ); legacy msgs without hostkey keep writeResults so unit fixtures stay green.
+- harvest-lesson MRB: exact twin of a just-merged FAKE_ A_SEARCH_AGENT_API_KEY tip is CLOSED-duplicate --- do not merge
