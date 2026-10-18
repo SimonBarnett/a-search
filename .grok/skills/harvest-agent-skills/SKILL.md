@@ -405,3 +405,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
 - When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
 - When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
+- Harvest-lesson tips whose session summary says Closes #N for an open product FR must FAIL-supersede and close unmerged (Prefer ExistingPrUrl to the product tip); never merge a tip that would close a product issue
