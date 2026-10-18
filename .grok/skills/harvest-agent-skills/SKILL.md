@@ -443,3 +443,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-clubs GUID uri/seen/clicks/since/init/lastmod live on trailing-slash marker a-clubs/{host}/{guid}/; widget.json is seed-only; setHostCredentials uses documented scrypt$ when Madeira auth is not vendored
 - FR #4008: pin AMerchants like #3999 (isolated CDK, shared/merchants keys+metadata with Stripe/email redaction, onCreated+runWeekly both buckets, never overwrite same-day parts); Prefer ExistingPrUrl; never log API secrets.
 - After FR-3949 marketplace-only fr142/fr143 floors, supersede every hostile enable pin that still assert.matches expected 30 primary queues (kelkoo/skimlinks/aliexpress/etsy/partnerize/webgains/woocommerce); partnerize is DB-backed so doesNotMatch in ENABLED_IDS
+- AMerchants MRB: synth:merchants + fr4008 17 pins enough for PASS; AGENT.md in docs satisfies FR when templates folder is missing; do not fold merely-behind MERGEABLE (FR #4649)
