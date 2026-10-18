@@ -412,4 +412,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
 - When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS --- tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
 - Docs that name a_search_sandbox must include FR-146 Recommended context (fr119 pin); ComponentsPiece DB ownership lines need Recommended/FR-146 near the sandbox name.
+- Stacked Phase5 ComponentsPiece tips: retarget tip to main, merge origin/main, Closes full open FR stack, close earlier stack heads as superseded, board PASS + --auto --squash, DONE without CI poll
 - a-search MRB CONFLICTING on runCdkSynth superviseMain: prefer main quoteWinArg+cmd.exe /s /c over tip shell:true quote; update fr3663 pin to match; one fold then PASS (FR #4649)
