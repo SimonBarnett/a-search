@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * docs/mrb-4232 hostile: FR #4231 LocalSystem cannot use Admin grok DPAPI;
+ * docs/mrb-4232 hostile: FR #4231 LocalSystem cannot use Admin grok ACL;
  * installer requires Credential/service.password; secrets never echoed;
  * gitignore covers service.password; Cursor .cmd uses shell.
  */
@@ -24,7 +24,7 @@ describe('MRB #4232 hostile FR #4231 service logon', () => {
     assert.match(g, /redqueen\/config\/service\.password|\*\*\/service\.password/);
   });
 
-  it('installer gate and DPAPI docs are contiguous', () => {
+  it('installer gate and ACL docs are contiguous', () => {
     const ps = fs.readFileSync(SCRIPT, 'utf8');
     const doc = fs.readFileSync(DOCS, 'utf8');
     const rev = fs.readFileSync(REVIEWERS, 'utf8');
@@ -32,8 +32,8 @@ describe('MRB #4232 hostile FR #4231 service logon', () => {
     assert.match(ps, /reviewer_logon_required/);
     assert.match(ps, /ServicePasswordFile/);
     assert.match(ps, /ObjectName/);
-    assert.match(doc, /DPAPI|Not signed in/i);
-    assert.match(rev, /DPAPI/);
+    assert.match(doc, /ACL|Not signed in/i);
+    assert.match(rev, /ACL/);
     assert.doesNotMatch(rev, /Credential is\s+not required/i);
     assert.match(rev, /shell:\s*useShell|shell:\s*true/);
   });
@@ -47,3 +47,4 @@ describe('MRB #4232 hostile FR #4231 service logon', () => {
     assert.doesNotMatch(t, /password\s*=\s*['"][^'"]{12,}['"]/i);
   });
 });
+
