@@ -493,3 +493,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Affiliate feedurl keeps {feedapikey}/{darwinhash} placeholders; resolve from provider marker into a local fetch URL only; never persist secrets on the affiliate marker; unresolved placeholders skip fetch and stamp laststatus=unresolved_placeholder
 - FIX product tip CI red on harvest SKILL.md BOM while tip is behind: one fold of origin/main picks up the clean book; re-arm --auto; do not poll CI
 - When fr055h reports missing LOCKED after Architecture on Windows, check core.autocrlf CRLF working copies against an LF blob; pin docs/vision.md text eol=lf and make the fence pin CRLF-tolerant
+- MRB APartsGateway CORS: pin allowHeaders includes x-parent-origin (and content-type); bare 204 on OPTIONS with Access-Control-Request-Headers means the header is missing from allowHeaders
