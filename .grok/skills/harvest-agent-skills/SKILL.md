@@ -536,3 +536,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Generate the a-search agent API key with Secrets Manager GenerateSecretString. Put a dynamic reference in A_SEARCH_AGENT_API_KEY and grantRead on the entry Lambda. Output the secret ARN, never the value, and do not take -c agentApiKey.
 - A docs/mrb PR whose first commit is this seat harvest tip is self-MRB even after that tip has merged. ACK then GIVEUP with the intake id. Leave the hostile pin for another seat.
 - When a stack reads gitignored provider env files at synth, npm run synth must pass the fixture root. The in-process test helper context does not cover the CI synth script. Do not auto-merge the head whose synth script still fails on a clean checkout.
+- When CDK tests build cdk.App with custom -c context, always merge providerEnvRoot=tests/fixtures/provider-env (or ensureDefaultStackSynth); package.json synth -c alone does not cover in-process App constructors.
