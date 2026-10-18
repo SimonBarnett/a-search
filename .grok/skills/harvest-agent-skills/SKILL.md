@@ -478,3 +478,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB large agent FRs: green local suite, put related metadata pins on a tip-based fix PR, close thinner twins, one main fold then --auto; do not block on live OTP.
 - FR paste-Merc-playbook jobs: ACK then GIVEUP reason=needs_human when skill shells are PENDING and no FR-061 body exists in-repo; never invent Awin UI element ids
 - When assigned MRB tip is already CLOSED unmerged as superseded by a fuller open covering PR that Closes the same FR, board FAIL-superseded citing the covering PR, leave the FR open for that merge, do not revive the closed tip, DONE FAIL
+- Re-offered FR with open Closes PR: ACK, verify closingIssuesReferences + claimed tests, DONE that PR URL — never open a second implement PR
