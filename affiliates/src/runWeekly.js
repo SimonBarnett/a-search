@@ -92,6 +92,18 @@ async function runWeekly(opts) {
   let affiliates = 0;
 
   for (const provider of providers) {
+    // FR #4176: load provider marker once per provider (feedapikey / darwinhash).
+    let providerMeta = Object.create(null);
+    try {
+      const pHead = await s3.headObject({
+        Bucket: bucket,
+        Key: `${provider}/`,
+      });
+      providerMeta = coerceStringMap(pHead.Metadata);
+    } catch {
+      providerMeta = Object.create(null);
+    }
+
     const affiliateIds = await listAffiliateIds(s3, bucket, provider);
     for (const affiliateId of affiliateIds) {
       affiliates += 1;
@@ -133,6 +145,7 @@ async function runWeekly(opts) {
           provider,
           affiliateId,
           affiliateMeta: meta,
+          providerMeta,
           fetchImpl: opts.fetchImpl,
           now,
           keep: opts.keep,
