@@ -24,6 +24,11 @@ describe('FR-058k vision Success row SQS pacing vs 407/429', () => {
       /sqs-pacing\.md|FR-058|fr058a-sqs-pacing|max-concurrency/i,
     );
     assert.match(text, /fail-when|unbounded|Sustained|batchSize/i);
+    const s18 = text.split('\n').find((line) => /^\|\s*S18\s*\|/.test(line));
+    assert.ok(s18, 'S18 row');
+    assert.match(s18, /reservedConcurrentExecutions: 1/);
+    assert.match(s18, /MaximumConcurrency` omitted/);
+    assert.doesNotMatch(s18, /registry `rateLimit\.maxConcurrency`/);
   });
 
   it('validate-vision-pack.py exits 0 on docs/vision.md', () => {
