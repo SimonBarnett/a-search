@@ -8,6 +8,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { queueName } = require('../providers/queueName');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -114,9 +115,9 @@ describe('FR-170 enable etsy', () => {
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-etsy-${env}`,
+          q.Properties.QueueName === queueName('etsy', env),
       );
-      assert.ok(qHit, `missing queue a-search-etsy-${env}`);
+      assert.ok(qHit, `missing queue ${queueName('etsy', env)}`);
     }
 
     for (const dark of ['admitad']) {

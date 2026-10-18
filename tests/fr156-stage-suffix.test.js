@@ -106,6 +106,6 @@ describe('FR-156 stack stage suffix', () => {
       (r) => r.Properties && r.Properties.QueueName,
     );
     assert.ok(queues.includes('a-search-provider-amazon-live-dev.fifo'));
-    assert.ok(queues.includes('a-search-provider-amazon-live-dev-dlq.fifo'));
+    assert.ok(queues.includes('a-search-provider-amazon-live-dlq-dev.fifo'));
   });
 });
