@@ -184,6 +184,32 @@ async function publishGuidSearch(opts) {
       wrote: false,
     };
   }
+  // FR #4311: annotated GUID already has queries and no searchid. POST that
+  // file once. Do not rebuild queries from a new review.
+  if (opts.repostExisting) {
+    const queries = Array.isArray(existing.queries) ? existing.queries : [];
+    if (!queries.length) {
+      const err = new Error('searches_missing');
+      err.code = 'searches_missing';
+      throw err;
+    }
+    const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
+    const posted = await postSearchBody(opts, {
+      hostkey: opts.hostkey,
+      guid: opts.guid,
+      queries,
+      exclude,
+    });
+    const doc = { queries, exclude, searchid: posted.searchid };
+    await writeSearches(opts, key, doc);
+    return {
+      ok: true,
+      searchid: posted.searchid,
+      idempotent: !!posted.idempotent,
+      wrote: true,
+      reposted: true,
+    };
+  }
   const { doc, cap } = buildSearchesDoc({
     review: opts.review,
     steering: opts.steering,
@@ -202,6 +228,18 @@ async function publishGuidSearch(opts) {
     throw err;
   }
   await writeSearches(opts, key, doc);
+  const posted = await postSearchBody(opts, {
+    hostkey: opts.hostkey,
+    guid: opts.guid,
+    queries: doc.queries,
+    exclude: doc.exclude,
+  });
+  doc.searchid = posted.searchid;
+  await writeSearches(opts, key, doc);
+  return { ok: true, searchid: posted.searchid, idempotent: !!posted.idempotent, wrote: true };
+}
+
+async function postSearchBody(opts, body) {
   const post = opts.postSearch;
   if (typeof post !== 'function') {
     const err = new Error('search_not_configured');
@@ -210,12 +248,7 @@ async function publishGuidSearch(opts) {
   }
   let resp;
   try {
-    resp = await post({
-      hostkey: opts.hostkey,
-      guid: opts.guid,
-      queries: doc.queries,
-      exclude: doc.exclude,
-    });
+    resp = await post(body);
   } catch (err) {
     const wrapped = new Error(`search_post_failed:${(err && err.message) || err}`);
     wrapped.code = 'search_post_failed';
@@ -233,9 +266,15 @@ async function publishGuidSearch(opts) {
     err.code = 'search_post_failed';
     throw err;
   }
-  doc.searchid = searchid;
-  await writeSearches(opts, key, doc);
-  return { ok: true, searchid, idempotent: !!resp.idempotent, wrote: true };
+  return { searchid, idempotent: !!(resp && resp.idempotent) };
+}
+
+/** 'idempotent' | 'repost' | 'missing' for an existing searches.json. */
+async function guidSearchState(opts, hostkey, guid) {
+  const existing = await readJsonObject(opts, searchesObjectKey(hostkey, guid));
+  if (existing && existing.searchid) return 'idempotent';
+  if (existing && Array.isArray(existing.queries) && existing.queries.length) return 'repost';
+  return 'missing';
 }
 
 /**
@@ -312,6 +351,7 @@ module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
   publishGuidSearch,
+  guidSearchState,
   readJsonObject,
   localPostSearchAck,
   createHttpPostSearch,

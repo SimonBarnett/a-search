@@ -18,7 +18,7 @@ const {
   isCompleteGuidReview,
 } = require('./reviewers');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
-const { publishGuidSearch, localPostSearchAck } = require('./guidSearch');
+const { publishGuidSearch, localPostSearchAck, guidSearchState } = require('./guidSearch');
 
 /** @deprecated FR #4098 --- sidecars removed; kept for test migration grep */
 function hostAnnotationsKey(hostkey) {
@@ -181,7 +181,29 @@ async function processFolderEvent(opts) {
     return { action: 'retry', detail: 'host_marker_missing' };
   }
   const hostMd = (head.Metadata || head.metadata) || {};
-  const hostNeed = annotationNeed(hostMd, { reannotate: Boolean(opts.reannotate) });
+  // FR #4311: every GUID already annotated with queries and at least one
+  // missing searchid. POST those files; do not re-review the host.
+  const guidsEarly = await listGuidIds(opts, event.hostkey);
+  let searchRepostOnly = guidsEarly.length > 0;
+  let anyRepost = false;
+  for (const guid of guidsEarly) {
+    const gHead = await headOrNull(opts, guidMarkerKeyFromHostkey(event.hostkey, guid));
+    const gMd = (gHead && (gHead.Metadata || gHead.metadata)) || {};
+    if (String(gMd.annotated || '') !== '1') {
+      searchRepostOnly = false;
+      break;
+    }
+    const state = await guidSearchState(opts, event.hostkey, guid);
+    if (state === 'missing') {
+      searchRepostOnly = false;
+      break;
+    }
+    if (state === 'repost') anyRepost = true;
+  }
+  if (!anyRepost) searchRepostOnly = false;
+  const hostNeed = searchRepostOnly
+    ? 'skip'
+    : annotationNeed(hostMd, { reannotate: Boolean(opts.reannotate) });
 
   let hostAnnDoc = null;
 
@@ -271,7 +293,7 @@ async function processFolderEvent(opts) {
     }
   }
 
-  const guids = await listGuidIds(opts, event.hostkey);
+  const guids = guidsEarly;
   const guidResults = [];
   for (const guid of guids) {
     const result = await annotateOneGuid({
@@ -300,6 +322,32 @@ async function annotateOneGuid(args) {
     return { action: 'skip', detail: 'guid_marker_missing' };
   }
   const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
+  if (String(guidMd.annotated || '') === '1') {
+    try {
+      const published = await publishGuidSearch({
+        ...opts,
+        hostkey: event.hostkey,
+        guid,
+        metadata: guidMd,
+        now,
+        repostExisting: true,
+        postSearch: opts.postSearch || localPostSearchAck(),
+      });
+      if (published.reposted) {
+        return { action: 'guid_searched', detail: 'search_reposted' };
+      }
+      if (published.idempotent && !published.wrote && !opts.reannotate) {
+        return { action: 'noop', detail: 'guid_unchanged' };
+      }
+    } catch (err) {
+      if (!(err && err.code === 'searches_missing')) {
+        return {
+          action: 'retry',
+          detail: (err && err.code) || 'search_failed',
+        };
+      }
+    }
+  }
   const need = annotationNeed(guidMd, { reannotate: Boolean(opts.reannotate) });
   if (need === 'skip') {
     const ann = await getNamedAnnotationJson(opts, markerKey, 'annotation');
