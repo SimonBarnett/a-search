@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR #3999: Lambda entry for weekly a-affiliates parts download.
+ * FR #3999 / #4195: Lambda entry for daily a-affiliates feed download
+ * (7-day refresh; EventBridge rate 1 day).
  */
 
 const { S3Client } = require('@aws-sdk/client-s3');
@@ -12,7 +13,7 @@ const {
   ListObjectsV2Command,
   DeleteObjectCommand,
 } = require('@aws-sdk/client-s3');
-const { runWeekly } = require('./runWeekly');
+const { runDaily } = require('./runDaily');
 
 const DEFAULT_BUCKET = 'a-affiliates';
 
@@ -49,7 +50,7 @@ async function handler(event, context, deps) {
       }),
     );
 
-  const summary = await runWeekly({
+  const summary = await runDaily({
     s3,
     bucket,
     fetchImpl: deps && deps.fetchImpl,

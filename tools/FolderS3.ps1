@@ -13,6 +13,7 @@ function Get-FolderS3MountRoot {
     elseif ($env:A_SEARCH_S3_MOUNT -and $env:A_SEARCH_S3_MOUNT.Trim()) {
         $raw = $env:A_SEARCH_S3_MOUNT.Trim()
     }
+    elseif (Test-Path -LiteralPath 'S:\') { $raw = 'S:\' }
     else { $raw = $script:FolderS3DefaultMountRoot }
     # WinPS: TrimEnd on 'S:\' -> 'S:' which resolves as cwd-on-drive. Keep drive roots as 'X:\'.
     # Accept 'S:\.' workaround from operators.
