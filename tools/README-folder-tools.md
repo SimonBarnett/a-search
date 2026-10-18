@@ -48,10 +48,31 @@ or `%ProgramData%\a-search\folder-tools.config.json`, or set:
 
 Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`. `Get-FolderMeta` also uses `5` for bucket root (FR #4087).
 
+## download / Invoke-FolderDownload.ps1
+
+Manual affiliate parts download for `a-affiliates` (FR #4108). Reuses `affiliates/src/downloadOne` via `tools/run-folder-download.js` (no second fetch implementation; not the #4001 DB import).
+
+From an affiliate folder, reads marker metadata (`feedurl`, format/compression) and writes `{provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}` + `parts/latest.{ext}`, bumping `lastdownload` / `laststatus` / `lastsize` / `lastmod`. Default **skips** when today's dated parts object already exists (`parts_exists`); pass `-Force` to re-download. Provider cwd requires `-All` (per-affiliate; one failure does not stop the others).
+
+```powershell
+cd S:\a-affiliates\awin\<affiliateid>
+download          # or: .\tools\download.ps1
+download -WhatIf  # dry run: no HTTP, no S3 writes; feedurl shown as ***set***
+download -Force   # overwrite today's dated parts
+cd S:\a-affiliates\awin
+download -All     # each affiliate child
+```
+
+Env: `A_SEARCH_S3_MOUNT`, `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE` (default `a-search-redqueen-agents`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). Never prints feed URLs, passwords, or tokens.
+
+Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate folder, `4` provider without `-All`, `5` bucket root, `1` download/missing_feedurl/partial `-All` failure, `0` success (including `parts_exists` skip).
+
 ## Tests
 
 ```powershell
 Invoke-Pester .\tests\fr4043-folder-tools.Tests.ps1
+Invoke-Pester .\tests\fr4108-folder-download.Tests.ps1
+node --test tests/fr4108-folder-download.test.js
 ```
 
-Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount exit 2, GUID/host search, and no credentials in output.
+Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount exit 2, GUID/host search, download cwd/dry-run/secrets, and no credentials in output.
