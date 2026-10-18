@@ -496,3 +496,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When fr055h reports missing LOCKED after Architecture on Windows, check core.autocrlf CRLF working copies against an LF blob; pin docs/vision.md text eol=lf and make the fence pin CRLF-tolerant
 - When PowerShell writes skill markdown, never use \a (BEL) or backtick escapes that inject C0 controls; write a-affiliates literally or via Python Path.write_text. FR-4155 signup rewrites must keep FR-060h/i Legacy Parts and disabled-stub needles.
 - Harvest SKILL.md lessons must stay pure ASCII: never PowerShell-write Unicode arrows (they double-encode and fail mrb1172 whole-file em/en-dash gate); write hyphen->dot via Python bytes/Path.write_text ASCII.
+- MRB affiliate import SQS: pin normalizeImportFiles drops feedurl/secrets from MessageBody; wake notify is fileCount-only; one docs/mrb hostile PR; PASS with --auto without live drain
