@@ -70,6 +70,7 @@ class PartsGatewayStack extends cdk.Stack {
           's3:PutObject',
           's3:ListBucket',
           's3:GetObjectTagging',
+          's3:PutObjectTagging',
           's3:PutObjectAnnotation',
           's3:GetObjectAnnotation',
           's3:ListObjectAnnotations',

@@ -12,6 +12,8 @@ const {
   isUsableReview,
   defaultReviewHost,
   defaultReviewGuid,
+  annotationsTooSimilar,
+  hostBriefText,
 } = require('./reviewers');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
 
@@ -46,9 +48,10 @@ function guidMarkerKeyFromHostkey(hostkey, guid) {
  * @param {Record<string, string>} md
  * @returns {'create'|'update'|'skip'}
  */
-function annotationNeed(md) {
+function annotationNeed(md, flags) {
   const meta = md || {};
   if (String(meta.annotated || '') !== '1') return 'create';
+  if (flags && flags.reannotate) return 'update';
   const lastmod = String(meta.lastmod || '').trim();
   const lastupdate = String(meta.lastupdate || '').trim();
   if (!lastupdate) return 'update';
@@ -175,7 +178,7 @@ async function processFolderEvent(opts) {
     return { action: 'retry', detail: 'host_marker_missing' };
   }
   const hostMd = (head.Metadata || head.metadata) || {};
-  const hostNeed = annotationNeed(hostMd);
+  const hostNeed = annotationNeed(hostMd, { reannotate: Boolean(opts.reannotate) });
 
   let hostAnnDoc = null;
 
@@ -199,6 +202,7 @@ async function processFolderEvent(opts) {
         host: event.host,
         hostkey: event.hostkey,
         pageText: hostPage.text,
+        pageHead: hostPage.head,
         pageUrl: hostUrl,
       });
     } catch (err) {
@@ -216,6 +220,9 @@ async function processFolderEvent(opts) {
       reviewedAt: now,
       model: review.model,
       summary: review.summary || '',
+      club: review.club || '',
+      audience: review.audience || '',
+      affiliateOpportunities: review.affiliateOpportunities || '',
       categories: Array.isArray(review.categories) ? review.categories : [],
       notes: review.notes || '',
     };
@@ -272,7 +279,7 @@ async function annotateOneGuid(args) {
     return { action: 'skip', detail: 'guid_marker_missing' };
   }
   const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
-  const need = annotationNeed(guidMd);
+  const need = annotationNeed(guidMd, { reannotate: Boolean(opts.reannotate) });
   if (need === 'skip') {
     return { action: 'noop', detail: 'guid_unchanged' };
   }
@@ -301,6 +308,7 @@ async function annotateOneGuid(args) {
       uri,
       hostAnnotations: hostAnn,
       pageText: guidPage.text,
+      pageHead: guidPage.head,
       pageUrl,
     });
   } catch (err) {
@@ -314,6 +322,9 @@ async function annotateOneGuid(args) {
       action: 'retry',
       detail: `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
     };
+  }
+  if (annotationsTooSimilar(review.summary, hostBriefText(hostAnn))) {
+    return { action: 'retry', detail: 'page_repeats_host' };
   }
 
   const annDoc = {

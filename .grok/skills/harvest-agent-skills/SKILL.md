@@ -510,3 +510,8 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Redqueen grok review must be async spawn: spawnSync blocks the event loop so the next S3/SQS write fails ECONNABORTED, and receive VisibilityTimeout must exceed the reviewer timeout with a ChangeMessageVisibility heartbeat plus a retry on ECONNABORTED/ECONNRESET/EPIPE/ETIMEDOUT.
 - Redqueen grok under LocalSystem: use dedicated -GrokHome with SYSTEM+Administrators ACL (not Admin profile USERPROFILE); grok honours GROK_HOME; Access is denied on auth.json was ACL not DPAPI.
 - Redqueen grok reviewers: prefer LocalSystem plus a dedicated -GrokHome ACL'd to SYSTEM and Administrators; Administrator profile auth.json is Access is denied, not DPAPI. Skip the live Set-Acl test unless the process is elevated.
+- A live Set-Acl that grants a SYSTEM ACE must skip unless the process is Administrator; keep the WhatIf and source pins running so a non-elevated MRB seat is not a false red.
+- MRB harvest tip for redqueen GrokHome: keep Set-Acl elevated-skip clause even when ACL/Access-is-denied core already on main; hostile NEEDLE on tip; --auto when 0 behind.
+- docs/mrb hostile pins may stack the product commits but use Refs only; leave the product PR open so its Closes line still lands.
+- Redqueen drain: default MaxNumberOfMessages=1 (FIFO one group per host); batched receipts expire while only the current message is heartbeated during long host+GUID reviews.
+- When two open harvest tips in the same book state the same playbook, keep the earlier fuller bullet and close the later tip. Do not merge both.

@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164 / #4231).
+  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164 / #4231 / #4240).
 
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-aclubs-queue" with nssm wrapping
@@ -11,11 +11,13 @@
   Bare `sc.exe` + node.exe is rejected (error 1053) --- nssm is required.
   Compatible with Windows PowerShell 5.1.
 
-  FR #4231: grok's stored sign-in (~/.grok/auth.json) is tied to the Windows user
-  that created it (DPAPI). LocalSystem with USERPROFILE/HOME/GROK_HOME pointing at
-  the Administrator profile still fails with "Not signed in". For reviewer installs
-  that set -GrokCli, pass -Credential or a service.password file so ObjectName runs
-  as that admin. -AllowLocalSystem opts out (tests / AWS-only drains without grok).
+  FR #4240 / #4231: LocalSystem can run grok reviewers when GROK_HOME is a
+  dedicated folder ACL'd to SYSTEM + Administrators (inheritance removed). Pointing
+  USERPROFILE/HOME at the Administrator profile fails with Access is denied (os
+  error 5) on auth.json --- not because grok ignores GROK_HOME. Preferred reviewer
+  mode: -GrokHome (alias -ServiceHome) under LocalSystem. Alternative: -Credential
+  / service.password so ObjectName is that admin. -AllowLocalSystem remains for
+  tests / AWS-only drains without grok.
 
 .PARAMETER InstallRoot
   Stable install folder containing redqueen\src\run.js.
@@ -40,16 +42,22 @@
   Prefer the real cursor-agent CLI (e.g. ...\cursor-agent\agent.cmd), not .grok\bin\agent.exe.
 
 .PARAMETER UserProfile
-  Optional path injected as USERPROFILE in AppEnvironmentExtra (AWS shared files, etc.).
-  Not sufficient alone for grok reviewer auth under LocalSystem (FR #4231).
+  Optional path injected as USERPROFILE in AppEnvironmentExtra. When -GrokHome is
+  set, defaults to that path.
 
 .PARAMETER HomePath
-  Optional path injected as HOME in AppEnvironmentExtra.
+  Optional path injected as HOME in AppEnvironmentExtra. When -GrokHome is set,
+  defaults to that path.
+
+.PARAMETER GrokHome
+  Service home root for LocalSystem grok reviewers (FR #4240). Creates the folder
+  and .grok with SYSTEM + Administrators-only ACL, sets USERPROFILE/HOME to this
+  path and GROK_HOME to <path>\.grok. Alias: -ServiceHome.
 
 .PARAMETER Credential
-  PSCredential for the service logon account (nssm ObjectName). Required for grok
-  reviewers unless -ServicePasswordFile / default service.password is present, or
-  -AllowLocalSystem is set.
+  Optional PSCredential for the service logon account (nssm ObjectName). Alternative
+  to -GrokHome for grok reviewers. Also satisfied by -ServicePasswordFile /
+  default service.password.
 
 .PARAMETER ServiceUser
   Account for ObjectName when loading a password file (default .\Administrator).
@@ -60,7 +68,8 @@
   InstallRoot\config\service.password, or env A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE.
 
 .PARAMETER AllowLocalSystem
-  Permit LocalSystem when -GrokCli is set (tests / non-reviewer drains). Default: off.
+  Permit LocalSystem when -GrokCli is set without -GrokHome or -Credential
+  (tests / AWS-only drains). Default: off. Preferred reviewer LocalSystem mode is -GrokHome.
 
 .PARAMETER WhatIf
   Alias DryRun: print nssm commands only; do not change the machine.
@@ -79,6 +88,7 @@ param(
   [string]$AgentCli,
   [string]$UserProfile,
   [string]$HomePath,
+  [Alias('ServiceHome')][string]$GrokHome,
   [System.Management.Automation.PSCredential]$Credential,
   [string]$ServiceUser = '.\Administrator',
   [string]$ServicePasswordFile,
@@ -123,6 +133,31 @@ function Invoke-Nssm {
   }
   & $Nssm @NssmArgs | Out-Host
   return [int]$LASTEXITCODE
+}
+
+function Initialize-GrokHomeAcl {
+  param([string]$HomeRoot)
+  if (-not $HomeRoot) { throw 'GrokHome path required' }
+  $grokDir = Join-Path $HomeRoot '.grok'
+  if ($DryRun) {
+    Write-Host "[DryRun] ensure GrokHome ACL SYSTEM+Administrators on $HomeRoot and $grokDir"
+    return $grokDir
+  }
+  New-Item -ItemType Directory -Force -Path $HomeRoot | Out-Null
+  New-Item -ItemType Directory -Force -Path $grokDir | Out-Null
+  $sys = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-18'
+  $admins = New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-32-544'
+  $inherit = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+  $prop = [System.Security.AccessControl.PropagationFlags]::None
+  $rights = [System.Security.AccessControl.FileSystemRights]::FullControl
+  foreach ($target in @($HomeRoot, $grokDir)) {
+    $acl = New-Object System.Security.AccessControl.DirectorySecurity
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($sys, $rights, $inherit, $prop, 'Allow')))
+    $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($admins, $rights, $inherit, $prop, 'Allow')))
+    Set-Acl -LiteralPath $target -AclObject $acl
+  }
+  return $grokDir
 }
 
 function Resolve-ReviewerServiceCredential {
@@ -175,15 +210,20 @@ $resolvedCred = Resolve-ReviewerServiceCredential `
   -ServicePasswordFile $ServicePasswordFile `
   -InstallRoot $InstallRoot
 
-# FR #4231: refuse LocalSystem + GrokCli unless explicitly allowed.
-if ($GrokCli -and -not $resolvedCred -and -not $AllowLocalSystem -and -not $Unregister) {
+# FR #4240: LocalSystem + GrokCli needs -GrokHome (preferred) or -Credential / AllowLocalSystem.
+$resolvedGrokDir = $null
+if ($GrokHome) {
+  $resolvedGrokDir = Initialize-GrokHomeAcl -HomeRoot $GrokHome
+  if (-not $UserProfile) { $UserProfile = $GrokHome }
+  if (-not $HomePath) { $HomePath = $GrokHome }
+}
+
+if ($GrokCli -and -not $resolvedCred -and -not $GrokHome -and -not $AllowLocalSystem -and -not $Unregister) {
   throw @'
-reviewer_logon_required: grok sign-in is DPAPI-bound to the Windows user that ran grok login.
-LocalSystem cannot use Administrator ~/.grok even when USERPROFILE/HOME/GROK_HOME point there
-(FR #4231: "Not signed in"). Pass -Credential, or write the admin password to
-InstallRoot\redqueen\config\service.password (never commit; never log), or set
-A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE. For tests / AWS-only drains without reviewers, pass
--AllowLocalSystem.
+reviewer_logon_required: LocalSystem cannot read Administrator ~/.grok (ACL Access is denied
+on auth.json; FR #4240). Pass -GrokHome <dedicated SYSTEM home> (creates SYSTEM+Administrators
+ACL and sets USERPROFILE/HOME/GROK_HOME), or -Credential / service.password for an admin
+ObjectName, or -AllowLocalSystem for tests / AWS-only drains without reviewers.
 '@
 }
 
@@ -258,6 +298,10 @@ if ($UserProfile) {
 if ($HomePath) {
   $envPairs += "HOME=$HomePath"
 }
+if ($GrokHome) {
+  $grokEnv = if ($resolvedGrokDir) { $resolvedGrokDir } else { Join-Path $GrokHome '.grok' }
+  $envPairs += "GROK_HOME=$grokEnv"
+}
 if ($GrokCli) {
   $envPairs += "GROK_CLI=$GrokCli"
   $envPairs += "A_SEARCH_GROK_BIN=$GrokCli"
@@ -311,8 +355,19 @@ if ($HomePath) {
 else {
   Write-Host 'HOME: (not set)'
 }
-if (-not $resolvedCred) {
-  Write-Host 'WARN: LocalSystem --- grok reviewer auth will fail (DPAPI); use -Credential or redqueen\config\service.password (FR #4231)'
+if ($GrokHome) {
+  $grokEnv = if ($resolvedGrokDir) { $resolvedGrokDir } else { Join-Path $GrokHome '.grok' }
+  Write-Host "GROK_HOME: $grokEnv"
+  $authJson = Join-Path $grokEnv 'auth.json'
+  if (-not (Test-Path -LiteralPath $authJson)) {
+    $grokBin = if ($GrokCli) { $GrokCli } else { 'grok' }
+    Write-Host 'GROK_HOME auth.json missing --- one-time SYSTEM sign-in required:'
+    Write-Host ("  set HOME={0} && set USERPROFILE={0} && set GROK_HOME={1} && run as SYSTEM: `"{2}`" login --device-auth" -f $GrokHome, $grokEnv, $grokBin)
+    Write-Host '  (e.g. schtasks /Create /RU SYSTEM once, /Run, then delete the task after auth.json appears)'
+  }
+}
+elseif ($GrokCli -and -not $resolvedCred) {
+  Write-Host 'WARN: LocalSystem without -GrokHome --- grok may hit Access is denied on Admin auth.json; prefer -GrokHome (FR #4240)'
 }
 Write-Host "Start: Start-Service $ServiceName  (or: nssm start $ServiceName)"
 if ($DryRun) {

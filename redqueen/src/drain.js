@@ -11,6 +11,12 @@ const { withSocketRetry } = require('./socketRetry');
 /** FR #4236: receive visibility must exceed the grok reviewer timeout (120s). */
 const RECEIVE_VISIBILITY_SEC = 180;
 
+/**
+ * FR #4246: FIFO is one group per host; receive a single message so idle
+ * receipts in a batch cannot expire while only the current message is heartbeated.
+ */
+const DEFAULT_MAX_MESSAGES = 1;
+
 function wrapSocket(fn) {
   if (typeof fn !== 'function') return fn;
   return (input) => withSocketRetry(() => fn(input));
@@ -50,7 +56,8 @@ async function drainOnce(opts) {
   const QueueUrl = opts.queueUrl;
   const resp = await opts.receiveMessage({
     QueueUrl,
-    MaxNumberOfMessages: opts.maxMessages || 5,
+    MaxNumberOfMessages:
+      opts.maxMessages == null ? DEFAULT_MAX_MESSAGES : opts.maxMessages,
     WaitTimeSeconds: opts.waitTimeSeconds == null ? 5 : opts.waitTimeSeconds,
     VisibilityTimeout:
       opts.visibilityTimeoutSeconds == null
@@ -109,6 +116,7 @@ async function drainOnce(opts) {
       fetchImpl: opts.fetchImpl,
       fetchTimeoutMs: opts.fetchTimeoutMs,
       fetchMaxBytes: opts.fetchMaxBytes,
+      reannotate: opts.reannotate,
     });
     } finally {
       if (beat) clearInterval(beat);
@@ -155,5 +163,6 @@ async function drainOnce(opts) {
 module.exports = {
   drainOnce,
   RECEIVE_VISIBILITY_SEC,
+  DEFAULT_MAX_MESSAGES,
   REVIEWER_TIMEOUT_MS,
 };

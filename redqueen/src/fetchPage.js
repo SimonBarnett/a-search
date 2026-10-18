@@ -13,6 +13,62 @@ const DEFAULT_MAX_BYTES = 512 * 1024;
  * @param {string} html
  * @returns {string}
  */
+function attrValue(tag, name) {
+  const re = new RegExp(
+    name + '\\s*=\\s*("([^"]*)"|\'([^\']*)\'|([^\\s"\'=<>`]+))',
+    'i',
+  );
+  const m = String(tag || '').match(re);
+  if (!m) return '';
+  return m[2] != null ? m[2] : m[3] != null ? m[3] : m[4] || '';
+}
+
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * FR #4251: title, description, keywords and og:* from the document head.
+ * @param {string} html
+ */
+function extractHeadMetadata(html) {
+  const s = String(html || '');
+  const titleRaw = (s.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '';
+  const title = decodeEntities(titleRaw.replace(/<[^>]+>/g, ' '));
+  const description = [];
+  const keywords = [];
+  const og = {};
+  const re = /<meta\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(s))) {
+    const tag = m[0];
+    const key = (
+      attrValue(tag, 'name') ||
+      attrValue(tag, 'property') ||
+      attrValue(tag, 'itemprop')
+    ).toLowerCase();
+    const content = decodeEntities(attrValue(tag, 'content'));
+    if (!key || !content) continue;
+    if (key === 'description') description.push(content);
+    else if (key === 'keywords') keywords.push(content);
+    else if (key.startsWith('og:')) og[key] = content;
+  }
+  return {
+    title,
+    description: description.join(' '),
+    keywords: keywords.join(', '),
+    og,
+  };
+}
+
 function extractReadableText(html) {
   let s = String(html || '');
   s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
@@ -83,9 +139,19 @@ async function fetchPageText(opts) {
     if (!buf.length) return { ok: false, detail: 'empty_body' };
     const truncated = buf.length > maxBytes;
     const sliced = truncated ? buf.subarray(0, maxBytes) : buf;
-    const text = extractReadableText(sliced.toString('utf8'));
-    if (!text) return { ok: false, detail: 'empty_text' };
-    return { ok: true, text, bytes: buf.length, truncated: Boolean(truncated) };
+    const raw = sliced.toString('utf8');
+    const head = extractHeadMetadata(raw);
+    const text = extractReadableText(raw);
+    if (!text && !head.title && !head.description) {
+      return { ok: false, detail: 'empty_text' };
+    }
+    return {
+      ok: true,
+      text,
+      head,
+      bytes: buf.length,
+      truncated: Boolean(truncated),
+    };
   } catch (err) {
     const name = err && err.name;
     if (name === 'AbortError') return { ok: false, detail: 'timeout' };
@@ -123,6 +189,7 @@ function clubPageUrl(host, uri) {
 module.exports = {
   fetchPageText,
   extractReadableText,
+  extractHeadMetadata,
   clubPageUrl,
   DEFAULT_TIMEOUT_MS,
   DEFAULT_MAX_BYTES,

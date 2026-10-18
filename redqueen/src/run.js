@@ -11,6 +11,7 @@
  *   REDQUEEN_POLL_MS                 (default 5000)
  *   REDQUEEN_ON_NEW_FOLDER           (optional path to .js hook module exporting onNewFolder)
  *   REDQUEEN_LOG_FILE                (optional rotating log path)
+ *   REDQUEEN_REANNOTATE              (1/true/yes: rewrite markers even when already annotated)
  *
  * Never logs secrets. Uses named AWS profile --- never root keys.
  */
@@ -259,6 +260,7 @@ async function buildAwsDeps() {
     listObjectAnnotations,
     reviewHost: defaultReviewHost,
     reviewGuid: defaultReviewGuid,
+    reannotate: /^(1|true|yes)$/i.test(String(process.env.REDQUEEN_REANNOTATE || '')),
     onNewFolder: loadOnNewFolderHook(),
   };
 }
