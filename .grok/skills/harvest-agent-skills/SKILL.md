@@ -486,3 +486,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB Merc skillbook paste: scan redqueen/awin-agent markdown for BEL (0x07) where ASCII a belongs before PASS; land restore + hostile pin on one tip-based fix PR
 - When FR says paste Merc playbooks and later comments supply the bodies on a sibling issue, ACK and land the paste + Simon host rules (Windows in-process sign-in, provider message length, AGENTS.md load order); do not GIVEUP needs_human after the paste arrives
 - FR paste-from-a-affiliates-AGENT.md jobs: ACK then GIVEUP reason=needs_human when flamingo lacks S3/S: read; never invent publisher signup steps.
+- When FR needs a-affiliates AGENT.md and later comments paste the bodies, ACK and land repo skills from the paste; do not GIVEUP needs_human after the paste arrives; leave live S3 pointer updates for redqueen
