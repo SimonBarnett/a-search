@@ -17,6 +17,7 @@ const {
 } = require('../../shared/identity/madeiraUserId');
 const { hostMarkerKey, useridClaimKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
+const { publishFolderEvent } = require('./publishFolderEvent');
 
 /**
  * @param {{
@@ -25,6 +26,8 @@ const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
  *   putObject: Function,
  *   putObjectTagging?: Function,
  *   mint?: () => string,
+ *   sendMessage?: Function,
+ *   folderEventsQueueUrl?: string,
  * }} opts
  * @returns {Promise<{
  *   created: boolean,
@@ -94,11 +97,14 @@ async function ensureAclubsHost(opts) {
   }
 
   // customerNumber === userid (FR #3968: no sequential in-memory counter)
+  const createdAtForMeta = new Date().toISOString();
   const metadata = {
     userid,
     host,
     hostkey,
     customerNumber: userid,
+    lastmod: createdAtForMeta,
+    annotated: '0',
   };
   const tagSet = buildHostTagSet({ hasdns: 0, partnerid: '', hasupg: 0 });
   const tagging = tagSet
@@ -146,6 +152,17 @@ async function ensureAclubsHost(opts) {
     await opts.putObjectTagging({
       Key: markerKey,
       Tagging: { TagSet: tagSet },
+    });
+  }
+
+  if (typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
+    await publishFolderEvent({
+      sendMessage: opts.sendMessage,
+      queueUrl: opts.folderEventsQueueUrl,
+      hostkey,
+      host,
+      createdAt: metadata.lastmod || new Date().toISOString(),
+      reason: 'host',
     });
   }
 

@@ -113,6 +113,8 @@ async function pagePartsAclubs(opts) {
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
     mint: opts.mint,
+    sendMessage: opts.sendMessage,
+    folderEventsQueueUrl: opts.folderEventsQueueUrl,
   });
 
   const widgetInfo = await ensureAclubsWidget({
@@ -120,8 +122,13 @@ async function pagePartsAclubs(opts) {
     widgetGuid: guid,
     customerNumber: hostInfo.customerNumber,
     layout: opts.layout,
+    referer: opts.referer,
+    pageUri: opts.pageUri,
+    uri: opts.uri,
     headObject: opts.headObject,
     putObject: opts.putObject,
+    sendMessage: opts.sendMessage,
+    folderEventsQueueUrl: opts.folderEventsQueueUrl,
   });
 
   const liveKey = widgetFileKey(host, guid, 'live.json');

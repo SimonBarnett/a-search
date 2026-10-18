@@ -118,6 +118,24 @@ async function handlePartsGateway(event, deps = {}) {
   const headers = headerMap(event);
   const s3 = buildS3Fns(deps);
 
+  let sendMessage = deps.sendMessage;
+  const folderEventsQueueUrl =
+    deps.folderEventsQueueUrl || process.env.A_CLUBS_FOLDER_EVENTS_QUEUE_URL;
+  if (!sendMessage && folderEventsQueueUrl) {
+    try {
+      const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+      const sqs =
+        deps.sqsClient ||
+        new SQSClient({
+          region:
+            process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2',
+        });
+      sendMessage = (input) => sqs.send(new SendMessageCommand(input));
+    } catch {
+      sendMessage = undefined;
+    }
+  }
+
   try {
     const page = await pagePartsAclubs({
       host: query.host,
@@ -125,12 +143,16 @@ async function handlePartsGateway(event, deps = {}) {
       offset: query.offset,
       n: query.n,
       origin: headers.origin,
+      referer: headers.referer || headers.Referer,
+      pageUri: query.pageUri || query.uri,
       headObject: s3.headObject,
       putObject: s3.putObject,
       getObject: s3.getObject,
       listObjectsV2: s3.listObjectsV2,
       putObjectTagging: s3.putObjectTagging,
       mint: deps.mint,
+      sendMessage,
+      folderEventsQueueUrl,
     });
     return jsonResponse(200, page);
   } catch (err) {

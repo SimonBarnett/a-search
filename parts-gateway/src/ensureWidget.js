@@ -1,13 +1,17 @@
 'use strict';
 
 /**
- * FR #3968: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
+ * FR #3968 / #3987: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
+ * GUID marker metadata on widget.json: uri, seen, clicks, since, lastmod, annotated.
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
 const { normalizeHost } = require('../../shared/components/customers');
+const { safeHostFolderName } = require('../../shared/widgets/hostFolderMeta');
 const { widgetFileKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent } = require('./s3Store');
+const { publishFolderEvent } = require('./publishFolderEvent');
+const { resolvePageUri } = require('./pageUri');
 
 /**
  * @param {{
@@ -16,10 +20,15 @@ const { headOrNull, putIfAbsent } = require('./s3Store');
  *   customerNumber: string,
  *   layout?: string,
  *   createdVia?: string,
+ *   referer?: string,
+ *   pageUri?: string,
+ *   uri?: string,
  *   headObject: Function,
  *   putObject: Function,
+ *   sendMessage?: Function,
+ *   folderEventsQueueUrl?: string,
  * }} opts
- * @returns {Promise<{ created: boolean, layout: string }>}
+ * @returns {Promise<{ created: boolean, layout: string, uri: string, metadata: object }>}
  */
 async function ensureAclubsWidget(opts) {
   if (!opts || typeof opts !== 'object') {
@@ -48,8 +57,25 @@ async function ensureAclubsWidget(opts) {
     Key: widgetKey,
   });
   if (existing) {
-    return { created: false, layout };
+    const md = existing.Metadata || existing.metadata || {};
+    return {
+      created: false,
+      layout,
+      uri: String(md.uri || ''),
+      metadata: md,
+    };
   }
+
+  const createdAt = new Date().toISOString();
+  const uri = resolvePageUri(opts);
+  const metadata = {
+    uri: uri || '',
+    seen: '0',
+    clicks: '0',
+    since: createdAt,
+    lastmod: createdAt,
+    annotated: '0',
+  };
 
   const widgetDoc = {
     widgetGuid: guid,
@@ -57,7 +83,8 @@ async function ensureAclubsWidget(opts) {
     customerNumber,
     layout,
     createdVia,
-    createdAt: new Date().toISOString(),
+    createdAt,
+    uri: uri || undefined,
   };
 
   const w = await putIfAbsent({
@@ -65,6 +92,7 @@ async function ensureAclubsWidget(opts) {
     Key: widgetKey,
     Body: `${JSON.stringify(widgetDoc, null, 2)}\n`,
     ContentType: 'application/json; charset=utf-8',
+    Metadata: metadata,
   });
 
   await putIfAbsent({
@@ -81,7 +109,20 @@ async function ensureAclubsWidget(opts) {
     ContentType: 'application/json; charset=utf-8',
   });
 
-  return { created: w.created, layout };
+  // FR #3987: resend host message for every new GUID so redqueen annotates it
+  // (host-only event schema; agent lists GUID folders itself).
+  if (w.created && typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
+    await publishFolderEvent({
+      sendMessage: opts.sendMessage,
+      queueUrl: opts.folderEventsQueueUrl,
+      hostkey: safeHostFolderName(host),
+      host,
+      createdAt,
+      reason: `guid:${guid}`,
+    });
+  }
+
+  return { created: w.created, layout, uri, metadata };
 }
 
 module.exports = {
