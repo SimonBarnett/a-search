@@ -884,13 +884,15 @@ describe('FR #3968 CDK stack isolation (source pins)', () => {
     assert.match(bin, /APartsGateway/);
   });
 
-  it('stage script includes shared/aClubs and client-sqs', () => {
+  it('stage script includes shared/aClubs and npm-installs client-sqs', () => {
     const stage = fs.readFileSync(
       path.join(ROOT, 'scripts', 'stage-parts-gateway-lambda-asset.js'),
       'utf8',
     );
     assert.match(stage, /shared\/aClubs/);
     assert.match(stage, /client-sqs/);
+    // FR #4078: full npm install into the asset (not cherry-picked SDK copies).
+    assert.match(stage, /npm[\s\S]*install|execFileSync\(\s*['"]npm['"]/);
   });
 
   it('shared package.json files includes aClubs/', () => {

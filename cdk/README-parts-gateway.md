@@ -61,6 +61,12 @@ npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
   -c account=620257466932 -c region=eu-west-2
 ```
 
+**Staging (FR #4078):** `stage-parts-gateway` copies `parts-gateway/src` + the
+shared helpers, then `npm install --omit=dev` of `@aws-sdk/client-s3` and
+`@aws-sdk/client-sqs` **inside** the asset directory so transitive packages
+(`@aws-sdk/checksums`, `@smithy/*`, …) ship with the Lambda. Do not restore the
+old cherry-pick copy from the repo-root `node_modules`. Staging needs network.
+
 `cdk diff` for this app should show **only** new APartsGateway resources.
 No `-c corsOrigins=` is required (CORS is hardcoded `*`).
 
