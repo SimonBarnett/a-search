@@ -1,11 +1,14 @@
 'use strict';
 
 /**
- * FR #3999: download one affiliate feed, write dated + latest, bump meta, retain N.
+ * FR #3999 / FR #4176: download one affiliate feed, write dated + latest, bump
+ * meta, retain N. Substitute {feedapikey}/{darwinhash}/{feedid} for the fetch
+ * only; affiliate marker feedurl keeps placeholders.
  */
 
 const {
   affiliateMarkerKey,
+  providerMarkerKey,
   partsDatedKey,
   partsLatestKey,
   partsPrefix,
@@ -20,6 +23,10 @@ const {
   pickDatedPartsKeysToDelete,
   DEFAULT_KEEP,
 } = require('../../shared/affiliates/retention');
+const {
+  listFeedUrlPlaceholders,
+  resolveFeedUrlForFetch,
+} = require('./resolveFeedUrl');
 
 /**
  * @param {Response| { ok: boolean, status: number, arrayBuffer?: Function, buffer?: Function, body?: Buffer }} res
@@ -44,11 +51,12 @@ async function readBody(res) {
  *   provider: string,
  *   affiliateId: string,
  *   affiliateMeta?: Record<string,string>,
+ *   providerMeta?: Record<string,string>,
  *   fetchImpl?: Function,
  *   now?: Date,
  *   keep?: number,
  * }} opts
- * @returns {Promise<{ ok: boolean, affiliateId: string, size?: number, status?: string, error?: string }>}
+ * @returns {Promise<{ ok: boolean, affiliateId: string, size?: number, status?: string, error?: string, placeholdersResolved?: boolean }>}
  */
 async function downloadOne(opts) {
   const provider = assertSlug(opts.provider, 'provider');
@@ -93,11 +101,60 @@ async function downloadOne(opts) {
     };
   }
 
+  let providerMeta = coerceStringMap(opts.providerMeta);
+  const needsProvider =
+    listFeedUrlPlaceholders(feedurl).some((n) =>
+      n === 'feedapikey' || n === 'darwinhash',
+    );
+  if (needsProvider && !Object.keys(providerMeta).length) {
+    try {
+      const head = await s3.headObject({
+        Bucket: bucket,
+        Key: providerMarkerKey(provider),
+      });
+      providerMeta = coerceStringMap(head.Metadata);
+    } catch {
+      providerMeta = Object.create(null);
+    }
+  }
+
+  const resolved = resolveFeedUrlForFetch({
+    feedurl,
+    affiliateMeta: meta,
+    providerMeta,
+  });
+  if (!resolved.ok) {
+    const patch = mergeAffiliateMeta(
+      meta,
+      {
+        affiliateid: affiliateId,
+        laststatus: 'unresolved_placeholder',
+        lastdownload: now.toISOString(),
+      },
+      { now },
+    );
+    // Keep placeholder feedurl; never stamp secrets onto affiliate marker.
+    await s3.putObject({
+      Bucket: bucket,
+      Key: affiliateMarkerKey(provider, affiliateId),
+      Body: Buffer.alloc(0),
+      Metadata: patch,
+    });
+    return {
+      ok: false,
+      affiliateId,
+      status: 'unresolved_placeholder',
+      error: 'unresolved_placeholder',
+      placeholdersResolved: false,
+    };
+  }
+
+  const fetchUrl = resolved.fetchUrl;
   const ext = extFromMeta(meta);
   const yyyyMmDd = now.toISOString().slice(0, 10);
 
   try {
-    const res = await fetchImpl(feedurl, {
+    const res = await fetchImpl(fetchUrl, {
       method: 'GET',
       redirect: 'follow',
     });
@@ -118,7 +175,13 @@ async function downloadOne(opts) {
         Body: Buffer.alloc(0),
         Metadata: patch,
       });
-      return { ok: false, affiliateId, status: code, error: code };
+      return {
+        ok: false,
+        affiliateId,
+        status: code,
+        error: code,
+        placeholdersResolved: resolved.placeholdersResolved,
+      };
     }
 
     const body = await readBody(res);
@@ -158,6 +221,7 @@ async function downloadOne(opts) {
       },
       { now },
     );
+    // feedurl in meta still has placeholders (merge keeps existing keys).
     await s3.putObject({
       Bucket: bucket,
       Key: affiliateMarkerKey(provider, affiliateId),
@@ -165,7 +229,13 @@ async function downloadOne(opts) {
       Metadata: patch,
     });
 
-    return { ok: true, affiliateId, size: body.length, status: 'ok' };
+    return {
+      ok: true,
+      affiliateId,
+      size: body.length,
+      status: 'ok',
+      placeholdersResolved: resolved.placeholdersResolved,
+    };
   } catch (err) {
     const code = 'download_error';
     try {
@@ -192,6 +262,7 @@ async function downloadOne(opts) {
       affiliateId,
       status: code,
       error: code,
+      placeholdersResolved: resolved.placeholdersResolved,
     };
   }
 }
@@ -199,4 +270,6 @@ async function downloadOne(opts) {
 module.exports = {
   downloadOne,
   readBody,
+  listFeedUrlPlaceholders,
+  resolveFeedUrlForFetch,
 };
