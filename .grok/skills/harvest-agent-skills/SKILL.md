@@ -398,3 +398,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search docs/mrb rematch: MERGEABLE tip with FR-2611 hostile pins green after jwt+mrb1404 heals --- PASS @ head without fold when only a few commits behind (FR #4649)
 - a-search FIX: when mrb1871 expects WooCommerce comingSoon but registry merchantConnect is already true from FR-180 on both the tip and origin/main, align the pin to connectEnabled --- do not fold (FR #4649).
 - a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
+- When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
