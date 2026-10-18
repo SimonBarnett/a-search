@@ -178,6 +178,7 @@ function requiredEntryAssetPaths() {
   return [
     'entry/src/index.js',
     'entry/src/enqueue.js',
+    'entry/src/dbBackedQueue.js',
     'entry/src/selftestProbes.js',
     'providers/registry.json',
     'providers/loadRegistry.js',
