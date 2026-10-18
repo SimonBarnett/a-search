@@ -3,7 +3,11 @@
 Agents call **`POST /search`** with `hostkey`, `guid`, and `queries` / `exclude`
 (same shape as `searches.json`). Auth is the agent API key
 (`x-agent-api-key` or `Authorization: Bearer agent:<key>`), matching Lambda env
-`A_SEARCH_AGENT_API_KEY`. This is not a public widget route; HTTP API CORS stays
+`A_SEARCH_AGENT_API_KEY`. FR #4311 stores that key in a generated Secrets
+Manager secret (`AgentApiKeySecret`). The entry Lambda reads it with a
+CloudFormation dynamic reference and `grantRead`. Stack outputs are
+`SearchApiUrl` and `AgentApiKeySecretArn` only - never the key value, and
+never a `-c agentApiKey` context string. This is not a public widget route; HTTP API CORS stays
 on the FR-153 allowlist (never `*`).
 
 ## Fan-out
