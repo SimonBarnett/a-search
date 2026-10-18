@@ -453,3 +453,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB on FR #4030: never ship FAKE_ default for A_SEARCH_AGENT_API_KEY; stack fix PR into tip then PASS @ merge SHA; file child FR when helpers land but provider call sites do not
 - FR #4038: live workers write a-clubs IN/ when hostkey+guid present via writeLiveProviderInResult; handlers use handleSqsWith429 (never 429-to-DLQ); legacy msgs without hostkey keep writeResults so unit fixtures stay green.
 - MRB CONFLICTING live-IN tip after #4035: one fold keep tip IN_SOURCES; add wireAclubsInAccess so workers can PutObject a-clubs IN/ before PASS
+- Harvest tip rematching live-IN CONFLICTING keep-both / wireAclubsInAccess after #4056 on main: CLOSED-duplicate; do not merge
