@@ -1,4 +1,4 @@
-﻿---
+---
 name: harvest-agent-skills
 description: >
   FOUNDATION: harvest a-search playbooks back as PRs to SimonBarnett/a-search.
