@@ -455,3 +455,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4039 FIFO provider queues: MERGEABLE behind main needs no fold (FR #4649); pin fifo:true + -dlq.fifo + MessageDeduplicationId with contentBasedDeduplication false
 - MRB CONFLICTING live-IN tip after #4035: one fold keep tip IN_SOURCES; add wireAclubsInAccess so workers can PutObject a-clubs IN/ before PASS
 - When two open PRs wire live providers to a-clubs IN/+backoff429, keep the fuller tip (handleSqsWith429 CMV + CDK a-clubs IN grant + docs) and FAIL-close the subset; leave the Closes issue OPEN for the kept tip
+- When two open PRs wire live providers to a-clubs IN/+backoff429, keep the fuller tip (handleSqsWith429 CMV + CDK a-clubs IN grant + docs) and FAIL-close the subset; leave the Closes issue OPEN for the kept tip.
