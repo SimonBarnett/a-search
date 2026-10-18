@@ -27,6 +27,19 @@ files on first request.
 **Host** comes from the `Origin` header only (`?host=` is ignored). Missing or
 unparseable Origin returns `400` `origin_required`.
 
+**FR #4107 — club domain, not embed frame:** when `Origin` is a known embed
+iframe host (today: `*.filesusr.com` Wix HTML components), the gateway resolves
+the **club's own domain** before creating any `a-clubs/{hostkey}/` folder or
+queue message. Wix encoding (vendor docs + live sample
+`www-mymodelflyingclub-co-uk.filesusr.com` ↔ `www.mymodelflyingclub.co.uk`)
+replaces every `.` in the club hostname with `-`. Literal hyphens in a club
+domain are lossy under that encoding: the widget may send `X-Parent-Origin`
+(from `location.ancestorOrigins` / `document.referrer`); it is accepted **only**
+when it re-encodes to the same filesusr label, and it is never a free-form
+`?host=` override. If the club domain cannot be determined unambiguously,
+returns `400` `club_domain_unresolved` and creates **nothing**. Embed-pattern
+hosts are never stored as hostkeys (gateway resolve + `ensureAclubsHost` guard).
+
 **GUID folder marker** (zero-byte `a-clubs/{hostkey}/{guid}/`): `uri`, `seen=0`,
 `clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`. `widget.json` is a plain
 seed file (no GUID folder metadata). `uri` prefers the `Referer` path; else
@@ -75,10 +88,17 @@ No `-c corsOrigins=` is required (CORS is hardcoded `*`).
 ```bash
 curl -sS -H "Origin: https://example.com" \
   "$PartsGatewayApiUrl/parts?widgetGuid=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+
+# FR #4107 live check (Wix frame → club domain host folder):
+curl -sS -H "Origin: https://www-mymodelflyingclub-co-uk.filesusr.com" \
+  "$PartsGatewayApiUrl/parts?widgetGuid=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+# Expect a-clubs/www.mymodelflyingclub.co.uk/ (normalised), never a filesusr.com folder.
 ```
 
 Repeat the same URL --- response stays 200 (idempotent). Missing `Origin`
 yields `400` `origin_required`. Widget shows "Searching" while `init` is `0`.
+When embedded (Wix HTML box), the widget also sends `X-Parent-Origin` so
+hyphenated club domains resolve unambiguously.
 
 Bob deploys after MRB PASS + merge (fleet playbook).
 

@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR #3968: standalone parts-gateway Lambda --- GET /parts via a-clubs S3.
- * No MSSQL, no VPC, no secrets. Host from Origin only.
+ * FR #3968 / FR #4107: standalone parts-gateway Lambda --- GET /parts via a-clubs S3.
+ * No MSSQL, no VPC, no secrets. Host from Origin only (embed frames → club domain).
  */
 
 const { pagePartsAclubs, PartsError } = require('./pageParts');
@@ -143,11 +143,12 @@ async function handlePartsGateway(event, deps = {}) {
 
   try {
     const page = await pagePartsAclubs({
-      // host from Origin only --- query.host ignored
+      // host from Origin only --- query.host ignored (FR #3968 / #4107)
       widgetGuid: query.widgetGuid,
       offset: query.offset,
       n: query.n,
       origin: headers.origin,
+      parentOrigin: headers['x-parent-origin'],
       referer: headers.referer,
       pageUri: query.pageUri || query.uri,
       uri: query.uri,
@@ -176,6 +177,7 @@ async function handlePartsGateway(event, deps = {}) {
       code === 'invalid_widget_guid' ||
       code === 'host_required' ||
       code === 'origin_required' ||
+      code === 'club_domain_unresolved' ||
       code === 'invalid_offset_or_n' ||
       code === 'invalid_host_folder_name'
     ) {
