@@ -68,28 +68,20 @@ describe('FR-131 stage maintainer Lambda asset with shared/', () => {
     }
   });
 
-  it('CDK uses staged maintainer asset (not bare maintainer/src)', () => {
+  it('staging helper remains; CDK stack no longer wires maintainer (FR-3949)', () => {
     const stack = fs.readFileSync(
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    assert.match(stack, /stageMaintainerLambdaAsset/);
-    assert.match(stack, /maintainerHandlerPath/);
+    assert.doesNotMatch(stack, /stageMaintainerLambdaAsset/);
+    assert.doesNotMatch(stack, /maintainerHandlerPath/);
+    assert.doesNotMatch(stack, /MaintainerLiveFunction|MaintainerSandboxFunction/);
     assert.match(
       fs.readFileSync(
         path.join(root, 'scripts', 'stage-maintainer-lambda-asset.js'),
         'utf8',
       ),
       /shared\/intake\/reportException/,
-    );
-    assert.doesNotMatch(
-      stack,
-      /Code\.fromAsset\(\s*path\.join\(__dirname,\s*'\.\.',\s*'\.\.',\s*'maintainer',\s*'src'\)\s*\)/,
-    );
-    // Handler must not stay as bare schedule.handler after staging.
-    assert.doesNotMatch(
-      stack,
-      /MaintainerLiveFunction[\s\S]{0,200}handler:\s*'schedule\.handler'/,
     );
   });
 });

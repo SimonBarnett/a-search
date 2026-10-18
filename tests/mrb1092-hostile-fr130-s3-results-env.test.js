@@ -22,12 +22,13 @@ describe('MRB #1092 hostile FR-130 S3_RESULTS_BUCKET', () => {
     assert.match(t, /grantReadWrite\(/);
     assert.match(t, /wireResultsBucketAccess\(\s*entry/);
     assert.match(t, /wireResultsBucketAccess\(\s*worker/);
-    assert.match(t, /wireResultsBucketAccess\(\s*maintainerLive/);
-    assert.match(t, /wireResultsBucketAccess\(\s*maintainerSandbox/);
     assert.match(t, /wireResultsBucketAccess\(\s*awinOnboardingLive/);
     assert.match(t, /wireResultsBucketAccess\(\s*awinOnboardingSandbox/);
     assert.match(t, /wireResultsBucketAccess\(\s*impactOnboardingSandbox/);
     assert.match(t, /wireResultsBucketAccess\(\s*impactOnboardingLive/);
+    // FR-3949: maintainer Lambdas gone from AWS
+    assert.doesNotMatch(t, /wireResultsBucketAccess\(\s*maintainerLive/);
+    assert.doesNotMatch(t, /wireResultsBucketAccess\(\s*maintainerSandbox/);
     assert.match(t, /module\.exports[\s\S]*wireResultsBucketAccess/);
   });
 

@@ -106,13 +106,15 @@ describe('FR-135 stage mssql into local worker + maintainer assets', () => {
     }
   });
 
-  it('CDK stack still stages local workers via helper (source pin)', () => {
+  it('CDK stack stages marketplace workers; maintainer staging helpers remain off-stack (FR-3949)', () => {
     const stack = fs.readFileSync(
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
+    // Marketplace workers still stage via helper (local/DB-backed skip the loop).
     assert.match(stack, /stageProviderWorkerLambdaAsset/);
-    assert.match(stack, /stageMaintainerLambdaAsset/);
+    // FR-3949: maintainer Lambda removed from AWS --- stack must not call the helper.
+    assert.doesNotMatch(stack, /stageMaintainerLambdaAsset\s*\(/);
     assert.match(
       fs.readFileSync(
         path.join(root, 'scripts', 'stage-provider-worker-lambda-asset.js'),
@@ -120,6 +122,7 @@ describe('FR-135 stage mssql into local worker + maintainer assets', () => {
       ),
       /stageMssqlNodeModules/,
     );
+    // Helper script still exists for walrus/local tooling; just unused by CDK.
     assert.match(
       fs.readFileSync(
         path.join(root, 'scripts', 'stage-maintainer-lambda-asset.js'),

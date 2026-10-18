@@ -15,7 +15,8 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+// FR-3949: marketplace only (local providers no longer have per-source queues).
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj'];
 
 /**
  * True when a CFN SQS queue uses SQS-managed SSE (SSE-SQS) or aws/sqs KMS alias.

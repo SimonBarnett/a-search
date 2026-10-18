@@ -15,7 +15,16 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains', 'woocommerce']; // FR-179 wix + FR-173 webgains + FR-180 woocommerce; GBP/UK hold bol/aliexpress/avantlink; worker floors 30 (+ FR-2139 shop-sync alarm separate)
+// FR-3949: marketplace only (local/DB-backed share a-search-db-backed; no per-source alarms).
+const ENABLED_IDS = [
+  'amazon',
+  'ebay',
+  'rakuten',
+  'cj',
+  'kelkoo',
+  'etsy',
+  'skimlinks',
+];
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -67,11 +76,11 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       );
     }
 
-    // Entry + workers (14 after FR-167) + maintainer (2) + onboarding (...) â€” floor only
+    // FR-3949: entry + marketplace workers + onboarding + widget helpers (no maintainers).
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',
     );
-    assert.ok(fns.length >= 19, `expected >=19 Lambdas, got ${fns.length}`);
+    assert.ok(fns.length >= 15, `expected >=15 Lambdas, got ${fns.length}`);
 
     const topics = Object.entries(resources).filter(
       ([, res]) => res && res.Type === 'AWS::SNS::Topic',
@@ -85,20 +94,20 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
         // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
         !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // Worker DLQ alarms only (15 enabled x live+sandbox = 30). FR-2139 shop-sync DLQ alarm is extra.
+    // Marketplace worker DLQ alarms only (7 x live+sandbox = 14). FR-2139 shop-sync separate.
     const workerDlqAlarms = alarms.filter((a) => {
       const name = (a.Properties && a.Properties.AlarmName) || '';
       const blob = JSON.stringify(a.Properties || {});
       return (
-        !/shop-sync|ShopSync|widget-events/i.test(String(name)) &&
-        !/shop-sync|widget-events/i.test(blob) &&
+        !/shop-sync|ShopSync|widget-events|db-backed/i.test(String(name)) &&
+        !/shop-sync|widget-events|db-backed/i.test(blob) &&
         (/-dlq/i.test(String(name)) || /-dlq/i.test(blob))
       );
     });
     assert.equal(
       workerDlqAlarms.length,
-      30,
-      `expected 30 DLQ depth alarms, got ${workerDlqAlarms.length}`,
+      14,
+      `expected 14 marketplace DLQ depth alarms, got ${workerDlqAlarms.length}`,
     );
 
     for (const id of ENABLED_IDS) {

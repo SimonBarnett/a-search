@@ -55,39 +55,18 @@ function walkFiles(dir, out = []) {
 }
 
 describe('FR-251 madeiradb read-only + a_search ownership', () => {
-  it('CDK defaults live=a_search sandbox=a_search_sandbox; rejects madeiradb wire', () => {
+  it('CDK no longer wires MSSQL (FR-3949); FR-251 Decision remains in docs + connector', () => {
     // Source pins (no aws-cdk-lib required — MRB #2209 / FR #3717 seat gap).
+    // FR-3949 removed MSSQL CDK wiring; madeiradb guards live in
+    // shared/mssql/connect + docs/fr/FR-251.md (not CDK).
     const stackSrc = fs.readFileSync(STACK_PATH, 'utf8');
-    assert.match(stackSrc, /MSSQL_LIVE_DATABASE = 'a_search'/);
-    assert.match(stackSrc, /MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox'/);
-    assert.doesNotMatch(stackSrc, /MSSQL_LIVE_DATABASE = 'madeiradb'/);
-    assert.match(stackSrc, /mssqlAppSecretArn/);
-    assert.match(stackSrc, /MADEIRADB_DATABASE/);
-    assert.match(
-      stackSrc,
-      /MSSQL_DATABASE=madeiradb forbidden \(FR-251\)/,
-    );
-    let wireMssqlSecretEnv;
-    try {
-      ({ wireMssqlSecretEnv } = require('../cdk/lib/a-search-stack'));
-    } catch (err) {
-      if (err && err.code === 'MODULE_NOT_FOUND') return;
-      throw err;
-    }
-    assert.throws(
-      () =>
-        wireMssqlSecretEnv(
-          {
-            addEnvironment() {},
-          },
-          {
-            secretValueFromJson: () => ({ unsafeUnwrap: () => 'x' }),
-            grantRead() {},
-          },
-          { database: 'madeiradb' },
-        ),
-      /madeiradb forbidden|FR-251/,
-    );
+    assert.doesNotMatch(stackSrc, /function wireMssql/);
+    assert.doesNotMatch(stackSrc, /MssqlConnSecret|mssqlAppSecretArn|mssqlSecretArn/);
+    assert.doesNotMatch(stackSrc, /MSSQL_LIVE_DATABASE\s*=/);
+    const fr = fs.readFileSync(path.join(ROOT, 'docs', 'fr', 'FR-251.md'), 'utf8');
+    assert.match(fr, /Decision \(LOCKED\)/);
+    assert.match(fr, /madeiradb/i);
+    assert.match(fr, /a_search/);
   });
 
   it('connector throws wrong_database for madeiradb; allowlist ok', async () => {

@@ -42,13 +42,13 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     );
   });
 
-  it('FR-142/143 pins use 26 primary/DLQ floors after keep-both shopify+tradedoubler+avantlink', () => {
+  it('FR-142/143 pins use FR-3949 marketplace floors (14) after keep-both', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 30 primary queues/);
-    assert.match(fr143, /expected 30 DLQ depth alarms/);
+    assert.match(fr142, /expected 14 marketplace primary queues/);
+    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
     assert.match(fr142, /'kelkoo'/);
     assert.match(fr142, /'skimlinks'/);
     assert.doesNotMatch(fr142, /'aliexpress'/);

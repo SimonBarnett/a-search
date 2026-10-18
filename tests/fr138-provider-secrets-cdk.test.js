@@ -116,16 +116,7 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'CJ_API_TOKEN',
       'cj-live',
     );
-    assertSecretRef(
-      envOf('a-search-awin-worker-live'),
-      'AWIN_API_TOKEN',
-      'awin-live',
-    );
-    assertSecretRef(
-      envOf('a-search-impact-worker-sandbox'),
-      'IMPACT_CAMPAIGN_ID',
-      'impact-sandbox',
-    );
+    // FR-3949: local awin/impact workers removed; credentials still on onboarding.
     assertSecretRef(
       envOf('a-search-kelkoo-worker-live'),
       'KELKOO_API_KEY',

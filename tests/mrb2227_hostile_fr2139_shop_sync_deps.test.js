@@ -61,7 +61,9 @@ describe('MRB #2227 hostile FR-2139 shop-sync deps gate', () => {
       stack,
       /SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC\s*=\s*SHOP_SYNC_LAMBDA_TIMEOUT_SEC\s*\*\s*6/,
     );
-    assert.match(stack, /SqsEventSource\(shopSyncQueue/);
+    // FR-3949: queue+DLQ + entry send stay; AWS consumer Lambda removed
+    assert.doesNotMatch(stack, /SqsEventSource\(shopSyncQueue/);
+    assert.doesNotMatch(stack, /shopSyncWorker\.handler/);
     assert.match(stack, /grantSendMessages\(entry\)/);
 
     const worker = fs.readFileSync(
