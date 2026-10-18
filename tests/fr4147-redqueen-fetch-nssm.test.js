@@ -284,6 +284,8 @@ describe('FR #4147 nssm installer + package.json', () => {
     assert.match(ps1, /redqueen\\logs/);
     assert.match(ps1, /AWS_PROFILE/);
     assert.match(ps1, /a-search-redqueen-annotator/);
+    assert.match(ps1, /\$NssmArgs/);
+    assert.doesNotMatch(ps1, /param\(\[string\]\$Nssm,\s*\[string\[\]\$Args\)/);
     assert.doesNotMatch(ps1, /sc\.exe create/);
   });
 
