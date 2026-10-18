@@ -50,26 +50,26 @@ Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder withou
 
 ## download / Invoke-FolderDownload.ps1
 
-Manual affiliate parts download for `a-affiliates` (FR #4108). Reuses `affiliates/src/downloadOne` via `tools/run-folder-download.js` (no second fetch implementation; not the #4001 DB import).
+Manual affiliate feed download for `a-affiliates` (FR #4108 / #4195). Reuses `affiliates/src/downloadOne` via `tools/run-folder-download.js` (no second fetch implementation; not the #4001 DB import).
 
-From an affiliate folder, reads marker metadata (`feedurl`, format/compression) and writes `{provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}` + `parts/latest.{ext}`, bumping `lastdownload` / `laststatus` / `lastsize` / `lastmod`. Default **skips** when today's dated parts object already exists (`parts_exists`); pass `-Force` to re-download. Provider cwd requires `-All` (per-affiliate; one failure does not stop the others).
+From an affiliate folder, reads marker metadata (`feedurl`, format/compression) and writes one decompressed object `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` (no `parts/`, no `latest`), bumping `lastdownload` / `lastok` / `laststatus` / `lastsize` / `lastmod`. Default **skips** when today's dated object already exists (`exists`); pass `-Force` to re-download. Provider cwd requires `-All` (per-affiliate; one failure does not stop the others). Summary lines include `key=`.
 
 ```powershell
 cd S:\a-affiliates\awin\<affiliateid>
 download          # or: .\tools\download.ps1
 download -WhatIf  # dry run: no HTTP, no S3 writes; feedurl shown as ***set***
-download -Force   # overwrite today's dated parts
+download -Force   # overwrite today's dated feed
 cd S:\a-affiliates\awin
 download -All     # each affiliate child
 ```
 
-Env: `A_SEARCH_S3_MOUNT`, `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE` (default `a-search-redqueen-agents`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). Never prints feed URLs, passwords, or tokens.
+Env: `A_SEARCH_S3_MOUNT` (redqueen: `S:\`; default falls back to `D:\s3`), `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE` (default `a-search-redqueen-agents`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). Never prints feed URLs, passwords, or tokens.
 
 **AWS identity (FR #4167):** `Invoke-FolderDownload` resolves one profile (`-AwsProfile`, else `A_SEARCH_AGENTS_AWS_PROFILE`, else `AWS_PROFILE`, else `a-search-redqueen-agents`) and sets process `AWS_PROFILE` for the whole run so marker metadata reads (`aws s3api head-object` / tagging) and Node S3 writes use the same identity. Setting `A_SEARCH_AGENTS_AWS_PROFILE` alone is enough.
 
 **WinPS 5.1 (FR #4167):** JSON args (including `affiliateMeta` / `feedurl`) are passed to Node via process env `A_SEARCH_FOLDER_DOWNLOAD_ARGS` and `run-folder-download.js --args-env`, not on the process command line (avoids 5.1 quote mangling and keeps the feed key out of Task Manager / process audit). Shims `download.ps1` / `meta.ps1` / `search.ps1` end with `exit $LASTEXITCODE` so `powershell -File` preserves tool exit codes.
 
-Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate folder, `4` provider without `-All`, `5` bucket root, `1` download/missing_feedurl/partial `-All` failure, `0` success (including `parts_exists` skip).
+Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate folder, `4` provider without `-All`, `5` bucket root, `1` download/missing_feedurl/partial `-All` failure, `0` success (including `exists` skip).
 
 ## Tests
 

@@ -16,6 +16,12 @@ const PROVIDER_KEYS = Object.freeze([
   'password',
   'apitoken',
   'authtype',
+  'enabled',
+  'refreshdays',
+  'format',
+  'compression',
+  'feedapikey',
+  'darwinhash',
   'lastmod',
 ]);
 
@@ -31,6 +37,7 @@ const AFFILIATE_KEYS = Object.freeze([
   'enabled',
   'disabledreason',
   'lastdownload',
+  'lastok',
   'laststatus',
   'lastsize',
   'lastmod',
@@ -42,9 +49,15 @@ const FORBIDDEN_AFFILIATE_KEYS = Object.freeze([
 ]);
 
 const AUTH_TYPES = Object.freeze(['password', 'token', 'oauth']);
-const FORMATS = Object.freeze(['csv', 'xml', 'json']);
+const FORMATS = Object.freeze(['csv', 'tsv', 'xml', 'json']);
 const COMPRESSIONS = Object.freeze(['gzip', 'zip', 'none']);
-const SECRET_META_KEYS = Object.freeze(['password', 'apitoken', 'username']);
+const SECRET_META_KEYS = Object.freeze([
+  'password',
+  'apitoken',
+  'username',
+  'feedapikey',
+  'darwinhash',
+]);
 
 /** Soft limit for S3 user metadata payload (~2 KiB). */
 const METADATA_SOFT_MAX_BYTES = 2048;
@@ -165,7 +178,7 @@ function normalizeAffiliateMeta(raw, opts) {
     out.compression = 'none';
   }
 
-  if (!out.schedule) out.schedule = 'weekly';
+  if (!out.schedule) out.schedule = 'daily';
 
   if (out.enabled == null || out.enabled === '') {
     out.enabled = '1';
@@ -193,6 +206,12 @@ function normalizeAffiliateMeta(raw, opts) {
       .toLowerCase();
     const allowEmpty =
       status === 'missing_feedurl' ||
+      status === 'exists' ||
+      status === 'unsupported_format' ||
+      status === 'unsupported_compression' ||
+      status === 'decompress_error' ||
+      status === 'empty_feed' ||
+      status === 'unresolved_placeholder' ||
       (enabled === '0' && reason === 'nofeed');
     if (!allowEmpty) {
       const err = new Error('feedurl_or_feedid_required');

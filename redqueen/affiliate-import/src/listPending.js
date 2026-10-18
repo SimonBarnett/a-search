@@ -101,6 +101,7 @@ const listPendingFeedFiles = listPendingPartsFiles;
 
 /**
  * Read affiliate marker metadata (format, compression). Never log secrets.
+ * compression describes the *source* feed; stored objects are decompressed (#4195).
  * @param {{ getObject: Function, bucket?: string, provider: string, affiliateid: string }} opts
  */
 async function loadAffiliateMeta(opts) {

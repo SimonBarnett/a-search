@@ -150,10 +150,11 @@ describe('FR #3999 retention', () => {
   });
 });
 
-describe('FR #3999 weekly download', () => {
-  it('gzip feed download success + latest copy', async () => {
+describe('FR #3999 / #4195 daily download (flat decompressed feed)', () => {
+  it('gzip feed download writes decompressed flat key + lastok', async () => {
     const s3 = createMemoryS3();
-    const gz = zlib.gzipSync(Buffer.from('sku,price\n1,2\n', 'utf8'));
+    const plain = Buffer.from('sku,price\n1,2\n', 'utf8');
+    const gz = zlib.gzipSync(plain);
     await s3.putObject({
       Bucket: BUCKET,
       Key: 'awin/',
@@ -197,20 +198,20 @@ describe('FR #3999 weekly download', () => {
       now,
     });
     assert.equal(r.ok, true);
-    assert.equal(r.size, gz.length);
+    assert.equal(r.size, plain.length);
+    assert.equal(r.key, 'awin/shop1/2026-10-18.csv');
 
     const dated = await s3.getObject({
-      Key: 'awin/shop1/parts/2026-10-18.csv.gz',
+      Key: 'awin/shop1/2026-10-18.csv',
     });
-    assert.deepEqual(dated.Body, gz);
-    const latest = await s3.getObject({
-      Key: 'awin/shop1/parts/latest.csv.gz',
-    });
-    assert.deepEqual(latest.Body, gz);
+    assert.deepEqual(dated.Body, plain);
+    assert.equal(s3.objects.has('awin/shop1/parts/latest.csv.gz'), false);
+    assert.equal(s3.objects.has('awin/shop1/parts/2026-10-18.csv.gz'), false);
 
     const head = await s3.headObject({ Key: 'awin/shop1/' });
     assert.equal(head.Metadata.laststatus, 'ok');
-    assert.equal(head.Metadata.lastsize, String(gz.length));
+    assert.equal(head.Metadata.lastsize, String(plain.length));
+    assert.equal(head.Metadata.lastok, now.toISOString());
     assert.equal(head.Metadata.extrakey, 'preserve-me');
     assert.equal(head.Metadata.name, 'Shop One');
   });
@@ -268,11 +269,12 @@ describe('FR #3999 weekly download', () => {
 
     assert.equal(summary.ok, 1);
     assert.equal(summary.failed, 1);
-    assert.ok(s3.objects.has('impact/good/parts/latest.csv'));
-    assert.equal(s3.objects.has('impact/bad/parts/latest.csv'), false);
+    assert.ok(s3.objects.has('impact/good/2026-10-18.csv'));
+    assert.equal(s3.objects.has('impact/bad/2026-10-18.csv'), false);
 
     const badHead = await s3.headObject({ Key: 'impact/bad/' });
     assert.equal(badHead.Metadata.laststatus, 'http_500');
+    assert.equal(badHead.Metadata.lastok, undefined);
 
     const logBlob = logs.join('\n');
     assert.match(logBlob, /affiliate bad/);
@@ -282,7 +284,7 @@ describe('FR #3999 weekly download', () => {
     assert.equal(/https:\/\/example\.invalid\/bad\.csv/.test(logBlob), false);
   });
 
-  it('retention keeps last 4 after download', async () => {
+  it('download leaves older dated feeds (no retention delete)', async () => {
     const s3 = createMemoryS3();
     await s3.putObject({
       Bucket: BUCKET,
@@ -301,19 +303,11 @@ describe('FR #3999 weekly download', () => {
         enabled: '1',
       }),
     });
-    for (const d of [
-      '2026-09-01',
-      '2026-09-08',
-      '2026-09-15',
-      '2026-09-22',
-      '2026-09-29',
-    ]) {
-      await s3.putObject({
-        Bucket: BUCKET,
-        Key: `cj/x/parts/${d}.csv`,
-        Body: Buffer.from(d, 'utf8'),
-      });
-    }
+    await s3.putObject({
+      Bucket: BUCKET,
+      Key: 'cj/x/2026-09-01.csv',
+      Body: Buffer.from('old', 'utf8'),
+    });
 
     await downloadOne({
       s3,
@@ -326,23 +320,16 @@ describe('FR #3999 weekly download', () => {
         body: Buffer.from('new', 'utf8'),
       }),
       now: new Date('2026-10-18T17:00:00.000Z'),
-      keep: 4,
     });
 
-    const listed = await s3.listObjectsV2({ Prefix: 'cj/x/parts/' });
-    const dated = (listed.Contents || [])
-      .map((c) => c.Key)
-      .filter((k) => /\/\d{4}-\d{2}-\d{2}\.csv$/.test(k))
-      .sort();
-    assert.equal(dated.includes('cj/x/parts/2026-09-01.csv'), false);
-    assert.equal(dated.length, 4);
-    assert.ok(dated.includes('cj/x/parts/2026-10-18.csv'));
-    assert.ok(s3.objects.has('cj/x/parts/latest.csv'));
+    assert.ok(s3.objects.has('cj/x/2026-09-01.csv'));
+    assert.ok(s3.objects.has('cj/x/2026-10-18.csv'));
+    assert.equal(s3.objects.has('cj/x/parts/latest.csv'), false);
   });
 });
 
 describe('FR #3999 CDK source pins (no aws-cdk-lib runtime)', () => {
-  it('stack pins bucket, BlockPublicAccess, SSE, weekly rule, no ASearchStack', () => {
+  it('stack pins bucket, BlockPublicAccess, SSE, daily rule, no ASearchStack', () => {
     const stackPath = path.join(ROOT, 'cdk', 'lib', 'affiliates-stack.js');
     const binPath = path.join(ROOT, 'cdk', 'bin', 'affiliates.js');
     assert.equal(fs.existsSync(stackPath), true);
@@ -363,7 +350,7 @@ describe('FR #3999 CDK source pins (no aws-cdk-lib runtime)', () => {
     assert.match(stack, /enforceSSL:\s*true/);
     assert.match(stack, /RemovalPolicy\.RETAIN/);
     assert.match(stack, /autoDeleteObjects:\s*false/);
-    assert.match(stack, /Schedule\.rate\(cdk\.Duration\.days\(7\)\)/);
+    assert.match(stack, /Schedule\.rate\(cdk\.Duration\.days\(1\)\)/);
     assert.match(stack, /NODEJS_20_X/);
     assert.match(stack, /s3:DeleteObject/);
     assert.match(bin, /AAffiliates/);
@@ -395,6 +382,9 @@ describe('FR #3999 CDK source pins (no aws-cdk-lib runtime)', () => {
     assert.match(doc, /stripeaccountid/);
     assert.match(doc, /Lambda/);
     assert.match(doc, /Fargate/);
+    assert.match(doc, /yyyy-mm-dd/);
+    assert.match(doc, /refreshdays|lastok/);
+    assert.match(doc, /rate\(1 day\)/);
     const deploy = fs.readFileSync(path.join(ROOT, 'docs', 'deploy.md'), 'utf8');
     assert.match(deploy, /AAffiliates/);
   });
