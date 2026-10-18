@@ -489,3 +489,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When FR needs a-affiliates AGENT.md and later comments paste the bodies, ACK and land repo skills from the paste; do not GIVEUP needs_human after the paste arrives; leave live S3 pointer updates for redqueen
 - FR tools download WinPS 5.1: pass JSON via A_SEARCH_FOLDER_DOWNLOAD_ARGS + run-folder-download.js --args-env (never argv); set process AWS_PROFILE for whole Invoke-FolderDownload so aws CLI meta and Node S3 share one identity; shims need exit $LASTEXITCODE for powershell -File
 - WinPS 5.1: never name a param $Args (automatic, always empty); nssm wrappers must return only [int]$LASTEXITCODE after Out-Host/Out-Null; pin with fake-nssm install path not DryRun-only.
+- APartsGateway CORS: corsPreflight allowHeaders must include x-parent-origin (and content-type) or Wix-embedded widget OPTIONS with Access-Control-Request-Headers blocks GET /parts.
