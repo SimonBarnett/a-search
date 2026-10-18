@@ -336,6 +336,8 @@ describe('FR #4098 drain + install pins', () => {
     assert.match(src, /AppRestartDelay|AppExit/);
     assert.match(src, /Unregister/);
     assert.match(src, /WhatIf|DryRun/);
+    assert.match(src, /\$NssmArgs/);
+    assert.doesNotMatch(src, /param\(\[string\]\$Nssm,\s*\[string\[\]\$Args\)/);
     assert.doesNotMatch(src, /sc\.exe create/);
     assert.doesNotMatch(src, /annotations\.json/);
   });
