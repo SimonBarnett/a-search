@@ -534,3 +534,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a GUID search retry posts an existing searches.json, the success write must keep market and currency on the file. Do not replace the doc with queries, exclude and searchid only.
 - searches.json queries-only repost: copy existing.market and existing.currency onto the POST body and the written doc when searchid lands; q stays product keywords only.
 - Generate the a-search agent API key with Secrets Manager GenerateSecretString. Put a dynamic reference in A_SEARCH_AGENT_API_KEY and grantRead on the entry Lambda. Output the secret ARN, never the value, and do not take -c agentApiKey.
+- A docs/mrb PR whose first commit is this seat harvest tip is self-MRB even after that tip has merged. ACK then GIVEUP with the intake id. Leave the hostile pin for another seat.
