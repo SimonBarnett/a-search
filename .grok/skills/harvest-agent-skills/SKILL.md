@@ -415,3 +415,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Stacked Phase5 ComponentsPiece tips: retarget tip to main, merge origin/main, Closes full open FR stack, close earlier stack heads as superseded, board PASS + --auto --squash, DONE without CI poll
 - a-search MRB CONFLICTING on runCdkSynth superviseMain: prefer main quoteWinArg+cmd.exe /s /c over tip shell:true quote; update fr3663 pin to match; one fold then PASS (FR #4649)
 - a-search FR: stack-wide AWS/MSSQL cutover with open Simon questions and walrus live acceptance --- ACK then GIVEUP with a child-FR matrix comment; do not open a partial Closes PR that cannot meet every acceptance checkbox
+- Docs/hostile companion PR opened by the MRB seat is self-MRB for that seat --- NACK before review; leave for a different seat (FR #2604).
