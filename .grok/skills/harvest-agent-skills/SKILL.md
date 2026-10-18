@@ -395,3 +395,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - docs/mrb rematch: when tip-owned pins green and CI fails only ambient mrb1404 that also fails on origin/main, PASS @ MERGEABLE head without fold (FR #4649)
 - When jwt tip product pins are green and CI fails only ambient mrb1404 that also fails on tip and origin/main, DONE FIX at MERGEABLE head without fold (FR #4649)
 - a-search FR: when one covering OPEN PR already Closes the issue and a sibling implement PR is CLOSED unmerged, Prefer ExistingPrUrl the OPEN PR — do not reopen the sibling or open a third PR
+- a-search docs/mrb rematch: MERGEABLE tip with FR-2611 hostile pins green after jwt+mrb1404 heals — PASS @ head without fold when only a few commits behind (FR #4649)
