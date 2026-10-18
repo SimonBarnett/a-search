@@ -521,3 +521,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a grok page review hits the 120s limit after a larger prompt, tell the model to answer in one shot from the supplied text and not to browse. Keep the timeout, and a GUID retry must not delete the host SQS message.
 - Reject a redqueen host brief unless club, audience and affiliateOpportunities are non-empty and the summary is not a plan to browse. Fetch about/shop/training pages in the annotator. Do not set annotated and do not review GUIDs until that brief is complete.
 - a-clubs host marker identity is userid only. Do not rename the locked {env}/x/{customerNumber}/ widget tree in the same change. Migration of the old metadata key is dry-run by default, copy-in-place, and must not bump lastmod or lastupdate.
+- FIX when FR #4277 host-brief gate lands: update fr4246 (and other) fake reviewHost fixtures to return non-empty club/audience/affiliateOpportunities or drain returns retry instead of host_processed.
+- FIX on a PR already CLOSED as superseded by a Closes successor: ACK, verify covering tip still open with Closes, DONE FIX with the assigned PR URL, do not reopen
