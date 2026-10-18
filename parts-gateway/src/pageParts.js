@@ -6,10 +6,19 @@
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
-const { setInit, touchLastmod } = require('../../shared/widgets/hostFolderMeta');
+const {
+  setInit,
+  touchLastmod,
+  partsResponseLeaksSecrets,
+} = require('../../shared/widgets/hostFolderMeta');
 const { ensureAclubsHost } = require('./ensureHost');
 const { ensureAclubsWidget } = require('./ensureWidget');
-const { widgetFileKey, widgetInPrefix, hostMarkerKey } = require('./aClubsKeys');
+const {
+  widgetFileKey,
+  widgetInPrefix,
+  hostMarkerKey,
+  guidMarkerKey,
+} = require('./aClubsKeys');
 const { requireHostFromOrigin } = require('./originHost');
 
 class PartsError extends Error {
@@ -208,7 +217,7 @@ async function pagePartsAclubs(opts) {
     now: opts.now,
   });
 
-  const widgetKey = widgetFileKey(host, guid, 'widget.json');
+  const guidKey = guidMarkerKey(host, guid);
   let init = parseInitFlag(
     widgetInfo.metadata && widgetInfo.metadata.init,
   );
@@ -247,7 +256,7 @@ async function pagePartsAclubs(opts) {
       ContentLength: Body.length,
       ContentType: 'application/json; charset=utf-8',
     });
-    await setInit({ Key: widgetKey, ...s3Meta });
+    await setInit({ Key: guidKey, ...s3Meta });
     await touchLastmod({ Key: hostMarkerKey(host), ...s3Meta });
     init = 1;
   }
@@ -256,7 +265,7 @@ async function pagePartsAclubs(opts) {
   const next = offset + n;
   const nextOffset = next < live.length ? next : null;
 
-  return {
+  const response = {
     customerNumber: hostInfo.customerNumber,
     widgetGuid: guid,
     layout: widgetInfo.layout,
@@ -264,6 +273,10 @@ async function pagePartsAclubs(opts) {
     nextOffset,
     init,
   };
+  if (partsResponseLeaksSecrets(response)) {
+    throw new PartsError('parts_response_secret_leak');
+  }
+  return response;
 }
 
 module.exports = {

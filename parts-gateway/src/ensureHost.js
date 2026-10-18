@@ -73,6 +73,12 @@ async function ensureAclubsHost(opts) {
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
         customerNumber: customerNumber || userid,
+        email: md.email == null ? '' : String(md.email),
+        passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
+        stripeaccountid:
+          md.stripeaccountid == null ? '' : String(md.stripeaccountid),
+        stripecustomerid:
+          md.stripecustomerid == null ? '' : String(md.stripecustomerid),
         ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
         ...(md.annotated != null ? { annotated: String(md.annotated) } : {}),
       },
@@ -109,6 +115,11 @@ async function ensureAclubsHost(opts) {
     customerNumber: userid,
     lastmod: createdAtForMeta,
     annotated: '0',
+    // Claim/onboarding fills these later (setHostCredentials / setHostStripe).
+    email: '',
+    passwordhash: '',
+    stripeaccountid: '',
+    stripecustomerid: '',
   };
   const tagSet = buildHostTagSet({ hasdns: 0, partnerid: '', hasupg: 0 });
   const tagging = tagSet
@@ -147,6 +158,12 @@ async function ensureAclubsHost(opts) {
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
         customerNumber: String(md.customerNumber || uid),
+        email: md.email == null ? '' : String(md.email),
+        passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
+        stripeaccountid:
+          md.stripeaccountid == null ? '' : String(md.stripeaccountid),
+        stripecustomerid:
+          md.stripecustomerid == null ? '' : String(md.stripecustomerid),
         ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
       },
       tags: parseHostTagSet(tagSet),

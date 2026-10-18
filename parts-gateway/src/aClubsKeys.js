@@ -25,6 +25,19 @@ function useridClaimKey(userid) {
 }
 
 /**
+ * Zero-byte GUID folder marker key (trailing slash).
+ * Metadata (uri/seen/clicks/since/init/lastmod) lives here --- not on widget.json.
+ * @param {unknown} host
+ * @param {unknown} widgetGuid
+ * @returns {string}
+ */
+function guidMarkerKey(host, widgetGuid) {
+  const hostkey = safeHostFolderName(host);
+  const guid = assertWidgetGuid(widgetGuid);
+  return `${hostkey}/${guid}/`;
+}
+
+/**
  * @param {unknown} host
  * @param {unknown} widgetGuid
  * @param {string} name
@@ -55,6 +68,7 @@ function widgetInPrefix(host, widgetGuid) {
 
 module.exports = {
   hostMarkerKey,
+  guidMarkerKey,
   useridClaimKey,
   widgetFileKey,
   widgetInPrefix,

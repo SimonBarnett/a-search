@@ -100,6 +100,12 @@ function buildHostMetadata(opts) {
     host,
     hostkey: safeHostFolderName(host),
     customerNumber,
+    email: opts.email == null ? '' : String(opts.email).trim(),
+    passwordhash: opts.passwordhash == null ? '' : String(opts.passwordhash),
+    stripeaccountid:
+      opts.stripeaccountid == null ? '' : String(opts.stripeaccountid).trim(),
+    stripecustomerid:
+      opts.stripecustomerid == null ? '' : String(opts.stripecustomerid).trim(),
   };
 }
 
@@ -528,11 +534,181 @@ async function setInit(opts) {
   return { Key: state.Key, init: 1, lastmod, metadata };
 }
 
+/**
+ * Hash a host password for S3 metadata storage (FR #3968).
+ * Format: scrypt$16384$8$1$<saltHex>$<hashHex> (Node crypto.scrypt).
+ * Madeira's auth layer is not vendored here; claim/onboarding may pass a
+ * precomputed hash string instead. Never log plaintext or the hash.
+ * @param {string} plaintext
+ * @param {{ salt?: Buffer }} [opts]
+ * @returns {string}
+ */
+function hashHostPassword(plaintext, opts = {}) {
+  const crypto = require('node:crypto');
+  const plain = plaintext == null ? '' : String(plaintext);
+  if (!plain) {
+    const err = new Error('password_required');
+    err.code = 'password_required';
+    throw err;
+  }
+  const N = 16384;
+  const r = 8;
+  const p = 1;
+  const salt = opts.salt || crypto.randomBytes(16);
+  const hash = crypto.scryptSync(plain, salt, 32, { N, r, p });
+  return `scrypt$${N}$${r}$${p}$${salt.toString('hex')}$${hash.toString('hex')}`;
+}
+
+/**
+ * True when value looks like our scrypt hash (not plaintext).
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isHostPasswordHash(value) {
+  const s = value == null ? '' : String(value);
+  return /^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]+\$[0-9a-f]+$/i.test(s);
+}
+
+/**
+ * Set host email + passwordhash on the host marker; bumps lastmod.
+ * Pass a precomputed hash (isHostPasswordHash) or plaintext (hashed here).
+ * Never stores plaintext. Never logs email/hash.
+ * @param {{
+ *   Key: string,
+ *   email?: string|null,
+ *   passwordHash?: string|null,
+ *   password?: string|null,
+ *   bucket?: string,
+ *   now?: Date|string|number,
+ *   headObject?: Function,
+ *   getObject?: Function,
+ *   getObjectTagging?: Function,
+ *   copyObject?: Function,
+ *   putObject?: Function,
+ *   putObjectTagging?: Function,
+ * }} opts
+ */
+async function setHostCredentials(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('setHostCredentials opts required');
+  }
+  if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
+    throw new Error('copyObject_or_getObject_required');
+  }
+  let passwordhash = opts.passwordHash == null ? '' : String(opts.passwordHash);
+  if (opts.password != null && String(opts.password) !== '') {
+    passwordhash = hashHostPassword(String(opts.password));
+  }
+  if (passwordhash && !isHostPasswordHash(passwordhash)) {
+    // Treat non-hash strings as plaintext and hash them (never store raw).
+    passwordhash = hashHostPassword(passwordhash);
+  }
+  const email = opts.email == null ? '' : String(opts.email).trim();
+  const state = await readMarkerState(opts);
+  const lastmod = isoLastmod(opts.now);
+  const metadata = {
+    ...state.metadata,
+    email,
+    passwordhash,
+    lastmod,
+  };
+  await rewriteMarkerMetadata({
+    Key: state.Key,
+    metadata,
+    body: state.body == null ? Buffer.alloc(0) : state.body,
+    contentType: state.contentType,
+    tagSet: state.tagSet,
+    bucket: opts.bucket,
+    copyObject: opts.copyObject,
+    putObject: opts.putObject,
+    putObjectTagging: opts.putObjectTagging,
+  });
+  return { Key: state.Key, email, passwordhashSet: Boolean(passwordhash), lastmod, metadata };
+}
+
+/**
+ * Set Stripe Connect / Customer ids on the host marker; bumps lastmod.
+ * No Stripe API secret keys --- only acct_/cus_ style ids (FR #3968).
+ * @param {{
+ *   Key: string,
+ *   accountId?: string|null,
+ *   customerId?: string|null,
+ *   bucket?: string,
+ *   now?: Date|string|number,
+ *   headObject?: Function,
+ *   getObject?: Function,
+ *   getObjectTagging?: Function,
+ *   copyObject?: Function,
+ *   putObject?: Function,
+ *   putObjectTagging?: Function,
+ * }} opts
+ */
+async function setHostStripe(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('setHostStripe opts required');
+  }
+  if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
+    throw new Error('copyObject_or_getObject_required');
+  }
+  const stripeaccountid =
+    opts.accountId == null ? '' : String(opts.accountId).trim();
+  const stripecustomerid =
+    opts.customerId == null ? '' : String(opts.customerId).trim();
+  const state = await readMarkerState(opts);
+  const lastmod = isoLastmod(opts.now);
+  const metadata = {
+    ...state.metadata,
+    stripeaccountid,
+    stripecustomerid,
+    lastmod,
+  };
+  await rewriteMarkerMetadata({
+    Key: state.Key,
+    metadata,
+    body: state.body == null ? Buffer.alloc(0) : state.body,
+    contentType: state.contentType,
+    tagSet: state.tagSet,
+    bucket: opts.bucket,
+    copyObject: opts.copyObject,
+    putObject: opts.putObject,
+    putObjectTagging: opts.putObjectTagging,
+  });
+  return {
+    Key: state.Key,
+    stripeaccountid,
+    stripecustomerid,
+    lastmod,
+    metadata,
+  };
+}
+
+/** Metadata keys that must never appear in GET /parts JSON. */
+const PARTS_RESPONSE_SECRET_KEYS = Object.freeze([
+  'email',
+  'passwordhash',
+  'stripeaccountid',
+  'stripecustomerid',
+  'stripesk',
+  'stripepk',
+  'stripewhsec',
+]);
+
+/**
+ * @param {Record<string, unknown>|null|undefined} obj
+ * @returns {boolean} true if any secret key is present
+ */
+function partsResponseLeaksSecrets(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+  const keys = Object.keys(obj).map((k) => k.toLowerCase());
+  return PARTS_RESPONSE_SECRET_KEYS.some((s) => keys.includes(s));
+}
+
 module.exports = {
   ANNOTATION_MAX_BYTES,
   TAG_HASDNS,
   TAG_PARTNERID,
   TAG_HASUPG,
+  PARTS_RESPONSE_SECRET_KEYS,
   safeHostFolderName,
   hostFolderMarkerKey,
   hostAnnotationsKey,
@@ -548,4 +724,9 @@ module.exports = {
   isoLastmod,
   touchLastmod,
   setInit,
+  hashHostPassword,
+  isHostPasswordHash,
+  setHostCredentials,
+  setHostStripe,
+  partsResponseLeaksSecrets,
 };
