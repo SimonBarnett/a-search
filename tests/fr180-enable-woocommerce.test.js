@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-180 / #1027: enable woocommerce (merchant) only; FR-138 secret wiring; no affiliate stamp.
  * FR-3949: local/DB-backed share a-search-db-backed (no per-source AWS workers).
