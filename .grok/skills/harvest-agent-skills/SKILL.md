@@ -468,7 +468,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When FIFO rewires DLQ names, hostile contiguous pins must allow queueName: dlqName|queueDlqName and use a window long enough for maxReceiveCount after the fifo props.
 - WinPS 5.1 folder tools: join aws/rclone string[] stdout before ConvertFrom-Json; native calls Continue+LASTEXITCODE for head_failed; bare S:\ mount must not TrimEnd to S:; bucket root empty Key exits 5 bucket_root
 - Redqueen a-clubs drain: PutObjectAnnotation on folder markers (never annotations.json); GUID markers are trailing-slash keys; stub reviewer must never set annotated=1; install via sc.exe service under a-search-redqueen-annotator profile
-- Wix HTML embeds Origin as {dots-as-hyphens}.filesusr.com --- decode by hyphenâ†’dot for hosts without literal hyphens; require consistent X-Parent-Origin when the club domain has hyphens; never create a-clubs/{filesusr}/ folders
+- Wix HTML embeds Origin as {dots-as-hyphens}.filesusr.com --- decode by hyphen->dot for hosts without literal hyphens; require consistent X-Parent-Origin when the club domain has hyphens; never create a-clubs/{filesusr}/ folders
 - MRB parts-gateway Wix embed: fold origin/main once when behind, run fr4107+fr3968 together, PASS @ head SHA then gh pr merge --auto without waiting for live redeploy
 - Affiliate marker missing_feedurl: allow normalize/merge without feedurl/feedid when laststatus=missing_feedurl; keep feedurl_or_feedid_required for create/update.
 - MRB folder-tools download: fold main once, run fr4108 Node+Pester with fr4043 regression, PASS @ head SHA then --auto; leave downloadOne missing_feedurl follow-up #4113 open
@@ -495,3 +495,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX product tip CI red on harvest SKILL.md BOM while tip is behind: one fold of origin/main picks up the clean book; re-arm --auto; do not poll CI
 - When fr055h reports missing LOCKED after Architecture on Windows, check core.autocrlf CRLF working copies against an LF blob; pin docs/vision.md text eol=lf and make the fence pin CRLF-tolerant
 - When PowerShell writes skill markdown, never use \a (BEL) or backtick escapes that inject C0 controls; write a-affiliates literally or via Python Path.write_text. FR-4155 signup rewrites must keep FR-060h/i Legacy Parts and disabled-stub needles.
+- Harvest SKILL.md lessons must stay pure ASCII: never PowerShell-write Unicode arrows (they double-encode and fail mrb1172 whole-file em/en-dash gate); write hyphen->dot via Python bytes/Path.write_text ASCII.
+- a-search FR #4196 import path: enqueue one SQS message of [{provider,affiliateid,key}] after download (empty=none); flat feed keys skip gunzip even when marker compression=gzip; delete S3 only after commit; one fix agent per key+ETag lock that exits 0 on success

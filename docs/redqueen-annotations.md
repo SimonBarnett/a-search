@@ -85,19 +85,27 @@ npm ci --omit=dev
 $env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/.../a-clubs-new-folders.fifo'
 # Dry-run first (prints nssm commands only):
 .\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search -WhatIf
-# Prefer -Credential of the admin that owns the annotator AWS profile / grok CLI:
+# Prefer -Credential of the admin that owns the annotator AWS profile / grok CLI.
+# LocalSystem cannot see that admin's USERPROFILE/.aws/.grok --- pass -Credential
+# and/or -UserProfile/-HomePath (injected into AppEnvironmentExtra):
+$cred = Get-Credential   # admin that owns a-search-redqueen-annotator + .grok
 .\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search `
-  -AwsProfile a-search-redqueen-annotator `
-  -GrokCli 'C:\path\to\grok.exe' -AgentCli 'C:\path\to\agent.cmd'
+    -AwsProfile a-search-redqueen-annotator `
+    -Credential $cred `
+    -UserProfile $env:USERPROFILE -HomePath $env:USERPROFILE `
+    -GrokCli 'C:\Users\Administrator\.grok\bin\grok.exe' `
+    -AgentCli 'C:\Users\Administrator\.grok\bin\agent.exe'
 Start-Service a-search-aclubs-queue
 ```
 
 The script is idempotent (`nssm install` / `nssm set`), auto-start, restart on
 failure, AppDirectory = InstallRoot, Application = node, AppParameters =
 `redqueen\src\run.js`. Environment includes `AWS_PROFILE` (never root keys),
-optional `GROK_CLI` / `AGENT_CLI`. Stdout/stderr rotate under
-`C:\ai\a-search\redqueen\logs\` with no secrets. Compatible with Windows
-PowerShell 5.1.
+optional `GROK_CLI` / `AGENT_CLI`, and optional `USERPROFILE` / `HOME` from
+`-UserProfile` / `-HomePath`. The install summary prints **Logon:**
+`LocalSystem` or `Credential (user)` and whether USERPROFILE/HOME were set.
+Stdout/stderr rotate under `C:\ai\a-search\redqueen\logs\` with no secrets.
+Compatible with Windows PowerShell 5.1 (FR #4164: nssm args must not use `$Args`).
 
 Manual console:
 
