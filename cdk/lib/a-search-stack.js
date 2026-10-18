@@ -140,10 +140,15 @@ function sqsMaxConcurrencyForSource(src) {
  * @param {s3.IBucket} bucket
  */
 
+/** Non-secret JSON placeholders so CFN :SecretString:KEY refs resolve (FR #3945). */
+const ENTRY_JWT_SECRET_PLACEHOLDERS = {
+  JWT_ISSUER: 'https://a-search.example.invalid/',
+  JWT_AUDIENCE: 'a-search',
+  JWT_JWKS_URL: 'https://a-search.example.invalid/.well-known/jwks.json',
+};
+
 /**
- * FR-136: resolve entry JWT secret from CDK context `jwtSecretArn`, else create
- * an empty Secrets Manager secret for ops to fill (JSON keys JWT_ISSUER,
- * JWT_AUDIENCE, JWT_JWKS_URL, JWT_SECRET). Never put plaintext JWT values in git.
+ * FR-136 / FR-3945: JWT secret ARN context, or create JSON EntryJwtSecret.
  * @param {Construct} scope
  * @param {cdk.Stack} stack
  * @returns {secretsmanager.ISecret}
@@ -157,9 +162,17 @@ function resolveEntryJwtSecret(scope, stack) {
       arn.trim(),
     );
   }
+  // FR #3945: default Secret() yields GenerateSecretString:{} (plain password).
+  // Entry wires JWT_* via secretValueFromJson --- SecretString must be JSON.
   return new secretsmanager.Secret(scope, 'EntryJwtSecret', {
     description:
-      'a-search entry JWT_* JSON (FR-136). Keys: JWT_ISSUER, JWT_AUDIENCE, JWT_JWKS_URL, JWT_SECRET (optional JWT_HS256_SECRET). Values are deploy-time only.',
+      'a-search entry JWT_* JSON (FR-136 / FR-3945). Keys: JWT_ISSUER, JWT_AUDIENCE, JWT_JWKS_URL, JWT_SECRET (optional JWT_HS256_SECRET). Placeholder values until ops replace; never real secrets in git.',
+    removalPolicy: cdk.RemovalPolicy.RETAIN,
+    generateSecretString: {
+      secretStringTemplate: JSON.stringify(ENTRY_JWT_SECRET_PLACEHOLDERS),
+      generateStringKey: 'JWT_SECRET',
+      excludeCharacters: ' %+~#$&*()|[]{}:;<>?!\'/"\\',
+    },
   });
 }
 
