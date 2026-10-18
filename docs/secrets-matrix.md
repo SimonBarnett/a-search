@@ -42,7 +42,15 @@ Entry must **never** hold provider marketplace credentials.
 |-----|--------|---------|
 | `S3_RESULTS_BUCKET` | CDK bucket name + `grantReadWrite` (FR-130) | entry, all enabled workers, maintainer, onboarding |
 
-## MSSQL (FR-137) - local workers + maintainer + onboarding only
+## MSSQL (FR-137) - on-box walrus (FR-3948); legacy Lambda row superseded
+
+**New stack (FR-3948 / FR-122 LOCKED C):** AWS Lambdas do **not** receive
+`MSSQL_*` and deploy does **not** pass `-c mssqlSecretArn`. DB credentials live
+on **walrus** only (ops secret store / integrated auth). Live writers use
+`MSSQL_DATABASE=a_search` (FR-251); sandbox uses `a_search_sandbox`. madeiradb
+stays read-only.
+
+**Legacy Lambda wiring** (old stacks; string kept for pins):
 
 | Secret JSON key | Env | Notes |
 |-----------------|-----|-------|
@@ -53,13 +61,14 @@ Entry must **never** hold provider marketplace credentials.
 
 | Plain (not Secrets Manager) | Value |
 |-----------------------------|-------|
-| `MSSQL_DATABASE` | live `madeiradb`; sandbox from CDK context / placeholder |
+| `MSSQL_DATABASE` | live **`a_search`** (FR-251); sandbox from CDK context / placeholder. Never live `madeiradb` for writers. |
 
-Deploy: `-c mssqlSecretArn=arn:...` (complete ARN). Live marketplace workers
-(amazon/ebay/rakuten/cj) do **not** receive `MSSQL_*`.
+Deploy (legacy only): `-c mssqlSecretArn=arn:...` (complete ARN). **Omit for the
+new stack.** Live marketplace workers (amazon/ebay/rakuten/cj) do **not**
+receive `MSSQL_*`.
 
-Enabled local workers today: **awin**, **impact** (plus maintainer and
-awin/impact onboarding Lambdas).
+Enabled local workers historically: **awin**, **impact** (plus maintainer and
+awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 ## Provider credentials (FR-138) - enabled sources only
 

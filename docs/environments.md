@@ -18,7 +18,7 @@ which environment it is in and must not cross-write.
 | Resource | live | sandbox |
 |----------|------|---------|
 | SQS queues | `...-live-...` per source | `...-sandbox-...` per source |
-| MSSQL | `a_search` on `WIN-MPRE8VI4U6U` (see below) | **Separate database** on the same instance (FR-121 LOCKED; name via deploy `MSSQL_DATABASE`) |
+| MSSQL | `a_search` on **walrus** (see below; FR-3948) | **Separate database** on the same instance (FR-121 LOCKED; name via deploy `MSSQL_DATABASE`) |
 | Results path (rclone mount) | live mapped root | sandbox mapped root |
 | Provider `.env` | live credentials / secrets | sandbox or shared-read-only test credentials |
 | S3 bucket prefix or bucket | live | sandbox |
@@ -27,15 +27,20 @@ Sandbox may skip or soften external side effects (no production affiliate
 writes, capped rate limits) but **must** still accept search with 200,
 enqueue, and write results under the sandbox rclone path so callers can UAT.
 
-## Results storage + rclone (LOCKED -- FR-124)
+## Results storage + rclone (LOCKED -- FR-124 / FR-3948)
 
-Object store remains an **S3 bucket**, but the **MSSQL host** exposes it as a
-**mapped drive via rclone** on that same server. Search/result consumers and
-ops tools on the SQL box read/write through the mount; AWS workers may still
-use the S3 API with the same bucket/key layout.
+Object store remains an **S3 bucket**, exposed on **walrus** (the MSSQL host)
+as a **mapped drive via rclone**. **Direction (FR-3948):** walrus **writes**
+DB-backed search results onto the mount; AWS serves from S3 and does **not**
+connect to MSSQL. Live marketplace providers that stay in AWS may still
+`PutObject` via the S3 API into the dedicated results bucket.
+
+**DB-backed landing path (FR-3948 LOCKED):** bucket `a-clubs`, key layout
+`a-clubs/{host}/{guid}/IN/` (each host is a **top-level** folder; **no**
+`HOSTS/` prefix). Simon 2026-10-18 cutover. Sibling FRs wire the runner.
 
 **Ops mount guide:** [rclone-results.md](rclone-results.md) (`S3_RESULTS_BUCKET`,
-`A_SEARCH_RCLONE_ROOT`, path examples).
+`A_SEARCH_RCLONE_ROOT`, `a-clubs` IN path, path examples).
 
 ### FR-124 LOCKED defaults (verified 2026-10-09)
 
@@ -76,10 +81,10 @@ Maintainer staging CSVs may also land under
 
 | Knob | Value |
 |------|-------|
-| Host | `WIN-MPRE8VI4U6U` (IONOS Windows; SQL Server 2022 Standard; mixed-mode auth; TCP on all interfaces) |
+| Host | **`walrus`** (on-prem Windows; SQL Server; outbound HTTPS only --- **no inbound ports**, FR-3948 / FR-122 **C**). Historical lab hostname `WIN-MPRE8VI4U6U` (IONOS) is **superseded**. |
 | Database | `a_search` (live) and `a_search_sandbox` (sandbox) on this instance (FR-251 / FR-121). madeiradb is read-only via `mdb.*`. |
 | Auth on the box | Windows integrated (`sqlcmd -E`) works locally |
-| Auth from AWS | SQL login or domain account over NTLM, read from a secret store. A Lambda outside the domain cannot use integrated auth. |
+| Auth from AWS | **None for the new stack (FR-3948).** AWS Lambdas do not connect to MSSQL. Legacy FR-137/FR-149 Lambda SQL path is superseded by on-box (walrus) runners. |
 | Recovery | SIMPLE. Nightly full backup only (`Madeira_Nightly_Maintenance` at 02:00) covers **`madeiradb`**. Point-in-time restore is not possible. |
 
 There is no RDS endpoint in this repo and nothing to "switch off RDS" -- the
@@ -87,7 +92,7 @@ live target was undefined until FR-119. Repo placeholders must not invent
 credentials or treat a not-yet-created sandbox DB name as already live.
 
 **Sandbox** (`A_SEARCH_ENV=sandbox`): **LOCKED (FR-121)** -- **separate database
-on the same instance** (`WIN-MPRE8VI4U6U`).
+on the same instance** (`walrus`; historical `WIN-MPRE8VI4U6U` superseded).
 
 | Rule | Detail |
 |------|--------|
@@ -110,7 +115,7 @@ never in git.
 
 | Key | Meaning |
 |-----|---------|
-| `MSSQL_SERVER` | Placeholder `<ionos-sql-host>`; deploy maps to `WIN-MPRE8VI4U6U` or a DNS alias |
+| `MSSQL_SERVER` | Placeholder `<ionos-sql-host>` / `<walrus-sql-host>`; on-box maps to **walrus** (historical `WIN-MPRE8VI4U6U` superseded) |
 | `MSSQL_DATABASE` | Live: `a_search`. Sandbox: `a_search_sandbox` (FR-251). Never `madeiradb` for writers. |
 | `MSSQL_USER` / `MSSQL_PASSWORD` | SQL login when not using trusted connection |
 | `MSSQL_TRUSTED_CONNECTION` | `true` for integrated / NTLM (on-box or domain) |
@@ -118,18 +123,23 @@ never in git.
 | `MSSQL_ENCRYPT` | default `true` (read by `mssqlConfigFromEnv`) |
 | `MSSQL_TRUST_SERVER_CERTIFICATE` | default `true` on lab boxes |
 
-### CDK Secrets Manager (FR-137)
+### CDK Secrets Manager (FR-137) --- legacy; superseded for new stack (FR-3948)
 
-`cdk/lib/a-search-stack.js` wires `MSSQL_*` onto **maintainer**, **local**
-provider workers (`providers/local/*`), and **awin/impact onboarding** Lambdas
-via Secrets Manager - never plaintext passwords in git or synth snapshots.
+**New stack (FR-3948):** do **not** pass `-c mssqlSecretArn` / `-c mssqlAppSecretArn`
+and do **not** wire `MSSQL_*` onto Lambdas. DB-backed work runs on **walrus**
+(on-box). Sibling CDK FRs strip `wireMssqlSecretEnv` from the template.
+
+**Legacy (pre-cutover) docs retained for pins / old stacks:**
+`cdk/lib/a-search-stack.js` still documents `wireMssqlSecretEnv` for
+maintainer / local workers / awin/impact onboarding via Secrets Manager -
+never plaintext passwords in git or synth snapshots.
 
 | Deploy context | Meaning |
 |----------------|---------|
-| `-c mssqlSecretArn=arn:aws:secretsmanager:...` | Existing secret ARN (required for real deploy; synth uses a `000000000000` placeholder ARN) |
-| `-c mssqlLiveDatabase=madeiradb` | Optional; default `madeiradb` |
+| `-c mssqlSecretArn=arn:aws:secretsmanager:...` | **Legacy only.** Existing secret ARN (old stacks; synth placeholder `000000000000`). **Omit for the new stack (FR-3948).** |
+| `-c mssqlLiveDatabase=a_search` | Optional; live default **`a_search`** (FR-251). Do **not** use `madeiradb` for writers. |
 | `-c mssqlSandboxDatabase=<name>` | Optional; default `a_search_sandbox` (FR-251 / FR-121) |
-| `-c mssqlAppSecretArn=...` | Preferred app secret ARN (FR-251); legacy `-c mssqlSecretArn` still accepted |
+| `-c mssqlAppSecretArn=...` | Legacy preferred app secret ARN (FR-251); legacy `-c mssqlSecretArn` still accepted on old stacks |
 
 Secret **string JSON** keys (create in AWS / ops; never commit values):
 
@@ -141,9 +151,9 @@ Secret **string JSON** keys (create in AWS / ops; never commit values):
 | (optional) `TRUSTED_CONNECTION` / `DOMAIN` | wire later if needed; stack sets `MSSQL_ENCRYPT=true` and `MSSQL_TRUST_SERVER_CERTIFICATE=true` as plain defaults |
 
 `MSSQL_DATABASE` is **plain** env (not from the secret) so live vs sandbox can
-point at different DB names on the same instance. Live amazon/ebay/... workers
-do **not** receive MSSQL env (no SQL). Helper: `wireMssqlSecretEnv` +
-`grantRead` on the secret.
+point at different DB names on the same instance. Live default is **`a_search`**
+(FR-251); never `madeiradb` for writers. Live amazon/ebay/... workers do **not**
+receive MSSQL env. Helper (legacy): `wireMssqlSecretEnv` + `grantRead`.
 
 Local selftest probes (`providers/local/*/src/selftestProbe.js`) report
 `mssql_unreachable` or `mssql_auth_failed` when Parts connect fails and feed
@@ -166,44 +176,40 @@ JSON keys match that provider's `.env.example` credential names (e.g.
 
 ## Network path (FR-122)
 
-AWS Lambda/Fargate (and other off-box workers) reach `WIN-MPRE8VI4U6U` /
-`madeiradb` only through an ops-chosen path. This section is the **decision
-surface** (LOCKED options). The **Chosen option** stays **PENDING** until
-ops confirms one; do not invent host firewall rules, private IPs, or VPN
-secrets as code in git.
+AWS Lambda/Fargate must **not** open SQL to the on-prem host. This section is
+the **decision surface** (LOCKED options) plus the **Chosen option**.
 
 | Option id | Name | Meaning |
 |-----------|------|---------|
-| A | Fixed egress allowlist | AWS NAT / static egress IPs allowed through the IONOS host or edge firewall to SQL TCP (usually 1433). Ops owns the allowlist outside this repo. |
-| B | VPN | Site-to-site or client VPN so workers land on a path that can reach the SQL host. Tunnel config lives in ops/IaC secrets, never in product git. |
-| C | On-box only | No off-box SQL from AWS. Workers that need MSSQL run on the SQL host (or a peered box already allowed). Lambda stays S3/SQS-only for those paths. |
+| A | Fixed egress allowlist | AWS NAT / static egress IPs allowed through the host or edge firewall to SQL TCP (usually 1433). Ops owns the allowlist outside this repo. **Rejected for the new stack (FR-3948).** |
+| B | VPN | Site-to-site or client VPN so workers land on a path that can reach the SQL host. Tunnel config lives in ops/IaC secrets, never in product git. **Rejected for the new stack (FR-3948).** |
+| C | On-box only | No off-box SQL from AWS. Workers that need MSSQL run on the SQL host (**walrus**). Lambda stays S3/SQS-only for those paths. Host makes **outbound HTTPS only** (no inbound ports). |
 
-**Chosen option:** **PENDING** (still UNKNOWN which of A/B/C ops will lock).
-Until then, treat off-box MSSQL connects as may-fail: local selftest probes
-map connect failures to `mssql_unreachable` / `mssql_auth_failed`
-(`shared/mssql/classifyConnectError.js`).
+**Chosen option:** **LOCKED C** (on-box / **walrus** only) --- Simon 2026-10-18
+cutover (FR-3948 / umbrella #3944). Options A and B are documented for history
+and are **not** the install path. Do not invent host firewall rules, private
+IPs, or VPN secrets as code in git. Historical lab hostname `WIN-MPRE8VI4U6U`
+is superseded by **walrus**.
 
-**Installable pattern (FR-149):** CDK is **explicit no-VPC** (default Lambda
-egress; no NAT/SG in `ASearchStack`). When ops selects **A**, follow the
-fixed-egress allowlist steps in [deploy.md](deploy.md) (FR-149 section). Do not
-invent private IPs in git. B/C stay valid FR-122 options without VPC IaC here.
+**Installable pattern (FR-149 / FR-3948):** CDK stays **explicit no-VPC**
+(default Lambda egress; no NAT/SG in `ASearchStack`). FR-149 fixed-egress
+allowlist steps for MSSQL are **superseded** --- do **not** open SQL TCP/1433
+to AWS egress for the new stack. See [deploy.md](deploy.md) section 9.
 
-**Ops checklist** (no ports opened by this FR):
+**Ops checklist** (FR-122 **LOCKED C**; no inbound ports on walrus):
 
-1. Pick exactly one of A / B / C and record it here as LOCKED (replace PENDING).
-2. If A: publish the egress CIDR/IP set in the ops runbook (see deploy.md FR-149);
-   open SQL TCP only for that set on the IONOS edge/host firewall.
-3. If B: stand up the VPN; confirm name resolution for
-   `MSSQL_SERVER` / `WIN-MPRE8VI4U6U` from the worker side.
-4. If C: document which processes on the box run MSSQL readers; keep AWS
-   workers off direct SQL.
-5. Confirm least-privilege SQL login (see **MSSQL target** above) from the
-   chosen path.
-6. Smoke: sandbox selftest shows `ok` or a classified error -- never a hang.
-7. **Never** commit firewall rule dumps, private IPs, VPN PSKs, or SQL
+1. Chosen option is **LOCKED C** (this section). Do not re-open A/B without a new FR.
+2. Run DB-backed workers / maintainer / onboarding / shop-sync on **walrus**
+   (outbound SQS long-poll + S3/rclone write). Keep AWS Lambdas off direct SQL.
+3. Confirm name resolution for `MSSQL_SERVER` / **walrus** on the box only
+   (historical `WIN-MPRE8VI4U6U` superseded).
+4. Confirm least-privilege SQL login (see **MSSQL target** above) from the
+   on-box path; madeiradb stays read-only (FR-251).
+5. Smoke: on-box selftest shows `ok` or a classified error -- never a hang.
+6. **Never** commit firewall rule dumps, private IPs, VPN PSKs, or SQL
    passwords into git. Placeholders stay in `.env.example` only.
 
-Related: [rclone-results.md](rclone-results.md) (SQL-host mount),
+Related: [rclone-results.md](rclone-results.md) (walrus mount + `a-clubs` IN),
 [endpoint-selftest.md](endpoint-selftest.md) (`mssql_unreachable`).
 
 ## Registry

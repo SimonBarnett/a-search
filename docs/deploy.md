@@ -75,7 +75,14 @@ never `Resource *` for secrets.
 
 Detail: [endpoint-search.md](endpoint-search.md) **JWT deploy config (FR-123)**.
 
-### MSSQL (FR-137)
+### MSSQL (FR-137) --- omit for new stack (FR-3948)
+
+**New stack (FR-3948 / FR-122 LOCKED C):** do **not** pass `-c mssqlSecretArn`
+(or `-c mssqlAppSecretArn`). AWS Lambdas do not connect to MSSQL; DB-backed
+work runs on **walrus**. Live DB name is **`a_search`** (FR-251), never
+`madeiradb` for writers. See [environments.md](environments.md).
+
+**Legacy only** (old stacks / pins; not the new-stack install path):
 
 ```bash
   -c mssqlSecretArn=arn:aws:secretsmanager:REGION:ACCOUNT:secret:name-XXXXXX \
@@ -83,8 +90,8 @@ Detail: [endpoint-search.md](endpoint-search.md) **JWT deploy config (FR-123)**.
 ```
 
 Secret JSON keys: `SERVER`, `USER`, `PASSWORD`. `MSSQL_DATABASE` is plain CDK
-context (live default `madeiradb`). Targets: maintainer, local workers, awin/impact
-onboarding - not live marketplace workers. See [environments.md](environments.md).
+context (live default **`a_search`**, FR-251). Legacy targets were maintainer,
+local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138)
 
@@ -111,8 +118,8 @@ Or call CDK directly from repo root (after secrets ARNs are ready):
 ```bash
 npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
   -c jwtSecretArn=arn:aws:secretsmanager:... \
-  -c mssqlSecretArn=arn:aws:secretsmanager:... \
-  -c mssqlSandboxDatabase=YOUR_SANDBOX_DB \
+  # legacy only (omit for new stack / FR-3948): -c mssqlSecretArn=arn:aws:secretsmanager:... \
+  # legacy only: -c mssqlSandboxDatabase=YOUR_SANDBOX_DB \
   -c amazonProviderSecretArn=arn:... \
   -c ebayProviderSecretArn=arn:... \
   -c rakutenProviderSecretArn=arn:... \
@@ -273,10 +280,17 @@ Pin: `tests/fr165-lambda-memory-size.test.js`. See `cdk/lib/a-search-stack.js`.
 `ASearchStack` is **explicit no-VPC**: Lambdas use default AWS networking.
 There are no `ec2.Vpc`, NAT gateway, or Security Group constructs in this
 product stack. Cross-link: [environments.md](environments.md) **Network path
-(FR-122)** (options A / B / C; Chosen may stay PENDING).
+(FR-122)** --- **Chosen option LOCKED C** (on-box / **walrus** only; FR-3948).
 
-**When ops selects FR-122 option A (fixed egress allowlist)** - the installable
-path for off-box MSSQL from AWS workers/maintainer/onboarding:
+**New-stack install path (FR-3948):** FR-122 **LOCKED C**. Do **not** open
+SQL TCP/**1433** to AWS egress, do **not** pass `-c mssqlSecretArn` for the
+new stack, and do **not** treat fixed egress allowlist as the install path.
+walrus makes outbound HTTPS only (SQS / S3); AWS stays SQL-free for DB-backed
+work. Sibling FRs remove Lambda MSSQL wiring.
+
+**Historical (superseded) --- FR-122 option A fixed egress allowlist:** the
+former installable path for off-box MSSQL from AWS workers/maintainer/onboarding
+is retained below for audit only:
 
 1. Confirm which Lambdas need MSSQL (maintainer, local/onboarding workers with
    `MSSQL_*` - not live marketplace amazon/ebay workers that stay SQL-free).
@@ -285,18 +299,18 @@ path for off-box MSSQL from AWS workers/maintainer/onboarding:
    VPC, or the documented regional Lambda egress behaviour for default
    networking). Record that set in the **ops** runbook only - **never** commit
    real CIDRs or private IPs into this repo.
-3. On the IONOS edge or `WIN-MPRE8VI4U6U` host firewall, allow **SQL TCP**
+3. On the IONOS edge or historical `WIN-MPRE8VI4U6U` host firewall, allow **SQL TCP**
    (usually **1433**) from that egress set only (least privilege). Opening the
-   firewall is **ops** - out of scope for this repo (FR-149 / FR-122).
+   firewall is **ops** - out of scope for this repo (FR-149 / FR-122). **Do not
+   do this for walrus / the new stack.**
 4. Confirm `MSSQL_SERVER` / Secrets Manager MSSQL secret resolve from a worker
    and sandbox selftest returns `ok` or a classified `mssql_*` error (never a
    hang). See [endpoint-selftest.md](endpoint-selftest.md).
-5. If ops instead locks **B (VPN)** or **C (on-box only)**, follow the FR-122
-   checklist in environments.md; do not invent VPC/VPN IaC in product git under
-   this FR.
+5. FR-122 now locks **C (on-box only)**; follow the FR-122 checklist in
+   environments.md; do not invent VPC/VPN IaC in product git under this FR.
 
-**Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK without an ops-locked
-FR-122 Chosen option.
+**Rejected for v0.1 installable:** shipping VPC/NAT/SG CDK; re-opening FR-122 A/B
+without a new FR after the FR-3948 lock.
 
 ## 10. Lambda intake egress - measure + fail-soft (FR-158)
 
