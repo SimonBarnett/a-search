@@ -522,3 +522,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Reject a redqueen host brief unless club, audience and affiliateOpportunities are non-empty and the summary is not a plan to browse. Fetch about/shop/training pages in the annotator. Do not set annotated and do not review GUIDs until that brief is complete.
 - FIX when FR #4277 host-brief gate lands: update fr4246 (and other) fake reviewHost fixtures to return non-empty club/audience/affiliateOpportunities or drain returns retry instead of host_processed.
 - FIX on a PR already CLOSED as superseded by a Closes successor: ACK, verify covering tip still open with Closes, DONE FIX with the assigned PR URL, do not reopen
+- a-clubs host marker identity is metadata userid only. Copy a missing userid from the old key in a dry-run migration, and do not write the duplicate key on new markers.
