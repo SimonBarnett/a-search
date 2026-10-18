@@ -491,6 +491,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - WinPS 5.1: never name a param $Args (automatic, always empty); nssm wrappers must return only [int]$LASTEXITCODE after Out-Host/Out-Null; pin with fake-nssm install path not DryRun-only.
 - APartsGateway CORS: corsPreflight allowHeaders must include x-parent-origin (and content-type) or Wix-embedded widget OPTIONS with Access-Control-Request-Headers blocks GET /parts.
 - Affiliate feedurl keeps {feedapikey}/{darwinhash} placeholders; resolve from provider marker into a local fetch URL only; never persist secrets on the affiliate marker; unresolved placeholders skip fetch and stamp laststatus=unresolved_placeholder
-- a-search FIX when CI fails FR-1947 contiguous tip-loop lesson: check harvest-agent-skills SKILL.md for UTF-8 BOM (EF BB BF) first — PowerShell Set-Content/Out-File often adds BOM; strip with byte write and keep NEEDLE contiguous; do not rewrite the lesson text
+- a-search FIX when CI fails FR-1947 contiguous tip-loop lesson: check harvest-agent-skills SKILL.md for UTF-8 BOM (EF BB BF) first --- PowerShell Set-Content/Out-File often adds BOM; strip with byte write and keep NEEDLE contiguous; do not rewrite the lesson text
 - FIX product tip CI red on harvest SKILL.md BOM while tip is behind: one fold of origin/main picks up the clean book; re-arm --auto; do not poll CI
 - When fr055h reports missing LOCKED after Architecture on Windows, check core.autocrlf CRLF working copies against an LF blob; pin docs/vision.md text eol=lf and make the fence pin CRLF-tolerant
