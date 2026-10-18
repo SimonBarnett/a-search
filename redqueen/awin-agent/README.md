@@ -21,8 +21,8 @@ Schedule the seat / Task Scheduler to pick Grok first. This Node entry
 | OTP | Not in the file. On `id.awin.com/u/mfa-otp-challenge` (or captcha): **stop**, ask Simon, do not loop |
 | Optional API | `apitoken` on `a-affiliates/awin/` provider marker (secure entry; read-side only) |
 
-Agents never create, copy, or print the secret file. Password is typed from a
-temp file that is deleted immediately after use.
+Agents never create, copy, or print the secret file. On redqueen, fill the password field in-process from line 2
+(no temp file, no clipboard, never log it).
 
 ## Config / limits
 
@@ -59,13 +59,17 @@ See `docs/a-affiliates.md` and `s3://a-affiliates/awin/AGENT.md`. Summary:
 
 ## Skillbooks
 
-Under `.grok/skills/a-search-awin-agent-*` (publisher sign-in, welcome monitor,
+Under .grok/skills/a-search-awin-agent-* (publisher sign-in, welcome monitor,
 feed link pulls, merchant feed key, daily signups, global recommendations,
 invite metrics, no-feed follow-up, merc-hostile-mrb).
 
-FR-named Merc operator skillbooks were not found in-repo on 2026-10-18; each
-skill carries the FR #4123 contract plus a **PENDING from Merc** section for
-UI step paste (do not invent Awin element ids).
+FR #4126: Merc operator playbook bodies (from #4123 comments 1-4) are pasted into
+those skills. Do not invent Awin UI element ids beyond what Merc documented.
+Sign-in on redqueen is in-process from C:\passwords\awin.secret.txt. Join /
+invite messages are unique per advertiser and at most 149 characters (Awin).
+
+Instruction load order: s3://a-affiliates/AGENTS.md then win/AGENT.md
+(see AGENTS.md in this folder).
 
 ## Manual run
 
@@ -85,5 +89,5 @@ Register a daily task (optional):
 ## Tests
 
 ```bash
-node --test tests/fr4123-awin-onboarding-agent.test.js
+node --test tests/fr4123-awin-onboarding-agent.test.js tests/fr4126-awin-merc-skillbooks.test.js
 ```
