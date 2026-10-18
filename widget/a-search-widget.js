@@ -14,7 +14,35 @@ var GO_BOUND_ATTR = 'data-a-search-go-bound';
 var DEFAULT_N = 10;
 
 /**
+ * FR #4107: parent page origin for embed frames (Wix filesusr, …).
+ * Prefer location.ancestorOrigins[0], else document.referrer origin.
+ * @param {{ location?: Location, document?: Document }} deps
+ * @returns {string} absolute origin or ''
+ */
+function resolveParentOrigin(deps) {
+  deps = deps || {};
+  var loc = deps.location;
+  try {
+    if (loc && loc.ancestorOrigins && loc.ancestorOrigins.length > 0) {
+      var ao = String(loc.ancestorOrigins[0] || '').trim();
+      if (ao) return ao;
+    }
+  } catch (e) {
+    /* ancestorOrigins may throw / be restricted */
+  }
+  var doc = deps.document;
+  var ref = doc && doc.referrer != null ? String(doc.referrer).trim() : '';
+  if (!ref) return '';
+  try {
+    return new URL(ref).origin;
+  } catch (e2) {
+    return '';
+  }
+}
+
+/**
  * FR #3968: host comes from Origin header on the gateway --- do not send ?host=.
+ * FR #4107: when embedded, also send X-Parent-Origin (never ?host=).
  * @param {string} apiBase
  * @param {{
  *   widgetGuid: string,
@@ -321,7 +349,22 @@ async function fetchPartsPage(opts) {
     uri: opts.uri,
     pageUri: opts.pageUri,
   });
-  var res = await opts.fetch(url, { method: 'GET', credentials: 'omit' });
+  var headers = {};
+  var parentOrigin =
+    opts.parentOrigin != null && String(opts.parentOrigin) !== ''
+      ? String(opts.parentOrigin)
+      : resolveParentOrigin({
+          location: opts.location,
+          document: opts.document,
+        });
+  if (parentOrigin) {
+    headers['X-Parent-Origin'] = parentOrigin;
+  }
+  var res = await opts.fetch(url, {
+    method: 'GET',
+    credentials: 'omit',
+    headers: headers,
+  });
   if (!res || !res.ok) {
     var err = new Error('parts_http_' + (res && res.status));
     err.code = 'parts_http_error';
@@ -485,6 +528,9 @@ async function pageFullscreen(el, deps) {
     n: deps.n != null ? deps.n : DEFAULT_N,
     uri: uri,
     pageUri: uri,
+    location: deps.location,
+    document: deps.document,
+    parentOrigin: deps.parentOrigin,
   });
   if (page && (page.init === 0 || page.init === '0')) {
     renderPage(el, page, el.getAttribute('data-mode'));
@@ -548,6 +594,7 @@ async function mountWidget(el, deps) {
     apiBase: apiBase,
     n: deps.n,
     openUrl: deps.openUrl,
+    parentOrigin: deps.parentOrigin,
   };
   bindGoClicks(el, mountDeps);
   try {
@@ -559,6 +606,9 @@ async function mountWidget(el, deps) {
       n: deps.n != null ? deps.n : DEFAULT_N,
       uri: uri,
       pageUri: uri,
+      location: deps.location,
+      document: deps.document,
+      parentOrigin: deps.parentOrigin,
     });
     renderPage(el, page, fallbackMode);
     return { skipped: false, page: page };
@@ -598,6 +648,7 @@ async function boot(deps) {
         apiBase: deps.apiBase,
         n: deps.n,
         openUrl: deps.openUrl,
+        parentOrigin: deps.parentOrigin,
       }),
     );
   }
@@ -610,6 +661,7 @@ var api = {
   GO_BOUND_ATTR: GO_BOUND_ATTR,
   DEFAULT_N: DEFAULT_N,
   buildPartsUrl: buildPartsUrl,
+  resolveParentOrigin: resolveParentOrigin,
   buildGoUrl: buildGoUrl,
   newEventId: newEventId,
   createEventBatcher: createEventBatcher,

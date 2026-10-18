@@ -154,8 +154,9 @@ async function pagePartsAclubs(opts) {
     throw new PartsError('parts_opts_required');
   }
 
-  // Host from Origin only --- ignore ?host=
-  const originCheck = requireHostFromOrigin(opts.origin);
+  // Host from Origin only --- ignore ?host= (FR #3968).
+  // Embed frames resolve to club domain (FR #4107); never a-clubs/{filesusr}/.
+  const originCheck = requireHostFromOrigin(opts.origin, opts.parentOrigin);
   if (!originCheck.ok) {
     throw new PartsError(originCheck.code);
   }

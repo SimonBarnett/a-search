@@ -378,7 +378,10 @@ false) --- do not pass `-c corsOrigins=` (and do not use `resolveCorsOrigins` he
 
 Also creates SQS FIFO `a-clubs-new-folders.fifo` (+ DLQ), env
 `A_CLUBS_FOLDER_EVENTS_QUEUE_URL`, and IAM user `a-search-redqueen-annotator`
-(consume + S3 R/W). Host for `/parts` comes from the `Origin` header only.
+(consume + S3 R/W). Host for `/parts` comes from the `Origin` header only (FR #3968). Embed
+frames such as Wix `*.filesusr.com` resolve to the club domain (FR #4107);
+ambiguous embeds return `400` `club_domain_unresolved`. Optional
+`X-Parent-Origin` disambiguates when consistent with the frame host.
 
 Full notes: [cdk/README-parts-gateway.md](../cdk/README-parts-gateway.md).
 
