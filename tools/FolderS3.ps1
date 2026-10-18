@@ -8,11 +8,42 @@ $script:FolderS3AnnotationPreviewChars = 2048
 
 function Get-FolderS3MountRoot {
     param([string]$MountRoot)
-    if ($MountRoot -and $MountRoot.Trim()) { return $MountRoot.TrimEnd('\', '/') }
-    if ($env:A_SEARCH_S3_MOUNT -and $env:A_SEARCH_S3_MOUNT.Trim()) {
-        return $env:A_SEARCH_S3_MOUNT.TrimEnd('\', '/')
+    $raw = $null
+    if ($MountRoot -and $MountRoot.Trim()) { $raw = $MountRoot.Trim() }
+    elseif ($env:A_SEARCH_S3_MOUNT -and $env:A_SEARCH_S3_MOUNT.Trim()) {
+        $raw = $env:A_SEARCH_S3_MOUNT.Trim()
     }
-    return $script:FolderS3DefaultMountRoot
+    else { $raw = $script:FolderS3DefaultMountRoot }
+    # WinPS: TrimEnd on 'S:\' -> 'S:' which resolves as cwd-on-drive. Keep drive roots as 'X:\'.
+    # Accept 'S:\.' workaround from operators.
+    if ($raw -match '^[A-Za-z]:\\\.$') { $raw = $raw[0] + ':\' }
+    if ($raw -match '^[A-Za-z]:\\?$') {
+        return ($raw[0].ToString().ToUpperInvariant() + ':\')
+    }
+    return $raw.TrimEnd('\', '/')
+}
+
+function ConvertFrom-FolderS3Json {
+    <#
+    .SYNOPSIS
+    ConvertFrom-Json that accepts WinPS 5.1 native-exe string[] stdout (FR #4087).
+    #>
+    param($Raw)
+    if ($null -eq $Raw) { return $null }
+    if ($Raw -is [System.Management.Automation.ErrorRecord]) { throw $Raw }
+    if ($Raw -is [System.Array] -and -not ($Raw -is [string])) {
+        $parts = New-Object System.Collections.Generic.List[string]
+        foreach ($x in @($Raw)) {
+            if ($x -is [System.Management.Automation.ErrorRecord]) { continue }
+            [void]$parts.Add([string]$x)
+        }
+        $Raw = ($parts -join "`n")
+    }
+    if ($Raw -is [string]) {
+        if (-not $Raw.Trim()) { return $null }
+        return ($Raw | ConvertFrom-Json)
+    }
+    return $Raw
 }
 
 function ConvertTo-FolderS3Location {
@@ -148,7 +179,7 @@ function Convert-FolderS3MetadataForJson {
 function Get-FolderS3ObjectMeta {
     param(
         [Parameter(Mandatory = $true)][string]$Bucket,
-        [Parameter(Mandatory = $true)][string]$Key,
+        [AllowEmptyString()][string]$Key,
         [scriptblock]$AwsHeadObject,
         [scriptblock]$AwsGetObjectTagging,
         [scriptblock]$RcloneLsJson,
@@ -172,27 +203,47 @@ function Get-FolderS3ObjectMeta {
         if (-not $headFn) {
             $headFn = {
                 param($b, $k)
-                aws s3api head-object --bucket $b --key $k --output json 2>$null
+                $prev = $ErrorActionPreference
+                $ErrorActionPreference = 'Continue'
+                try {
+                    $raw = aws s3api head-object --bucket $b --key $k --output json 2>&1
+                    if ($LASTEXITCODE -ne 0) { return $null }
+                    return $raw
+                }
+                finally { $ErrorActionPreference = $prev }
             }
         }
         $tagFn = $AwsGetObjectTagging
         if (-not $tagFn) {
             $tagFn = {
                 param($b, $k)
-                aws s3api get-object-tagging --bucket $b --key $k --output json 2>$null
+                $prev = $ErrorActionPreference
+                $ErrorActionPreference = 'Continue'
+                try {
+                    $raw = aws s3api get-object-tagging --bucket $b --key $k --output json 2>&1
+                    if ($LASTEXITCODE -ne 0) { return $null }
+                    return $raw
+                }
+                finally { $ErrorActionPreference = $prev }
             }
         }
-        $headRaw = & $headFn $Bucket $Key
+        try {
+            $headRaw = & $headFn $Bucket $Key
+        }
+        catch {
+            throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key)
+        }
         if (-not $headRaw) { throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key) }
-        $head = if ($headRaw -is [string]) { $headRaw | ConvertFrom-Json } else { $headRaw }
-        if ($head.Metadata) {
+        $head = ConvertFrom-FolderS3Json $headRaw
+        if (-not $head) { throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key) }
+        if ($head.PSObject.Properties['Metadata'] -and $head.Metadata) {
             foreach ($p in $head.Metadata.PSObject.Properties) {
                 $metadata[$p.Name] = [string]$p.Value
             }
         }
         $tagRaw = & $tagFn $Bucket $Key
         if ($tagRaw) {
-            $tagDoc = if ($tagRaw -is [string]) { $tagRaw | ConvertFrom-Json } else { $tagRaw }
+            $tagDoc = ConvertFrom-FolderS3Json $tagRaw
             foreach ($t in @($tagDoc.TagSet)) {
                 if ($t -and $t.Key) { $tags[[string]$t.Key] = [string]$t.Value }
             }
@@ -204,12 +255,19 @@ function Get-FolderS3ObjectMeta {
             $rcFn = {
                 param($b, $k)
                 $remote = if ($env:A_SEARCH_RCLONE_REMOTE) { $env:A_SEARCH_RCLONE_REMOTE } else { 's3' }
-                rclone lsjson --metadata ("{0}:{1}/{2}" -f $remote, $b, $k.TrimEnd('/')) 2>$null
+                $prev = $ErrorActionPreference
+                $ErrorActionPreference = 'Continue'
+                try {
+                    $raw = rclone lsjson --metadata ("{0}:{1}/{2}" -f $remote, $b, $k.TrimEnd('/')) 2>&1
+                    if ($LASTEXITCODE -ne 0) { return $null }
+                    return $raw
+                }
+                finally { $ErrorActionPreference = $prev }
             }
         }
         $raw = & $rcFn $Bucket $Key
         if (-not $raw) { throw ("rclone_failed: s3://{0}/{1}" -f $Bucket, $Key) }
-        $arr = if ($raw -is [string]) { $raw | ConvertFrom-Json } else { $raw }
+        $arr = ConvertFrom-FolderS3Json $raw
         $item = @($arr) | Select-Object -First 1
         if (-not $item) { throw ("rclone_empty: s3://{0}/{1}" -f $Bucket, $Key) }
         if ($item.Metadata) {
@@ -298,7 +356,7 @@ function Get-FolderS3Annotations {
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Bucket,
-        [Parameter(Mandatory = $true)][string]$Key,
+        [AllowEmptyString()][string]$Key,
         [scriptblock]$AwsListAnnotations,
         [scriptblock]$AwsGetAnnotation,
         [switch]$Full,
@@ -310,7 +368,14 @@ function Get-FolderS3Annotations {
     if (-not $listFn) {
         $listFn = {
             param($b, $k)
-            aws s3api list-object-annotations --bucket $b --key $k --output json 2>$null
+            $prev = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $raw = aws s3api list-object-annotations --bucket $b --key $k --output json 2>&1
+                if ($LASTEXITCODE -ne 0) { return $null }
+                return $raw
+            }
+            finally { $ErrorActionPreference = $prev }
         }
     }
     $getFn = $AwsGetAnnotation
@@ -341,7 +406,7 @@ function Get-FolderS3Annotations {
         }
     }
 
-    $listDoc = if ($listRaw -is [string]) { $listRaw | ConvertFrom-Json } else { $listRaw }
+    $listDoc = ConvertFrom-FolderS3Json $listRaw
     $names = @()
     foreach ($a in @($listDoc.Annotations)) {
         if ($a -and $a.AnnotationName) { $names += [string]$a.AnnotationName }
