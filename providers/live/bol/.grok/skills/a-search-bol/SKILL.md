@@ -38,7 +38,7 @@ Partial rows without id+title are skipped (no throw). Stay-dark.
 
 ## Worker (FR-081)
 
-`src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `assertBolCreds` -> `searchBol` -> `normalizeSearchResponse` -> `writeResults`. Injectable `httpRequest` / `putObject` / search / normalize. Optional `handler` for SQS Records. Stay-dark.
+`src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `assertBolCreds` -> `searchBol` -> `normalizeSearchResponse` -> `writeLiveProviderInResult` (a-clubs IN/; legacy `writeResults` fallback). Injectable `httpRequest` / `putObject` / search / normalize. Optional `handler` for SQS Records. Stay-dark.
 
 ## Selftest + pacing (FR-082)
 

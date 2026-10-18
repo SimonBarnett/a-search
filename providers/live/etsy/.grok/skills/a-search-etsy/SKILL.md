@@ -38,7 +38,8 @@ Fail closed when affiliate ids missing (never emit raw listing URL).
 ## Worker (FR-077)
 
 `src/worker.js` -- `run(msg, deps)` wires `assertWorkerEnv` -> `assertEtsyCreds` ->
-`searchEtsy` -> `normalizeSearchResponse` -> `writeResults`.
+`searchEtsy` -> `normalizeSearchResponse` -> `writeLiveProviderInResult` (a-clubs IN/;
+legacy `writeResults` fallback).
 
 ## Selftest + pacing (FR-078)
 
