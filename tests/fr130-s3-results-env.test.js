@@ -2,6 +2,8 @@
 
 /**
  * FR-130: S3_RESULTS_BUCKET env + PutObject/GetObject grants on Lambdas.
+ * FR-3949: maintainer Lambdas removed from AWS --- do not require
+ * wireResultsBucketAccess(maintainerLive|Sandbox). Onboarding stays.
  */
 
 const { describe, it } = require('node:test');
@@ -14,19 +16,20 @@ const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
 describe('FR-130 S3_RESULTS_BUCKET env + IAM grants', () => {
-  it('stack wires wireResultsBucketAccess for entry/workers/maintainer/onboarding', () => {
+  it('stack wires wireResultsBucketAccess for entry/workers/onboarding', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /function wireResultsBucketAccess/);
     assert.match(text, /S3_RESULTS_BUCKET/);
     assert.match(text, /grantReadWrite/);
     assert.match(text, /wireResultsBucketAccess\(\s*entry/);
     assert.match(text, /wireResultsBucketAccess\(\s*worker/);
-    assert.match(text, /wireResultsBucketAccess\(\s*maintainerLive/);
-    assert.match(text, /wireResultsBucketAccess\(\s*maintainerSandbox/);
     assert.match(text, /wireResultsBucketAccess\(\s*awinOnboardingLive/);
     assert.match(text, /wireResultsBucketAccess\(\s*awinOnboardingSandbox/);
     assert.match(text, /wireResultsBucketAccess\(\s*impactOnboardingSandbox/);
     assert.match(text, /wireResultsBucketAccess\(\s*impactOnboardingLive/);
+    // FR-3949: no maintainer Lambdas on AWS
+    assert.doesNotMatch(text, /wireResultsBucketAccess\(\s*maintainerLive/);
+    assert.doesNotMatch(text, /wireResultsBucketAccess\(\s*maintainerSandbox/);
   });
 
   it('synth template has S3_RESULTS_BUCKET env and scoped S3 IAM (no Resource *)', () => {
@@ -70,15 +73,6 @@ describe('FR-130 S3_RESULTS_BUCKET env + IAM grants', () => {
     );
     const s3Actions = new Set();
     for (const pol of policies) {
-      const docs = [].concat(
-        pol.Properties?.PolicyDocument || [],
-        pol.Properties?.PolicyDocument?.Statement ? [pol.Properties.PolicyDocument] : [],
-      );
-      const statements = [];
-      for (const doc of docs) {
-        if (doc && Array.isArray(doc.Statement)) statements.push(...doc.Statement);
-      }
-      // PolicyDocument is usually a single object
       const pd = pol.Properties && pol.Properties.PolicyDocument;
       if (pd && Array.isArray(pd.Statement)) {
         for (const st of pd.Statement) {
