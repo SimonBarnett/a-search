@@ -480,3 +480,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When assigned MRB tip is already CLOSED unmerged as superseded by a fuller open covering PR that Closes the same FR, board FAIL-superseded citing the covering PR, leave the FR open for that merge, do not revive the closed tip, DONE FAIL
 - Re-offered harvest-lesson MRB that was already FAIL-supersede closed as twin of a merged tip: ACK, re-verify CLOSED+board, DONE PASS with assigned URL; do not reopen or open a worktree
 - Re-offered harvest-lesson MRB already FAIL-supersede closed as twin of a merged tip: ACK, re-verify CLOSED+board, DONE PASS with assigned URL; do not reopen or open a worktree
+- MRB harvest tip: PASS re-offer FAIL-supersede twin lesson; pin contiguous NEEDLE on docs/mrb-N from new main
