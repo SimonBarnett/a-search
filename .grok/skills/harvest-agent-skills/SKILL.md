@@ -443,3 +443,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-clubs GUID uri/seen/clicks/since/init/lastmod live on trailing-slash marker a-clubs/{host}/{guid}/; widget.json is seed-only; setHostCredentials uses documented scrypt$ when Madeira auth is not vendored
 - FR #4008: pin AMerchants like #3999 (isolated CDK, shared/merchants keys+metadata with Stripe/email redaction, onCreated+runWeekly both buckets, never overwrite same-day parts); Prefer ExistingPrUrl; never log API secrets.
 - After FR-3949 marketplace-only fr142/fr143 floors, supersede every hostile enable pin that still assert.matches expected 30 primary queues (kelkoo/skimlinks/aliexpress/etsy/partnerize/webgains/woocommerce); partnerize is DB-backed so doesNotMatch in ENABLED_IDS
+- a-search harvest-lesson MRB: PASS when tip adds partnerize-DB-backed doesNotMatch + every-hostile-enable-pin supersede after FR-3949 even if a fr3428 meta-pin neighbour already exists on main.
