@@ -75,3 +75,21 @@ Repeat the same URL --- response stays 200 (idempotent). Missing `Origin`
 yields `400` `origin_required`. Widget shows "Searching" while `init` is `0`.
 
 Bob deploys after MRB PASS + merge (fleet playbook).
+
+## FR #3987 folder events + redqueen
+
+Also creates:
+
+| Resource | Notes |
+|----------|--------|
+| SQS FIFO `a-clubs-new-folders.fifo` | `MessageGroupId=hostkey`; SSE-SQS; visibility 90s |
+| SQS FIFO DLQ `a-clubs-new-folders-dlq.fifo` | maxReceiveCount 5 |
+| IAM user `a-search-redqueen-annotator` | consume queue + S3 Get/Put/List on `a-clubs` only |
+| Lambda env `A_CLUBS_FOLDER_EVENTS_QUEUE_URL` | gateway publishes host events on new host and new GUID |
+
+Gateway Lambda may **send** only. Redqueen drains outbound over HTTPS (see
+`docs/redqueen-annotations.md`). Create access keys for the IAM user out-of-band;
+never commit them.
+
+Outputs: `AClubsFolderEventsQueueUrl`, `AClubsFolderEventsDlqUrl`,
+`RedqueenAnnotatorUserName`.
