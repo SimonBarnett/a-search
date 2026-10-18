@@ -468,3 +468,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When FIFO rewires DLQ names, hostile contiguous pins must allow queueName: dlqName|queueDlqName and use a window long enough for maxReceiveCount after the fifo props.
 - WinPS 5.1 folder tools: join aws/rclone string[] stdout before ConvertFrom-Json; native calls Continue+LASTEXITCODE for head_failed; bare S:\ mount must not TrimEnd to S:; bucket root empty Key exits 5 bucket_root
 - Redqueen a-clubs drain: PutObjectAnnotation on folder markers (never annotations.json); GUID markers are trailing-slash keys; stub reviewer must never set annotated=1; install via sc.exe service under a-search-redqueen-annotator profile
+- MRB harvest tip: PASS fuller Redqueen PutObjectAnnotation lesson; close thinner twin tip; pin contiguous NEEDLE on docs/mrb-N from new main
