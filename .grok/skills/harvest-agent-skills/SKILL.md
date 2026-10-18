@@ -498,4 +498,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Harvest SKILL.md lessons must stay pure ASCII: never PowerShell-write Unicode arrows (they double-encode and fail mrb1172 whole-file em/en-dash gate); write hyphen->dot via Python bytes/Path.write_text ASCII.
 - a-search FR #4196 import path: enqueue one SQS message of [{provider,affiliateid,key}] after download (empty=none); flat feed keys skip gunzip even when marker compression=gzip; delete S3 only after commit; one fix agent per key+ETag lock that exits 0 on success
 - MRB affiliate flat feed: pin downloadOne writes only {provider}/{affiliateid}/{yyyy-mm-dd}.{ext} with lastok/decompressed lastsize; CDK rate(1 day)+runDaily; no parts/latest; one docs/mrb hostile PR
+- a-search MRB: never FAIL-close or supersede a product FR tip citing a docs/mrb-N hostile-pins PR - docs/mrb uses Refs only; Prefer ExistingPrUrl reopen the product tip when closed unmerged
+- MRB harvest tip that replaces the last SKILL.md bullet: FAIL and open one append-only keep-both fix PR; never merge a tip that drops an existing lesson line
 - MRB affiliate import SQS: pin normalizeImportFiles drops feedurl/secrets from MessageBody; wake notify is fileCount-only; one docs/mrb hostile PR; PASS with --auto without live drain
