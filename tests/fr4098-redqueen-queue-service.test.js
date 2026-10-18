@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR #4098: redqueen a-clubs queue service --- object annotations, GUID markers,
- * stub never annotates, install script, hook.
+ * FR #4098 / #4147: redqueen a-clubs queue --- object annotations, GUID markers,
+ * stub never annotates, nssm install, fetch before review.
  */
 
 const { describe, it } = require('node:test');
@@ -71,6 +71,16 @@ function s3Deps(s3, extra = {}) {
   };
 }
 
+
+/** FR #4147: happy-path tests inject a successful page fetch. */
+function okFetch(html = '<html><body><p>Club page content for tests</p></body></html>') {
+  return async () => ({
+    ok: true,
+    status: 200,
+    arrayBuffer: async () => Buffer.from(html, 'utf8'),
+  });
+}
+
 describe('FR #4098 object annotations (no sidecars)', () => {
   it('annotates host then GUID via PutObjectAnnotation; no annotations.json', async () => {
     const s3 = createMemoryS3();
@@ -79,6 +89,7 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     const result = await processFolderEvent(
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
+        fetchImpl: okFetch(),
         reviewHost: async () => ({
           summary: 'Parts shop',
           categories: ['brakes'],
@@ -165,6 +176,7 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     const result = await processFolderEvent(
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
+        fetchImpl: okFetch(),
         reviewHost: async () => ({ model: 'stub', summary: 'nope', usable: false }),
       }),
     );
@@ -210,6 +222,7 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     const result = await processFolderEvent(
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
+        fetchImpl: okFetch(),
         reviewHost: async () => {
           hostReviews += 1;
           return { summary: 'x', model: 'h' };
@@ -240,6 +253,7 @@ describe('FR #4098 object annotations (no sidecars)', () => {
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
         copyObject: clearCopy,
+        fetchImpl: okFetch(),
         reviewHost: async () => ({ summary: 'H', model: 'h' }),
         reviewGuid: async () => ({ summary: 'G', model: 'g' }),
       }),
@@ -258,6 +272,7 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     await processFolderEvent(
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
+        fetchImpl: okFetch(),
         reviewHost: async () => ({ summary: 'H', model: 'h' }),
         reviewGuid: async () => ({ summary: 'G', model: 'g' }),
         onNewFolder: async (e) => {
@@ -297,6 +312,7 @@ describe('FR #4098 drain + install pins', () => {
       },
       changeMessageVisibility: async () => {},
       ...s3Deps(s3, {
+        fetchImpl: okFetch(),
         reviewHost: async () => ({ model: 'stub', usable: false }),
       }),
     });
@@ -304,7 +320,7 @@ describe('FR #4098 drain + install pins', () => {
     assert.equal(deleted, 0);
   });
 
-  it('install script exists and is WinPS 5.1 idempotent sc.exe service', () => {
+  it('install script exists and is WinPS 5.1 idempotent nssm service (FR #4147)', () => {
     const script = path.join(
       ROOT,
       'redqueen',
@@ -314,11 +330,13 @@ describe('FR #4098 drain + install pins', () => {
     assert.ok(fs.existsSync(script));
     const src = fs.readFileSync(script, 'utf8');
     assert.match(src, /#Requires -Version 5\.1/);
-    assert.match(src, /sc\.exe create/);
-    assert.match(src, /sc\.exe config/);
+    assert.match(src, /nssm/i);
+    assert.match(src, /AppEnvironmentExtra|AWS_PROFILE/);
     assert.match(src, /a-search-redqueen-annotator/);
-    assert.match(src, /failure/);
+    assert.match(src, /AppRestartDelay|AppExit/);
     assert.match(src, /Unregister/);
+    assert.match(src, /WhatIf|DryRun/);
+    assert.doesNotMatch(src, /sc\.exe create/);
     assert.doesNotMatch(src, /annotations\.json/);
   });
 
