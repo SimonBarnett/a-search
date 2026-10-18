@@ -5,9 +5,10 @@
  * Layout:
  *   parts-gateway/src/**
  *   shared/identity/**
- *   shared/widgets/hostFolderMeta.js + widgetPath.js + parts.js (PartsError)
+ *   shared/widgets/hostFolderMeta.js + widgetPath.js
  *   shared/components/customers.js (normalizeHost)
- *   node_modules/@aws-sdk/client-s3 (when present)
+ *   shared/aClubs/**
+ *   node_modules/@aws-sdk/client-s3 + client-sqs (when present)
  */
 
 const fs = require('node:fs');
@@ -37,6 +38,7 @@ function stagePartsGatewayLambdaAsset(repoRoot, opts) {
     ['shared/components/customers.js', 'shared/components/customers.js'],
     ['shared/widgets/hostFolderMeta.js', 'shared/widgets/hostFolderMeta.js'],
     ['shared/widgets/widgetPath.js', 'shared/widgets/widgetPath.js'],
+    ['shared/aClubs', 'shared/aClubs'],
   ];
   for (const [fromRel, toRel] of sharedPairs) {
     const from = path.join(root, fromRel);
@@ -53,14 +55,17 @@ function stagePartsGatewayLambdaAsset(repoRoot, opts) {
   if (fs.existsSync(sdkSrc)) {
     const sdkDest = path.join(outDir, 'node_modules', '@aws-sdk');
     fs.mkdirSync(sdkDest, { recursive: true });
-    for (const name of ['client-s3', 'types', 'middleware-sdk-s3']) {
+    for (const name of [
+      'client-s3',
+      'client-sqs',
+      'types',
+      'middleware-sdk-s3',
+    ]) {
       const from = path.join(sdkSrc, name);
       if (fs.existsSync(from)) {
         fs.cpSync(from, path.join(sdkDest, name), { recursive: true });
       }
     }
-    // Copy smithy / credential deps lightly when present (Lambda runtime may
-    // still need a fuller tree --- deploy uses npm bundle via asset).
     const nm = path.join(root, 'node_modules');
     for (const name of [
       '@smithy',

@@ -434,3 +434,8 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - APartsGateway CORS must hardcode allowOrigins ['*'] without resolveCorsOrigins (FR-153 rejects star); host from Origin only (origin_required); Prefer Referer for GUID uri; touchLastmod/setInit via S3 metadata REPLACE self-copy
 - When a MERGED FR is reopened with Simon scope comments after merge, ship one successor PR that covers the reopen gap list plus every later comment (do not DONE the old merged PR URL while acceptance still fails on main).
 - After FR-3949 marketplace-only queue floors, supersede meta-pins like fr3428 that still assert expected 30 primary queues / webgains+woocommerce in fr142 ENABLED_IDS; keep registry keep-both asserts
+- When FR-3949 drops maintainer Lambdas, supersede mrb1096 to assert stack has stageOnboarding but not stage-maintainer-lambda-asset; fold main when CI failed (FR #4649).
+- a-affiliates v1 = Lambda not Fargate; lifecycle objectSizeGreaterThan:0 keeps zero-byte markers while expiring parts; CDK source-pin tests must avoid forbidden strings even in comments
+- New affiliate S3 product surfaces ship as an isolated CDK app/stack (like APartsGateway): never touch ASearchStack/a-clubs; forbid Stripe fields on affiliate markers; never log provider login secrets (FAKE_ test placeholders only).
+- Isolated AAffiliates CDK stack may PASS without multipart upload when docs mark Lambda v1 + Fargate follow-up for large feeds; keep #4001 redqueen import open as sibling OOS
+- Affiliate import on redqueen: map (provider,affiliateid,partid) to Parts Source/FeedKey/MerchantProductId Env=live; prune live.json via PartLiveIndex not full scan; bump lastmod for #3987; delete S3 file only after commit; never madeiradb or credential logs.

@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR #3968: when Origin is present, require it to match ?host=.
+ * FR #3968: host comes from Origin only (?host= ignored).
+ * Missing or unparseable Origin => origin_required.
  */
 
 const { normalizeHost } = require('../../shared/components/customers');
@@ -25,29 +26,19 @@ function hostFromOriginHeader(originHeader) {
 }
 
 /**
- * @param {unknown} queryHost
+ * Require a parseable Origin hostname. Ignores any query host.
  * @param {unknown} originHeader
- * @returns {{ ok: true } | { ok: false, code: string }}
+ * @returns {{ ok: true, host: string } | { ok: false, code: 'origin_required' }}
  */
-function assertHostMatchesOrigin(queryHost, originHeader) {
-  const originHost = hostFromOriginHeader(originHeader);
-  if (originHost == null) {
-    return { ok: true };
+function requireHostFromOrigin(originHeader) {
+  const host = hostFromOriginHeader(originHeader);
+  if (host == null) {
+    return { ok: false, code: 'origin_required' };
   }
-  let host;
-  try {
-    host = normalizeHost(queryHost);
-  } catch (err) {
-    const code = err && err.code ? String(err.code) : 'host_required';
-    return { ok: false, code };
-  }
-  if (host !== originHost) {
-    return { ok: false, code: 'widget_host_mismatch' };
-  }
-  return { ok: true };
+  return { ok: true, host };
 }
 
 module.exports = {
   hostFromOriginHeader,
-  assertHostMatchesOrigin,
+  requireHostFromOrigin,
 };

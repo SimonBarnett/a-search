@@ -3,6 +3,7 @@
 /**
  * FR #3968: ensure a-clubs/{hostkey}/ marker with Madeira userid metadata.
  * customerNumber metadata === userid (documented choice; no sequential counter).
+ * Sets lastmod on create; publishes folder event when newly created.
  */
 
 const { normalizeHost } = require('../../shared/components/customers');
@@ -10,6 +11,7 @@ const {
   safeHostFolderName,
   buildHostTagSet,
   parseHostTagSet,
+  isoLastmod,
 } = require('../../shared/widgets/hostFolderMeta');
 const {
   mintUniqueUserId,
@@ -17,6 +19,7 @@ const {
 } = require('../../shared/identity/madeiraUserId');
 const { hostMarkerKey, useridClaimKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
+const { publishFolderEvent } = require('./publishFolderEvent');
 
 /**
  * @param {{
@@ -25,6 +28,9 @@ const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
  *   putObject: Function,
  *   putObjectTagging?: Function,
  *   mint?: () => string,
+ *   sendMessage?: Function,
+ *   folderEventsQueueUrl?: string,
+ *   now?: Date|string|number,
  * }} opts
  * @returns {Promise<{
  *   created: boolean,
@@ -64,9 +70,11 @@ async function ensureAclubsHost(opts) {
       customerNumber: customerNumber || userid,
       metadata: {
         userid,
-        host,
-        hostkey,
+        host: md.host || host,
+        hostkey: md.hostkey || hostkey,
         customerNumber: customerNumber || userid,
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
+        ...(md.annotated != null ? { annotated: String(md.annotated) } : {}),
       },
       tags: { hasdns: false, partnerid: '', hasupg: false },
     };
@@ -93,12 +101,14 @@ async function ensureAclubsHost(opts) {
     throw err;
   }
 
-  // customerNumber === userid (FR #3968: no sequential in-memory counter)
+  const createdAtForMeta = isoLastmod(opts.now);
   const metadata = {
     userid,
     host,
     hostkey,
     customerNumber: userid,
+    lastmod: createdAtForMeta,
+    annotated: '0',
   };
   const tagSet = buildHostTagSet({ hasdns: 0, partnerid: '', hasupg: 0 });
   const tagging = tagSet
@@ -137,6 +147,7 @@ async function ensureAclubsHost(opts) {
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
         customerNumber: String(md.customerNumber || uid),
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
       },
       tags: parseHostTagSet(tagSet),
     };
@@ -146,6 +157,17 @@ async function ensureAclubsHost(opts) {
     await opts.putObjectTagging({
       Key: markerKey,
       Tagging: { TagSet: tagSet },
+    });
+  }
+
+  if (typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
+    await publishFolderEvent({
+      sendMessage: opts.sendMessage,
+      queueUrl: opts.folderEventsQueueUrl,
+      hostkey,
+      host,
+      createdAt: metadata.lastmod,
+      reason: 'host',
     });
   }
 
