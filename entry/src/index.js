@@ -94,6 +94,10 @@ const {
   handleWixWebhook,
 } = require('./wixWebhooks');
 const {
+  matchEcwidWebhookRoute,
+  handleEcwidWebhook,
+} = require('./ecwidWebhooks');
+const {
   matchStripeWebhookRoute,
   handleStripeWidgetUpgradeWebhook,
 } = require('./stripeWidgetUpgradeWebhook');
@@ -293,6 +297,7 @@ async function handler(event, _context, deps = {}) {
   const merchantRoute = matchMerchantShopsRoute(method, path);
   const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
   const wixWebhookRoute = matchWixWebhookRoute(method, path);
+  const ecwidWebhookRoute = matchEcwidWebhookRoute(method, path);
   const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
   const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
   const loginRoute = matchLoginEntryRoute(method, path);
@@ -433,6 +438,9 @@ async function handler(event, _context, deps = {}) {
     }
     if (wixWebhookRoute) {
       return await handleWixWebhook(event, deps);
+    }
+    if (ecwidWebhookRoute) {
+      return await handleEcwidWebhook(event, deps);
     }
     if (bigcommerceWebhookRoute) {
       return await handleBigCommerceWebhook(event, deps);

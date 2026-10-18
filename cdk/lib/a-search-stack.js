@@ -937,6 +937,12 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
     });
+    // FR-246: Ecwid application.uninstalled webhook
+    httpApi.addRoutes({
+      path: '/webhooks/shop/ecwid',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryEcwidShopWebhookIntegration'),
+    });
     // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
     httpApi.addRoutes({
       path: '/webhooks/shop/bigcommerce',
@@ -953,7 +959,9 @@ class ASearchStack extends cdk.Stack {
     httpApi.addRoutes({
       path: '/webhooks/shop/bigcommerce/load',
       methods: [apigwv2.HttpMethod.POST],
-      integration: entryIntegration('EntryBigCommerceShopLoadWebhookIntegration'),
+      integration: entryIntegration(
+        'EntryBigCommerceShopLoadWebhookIntegration',
+      ),
     });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
