@@ -517,3 +517,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When two open harvest tips in the same book state the same playbook, keep the earlier fuller bullet and close the later tip. Do not merge both.
 - Host annotation is an affiliate brief (club, audience, opportunities). GUID annotation describes only that page using the host brief plus title and meta, and must be rejected when it copies the host text. REDQUEEN_REANNOTATE=1 rewrites markers that are already annotated.
 - GUID folder meta must print the full host annotation and the page annotation plus steering (hostReview, pageReview, steering with annotated and lastupdate). Do not stop at the truncated parent-host preview.
+- If a harvest tip turns CONFLICTING after the PASS board, fold origin/main once, keep the tip bullet and the new main bullets, comment the new head SHA, and re-arm auto-merge.
