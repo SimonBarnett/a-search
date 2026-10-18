@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-173 / #1020: enable webgains only; FR-138 secret wiring; others stay dark.
  * FR-3949: local/DB-backed share a-search-db-backed (no per-source AWS workers).
