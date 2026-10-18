@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-820 FR-098 hostile', () => {
-  it('registry avantlink enabled both envs (FR-177)', () => {
+  it('registry avantlink disabled both envs under GBP hold (FR-1426 supersedes FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const al = registry.sources.find((s) => s.id === 'avantlink');
     assert.ok(al);
-    assert.equal(al.enabled.live, true);
-    assert.equal(al.enabled.sandbox, true);
+    assert.equal(al.enabled.live, false);
+    assert.equal(al.enabled.sandbox, false);
     assert.equal(al.kind, 'local');
     assert.equal(al.queueEnv, 'SQS_AVANTLINK_URL');
   });
@@ -63,7 +63,7 @@ describe('MRB-820 FR-098 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> normalizePart -> writeResults with avad track', async () => {
+  it('worker run: queryParts -> normalizePart -> writeResults with pw+ctc track', async () => {
     const puts = [];
     const row = {
       Source: 'avantlink',
@@ -99,7 +99,7 @@ describe('MRB-820 FR-098 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'avantlink');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /avad=al-aff-hostile/);
+    assert.match(String(result.products[0].url), /pw=al-aff-hostile&ctc=/);
     assert.equal(puts.length, 1);
   });
 

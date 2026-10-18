@@ -109,13 +109,14 @@ describe('FR-105 wix Stores catalogue client (stay dark)', () => {
     );
   });
 
-  it('registry wix stays dark (enabled live/sandbox false)', () => {
+  it('registry wix enabled both envs (FR-179)', () => {
     const { sources } = loadRegistry();
     const s = sources.find((x) => x.id === 'wix');
     assert.ok(s, 'wix in registry');
     assert.equal(s.kind, 'local');
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
   });
 
   it('buildProductsQueryUrl defaults to wixapis stores query', () => {

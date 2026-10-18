@@ -27,7 +27,7 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     assert.equal(byId.get('kelkoo').enabled.live, true);
     assert.equal(byId.get('kelkoo').enabled.sandbox, true);
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
-    assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'GBP/UK hold aliexpress');
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.kelkoo + KELKOO_COUNTRY plain default', () => {
@@ -42,7 +42,7 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     );
   });
 
-  it('FR-142/143 pins use 30 primary/DLQ floors after keep-both shopify+tradedoubler+avantlink', () => {
+  it('FR-142/143 pins use 26 primary/DLQ floors after keep-both shopify+tradedoubler+avantlink', () => {
     const fr142 = utf8NoBom(path.join('tests', 'fr142-sqs-dlq.test.js'));
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
@@ -51,7 +51,7 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     assert.match(fr143, /expected 30 DLQ depth alarms/);
     assert.match(fr142, /'kelkoo'/);
     assert.match(fr142, /'skimlinks'/);
-    assert.match(fr142, /'aliexpress'/);
+    assert.doesNotMatch(fr142, /'aliexpress'/);
   });
 
   it('stay-dark pins exclude kelkoo; DEFAULT_ON includes kijiji; Decision LOCKED', () => {

@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-164: SQS visibilityTimeout must exceed worker Lambda timeout (6x).
  */
@@ -44,11 +46,7 @@ describe('FR-164 SQS visibilityTimeout > worker Lambda timeout', () => {
       WORKER_LAMBDA_TIMEOUT_SEC,
       WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
     } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr164');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');

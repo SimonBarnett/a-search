@@ -51,14 +51,14 @@ describe('FR-075 etsy search client', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
-          ETSY_API_KEY: 'fixture-key',
+          ETSY_API_KEY: 'fixture-key', ETSY_SHARED_SECRET: 'test-secret',
         },
         httpRequest: async (req) => {
           httpCalls.push(req);
           assert.equal(req.method, 'GET');
           assert.match(req.url, /etsy|listings\/active/i);
           assert.match(req.url, /keywords=mug/i);
-          assert.equal(req.headers['x-api-key'], 'fixture-key');
+          assert.equal(req.headers['x-api-key'], 'fixture-key:test-secret');
           return fixture;
         },
       },

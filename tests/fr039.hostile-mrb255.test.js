@@ -23,6 +23,6 @@ describe('hostile MRB #255 FR-039', () => {
     });
     assert.ok(Array.isArray(products) && products.length >= 1);
     assert.equal(products[0].source, 'ebay');
-    assert.match(products[0].url, /userId=U-EBAY/);
+    assert.match(products[0].url, /[?&]customid=U-EBAY/); // FR-248 networkParams.tenantParam
   });
 });

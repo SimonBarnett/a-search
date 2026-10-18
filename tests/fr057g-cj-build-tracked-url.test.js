@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-057g: CJ clickUrl → buildTrackedUrl (JWT userId + CJ_WEBSITE_ID).
+ * FR-057g + FR-248: CJ clickUrl -> buildTrackedUrl.
+ * CJ_WEBSITE_ID is path PID (/click-{PID}-); sid is tenant (not website id).
  */
 
 const { describe, it } = require('node:test');
@@ -25,10 +26,10 @@ const {
 const { run } = require('../providers/live/cj/src/worker');
 const { TrackedUrlError } = require('../shared/links/buildTrackedUrl');
 
-const envVars = { CJ_WEBSITE_ID: 'web-9' };
+const envVars = { CJ_WEBSITE_ID: '99999' };
 
 describe('FR-057g cj buildTrackedUrl wiring', () => {
-  it('normalizeCjItem stamps userId + sid for two tenants', () => {
+  it('normalizeCjItem stamps sid=tenant for two tenants (FR-248)', () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const item = fixture.data.products.resultList[0];
     const a = normalizeCjItem(item, {
@@ -41,9 +42,10 @@ describe('FR-057g cj buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
-    assert.match(a.url, /sid=web-9/);
+    assert.match(a.url, /[?&]sid=U-A/);
+    assert.match(b.url, /[?&]sid=U-B/);
+    assert.doesNotMatch(a.url, /[?&]sid=99999/);
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.notEqual(a.url, b.url);
   });
 
@@ -68,7 +70,7 @@ describe('FR-057g cj buildTrackedUrl wiring', () => {
     );
   });
 
-  it('worker run results include tenant stamp', async () => {
+  it('worker run results include tenant on sid', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const out = await run(
       {
@@ -84,15 +86,15 @@ describe('FR-057g cj buildTrackedUrl wiring', () => {
           A_SEARCH_ENV: 'sandbox',
           CJ_API_TOKEN: 'token-test',
           CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
-          CJ_WEBSITE_ID: 'web-9',
+          CJ_WEBSITE_ID: '99999',
           S3_RESULTS_BUCKET: 'test-results',
         },
         httpRequest: async () => fixture,
         putObject: async () => ({}),
       },
     );
-    assert.match(out.products[0].url, /userId=U-CJ/);
-    assert.match(out.products[0].url, /sid=web-9/);
+    assert.match(out.products[0].url, /[?&]sid=U-CJ/);
+    assert.doesNotMatch(out.products[0].url, /[?&]sid=99999/);
   });
 
   it('cj .env.example documents CJ_WEBSITE_ID as tracked account key', () => {
@@ -101,7 +103,7 @@ describe('FR-057g cj buildTrackedUrl wiring', () => {
       'utf8',
     );
     assert.match(text, /CJ_WEBSITE_ID/);
-    assert.match(text, /tracked|FR-057|affiliate|account/i);
+    assert.match(text, /tracked|FR-057|affiliate|account|FR-248/i);
     assert.match(text, /CJ_WEBSITE_ID=\s*$/m);
   });
 });

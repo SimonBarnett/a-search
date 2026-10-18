@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-154: ResultsBucket security defaults  -  BlockPublicAccess, SSE-S3,
  * enforceSSL, BucketOwnerEnforced (no public ACL). Cross-links FR-129/130.
@@ -39,11 +41,7 @@ describe('FR-154 S3 results bucket SSE + BlockPublicAccess', () => {
   it('synth: ResultsBucket has BPA all-block, AES256 SSE, no public ACL', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr154');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');

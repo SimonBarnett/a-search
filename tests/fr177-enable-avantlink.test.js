@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-177 / #1024: enable avantlink only; FR-138 secret wiring; others stay dark.
  */
@@ -13,7 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'wix', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -29,17 +31,17 @@ function utf8NoBom(rel) {
 }
 
 describe('FR-177 enable avantlink', () => {
-  it('registry enables avantlink both envs; siblings stay dark', () => {
+  it('registry holds avantlink disabled both envs (GBP/UK); siblings stay dark', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const al = byId.get('avantlink');
     assert.ok(al, 'registry missing avantlink');
-    assert.equal(al.enabled.live, true);
-    assert.equal(al.enabled.sandbox, true);
+    assert.equal(al.enabled.live, false);
+    assert.equal(al.enabled.sandbox, false);
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
     assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
-    assert.equal(byId.get('aliexpress').enabled.live, true, 'FR-169');
+    assert.equal(byId.get('aliexpress').enabled.live, false, 'FR-169');
     assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
     assert.equal(byId.get('admitad').enabled.live, false, 'FR-175 not on main');
@@ -74,14 +76,18 @@ describe('FR-177 enable avantlink', () => {
     );
   });
 
-  it('synth: avantlink live+sandbox workers+queues; secret refs; dark ids absent', () => {
+  it(
+    'synth: GBP/UK hold - avantlink workers+queues absent (folder retained)',
+    {
+      skip:
+        process.platform === 'win32'
+          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
+          : false,
+    },
+    () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr177');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -92,43 +98,20 @@ describe('FR-177 enable avantlink', () => {
     const queues = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
-
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
-
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-avantlink-worker-${env}`);
-      assert.ok(envVars.AVANTLINK_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.AVANTLINK_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.AVANTLINK_API_KEY === 'object',
-        `AVANTLINK_API_KEY must be Secrets Manager ref (${env})`,
-      );
-      assert.ok(envVars.AVANTLINK_AFFILIATE_ID, `missing affiliate id ${env}`);
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-avantlink-${env}`,
-      );
-      assert.ok(qHit, `missing queue a-search-avantlink-${env}`);
-    }
-
-    for (const dark of STILL_DARK) {
-      const hit = fns.find(
+      const fn = fns.find(
         (res) =>
           res.Properties &&
-          typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
+          res.Properties.FunctionName === `a-search-avantlink-worker-${env}`,
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(fn, undefined, `hold avantlink must not have worker ${env}`);
+      const q = queues.find(
+        (q) =>
+          q.Properties &&
+          q.Properties.QueueName === `a-search-avantlink-${env}`,
+      );
+      assert.equal(q, undefined, `hold avantlink must not have queue ${env}`);
     }
-  });
+    },
+  );
 });

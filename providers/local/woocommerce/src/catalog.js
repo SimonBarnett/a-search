@@ -22,21 +22,37 @@ class WooCommerceCredsError extends Error {
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{
+ *   storeUrl?: string,
+ *   shopDomain?: string,
+ *   consumerKey?: string,
+ *   consumerSecret?: string,
+ * }} [overrides]
+ * FR-238: per-call storeUrl/shopDomain + consumer key/secret; env remains selftest fallback.
  */
-function readWooCommerceCreds(env) {
+function readWooCommerceCreds(env, overrides) {
   const e = env || process.env;
+  const o = overrides || {};
   const storeUrl =
-    e.WOOCOMMERCE_STORE_URL != null
-      ? String(e.WOOCOMMERCE_STORE_URL).trim()
-      : '';
+    o.storeUrl != null && String(o.storeUrl).trim()
+      ? String(o.storeUrl).trim()
+      : o.shopDomain != null && String(o.shopDomain).trim()
+        ? String(o.shopDomain).trim()
+        : e.WOOCOMMERCE_STORE_URL != null
+          ? String(e.WOOCOMMERCE_STORE_URL).trim()
+          : '';
   const consumerKey =
-    e.WOOCOMMERCE_CONSUMER_KEY != null
-      ? String(e.WOOCOMMERCE_CONSUMER_KEY).trim()
-      : '';
+    o.consumerKey != null && String(o.consumerKey).trim()
+      ? String(o.consumerKey).trim()
+      : e.WOOCOMMERCE_CONSUMER_KEY != null
+        ? String(e.WOOCOMMERCE_CONSUMER_KEY).trim()
+        : '';
   const consumerSecret =
-    e.WOOCOMMERCE_CONSUMER_SECRET != null
-      ? String(e.WOOCOMMERCE_CONSUMER_SECRET).trim()
-      : '';
+    o.consumerSecret != null && String(o.consumerSecret).trim()
+      ? String(o.consumerSecret).trim()
+      : e.WOOCOMMERCE_CONSUMER_SECRET != null
+        ? String(e.WOOCOMMERCE_CONSUMER_SECRET).trim()
+        : '';
   const apiPrefix =
     e.WOOCOMMERCE_API_PREFIX != null && String(e.WOOCOMMERCE_API_PREFIX).trim()
       ? String(e.WOOCOMMERCE_API_PREFIX).trim()
@@ -46,9 +62,15 @@ function readWooCommerceCreds(env) {
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{
+ *   storeUrl?: string,
+ *   shopDomain?: string,
+ *   consumerKey?: string,
+ *   consumerSecret?: string,
+ * }} [overrides]
  */
-function assertWooCommerceCreds(env) {
-  const c = readWooCommerceCreds(env);
+function assertWooCommerceCreds(env, overrides) {
+  const c = readWooCommerceCreds(env, overrides);
   const missing = [];
   if (!c.storeUrl) missing.push('WOOCOMMERCE_STORE_URL');
   if (!c.consumerKey) missing.push('WOOCOMMERCE_CONSUMER_KEY');
@@ -296,7 +318,12 @@ function parseProductsResponse(body, meta) {
  */
 async function fetchCatalogPage(deps) {
   const envVars = (deps && deps.env) || process.env;
-  const creds = assertWooCommerceCreds(envVars);
+  const creds = assertWooCommerceCreds(envVars, {
+    storeUrl: deps && deps.storeUrl,
+    shopDomain: deps && deps.shopDomain,
+    consumerKey: deps && deps.consumerKey,
+    consumerSecret: deps && deps.consumerSecret,
+  });
   const authInQuery = Boolean(deps && deps.authInQuery);
   const url = buildProductsUrl(creds.storeUrl, {
     apiPrefix: creds.apiPrefix,

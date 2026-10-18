@@ -8,6 +8,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
@@ -24,7 +25,7 @@ describe('FR-137 MSSQL Secrets Manager CDK wiring', () => {
     assert.match(text, /grantRead/);
     assert.match(text, /MSSQL_DATABASE/);
     assert.match(text, /madeiradb/);
-    assert.match(text, /<sandbox-mssql-database>/);
+    assert.match(text, /a_search_sandbox/);
     // Local workers only (not every worker)
     assert.match(
       text,
@@ -40,15 +41,21 @@ describe('FR-137 MSSQL Secrets Manager CDK wiring', () => {
     assert.doesNotMatch(text, /MSSQL_PASSWORD\s*[:=]\s*['"][^'"<{][^'"]+['"]/);
   });
 
-  it('synth: SQL Lambdas get MSSQL_* dynamic refs; live amazon worker does not', () => {
+  it('synth: SQL Lambdas get MSSQL_* dynamic refs; live amazon worker does not', (t) => {
     // In-process synth (not npm spawn): mssql asset staging can exceed spawnSync
     // timeouts on fleet seats; Node test runner may wait for the full stage.
+    // FR #3717: seat without jose under stage-entry skips synth (CI owns synth).
+    try {
+      require.resolve('jose', {
+        paths: [path.join(root, 'entry'), root],
+      });
+    } catch {
+      t.skip('missing jose for entry asset staging (FR #3717); CI owns synth');
+      return;
+    }
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out');
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing ASearchStack.template.json');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -82,21 +89,21 @@ describe('FR-137 MSSQL Secrets Manager CDK wiring', () => {
       assert.doesNotMatch(pwd, /^(SuperSecret|password|hunter2)/i);
     }
 
-    assertMssqlWired('a-search-maintainer-live', 'madeiradb');
+    assertMssqlWired('a-search-maintainer-live', 'a_search');
     assertMssqlWired(
       'a-search-maintainer-sandbox',
-      '<sandbox-mssql-database>',
+      'a_search_sandbox',
     );
-    assertMssqlWired('a-search-awin-worker-live', 'madeiradb');
+    assertMssqlWired('a-search-awin-worker-live', 'a_search');
     assertMssqlWired(
       'a-search-awin-worker-sandbox',
-      '<sandbox-mssql-database>',
+      'a_search_sandbox',
     );
-    assertMssqlWired('a-search-impact-worker-live', 'madeiradb');
-    assertMssqlWired('a-search-awin-onboarding-live', 'madeiradb');
+    assertMssqlWired('a-search-impact-worker-live', 'a_search');
+    assertMssqlWired('a-search-awin-onboarding-live', 'a_search');
     assertMssqlWired(
       'a-search-impact-onboarding-sandbox',
-      '<sandbox-mssql-database>',
+      'a_search_sandbox',
     );
 
     const amazonLive = envOf('a-search-amazon-worker-live');

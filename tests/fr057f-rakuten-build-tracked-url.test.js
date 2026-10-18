@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-057f: Rakuten linkurl → buildTrackedUrl (JWT userId + RAKUTEN_SITE_ID).
+ * FR-057f + FR-248: Rakuten linkurl -> buildTrackedUrl.
+ * RAKUTEN_SITE_ID -> query `id` (publisher); tenant is `u1` (not mid/userId).
  */
 
 const { describe, it } = require('node:test');
@@ -25,10 +26,10 @@ const item = {
   linkurl: 'https://www.example.com/rk/RK-FIX-001',
 };
 
-const envVars = { RAKUTEN_SITE_ID: 'site-7' };
+const envVars = { RAKUTEN_SITE_ID: 'site-7', RAKUTEN_MID: 'adv-9' };
 
 describe('FR-057f rakuten buildTrackedUrl wiring', () => {
-  it('normalizeRakutenItem stamps userId + mid for two tenants', () => {
+  it('normalizeRakutenItem stamps id + u1 for two tenants (FR-248)', () => {
     const a = normalizeRakutenItem(item, {
       userId: 'U-A',
       env: 'sandbox',
@@ -39,9 +40,12 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
       env: 'sandbox',
       envVars,
     });
-    assert.match(a.url, /userId=U-A/);
-    assert.match(b.url, /userId=U-B/);
-    assert.match(a.url, /mid=site-7/);
+    assert.match(a.url, /[?&]u1=U-A/);
+    assert.match(b.url, /[?&]u1=U-B/);
+    assert.match(a.url, /[?&]id=site-7/);
+    assert.match(a.url, /[?&]mid=adv-9/);
+    assert.doesNotMatch(a.url, /[?&]mid=site-7/);
+    assert.doesNotMatch(a.url, /[?&]userId=/);
     assert.notEqual(a.url, b.url);
   });
 
@@ -61,7 +65,7 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
     assert.throws(() => normalizeSearchItems([item]), /track|userId|tracked/i);
   });
 
-  it('worker run results include tenant stamp', async () => {
+  it('worker run results include tenant on u1', async () => {
     const xml = fs.readFileSync(
       path.join(
         root,
@@ -88,6 +92,7 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
           RAKUTEN_APPLICATION_KEY: 'app-key-test',
           RAKUTEN_AFFILIATE_ID: 'aff-1',
           RAKUTEN_SITE_ID: 'site-7',
+          RAKUTEN_MID: 'adv-9',
           RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
           S3_RESULTS_BUCKET: 'test-results',
         },
@@ -95,8 +100,8 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
         putObject: async () => ({}),
       },
     );
-    assert.match(out.products[0].url, /userId=U-RK/);
-    assert.match(out.products[0].url, /mid=site-7/);
+    assert.match(out.products[0].url, /[?&]u1=U-RK/);
+    assert.match(out.products[0].url, /[?&]id=site-7/);
   });
 
   it('rakuten .env.example documents RAKUTEN_SITE_ID as tracked account key', () => {
@@ -105,7 +110,7 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
       'utf8',
     );
     assert.match(text, /RAKUTEN_SITE_ID/);
-    assert.match(text, /tracked|FR-057|affiliate|account/i);
+    assert.match(text, /tracked|FR-057|affiliate|account|FR-248/i);
     assert.match(text, /RAKUTEN_SITE_ID=\s*$/m);
   });
 });

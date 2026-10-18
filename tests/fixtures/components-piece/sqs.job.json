@@ -1,0 +1,9 @@
+{
+  "eventType": "widget_created",
+  "env": "sandbox",
+  "customerNumber": "C1001",
+  "widgetGuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "host": "shop.example",
+  "s3Key": "sandbox/x/C1001/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee/widget.json",
+  "at": "2026-10-14T09:00:01.000Z"
+}

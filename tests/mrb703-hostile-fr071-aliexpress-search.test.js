@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * MRB #703 hostile: FR-071 aliexpress search stay-dark gates.
@@ -53,8 +53,8 @@ describe('MRB #703 hostile FR-071 aliexpress search', () => {
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    assert.equal(ae.enabled.live, false);
+    assert.equal(ae.enabled.sandbox, false);
   });
 
   it('skill documents FR-071 search needles', () => {

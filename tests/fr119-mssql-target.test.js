@@ -51,35 +51,28 @@ describe('FR-119 docs/environments.md MSSQL target', () => {
     assert.doesNotMatch(text, /\bor live DB\b/i);
   });
 
-  it('docs and .env.example never treat a_search_sandbox as real', () => {
+  it('docs lock a_search_sandbox as sandbox DB (FR-251); env examples default a_search', () => {
     const docsDir = path.join(root, 'docs');
     for (const ent of fs.readdirSync(docsDir, { withFileTypes: true })) {
       if (!ent.isFile() || !ent.name.endsWith('.md')) continue;
       const text = fs.readFileSync(path.join(docsDir, ent.name), 'utf8');
-      // FR #1280 / FR-146: environments.md may Recommend `a_search_sandbox` as
-      // Treat-as-missing until ops apply-ddl; never an assigned live DB.
       if (ent.name === 'environments.md') {
-        assert.match(text, /Recommended[\s\S]{0,120}a_search_sandbox/i);
-        assert.match(text, /Treat as missing|do not invent credentials/i);
+        assert.match(text, /(?:Recommended|Required)[\s\S]{0,120}a_search_sandbox/i);
+        assert.match(text, /Treat as missing|do not invent credentials|FR-251/i);
         assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
         continue;
       }
       if (!/a_search_sandbox/.test(text)) continue;
-      // Other top-level docs may cite the FR-146 recommended name only.
+      // Other docs may cite the FR-146/FR-251 sandbox name.
       assert.match(
         text,
-        /FR-146|recommended DB|Recommended/i,
-        `docs/${ent.name} names a_search_sandbox without FR-146 recommended context`,
+        /FR-146|FR-251|recommended DB|Recommended|Required|a-search database/i,
+        `docs/${ent.name} names a_search_sandbox without FR-146/251 context`,
       );
       assert.doesNotMatch(text, /MSSQL_DATABASE=a_search_sandbox/);
     }
     for (const envPath of walkEnvExamples(root)) {
       const text = fs.readFileSync(envPath, 'utf8');
-      assert.doesNotMatch(
-        text,
-        /a_search_sandbox/,
-        `${path.relative(root, envPath)} still names a_search_sandbox`,
-      );
       if (/MSSQL_SERVER\s*=/.test(text)) {
         assert.match(
           text,
@@ -88,8 +81,8 @@ describe('FR-119 docs/environments.md MSSQL target', () => {
         );
         assert.match(
           text,
-          /MSSQL_DATABASE=madeiradb/,
-          `${path.relative(root, envPath)} missing madeiradb`,
+          /MSSQL_DATABASE=a_search/,
+          `${path.relative(root, envPath)} missing a_search`,
         );
         assert.match(text, /MSSQL_ENCRYPT/);
         assert.match(text, /MSSQL_TRUST_SERVER_CERTIFICATE/);

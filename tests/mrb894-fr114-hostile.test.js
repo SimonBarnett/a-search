@@ -93,11 +93,12 @@ describe('MRB-894 FR-114 hostile', () => {
     );
   });
 
-  it('identity.md covers format, open Partner question, no PII; README keep-both', () => {
+  it('identity.md covers format, DECIDED partner permissions rule, no PII; README keep-both', () => {
     const text = fs.readFileSync(path.join(root, 'docs', 'identity.md'), 'utf8');
     assert.match(text, /\^\[0-9A-Z\]\{8\}\$/);
     assert.match(text, /GenerateUniqueUserId/);
-    assert.match(text, /open question|not authoritative/i);
+    assert.match(text, /DECIDED 2026-10-10/);
+    assert.match(text, /permissions/);
     assert.match(text, /clubscan/);
     assert.doesNotMatch(text, /@gmail\.com|@hotmail\.com/i);
     assert.ok(!/[^\x09\x0A\x0D\x20-\x7E]/.test(text));

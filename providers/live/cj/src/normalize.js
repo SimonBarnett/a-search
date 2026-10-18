@@ -46,7 +46,7 @@ function normalizeCjItem(item, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['CJ_WEBSITE_ID'],
+      source: 'cj',
     });
   }
 

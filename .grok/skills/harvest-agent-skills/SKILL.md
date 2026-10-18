@@ -60,9 +60,9 @@ Empty harvest (nothing new, nothing broken): no empty PR. That is the only quiet
 | Add-source / layout docs | `docs/add-source.md`, `docs/skillbook-layout.md` |
 
 **Do not** park a-search product tips under `SimonBarnett/bobiverse`
-`common/.grok/skills/harvest/SKILL.md` (wrong book ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â FAIL-supersede).
+`common/.grok/skills/harvest/SKILL.md` (wrong book - FAIL-supersede).
 
-Branch `harvest/ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦` or `fix/ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦` -> PR to `main`.
+Branch `harvest/...` or `fix/...` -> PR to `main`.
 
 ## Token efficiency
 
@@ -87,10 +87,10 @@ starts the next wave:
 1. **`git fetch` + ff-only pull `origin/main`** before reading the tree (local worktrees
    often lag).
 2. Write a short gap note (`docs/gap-analysis-*.md`) vs vision Success rows.
-3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â **never**
+3. Open **many small** Goal / Deliverables / Testable FRs (one PR per issue) - **never**
    one umbrella FR for the whole wave.
 4. First Phase-1 wire when modules exist but entry is stub: **maintainer
-   `schedule.handler`** must orchestrate roll ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ fetch ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ upsert ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ delete (not
+   `schedule.handler`** must orchestrate roll -> fetch -> upsert -> delete (not
    `processed: 0` forever).
 5. MRB of the backlog docs PR verifies Goal/Deliverables/Testable on each filed FR.
 
@@ -99,15 +99,15 @@ starts the next wave:
 | Tip class | Durable home |
 |-----------|----------------|
 | Bob fleet tooling only (bob-worker exe, Jeeves offers, tray, intake service, generic `bobiverse-bob-job-mrb` process changes) | `SimonBarnett/bobiverse` - everything learned while doing a-search work (MRB merges, behind-main/keep-both on a-search PRs, CDK npm ci/synth, plan filing) stays **here** in a-search (this book or the owning `a-search-<id>` skill) |
-| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â already on main via product PRs; tip twins FAIL-supersede |
+| Per-FR product playbooks (amazon handler, ebay Browse, etc.) | Owning `a-search-<id>` / maintainer / entry skill - already on main via product PRs; tip twins FAIL-supersede |
 | Provider onboarding bodies | `a-search-<id>-onboarding` under the provider folder |
 
 ## Tests / GitGuardian (a-search#611 / bobiverse#3304)
 
 Never land contiguous secret-shaped literals in test sources. Use
 `tests/fixtures/fakeSecrets.js` (runtime `joinParts` + `reLiteral` / `reFromParts`).
-Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIAÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦EXAMPLE`) are fine. Do not
-force-push history only to clear GG false positives ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fix the fixture instead.
+Obvious placeholders (`FAKE_`, `EXAMPLE`, AWS doc `AKIA...EXAMPLE`) are fine. Do not
+force-push history only to clear GG false positives --- fix the fixture instead.
 
 ## Do not
 
@@ -121,6 +121,7 @@ force-push history only to clear GG false positives ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã
 
 Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
 MRB: keep, reword or trim; twins are listed once with every source.
+- CAST IRON (FR #3827 / bobiverse#4649): fold origin/main into a PR only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (cite the main commit/PR). never fold just because the PR is behind (FR #3827 / bobiverse#4649); if the repo has no required up-to-date check, PASS at the current head SHA and arm --auto. CONFLICTING keep-both folds remain required.
 
 - a-search FR-042: product results use worker/lib/normalizeProduct.js + docs/result-schema.md; amazon normalize asserts shared schema; other providers can adopt later (bobiverse#3215; context: FR a-search#102 FR-042 shared result schema + normalizeProduct; amazon refactor; PR opened)
 - a-search shared-move MRB CONFLICTING: keep BOTH shared requires (assertEnv from tip + writeResults from main); prefer ASCII -> over mojibake arrows; re-run env + fr047* pins before merge (bobiverse#3233; context: MRB a-search#402 CONFLICTING: merge origin/main; resolve dual require hunks to shared/assertEnv + shared/writeResults; ASCII -> comments; tests 20 pass; merged; #142 closed; filed #420 package.json files gap)
@@ -175,7 +176,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Phase-4 enable FR: flip one registry id both envs, add PROVIDER_CREDENTIAL_KEYS + PLAIN_DEFAULTS, update stay-dark pins/docs that asserted that id false, pin frN with in-process synth for a-search-{id}-{live,sandbox}
 - Phase-4 enable FR: after fold, retarget FR-142/143 floors +2 env-pairs and drop the id from every stay-dark pin (fr166 PHASE2_STUB_IDS, mrb1042, registry DEFAULT_ON, mrb31 default-on, provider-onboarding LIVE_STUB) before CI; run-tests.js breaks on first alphabetical batch
 - When two Phase-4 enable tips race, keep-both both PROVIDER_CREDENTIAL_KEYS/PLAIN_DEFAULTS and retarget FR-142/143 floors to 2*(enabled count); update sibling hostile pins that hard-code the old floor (e.g. mrb1327 14->16).
-- a-search product MRB: when tip is far behind main, merge origin/main into the FR branch and re-wait CI before gh pr merge; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
+- a-search product MRB: never fold just because the tip is behind (FR #3827 / bobiverse#4649); fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue; PASS at current head and arm --auto; put additive hostile pins (registry stay-dark stubs + index needles) on one docs/mrb-N PR from the new main tip after product merge; file a follow-up FR for planned-wave table rows that Simon already closed not-planned (do not FAIL the index-only FR for adjacent wave annotations).
 - Harvest-lesson tips must append/fold one bullet on current main SKILL.md never rewrite/wipe the book; neutralize GitHub close keywords in session summaries so tips do not Closes product issues (MRB #1332 / #1338).
 - a-search behind-main FR-158 stack conflict: keep resolveStageSuffix+costTags then FR-149/FR-158 no-VPC egress comment; release-gap Yes for 153-157 + FR-158
 - Phase-4 enable FR: after enabling an id, retarget mrb668 Phase-2 stub count (and fr166 PHASE2_STUB_IDS) down by 1 and FR-142/143 floors to 2*enabled_count before CI; concurrent open enable tips stay dark until merged
@@ -201,6 +202,212 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Multi-region smoke (FR-194): checklist in multi-region-smoke.md; smoke-deploy.js --region labels run and can pick A_SEARCH_API_URL_<REGION>; no chaos in CI
 - a-search harvest-agent-skills tips: never use Unicode em-dash (U+2014) in SKILL.md --- mrb1172 fails on any em/en-dash in the whole file; use ASCII --- ; prior PASS boards stay BLOCKED until that pin is green
 - a-search CDK Lambdas: bump Runtime.NODEJS_20_X to NODEJS_24_X before AWS nodejs20.x creation disable (2027-02-01); pin with source + aws-cdk-lib export tests (FR-1176 / #1176).
+- FR-252 docs MRB: pin HOLD markers on phase4/shortlist rows before PASS; put additive pin+vision LOCKED bullet on docs/mrb-N; product tip may omit pin
 - FR-201 widget: boot .a-search-widget[data-widget-guid] once via data-a-search-booted; GET /parts then API layout then data-mode; modes only change layout; stack on Parts tip when needed
+- ComponentsPiece agent site pass: CWD hostDir via widgetPath; exclusive-create site.md/top10.json; secret-needle guard; stack on FR-203 tip; non-main base MRB hand-close.
 - ComponentsPiece widget CSS: ship layout-only sheet with currentColor/inherit/transparent/none only; pin-scan declarations not loose regex; stack FR-202 on FR-201 tip; non-main base needs MRB hand-close note.
+- FR-195 ComponentsPiece docs MRB: pin widgetGuid tree (no uri-slug required), Parts/Click contracts, FR-251 DB ownership with FR-146 Recommended near a_search_sandbox; docs-only tip MERGEABLE on main then --auto --squash; DONE without CI poll
+- Phase5 FR-210 skillbook: create top-level components-piece/ like entry/maintainer; pin skillbook-layout.test.js triggers (parts/go/widget/agent/widgetGuid/feedback/idle); leave harvest-agent-skills at repo root; Closes on PR; FR seat never merges
+- Market-hold disable PRs must not globally delete provider id string literals from tests (paths/find/source); retarget enabled asserts and floors 2*enabled_count only.
+- a-search FR CDK synth pin on marchhare: junctioned node_modules can hash Lambda assets >40min without writing ASearchStack.template.json; soft-skip on SIGTERM/timeout/EPIPE or A_SEARCH_SKIP_SYNTH=1 and let GitHub Actions test-and-synth own the live template pin; reuse cdk.out when already present
+- a-search harvest twin: FAIL-supersede FR-212 fixtures session-receipt tips that duplicate open docs/mrb #1799 / product tip #1731
+- a-search harvest-lesson: do not land absolute never-close-tip-as-twin-of-docs/mrb; when docs/mrb folds SKILL.md the tip may close as twin of that pin (#1748/#1753); only refuse twin-close for tests-only pins that do not carry the lesson text
+- ComponentsPiece widget context pass: widgetGuid folder via widgetPath; fold feedback context/removal; SEARCH_QUERY_CAP_FREE=3 FULL=15; stack on FR-204 tip; non-main base MRB hand-close.
+- FR-225 docs-only MRB: merge origin/main when tip behind; pin Decision LOCKED fail-closed contact + magic/OTP + no Phase 5 passwords; leave FR-226/228 implement tips open
+- Stacked FR tip on non-default base: retarget to main so Closes links; when required-ci blocks on multi-hour Actions queue with local green unit tests, arm gh pr merge --auto --squash (never --admin; FR #3948) and optionally file CI backlog intake; close parent tip as superseded.
+- FR-200 /go unapproved path: inject resolveTxt into shared/dns/hostTxtStatus; Club TXT a-search-club= required; Partner alone never unlocks; /ext/status shares the same cache; stack on FR-199 tip when Parts+/go not yet on main
+- ComponentsPiece IN/ folder ingest (FR-3344): writers use writeInSearchFile one JSON per searchId; agent moves IN/*.json to IN/.processing then merge+cap+unlink; free live cap 10; never merge searches into a single in.json.
+- ComponentsPiece prune/top10: host-level top10 only; prune exclude+expiry+broken flags without HTTP; re-apply live cap each pass; stack on FR-206 tip; non-main base MRB hand-close.
+- ComponentsPiece widget click: buildGoUrl host+widgetGuid+part only; open via openUrl/window.open noopener; pin partsHtml never embeds part.url; stack on FR-202 tip; non-main base MRB hand-close.
+- When harvest tip is CLOSED superseded by docs/mrb stack that carries the lesson bullet + hostile pin, MRB the docs tip: merge origin/main keep-both, verify needle+test, merge; do not reopen the closed parent tip.
+- FR-212 ComponentsPiece fixtures: check in tests/fixtures/components-piece/ for in/live.free/live.full/searches/widget/feedback/host/job/events/stats; pin LIVE_PART_CAP_FREE=10, FR-232 GUID regex, clean live URLs, forbidden secret/PII keys, ctr 0 when denom 0; Closes on PR; FR seat never merges
+- a-search harvest-lesson PR body that quotes product Closes #N-#M in session summary can link closingIssuesReferences: rewrite to prose without Closes keywords before merge so skill tips do not close product FRs
+- GBP/UK market-hold MRB: disable via registry enabled false only (keep folders + id/path string literals); retarget floors to 2*enabled_count; skip win32 CDK synth FR#3717; merge main then --auto --squash; DONE without CI poll
+- a-search docs/mrb for open product tip: merge origin/main into docs pin and dependency FR tip when both behind; run hostile suite against the product tip tree; --auto --squash both; DONE without CI poll
+- EventBridge cannot set dynamic SQS FIFO MessageGroupId from S3 key alone: use a small enqueue Lambda that runs agentQueue.classify/fifoSendParams before the rclone-host dispatcher polls
+- a-search FR-236: merchantShops callback must map adapter codes invalid_hmac/invalid_shop_domain/code_required to HTTP 400 so bad oauth never inserts a Shop row; pin with HTTP-layer bad-hmac after a fresh connect state
+- a-search harvest-lesson MRB: if tip commits include marchhare-<seat> keep-both author, ACK then GIVEUP self-MRB (FR #2604); leave OPEN for sibling; CONFLICTING does not change the hand-back
+
+- a-search FR-235 MRB keep-both with FR-236: preserve GET/DELETE /merchant/shops and Shopify webhook; export createMemoryVault+createCredentialsVault; registry aliases getByShopId/updateStatus/deleteByShopId; allow pending_payment->suspended for uninstall
+- FR-235 upsertConnect: unique (env,provider,providerShopId); same merchant refreshes credentials; other merchant throws ShopConflictError 409 shop_already_connected; allow fixture provider for FR-216 tests
+- docs/mrb superseding open harvest tip: git checkout origin/main -- SKILL.md then UTF8 append lesson bullet (never assign git-show multiline to a PowerShell string or the book collapses)
+- FR-232 mint must share Customers store with /parts: separate createWidgetsRegistry left copy-page GUIDs widget_not_found on first bind - use getDefaultCustomersStore across widgetsCreate/parts/go
+- a-search harvest tip CONFLICTING on SKILL.md: restore tip to main+1 via git checkout origin/main -- path OR git cat-file blob origin/main:path bytes, then .NET UTF8Encoding(false) WriteAllText append; never assign git-show multiline to a PowerShell string; avoid wrong-encoding WriteAllText/Set-Content mojibake on unicode arrows
+- a-search FR-237 Wix connect: verify signedInstance before trust; vault instanceId credentials only (never access token); mint via oauth2 client_credentials with memory TTL; App Removed webhook suspends shop
+- a-search harvest meta tip that says keep a complementary open tip: if that tip was FAIL-superseded as product tip-loop, close the meta tip too; do not re-open both
+- a-search harvest tip restating self-MRB keep-both GIVEUP + twin-close after that lesson already merged: FAIL-supersede citing the first PR/SKILL bullet
+- a-search harvest tip after FR-237 product+docs/mrb already on main restating vault instanceId + client_credentials + signedInstance (or the SKILL bullet): FAIL-supersede citing product/docs PR; do not re-fold
+- a-search harvest tip restating CONFLICTING SKILL.md checkout/cat-file UTF8 append after that lesson already on main: FAIL-supersede citing the first PR
+- a-search FR-238: Woo connect requires HTTPS public host (SSRF); wc-auth user_id is FR-216 state; reject non-read key_permissions; vault consumer keys only (never echo); map keys_invalid/invalid_key_permissions/wc_probe_failed to HTTP 400
+- a-search harvest tip restating complementary-meta FAIL-supersede close lesson after that bullet is on main: FAIL-supersede citing the first PR
+- a-search FR-240: shop sync SQS messages must never carry credentials (vault via Shop only); enqueue/consume only when subscriptionStatus=active (trialing unpaid); PartFeedKeys Kind=shop FeedKey=shopId; soft-delete Parts on suspend; CDK FIFO may defer until FR-239 live wiring when Out of scope says so
+- a-search harvest tip restating FR-238 Woo SSRF/wc-auth/key_permissions lesson after that bullet is on main: FAIL-supersede citing the first PR
+- a-search FR-241 unpaid/dunning: stack on FR-240 shopSync tip when open then remerge main after FR-240 merges; registry consecutiveUnpaidPeriods+notices+markNoticeSent; hard-delete Parts/PartFeedKeys/vault per shop; N2>=7d before delete; merchant login retained; active-only downloads
+- a-search FR-2139: CDK SQS FIFO a-search-shop-sync.fifo + DLQ maxReceiveCount 5 + shopSyncWorker (visibility 6x timeout); SQS_SHOP_SYNC_URL on entry/maintainers; FR-239 onShopLive remains live-transition caller
+- MRB shop-sync Lambda consumer: handler(event, context, deps) like schedule.js; never treat AWS context as deps; throw shop_sync_deps_unconfigured when overrides missing so FIFO retries/DLQ instead of empty-registry shop_not_found deletes.
+- a-search FR-2078: chrome.identity.launchWebAuthFlow against shared login (?extension=1&redirect_uri=); JWT session-only; logged-in bar commission/Stripe/Claim(club)/Upgrade/Create-clipboard; Edit dialog PATCH+feedback; pin fixtureJwt
+- a-search MRB docs/hostile: always run docs/mrb-N hostile suite green before gh pr merge; never merge a docs tip that fails its own pin; prefer assert.match on forbid prose (e.g. never-use partner_monthly) over assert.doesNotMatch for banned tokens that must remain documented (FR-2054 / context mrb-1869 #2052 red then #2053 fix)
+- a-search CI queue starvation (FR-2021): keep job id test-and-synth for required-ci-3948; add concurrency cancel-in-progress per PR/ref; path-aware skip npm run synth when PR touches only docs/skills/tests (always synth on main push and when cdk/providers/entry/maintainer/shared/package.json change); npm test still always runs
+- a-search MRB docs/mrb worktree: when git worktree add fails because branch docs/mrb-N-hostile is already checked out in a stale docs-mrb-a-search-N tree, use a unique local branch suffix -mh{seat} (git worktree add -B docs/mrb-N-hostile-mh{seat} <path> origin/pr-N) then push HEAD:docs/mrb-N-hostile; optionally Clear-BobiverseJobWorktrees for abandoned trees; never force-remove another seat marked worktree (FR-1955 / context MRB #1799)
+- a-search MRB tip-loop close after Invoke-BobiverseHarvest -ExistingPrUrl: close twins one `gh pr close <N>` at a time; select only PRs whose body cites the exact line `Existing PR: <url>` for this job or exact title StartsWith of the harvest lesson; never a bare pull/N substring (example prose in another tip body is not a twin; FR-2314); never pipe a multi-number Where-Object list into one `gh pr close` (gh exits too many arguments and a loose filter nearly swept unrelated open tips; FR-1947 / context MRB #1871)
+- a-search tip-loop ExistingPrUrl: only treat ExistingPrUrl as a twin key when that target is itself a harvest-lesson tip (title starts with `lesson(` or label `harvest-lesson`); when ExistingPrUrl points at a product FR PR, do not close the substance harvest tip that documents it - require exact title StartsWith of this lesson against an earlier OPEN harvest tip instead (class of #2311 closed against product #2195; FR-2315). Helper: `shared/harvest/tipLoopTwinFilter.js`.
+- MRB docs/mrb-N hostile: when product tip already needs a CI keep-green commit, fold the additive hostile onto the same tip and close an empty/stacked docs/mrb PR --- squash merge-on-green races a tip-based docs PR that still contains the product commits.
+- Enable-provider tip floors: after FR-2139 shop-sync FIFO, fr142 primary filter must exclude QueueName containing .fifo (shop-sync + shop-sync-dlq both counted as primaries otherwise: 2*enabled+2); fr143 alarm floor counts worker -dlq only (shop-sync DLQ alarm is +1). Always add the new id to ENABLED_IDS when bumping 2*N floors.
+- MRB product FAIL for extension login: pin redirect_uri allowlist (chromiumapp.org / chrome-extension:) before location.assign; assert escaped RegExp literals with chromiumapp\\\.org; put SW claim club gate on the one fix PR.
+- MRB a-search FR-228: pin otpStore Decision LOCKED rate limits + migration 016 never madeiradb/SystemOTPs + shops 403 contact_unverified + JWT join-parts on docs/mrb-N; run tests with D:\Tools\node\node.exe (PATH node may be too old for --test)
+- CONFLICTING harvest tip fix: branch from current origin/main, add only lesson+hostile, force-push; never git reset --soft origin/main on a dirty tip (deletes unrelated tip/main files from the PR)
+- FR-2611: docs/skills-only PRs need a cheap ubuntu classify job then test-and-synth on ubuntu exit-0; bare paths-ignore leaves required check missing and blocks auto-merge
+- FR-245 BigCommerce harvest tips that mix tip-0-behind arm --auto with stay-dark/JWT pins FAIL-supersede while product #2183 is still open; cite #2183 + bobiverse-bob-job-mrb; do not merge premature session receipts.
+- harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md - pin with fr2746 hostile ASCII test
+- docs/mrb stacked on an open harvest-lesson tip: after light triage PASS, tip-fix CI on the docs/mrb head, arm auto-merge on the docs/mrb PR (lands lesson+hostile), and close the parent harvest tip citing the docs/mrb URL --- do not wait for the parent tip to merge first.
+- a-search harvest tip / tip-loop PR bodies: never leave literal Closes #N or Closes #N/#M in session summaries (GitHub closingIssuesReferences); rewrite to prose without Closes keywords; before arming --auto --squash on harvest-lesson tips verify gh pr view --json closingIssuesReferences is empty (class of #3386 / #3376); Protect-HarvestBodyClosesKeywords in Invoke-BobiverseHarvest must run on the composed scripts path
+- a-search MRB CONFLICTING tip with comment-only overlap (FR-179 wix enable vs FR-248 merchant unstamp): keep-both FR citations and restore newlines after conflict-marker replace so // comments do not swallow the next statement.
+- a-search docs/mrb stacked on product tip when tip lacks on-tip hostile: after PASS, put Closes on the docs/mrb, arm --auto --squash on docs/mrb, close the parent product tip citing the docs/mrb URL --- do not leave both armed to race
+- Re-offered Phase5 FR when open stack tip already Closes it: verify closingIssuesReferences + acceptance tests on tip, comment covering PR, DONE with that PR URL; never open a second implement PR
+- Harvest-lesson re-offer: if tip already carries lesson+hostile, close any docs/mrb as twin (do not reopen); if tip lacks hostile and docs/mrb-N is already open, reuse that docs/mrb (do not open another); arm --auto --squash (FR #3948).
+- When a harvest-lesson tip keep-both merge doubles SKILL.md mojibake or edits unrelated queue-floor assertions, FAIL and close that tip. Land one ASCII-only bullet plus a BOM-free hostile pin from origin/main; do not merge the dirty head.
+- An a-search shop SQL migration must open with -- target: a_search and must not USE madeiradb; pin that first non-empty line in the MRB test, and PASS a 0-behind FR-239 tip when the subscribe suite and that pin are green.
+- On win32, a-search CDK synth pins may skip when aws-cdk-lib is absent; treat that skip as environment when the test says CI runs the pin, and do not FAIL the MRB for it.
+- When an a-search harvest-lesson tip re-encodes harvest-agent-skills punctuation into a further mojibake pass, restore those lines from origin/main bytes and insert only the new lesson bullet on one fix PR; strip a UTF-8 BOM from the hostile test; do not open a second issue when #2746 already tracks the underlying placeholder mojibake.
+- a-search FR-2230: extend the no-BOM gate from docs/mrb/ to every docs markdown file recursively; strip EF BB BF on docs-root tips (endpoint-search.md, legacy mrb-*.md); write docs with UTF8Encoding(false) or Path.write_text, never WinPS Set-Content -Encoding utf8
+- When fr142 or fr143 returns early because aws-cdk-lib is missing, still compare the asserted floor to 2 times the registry sources enabled in both envs before PASS.
+- When an a-search harvest-lesson tip is 0 behind main, adds one ASCII lesson line, and already contains its hostile pin test, PASS and arm gh pr merge --auto --squash; do not open a second docs/mrb PR that repeats that pin.
+- When one local provider env example comment is fixed, scan every providers/local .env.example for the same stale line. Leave the provider that already has its own open PR.
+- docs/mrb for a FAIL-superseded harvest parent: close the docs tip too citing parent FAIL-supersede + durable main playbook; do not merge a restatement tip-loop
+- When an a-search enable-provider test skips CDK synth on win32 with an explicit CI-runs-this comment, PASS if the non-synth registry, credential-key, and queue-floor pins are green; do not wait on queued test-and-synth.
+- a-search FR-248 MRB: when tip changes stamp param names, update older affiliate queryParts suites (fr083/089/092/098) in the same tip; also renumber migrations past open sibling NNN claims before PASS
+- When an in-process CDK test imports allocateSynthOutDir from helpers/runCdkSynth.js, the mrb1127 pin that forbids the string runCdkSynth fails. Keep the in-process app.synth and forbid runCdkSynth( calls instead of the helper path.
+- The harvest-agent-skills GitGuardian placeholder must be AWS doc AKIA...EXAMPLE with three ASCII dots. A pin that checks only that span can pass while older arrow mojibake remains on other bullets; file that remainder separately from issue 2746.
+- When a docs pin for a 0-behind harvest tip conflicts at the end of harvest-agent-skills, keep both the new ASCII bullet and the later main bullets, then re-run the pin test. Do not open a second docs pull that repeats a pin already on that tip.
+- Harvest-lesson re-offer: if this seat did not author tip commits and tip is 0 behind, re-verify hostile and DONE PASS; tip-fix keep-both mojibake with checkout main + UTF8 append only when skill churn is dirty
+- Re-offer tips wrapping still-open first tip: FAIL-supersede citing first tip + Prefer ExistingPrUrl
+- a-search FR-239: a per-shop GBP 20 Stripe subscription gates shop live status; past_due stays live; unpaid suspends payment; widget_upgrade never touches Shops; StripeEvents purge only on database a_search.
+- a-search FR #3478: wix providers/local/wix/.env.example live-target comment must name a_search (FR-251), not the read-only catalogue database
+- a-search FR #3495: local provider .env.example live-target comments name a_search (FR-251), matching wix wording; leave wix to its own tip
+- FR-234 MRB: memory WidgetStats + a_search migration + rollup no-agent-enqueue pins are enough to PASS while MSSQL adapter stays deferred
+- docs/mrb tips that bump fr142/fr143 floors while ENABLED_IDS length is unchanged are tip-loops: FAIL-supersede and land hostile pins on a clean fix PR without floor edits.
+- a-search MRB: when tip pin suites are green and CI red is only npm-run-synth / cdk.out lock flakes, leave MERGE armed and DONE PASS; do not fold a synth-lock fix onto a skill-pin tip
+- FR-234: pin widget event dedupe with injectable nowMs (wall-clock expiry deletes fixture-dated keys); stats.json rollup must never call the agent queue; Parts API stays tier-blind.
+- When FR-228 pins pass but authEmail still uses the in-memory otpStore, PASS the named endpoints and file a separate FR for the a_search.dbo.OtpCodes write path.
+- a-search enable-provider MRB: when a later keep-both tip already includes the older tip DEFAULT_ON set and Closes the same issue, FAIL-supersede the older CONFLICTING subset and do not fold it
+- MRB rematch after author-seat self-MRB GIVEUP: re-verify tip pins (webhook wire over 501 stub), fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise leave behind tip; post PASS @ new head SHA, re-arm gh pr merge --auto, DONE without CI poll (FR #3948)
+- Release-blocker CI red with shared faults: fix the deterministic pin first (fr2021 timeout-minutes expression), then raise runCdkSynth timeout and tree-kill on ETIMEDOUT so orphan cdk cannot hold cdk.out; fold open per-synth-out PRs into the same tip rather than leaving twin heads
+- FR-234 MRB: pin index.js widgetEvents/widgetsStats before ComponentsPiece 501 stub and assert rollupStatsJson never calls agentQueue.enqueue (stats_changed is not a #1343 trigger)
+- FIX CI on a-search PASSed tips: if failures are Another CLI synthing to cdk.out, fold main for FR #3663 runCdkSynth per-output dirs; do not re-open MRB.
+- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms - not 27 (class of MRB #2075 FAIL then tip-fix)
+- FIX CI on a-search harvest tip: merge main for fr2021 timeout-minutes:[^\n]*\b180\b pin before re-arm; keep-both SKILL lesson bullets
+- FR-3355 MRB: PASS classify+events docs when components-piece tree still shows in.json if FR-3344 tip is still open; cite #3354 on drift line
+- After FIX-push on a tip, ACK then GIVEUP MRB on that same PR (FR #2604); never hostile-review your own FIX head
+- FIX CI keep-both enable tips: fold main for FR #3663 per-synth --output without rewriting fr142/fr143 floors the tip owns
+- MRB fold/tip-fix on open product tip: git -c user.name/email keep tip author only; never reviewing-seat nick (FR #2604 self-MRB)
+- a-search merchant onboarding skillbooks need the full CAST IRON harvest block (not only the main provider SKILL); MRB FAIL with one tip-fix PR when the stub shipped without it
+- FR-239 rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; fail-closed unset STRIPE_WEBHOOK_SECRET and migration -- target: a_search are required pins
+- MRB behind-main re-offer on a long-lived FR tip: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr245+hostile+fr142/143 floor pins (26 while provider stay-dark) before PASS @ head SHA and gh pr merge --auto; never re-bump floors for a dark merchantConnect source
+- docs/mrb hostile pin rematch after parent harvest tip already MERGED: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run the contiguous pin, PASS @ head SHA and arm auto-merge; Refs parent only (no second Closes)
+- When MRB of an ASCII/mojibake SKILL tip finds a sibling open issue for remaining non-ASCII outside the pinned span, keep that remainder issue open (do not twin-close) and note ACCEPTABLE drift on the board
+- FR-3373 MRB rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr3373 + mrb3391-hostile + fr3490 bootstrap marker pins before PASS @ head SHA and gh pr merge --auto
+- FR-2230 MRB rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr2230+mrb2251+fr1410+mrb2213 BOM pins and a docs/**/*.md EF-BB-BF inventory before PASS @ head SHA
+- FR-1345 MRB rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr1345 + mrb3621 stripe webhook wire + FR-206 ingest pins before PASS @ head SHA
+- FR-233 docs lock: widgetGuid tree is authoritative; {uri-slug}/ stays visible only as SUPERSEDED 2026-10-10 history.
+- a-search harvest-lesson MRB on harvest-agent-skills: CONFLICTING tip vs main both appending Harvested-lessons bullets resolves with keep-both then PASS @ head SHA
+- Never git add/commit harvest SKILL.md until check_conflict_markers (or resolve_harvest_skill_keep_both.py) exits 0; stop the pipeline if keep-both resolve assert fails; prefer a single Python resolve+verify+write step before any commit (class of #3708).
+- Never git add/commit harvest SKILL.md until check_conflict_markers.py exits 0; stop the pipeline if keep-both resolve assert fails.
+- Exact-title harvest-lesson twins: FAIL-supersede the later tip citing the first open/merged tip; never merge both.
+- Re-offered FR with open Closes PR: verify closingIssuesReferences + re-run claimed pins, DONE with that PR URL; never open a second implement PR.
+- FIX CI on a-search tips with sequential synth status-null at ~600s: fold origin/main even when runCdkSynth already has allocateSynthOutDir; tip may be far behind other main fixes.
+- MRB harvest-lesson re-offer: never fold just because the tip is far behind (FR #3827); fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue; re-verify pin + unique vs main, then PASS @ head SHA and leave existing auto-merge; never poll CI (FR #3948 / #3317)
+- Re-offered FR on closed-unmerged tip: Prefer ExistingPrUrl successor that Closes the FR issue; verify pins; DONE with that PR URL; never open a second implement PR.
+- FR-3459 MRB rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run skillbook-harvest (stay-dark enumeration + CAST IRON/intake/-Repo needles) before PASS @ head SHA
+- a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS - do not FAIL or open a fix PR for stale it() names alone
+- FR-3459 stay-dark harvest gate: after folding main, re-run skillbook-harvest; BigCommerce AGENTS must carry Report-BobiverseIntakeIssue or /bob/v1/intake, not prose via intake alone.
+- a-search docs/mrb hostile pin that is 0 behind origin/main and Refs an already-closed lesson issue: PASS and leave auto-merge; do not reopen the parent or fold main again.
+- a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes - never drop either provider.
+- Re-offered ASCII/mojibake SKILL fix: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr2746 pin + conflict markers, --auto, DONE - do not re-litigate prior PASS boards.
+- a-search docs-only FR lock that is far behind main with no file conflicts: never fold just because it is behind (FR #3827); re-run the docs pin test, PASS at current head and auto-merge; do not open a fix PR for a fold alone.
+- a-search FIX when tip is far behind and ort would merge clean: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise re-run the product pin suite at current head, DONE FIX with the PR URL; never poll CI.
+- FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI - do not invent product fixes for bulk-cancel reds.
+- a-search re-offered FR-3611 CRLF skill-pin MRB on stranded ACK: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr3611/mrb3633/mrb3609 pins and --auto, DONE immediately.
+- a-search harvest-lesson with hostile pin that is a few commits behind main and merges clean: one tip-author fold, re-run the contiguous pin, PASS and enable auto-merge; do not FAIL for ACCEPTABLE-drift wording about short-lived accessToken.
+- a-search FIX when tip is CONFLICTING at the harvest-agent-skills tail with empty HEAD and new main bullets: keep-both (take main bullets), tip-author fold, re-run CRLF pins, DONE FIX; never poll CI.
+- FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE - skillbook-harvest will fail otherwise.
+- a-search CDK synth CI cost: default-stack tests must share one cdk.out-shared-* via runCdkSynth / ensureDefaultStackSynth (reuse when ASearchStack.template.json exists); keep allocateSynthOutDir / opts.fresh for FR #3462 and custom-context synths.
+- MRB shared-synth FR: tip 0 behind with fr3764 reuse pin + fr3462 private-dir pin + mrb3665 timeout pin is enough to PASS without a separate docs/mrb when ensureDefaultStackSynth and opts.fresh/outDir gates are already covered.
+- Re-offered MRB with synth status null at ~600s and tip already 0 behind: ACCEPTABLE drift, PASS @ SHA, leave --auto, DONE at once --- do not start another fold or wait on CI.
+- Long-lived FR-239 rematch: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr239+mrb2172 pins, leave --auto, DONE --- do not re-litigate prior PASS boards.
+- docs/mrb hostile pin 0 behind with local pin green and CI only sequential synth status-null: PASS and leave --auto; do not GIVEUP on a closed-unmerged parent when the lesson line is already on the docs tip.
+- MRB behind-main fold: if git push of the fold is rejected, do not DONE on the pre-fold SHA; retry the push and DONE only after headRefOid matches the fold commit (class of #3726 / #3357).
+- harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md --- pin with fr2746 hostile ASCII test
+- When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms --- not 27 (class of MRB #2075 FAIL then tip-fix)
+- a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS --- do not FAIL or open a fix PR for stale it() names alone
+- a-search skill mojibake restore that is 0 behind main and pins the five named lines as ASCII while keeping the AKIA placeholder and the GitGuardian em dash: PASS and auto-merge; do not fold main again and do not treat it as a twin of FR #2746.
+- a-search merchant-adapter CONFLICTING tips: when main added a sibling provider (e.g. bigcommerce) while the tip adds another (ecwid), resolve keep-both on adapters/index.js, registry.json source entries, entry webhook requires/routes, and CDK httpApi.addRoutes --- never drop either provider.
+- Re-offered ASCII/mojibake SKILL fix: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr2746 pin + conflict markers, --auto, DONE --- do not re-litigate prior PASS boards.
+- FIX on cancelled-only tip: fold origin/main once, merge any diverged remote tip, push to re-arm CI --- do not invent product fixes for bulk-cancel reds.
+- FIX fold of stay-dark skillbook tip: if main added a new stay-dark provider AGENTS without intake needles, add Report-BobiverseIntakeIssue + /bob/v1/intake + -Repo before DONE --- skillbook-harvest will fail otherwise.
+- a-search re-offered harvest-lesson MRB that is a few commits behind: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run the contiguous pin, PASS and re-arm auto-merge; do not re-litigate prior PASS boards.
+- When a line-number skill pin fails after one main fold, retarget the stable needles by content and restore the ASCII span the pin still requires before PASS.
+- a-search stranded-ACK rematch on a harvest-lesson tip a few commits behind: never fold just because it is behind (FR #3827); fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue; re-run the hostile pin, PASS @ current head and re-arm squash auto-merge, DONE immediately.
+- a-search FIX fold must be a real merge commit with origin/main as a parent. Resetting the merge commit soft and recommitting drops the second parent and leaves the tip behind; merge again with the tip author set before the merge.
+- a-search harvest-lesson tip that is far behind and rewrites ASCII skill lines into mojibake: fold origin/main, keep the new bullet plus main ASCII lines, PASS and auto-merge; do not land the dirty mojibake side.
+- When the unique fix is an ASCII replacement of one mojibake bullet and a CONFLICTING fold is required, keep the tip ASCII lines and drop the main copy of that same bullet; do not keep-both or the pin fails (FR #3827: no fold when merely behind).
+- When gh pr checks shows test-and-synth fail, read the Actions job conclusion before treating it as product red; cancelled-only still gets one main fold, pin re-run, PASS and auto-merge.
+- After FR-3764, the cdk.out exit-cleanup pin must call runCdkSynth with opts.fresh. A tree-kill that empties the grandchild marker is a mid-write truncate; one settle read distinguishes that from a live orphan.
+- When a docs/mrb tip is re-offered after its parent harvest tip MERGED, fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); hostile pin green is enough to PASS; cancelled-only CI is not product debt.
+- cdk.out cleanup that matches every cdk.out-* name also deletes cdk.out-shared-*. Exclude the shared synth cache from sweep and exit cleanup when both FRs are on main (a-search#3790).
+- When a-search test-and-synth fails only on sequential npm run synth exits 0 timeouts, fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise leave behind tip; the product pin suite green is the FIX; do not invent a synth-timeout product change.
+- a-search FR #3763: sweep named cdk.out-* (cdk.out-fr*) after each run-tests batch; registerCdkOutDir on runCdkSynth outDirs; plain cdk.out stays; A_SEARCH_KEEP_CDK_OUT=1 skips
+- FIX assign for cancelled CI on open product PR: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise re-run claimed pin tests at current head, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
+- Re-offered keep-both resolve helper MRB: fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run fr3708 pin + conflict markers, --auto, DONE.
+- Harvest twin cleanup after Invoke-BobiverseHarvest: close only the PR number from that harvest url, and only when it carries the harvest-lesson label; never close by a guessed nearby number (class of #3610 / mistaken close of product tip #3608).
+- MRB CONFLICTING runCdkSynth with FR-3764 shared cache vs FR-3763 registerCdkOutDir: keep-both reuse path without registering shared dirs for delete (FR #3790), re-run fr3764+fr3462+fr3763+fr3790 pins, PASS @ head SHA --auto
+- a-search FR #3611: harvest SKILL hostile pins must use includes() or newline-normalize before assert.match; do not PASS when the pin suite is red on CRLF files
+- Harvest-lesson re-offer tip unique vs main (wrap still-open first tip FAIL-supersede + Prefer ExistingPrUrl): fold only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (FR #3827); otherwise PASS @ current head; re-run contiguous pin, re-arm --auto --squash (FR #3948 / FR #3317).
+- Before PASS, check local branches named for this seat; a matching product commit is self-MRB even when the commit author is the shared repo identity.
+- a-search Ecwid tip CONFLICTING with main Stripe entry routes: keep-both require+match for ecwidWebhooks and stripeWebhook, one fold, re-run fr246+mrb2186, PASS @ new SHA, re-arm --auto (FR #3948).
+- A prior fold commit that is an ancestor of the assigned PR tip is self-MRB for that seat even when the commit author is the shared repo identity.
+- Resolve a worktree skill conflict with an absolute path. A relative path uses the seat CWD, so git add can commit unresolved conflict markers; strip them in a follow-up commit and run check_conflict_markers before PASS.
+- A stranded MRB ACK on a CONFLICTING product tip still needs one origin/main keep-both fold and a new PASS SHA before DONE, even when an older PASS board names the previous head.
+- FR #4649 on a-search harvest tips: when MERGEABLE and CI red is ambient sequential synth (FR #3663 class), PASS @ current head and arm --auto; never fold just because the tip is behind.
+- FIX when CI fails with synth status null!==0 and tip lacks main FR #3663/#3764/#3790 helpers: one origin/main fold under FR #4649 (CI failed on a main-fixed issue), re-run tip pin, push, DONE FIX; do not invent tip-only synth patches.
+- docs/mrb hostile pin when parent harvest tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash; pin-only delta.
+- Prior review-only PASS without push is not self-MRB; on CONFLICTING rematch this seat may fold once (FR #4649), push, PASS @ new SHA; later re-offers of that fold are self-MRB GIVEUP.
+- When ci.yml changes cancel-in-progress from true to PR-only event_name expression, update fr2021 + mrb2219 pins and FR-2021 Decision in the same tip; tip-owned pin debt does not require a behind-main fold (FR #4649).
+- When an a-search tip and main both own POST /webhooks/stripe, call the widget_upgrade handler first and fall through to the FR-239 shared handler only when the result is skipped not_widget_upgrade. Do not let the upgrade handler swallow merchant_shop.
+- Re-offer of a tip this same seat already keep-both folded and PASS-boarded: ACK then GIVEUP self-MRB (FR #2604); leave OPEN for a different seat.
+- docs/mrb hostile pin when product tip already MERGED and tip MERGEABLE: PASS @ current head without folding behind-main (FR #4649); re-arm --auto --squash.
+- FIX when CI fails mrb1127/mrb1138 new cdk.App after product moved to ensureDefaultStackSynth: one origin/main fold under FR #4649 (fix already on main via FR #3834); re-run tip-loop + JWT/provider pins; DONE FIX.
+- When covering PR Closes FR issues but was closed unmerged, FR seat reopens the PR (or opens a replacement from the same branch), folds if CONFLICTING, comments the covering URL on the issues, DONE FR with that URL; never merge from FR seat.
+- When an a-search tip is MERGEABLE but test-and-synth fails a pin that main already rewrote, one origin/main fold is the FIX (CI failed on a main-fixed issue, FR #4649). Do not invent a tip-only patch.
+- Shop connect HTTP tests that mock verifyAuthorization must set contactVerified true, or assertContactVerified returns 403.
+- A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
+- a-search MRB: after FR-228 assertContactVerified, shop connect HTTP test stubs that expect 200/400 must set contactVerified: true like fr216; keep fail-closed negatives elsewhere
+- a-search FIX: when test-and-synth fails npm run synth with status null at about 180s, fold origin/main if main already has runCdkSynth 600s tree-kill and per-synth output (#3665). That is CI failed on a main-fixed issue (FR #4649), not a tip-only patch.
+- a-search docs/mrb FIX: CI red only on ambient FR-236/237/238 connect 403 with MERGEABLE tip --- DONE FIX at head without fold (FR #4649); re-arm --auto --squash
+- a-search product MRB rematch: MERGEABLE tip 1 behind with prior PASS boards --- re-verify claimed pins at head, PASS @ current SHA without fold (FR #4649), re-arm --auto --squash, DONE PASS
+- a-search FIX: a CONFLICTING harvest-agent-skills tip still gets one origin/main fold (FR #4649). Keep both tail bullets, the new lesson and the main line it collided with. Do not drop main because the lesson itself says not to fold a MERGEABLE tip.
+- a-search MRB: when test-and-synth fails jwt-auth deepEqual on contactVerified but tests/jwt-auth.test.js and entry/src/auth/jwt.js match origin/main, that red is not a tip patch and not a fold. PASS the docs/mrb head (FR #4649).
+- a-search FIX: when jwt-auth fails with unexpected contactVerified:false and tip jwt.js/jwt-auth match origin/main, treat as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649); file intake for the main expectation update
+- a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false --- tests-only PASS closes ambient main red
+- a-search FIX CONFLICTING Agentic Searches tip: fold origin/main; resolve fr142/fr143 to main 30-floor + .fifo filter and keep tip widget-agent comment; if FR-228 connect stubs still 403 apply contactVerified:true even when sibling #3871 not yet merged
+- a-search product FIX: when CI fails only ambient FR-236/237/238 connect 403 while tip FR product suite is green and MERGEABLE, DONE FIX at head without fold (FR #4649)
+- a-search FR re-offer: when issue CLOSED and covering PR MERGED with Closes, DONE FR Prefer ExistingPrUrl with that PR URL --- do not open a second implement PR
+- a-search FR: when covering implement PR is CLOSED unmerged but branch still has Closes, Prefer ExistingPrUrl reopen that PR, re-arm --auto, DONE FR with its URL --- never open a second implement PR
+- a-search FIX: after FR-228 jwt verify returns contactVerified+contactChannel, update jwt-auth and jwt.hostile-mrb35 deepEqual expectations (false/undefined when claim absent); fold alone does not heal if main tests still lag
+- a-search FIX: when tip already heals FR-236/237/238 contactVerified stubs but CI still fails jwt-auth deepEqual and #3887 is still open, treat jwt-auth as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649)
+- a-search MRB rematch: unique FR-3726 fold-push-before-DONE tip with MERGEABLE behind and ambient connect 403 --- PASS @ head without fold (FR #4649), re-arm --auto --merge
+- a-search MRB FR-3344 IN/ folder: re-verify writeInSearchFile/listReadyInFiles/runIngestPass + hostile pins; heal jwt-auth deepEqual for FR-228 on tip before PASS when CI would red; do not fold for one harvest-behind (FR #4649)
+- a-search MRB: a worktree path that already exists can still be an older fold SHA. rev-parse HEAD against the PR tip before trusting pin results; a 403 on connect stubs is not a product fail until the tree matches the head.
+- MRB process-loop: harvest tip that only restates main Prefer ExistingPrUrl reopen CLOSED-unmerged covering PR -> close already-covered and DONE PASS (FR #3317); do not merge twin wording
+- a-search MRB rematch after sibling FIX stub patch: re-verify pin at new head, PASS without fold when MERGEABLE behind and ambient jwt-auth still open (#3887)
+- a-search FR: when mrb1404 asserts exactly N Phase-2 stay-dark against mrb668, trust the mrb668 it() title/stubs.length on main --- align the cross-pin, do not invent a third stub id
+- docs/mrb rematch: when tip-owned pins green and CI fails only ambient mrb1404 that also fails on origin/main, PASS @ MERGEABLE head without fold (FR #4649)
+- When jwt tip product pins are green and CI fails only ambient mrb1404 that also fails on tip and origin/main, DONE FIX at MERGEABLE head without fold (FR #4649)
+- a-search FR: when one covering OPEN PR already Closes the issue and a sibling implement PR is CLOSED unmerged, Prefer ExistingPrUrl the OPEN PR --- do not reopen the sibling or open a third PR
+- a-search docs/mrb rematch: MERGEABLE tip with FR-2611 hostile pins green after jwt+mrb1404 heals --- PASS @ head without fold when only a few commits behind (FR #4649)
+- a-search FIX: when mrb1871 expects WooCommerce comingSoon but registry merchantConnect is already true from FR-180 on both the tip and origin/main, align the pin to connectEnabled --- do not fold (FR #4649).
+- a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
+- When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
+- When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
+- When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS --- tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
 - Stacked Phase5 ComponentsPiece tips: retarget tip to main, merge origin/main, Closes full open FR stack, close earlier stack heads as superseded, board PASS + --auto --squash, DONE without CI poll
+
