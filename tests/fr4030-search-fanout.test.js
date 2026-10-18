@@ -281,6 +281,9 @@ describe('FR #4030 CDK concurrency + redqueen pins', () => {
     assert.match(stack, /SQS_SQL_URL/);
     assert.match(stack, /A_SEARCH_AGENT_API_KEY/);
     assert.match(stack, /a-clubs/);
+    // MRB #4035: never ship a known FAKE_ default agent key when context missing.
+    assert.doesNotMatch(stack, /FAKE_agent_key_set_at_deploy/);
+    assert.doesNotMatch(stack, /A_SEARCH_AGENT_API_KEY',\s*'FAKE_/);
     assert.equal(/RdsQueryApi|madeira-/i.test(stack) && false, false);
   });
 
@@ -294,5 +297,7 @@ describe('FR #4030 CDK concurrency + redqueen pins', () => {
     assert.match(doc, /MessageGroupId|reservedConcurrentExecutions/);
     assert.match(doc, /429/);
     assert.match(doc, /IN\//);
+    // MRB #4035: docs must cite #4040 for live provider call-site wire-up.
+    assert.match(doc, /#4040/);
   });
 });
