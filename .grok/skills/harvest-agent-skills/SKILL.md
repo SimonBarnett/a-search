@@ -435,3 +435,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a MERGED FR is reopened with Simon scope comments after merge, ship one successor PR that covers the reopen gap list plus every later comment (do not DONE the old merged PR URL while acceptance still fails on main).
 - After FR-3949 marketplace-only queue floors, supersede meta-pins like fr3428 that still assert expected 30 primary queues / webgains+woocommerce in fr142 ENABLED_IDS; keep registry keep-both asserts
 - When FR-3949 drops maintainer Lambdas, supersede mrb1096 to assert stack has stageOnboarding but not stage-maintainer-lambda-asset; fold main when CI failed (FR #4649).
+- Harvest-lesson MRB: mrb1096 stageOnboarding-without-maintainer-stage lesson is useful/non-duplicate for a-search; PASS MERGEABLE tip with --auto (FR #3317/#3948).
