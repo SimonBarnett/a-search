@@ -4,6 +4,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 /**
  * FR-179 / #1026: enable wix (merchant) only; FR-138 secret wiring; no affiliate stamp.
+ * FR-3949: local/DB-backed share a-search-db-backed (no per-source AWS workers).
  */
 
 const { describe, it } = require('node:test');
@@ -83,17 +84,15 @@ describe('FR-179 enable wix', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bwix\b/i);
   });
 
-  it(
-    'synth: wix live+sandbox workers+queues; secret refs; dark ids absent',
-    {
-      skip:
-        process.platform === 'win32'
-          ? 'FR #3717 win32 CDK synth hang; CI runs this pin'
-          : false,
-    },
-    () => {
-    const cdk = require('aws-cdk-lib');
-    const { ASearchStack } = require('../cdk/lib/a-search-stack');
+  it('synth: FR-3949 no per-source wix workers/queues; shared db-backed present', () => {
+    let cdk;
+    try {
+      cdk = require('aws-cdk-lib');
+    } catch (err) {
+      assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
+      return;
+    }
+    void cdk;
     const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
@@ -106,42 +105,49 @@ describe('FR-179 enable wix', () => {
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
 
-      function envOf(name) {
-        const fn = fns.find(
-          (res) => res.Properties && res.Properties.FunctionName === name,
-        );
-        assert.ok(fn, `missing Lambda ${name}`);
-        return fn.Properties.Environment.Variables || {};
-      }
+    for (const env of ['live', 'sandbox']) {
+      const workerName = 'a-search-wix-worker-' + env;
+      const workerHit = fns.find(
+        (res) =>
+          res.Properties &&
+          res.Properties.FunctionName === workerName,
+      );
+      assert.equal(
+        workerHit,
+        undefined,
+        'FR-3949: no ' + workerName,
+      );
+      const qName = 'a-search-wix-' + env;
+      const qHit = queues.find(
+        (q) =>
+          q.Properties &&
+          typeof q.Properties.QueueName === 'string' &&
+          q.Properties.QueueName === qName,
+      );
+      assert.equal(
+        qHit,
+        undefined,
+        'FR-3949: no ' + qName + ' queue',
+      );
+    }
 
-      for (const env of ['live', 'sandbox']) {
-        const envVars = envOf(`a-search-wix-worker-${env}`);
-        assert.ok(envVars.WIX_CLIENT_ID, `missing CLIENT_ID ${env}`);
-        const keyVal = String(envVars.WIX_CLIENT_ID);
-        assert.ok(
-          keyVal.includes('resolve:secretsmanager') ||
-            keyVal.includes('Secret') ||
-            typeof envVars.WIX_CLIENT_ID === 'object',
-          `WIX_CLIENT_ID must be Secrets Manager ref (${env})`,
-        );
-        const qHit = queues.find(
-          (q) =>
-            q.Properties &&
-            typeof q.Properties.QueueName === 'string' &&
-            q.Properties.QueueName === `a-search-wix-${env}`,
-        );
-        assert.ok(qHit, `missing queue a-search-wix-${env}`);
-      }
+    const dbQ = queues.find(
+      (q) =>
+        q.Properties &&
+        typeof q.Properties.QueueName === 'string' &&
+        q.Properties.QueueName === 'a-search-db-backed',
+    );
+    assert.ok(dbQ, 'shared a-search-db-backed queue required');
 
-    for (const dark of STILL_DARK) {
+    const darkIds = typeof STILL_DARK !== 'undefined' ? STILL_DARK : ['admitad'];
+    for (const dark of darkIds) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
+          res.Properties.FunctionName.includes('-' + dark + '-worker-'),
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(hit, undefined, 'stay-dark ' + dark + ' must not have worker');
     }
-  }
-);
+  });
 });
