@@ -215,7 +215,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - ComponentsPiece widget context pass: widgetGuid folder via widgetPath; fold feedback context/removal; SEARCH_QUERY_CAP_FREE=3 FULL=15; stack on FR-204 tip; non-main base MRB hand-close.
 - Stacked FR tip on non-default base: retarget to main so Closes links; when required-ci blocks on multi-hour Actions queue with local green unit tests, arm gh pr merge --auto --squash (never --admin; FR #3948) and optionally file CI backlog intake; close parent tip as superseded.
 - FR-200 /go unapproved path: inject resolveTxt into shared/dns/hostTxtStatus; Club TXT a-search-club= required; Partner alone never unlocks; /ext/status shares the same cache; stack on FR-199 tip when Parts+/go not yet on main
-- ComponentsPiece in.json ingest: exclusive rename to in.processing.json then merge+cap+unlink; free live cap 10; stack on FR-205 tip; non-main base MRB hand-close.
+- ComponentsPiece IN/ folder ingest (FR-3344): writers use writeInSearchFile one JSON per searchId; agent moves IN/*.json to IN/.processing then merge+cap+unlink; free live cap 10; never merge searches into a single in.json.
 - ComponentsPiece prune/top10: host-level top10 only; prune exclude+expiry+broken flags without HTTP; re-apply live cap each pass; stack on FR-206 tip; non-main base MRB hand-close.
 - ComponentsPiece widget click: buildGoUrl host+widgetGuid+part only; open via openUrl/window.open noopener; pin partsHtml never embeds part.url; stack on FR-202 tip; non-main base MRB hand-close.
 - When harvest tip is CLOSED superseded by docs/mrb stack that carries the lesson bullet + hostile pin, MRB the docs tip: merge origin/main keep-both, verify needle+test, merge; do not reopen the closed parent tip.
