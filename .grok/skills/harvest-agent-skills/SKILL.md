@@ -476,3 +476,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Awin daily agent: merge a-affiliates folders never recreate; secrets never in reports; OTP stops for Simon; skill UI steps PENDING from Merc — do not invent ids.
 - MRB Awin agent: fr4123+fr3999 local green; pin #4113 missing_feedurl/nofeed on separate tip-based fix PR; close thinner twin PR; fold main once then --auto without live Awin OTP
 - FR paste-Merc-playbook jobs: ACK then GIVEUP reason=needs_human when skill shells are PENDING and no FR-061 body exists in-repo; never invent Awin UI element ids
+- MRB stacked docs/mrb that still contains product commits: cherry-pick hostile pin onto the open product tip, close the stacked PR unmerged; do not merge the stack twice
