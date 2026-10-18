@@ -18,8 +18,9 @@ const lesson = 'When CDK tests build cdk.App with custom -c context, always merg
 
 describe('MRB #4343 provider env context lesson', () => {
   it('keeps the CI synth bullet and appends the in-process App bullet', () => {
-    const window = prior + '\r\n- ' + lesson;
-    assert.ok(book.includes(window), 'contiguous prior bullet then new lesson');
+    const norm = book.replace(/\r\n/g, '\n');
+    const window = prior + '\n- ' + lesson;
+    assert.ok(norm.includes(window), 'contiguous prior bullet then new lesson');
     assert.equal(book.includes('\uFEFF'), false);
   });
 });
