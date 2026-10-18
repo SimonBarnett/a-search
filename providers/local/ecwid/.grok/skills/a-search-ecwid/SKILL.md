@@ -7,7 +7,12 @@ description: >
 
 # a-search ecwid (merchant)
 
-> CAST IRON harvest + intake to SimonBarnett/a-search. Never commit tokens.
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+> Never commit OAuth tokens, client secrets, or webhook signatures.
 
 ## Auth (FR-246)
 
