@@ -2,8 +2,9 @@
 
 /**
  * FR #3968: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
- * GUID marker metadata on widget.json: uri, seen, clicks, since, lastmod,
- * annotated, init. Prefer Referer path for uri (see pageUri.js).
+ * GUID folder marker (zero-byte trailing-slash key) carries metadata:
+ * uri, seen, clicks, since, lastmod, annotated, init --- not widget.json.
+ * Prefer Referer path for uri (see pageUri.js).
  * Seed writes bump GUID + host lastmod; publish host folder event on new GUID.
  */
 
@@ -14,7 +15,11 @@ const {
   touchLastmod,
   isoLastmod,
 } = require('../../shared/widgets/hostFolderMeta');
-const { widgetFileKey, hostMarkerKey } = require('./aClubsKeys');
+const {
+  widgetFileKey,
+  hostMarkerKey,
+  guidMarkerKey,
+} = require('./aClubsKeys');
 const { headOrNull, putIfAbsent } = require('./s3Store');
 const { publishFolderEvent } = require('./publishFolderEvent');
 const { resolvePageUri } = require('./pageUri');
@@ -62,10 +67,10 @@ async function ensureAclubsWidget(opts) {
       ? 'extension'
       : String(opts.createdVia).trim();
 
-  const widgetKey = widgetFileKey(host, guid, 'widget.json');
+  const markerKey = guidMarkerKey(host, guid);
   const existing = await headOrNull({
     headObject: opts.headObject,
-    Key: widgetKey,
+    Key: markerKey,
   });
   if (existing) {
     const md = existing.Metadata || existing.metadata || {};
@@ -89,6 +94,13 @@ async function ensureAclubsWidget(opts) {
     init: '0',
   };
 
+  const markerPut = await putIfAbsent({
+    putObject: opts.putObject,
+    Key: markerKey,
+    Body: Buffer.alloc(0),
+    Metadata: metadata,
+  });
+
   const widgetDoc = {
     widgetGuid: guid,
     host,
@@ -99,12 +111,11 @@ async function ensureAclubsWidget(opts) {
     uri: uri || undefined,
   };
 
-  const w = await putIfAbsent({
+  await putIfAbsent({
     putObject: opts.putObject,
-    Key: widgetKey,
+    Key: widgetFileKey(host, guid, 'widget.json'),
     Body: `${JSON.stringify(widgetDoc, null, 2)}\n`,
     ContentType: 'application/json; charset=utf-8',
-    Metadata: metadata,
   });
 
   await putIfAbsent({
@@ -121,7 +132,7 @@ async function ensureAclubsWidget(opts) {
     ContentType: 'application/json; charset=utf-8',
   });
 
-  if (w.created) {
+  if (markerPut.created) {
     const s3Touch = {
       headObject: opts.headObject,
       getObject: opts.getObject,
@@ -132,7 +143,7 @@ async function ensureAclubsWidget(opts) {
       now: opts.now,
     };
     // Seed writes bump GUID lastmod and host lastmod.
-    const bumped = await touchLastmod({ Key: widgetKey, ...s3Touch });
+    const bumped = await touchLastmod({ Key: markerKey, ...s3Touch });
     Object.assign(metadata, bumped.metadata);
     await touchLastmod({ Key: hostMarkerKey(host), ...s3Touch });
 
@@ -148,7 +159,7 @@ async function ensureAclubsWidget(opts) {
     }
   }
 
-  return { created: w.created, layout, uri, metadata };
+  return { created: markerPut.created, layout, uri, metadata };
 }
 
 module.exports = {

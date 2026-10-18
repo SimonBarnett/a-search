@@ -15,6 +15,11 @@ const {
   safeHostFolderName,
   touchLastmod,
   setInit,
+  setHostCredentials,
+  setHostStripe,
+  hashHostPassword,
+  isHostPasswordHash,
+  partsResponseLeaksSecrets,
 } = require('../shared/widgets/hostFolderMeta');
 const {
   buildFolderEvent,
@@ -35,6 +40,7 @@ const {
   hostMarkerKey,
   useridClaimKey,
   widgetFileKey,
+  guidMarkerKey,
 } = require('../parts-gateway/src/aClubsKeys');
 const { buildPartsUrl, renderPage } = require('../widget/a-search-widget');
 
@@ -178,6 +184,10 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     assert.equal(marker.Metadata.userid, r.userid);
     assert.equal(marker.Metadata.hostkey, 'club.example.com');
     assert.equal(marker.Metadata.lastmod, r.metadata.lastmod);
+    assert.equal(marker.Metadata.email, '');
+    assert.equal(marker.Metadata.passwordhash, '');
+    assert.equal(marker.Metadata.stripeaccountid, '');
+    assert.equal(marker.Metadata.stripecustomerid, '');
   });
 
   it('host ensure is idempotent on repeat', async () => {
@@ -198,7 +208,7 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     assert.equal(b.userid, a.userid);
   });
 
-  it('creates widget.json live.json searches.json with GUID metadata defaults', async () => {
+  it('creates GUID folder marker + seed files; metadata on marker not widget.json', async () => {
     const s3 = createMemoryS3();
     const host = await ensureAclubsHost({
       host: 'w.example.com',
@@ -228,9 +238,17 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     assert.equal(w.metadata.init, '0');
     assert.ok(w.metadata.since);
     assert.ok(w.metadata.lastmod);
+    const markerKey = guidMarkerKey('w.example.com', GUID);
+    assert.ok(s3.objects.has(markerKey));
+    const marker = s3.objects.get(markerKey);
+    assert.equal(marker.Body.length, 0);
+    assert.equal(marker.Metadata.uri, '/page/one');
+    assert.equal(marker.Metadata.init, '0');
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'widget.json')));
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'live.json')));
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'searches.json')));
+    const widgetObj = s3.objects.get(widgetFileKey('w.example.com', GUID, 'widget.json'));
+    assert.deepEqual(widgetObj.Metadata || {}, {});
     const live = JSON.parse(
       s3.objects.get(widgetFileKey('w.example.com', GUID, 'live.json')).Body.toString('utf8'),
     );
@@ -305,13 +323,12 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
     assert.equal(tags.TagSet.find((t) => t.Key === 'hasdns').Value, '1');
   });
 
-  it('setInit sets init=1, bumps lastmod, never back to 0', async () => {
+  it('setInit sets init=1 on GUID folder marker, bumps lastmod, never back to 0', async () => {
     const s3 = createMemoryS3();
-    const key = widgetFileKey('init.example.com', GUID, 'widget.json');
+    const key = guidMarkerKey('init.example.com', GUID);
     await s3.putObject({
       Key: key,
-      Body: Buffer.from('{}\n', 'utf8'),
-      ContentType: 'application/json; charset=utf-8',
+      Body: Buffer.alloc(0),
       Metadata: {
         uri: '/x',
         seen: '0',
@@ -370,7 +387,7 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
     });
     const hostLast2 = s3.objects.get(hostMarkerKey('bump.example.com')).Metadata.lastmod;
     const guidLast = s3.objects.get(
-      widgetFileKey('bump.example.com', GUID, 'widget.json'),
+      guidMarkerKey('bump.example.com', GUID),
     ).Metadata.lastmod;
     assert.equal(hostLast2, '2026-10-18T10:05:00.000Z');
     assert.equal(guidLast, '2026-10-18T10:05:00.000Z');
@@ -391,10 +408,156 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
       hostLast2,
     );
     assert.equal(
-      s3.objects.get(widgetFileKey('bump.example.com', GUID, 'widget.json')).Metadata
-        .lastmod,
+      s3.objects.get(guidMarkerKey('bump.example.com', GUID)).Metadata.lastmod,
       guidLast,
     );
+  });
+});
+
+describe('FR #3968 host credentials + Stripe ids', () => {
+  it('hashHostPassword never stores plaintext; isHostPasswordHash detects format', () => {
+    const hashed = hashHostPassword('FAKE_plain_for_test', {
+      salt: Buffer.alloc(16, 7),
+    });
+    assert.equal(isHostPasswordHash(hashed), true);
+    assert.equal(hashed.includes('FAKE_plain_for_test'), false);
+    assert.match(hashed, /^scrypt\$16384\$8\$1\$/);
+  });
+
+  it('setHostCredentials sets email/hash, bumps lastmod, keeps tags', async () => {
+    const s3 = createMemoryS3();
+    const key = hostMarkerKey('cred.example.com');
+    await s3.putObject({
+      Key: key,
+      Body: Buffer.alloc(0),
+      Metadata: {
+        userid: 'ABC12345',
+        host: 'cred.example.com',
+        hostkey: 'cred.example.com',
+        customerNumber: 'ABC12345',
+        lastmod: '2020-01-01T00:00:00.000Z',
+        email: '',
+        passwordhash: '',
+        stripeaccountid: '',
+        stripecustomerid: '',
+        annotated: '0',
+      },
+    });
+    await s3.putObjectTagging({
+      Key: key,
+      Tagging: { TagSet: [{ Key: 'hasdns', Value: '1' }] },
+    });
+    const r = await setHostCredentials({
+      Key: key,
+      email: 'owner@example.com',
+      password: 'FAKE_plain_for_test',
+      now: new Date('2026-10-18T15:00:00.000Z'),
+      headObject: s3.headObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+      getObjectTagging: s3.getObjectTagging,
+      putObjectTagging: s3.putObjectTagging,
+    });
+    assert.equal(r.email, 'owner@example.com');
+    assert.equal(r.passwordhashSet, true);
+    assert.equal(r.lastmod, '2026-10-18T15:00:00.000Z');
+    assert.equal(isHostPasswordHash(r.metadata.passwordhash), true);
+    assert.equal(r.metadata.passwordhash.includes('FAKE_plain_for_test'), false);
+    assert.equal(r.metadata.userid, 'ABC12345');
+    const tags = await s3.getObjectTagging({ Key: key });
+    assert.equal(tags.TagSet.find((t) => t.Key === 'hasdns').Value, '1');
+  });
+
+  it('setHostStripe sets Connect/Customer ids, bumps lastmod, keeps other meta', async () => {
+    const s3 = createMemoryS3();
+    const key = hostMarkerKey('stripe.example.com');
+    await s3.putObject({
+      Key: key,
+      Body: Buffer.alloc(0),
+      Metadata: {
+        userid: 'ABC12345',
+        host: 'stripe.example.com',
+        hostkey: 'stripe.example.com',
+        customerNumber: 'ABC12345',
+        lastmod: '2020-01-01T00:00:00.000Z',
+        email: '',
+        passwordhash: '',
+        stripeaccountid: '',
+        stripecustomerid: '',
+        annotated: '0',
+      },
+    });
+    const r = await setHostStripe({
+      Key: key,
+      accountId: 'acct_FAKE_test',
+      customerId: 'cus_FAKE_test',
+      now: new Date('2026-10-18T16:00:00.000Z'),
+      headObject: s3.headObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+    });
+    assert.equal(r.stripeaccountid, 'acct_FAKE_test');
+    assert.equal(r.stripecustomerid, 'cus_FAKE_test');
+    assert.equal(r.lastmod, '2026-10-18T16:00:00.000Z');
+    assert.equal(r.metadata.userid, 'ABC12345');
+    assert.equal(r.metadata.email, '');
+  });
+
+  it('GET /parts never returns email passwordhash or stripe ids', async () => {
+    const s3 = createMemoryS3();
+    const page = await pagePartsAclubs({
+      origin: 'https://secret.example.com',
+      widgetGuid: GUID,
+      headObject: s3.headObject,
+      putObject: s3.putObject,
+      getObject: s3.getObject,
+      listObjectsV2: s3.listObjectsV2,
+      copyObject: s3.copyObject,
+      getObjectTagging: s3.getObjectTagging,
+      putObjectTagging: s3.putObjectTagging,
+      mint: mintFixed([9, 9, 9, 9, 9, 9, 9]),
+    });
+    assert.equal(partsResponseLeaksSecrets(page), false);
+    assert.equal('email' in page, false);
+    assert.equal('passwordhash' in page, false);
+    assert.equal('stripeaccountid' in page, false);
+    assert.equal('stripecustomerid' in page, false);
+    const body = JSON.stringify(page);
+    assert.equal(/passwordhash|stripeaccountid|stripecustomerid|"email"/.test(body), false);
+
+    const hostKey = hostMarkerKey('secret.example.com');
+    await setHostCredentials({
+      Key: hostKey,
+      email: 'hidden@example.com',
+      passwordHash: hashHostPassword('FAKE_plain_for_test', {
+        salt: Buffer.alloc(16, 3),
+      }),
+      headObject: s3.headObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+    });
+    await setHostStripe({
+      Key: hostKey,
+      accountId: 'acct_FAKE_hidden',
+      customerId: 'cus_FAKE_hidden',
+      headObject: s3.headObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+    });
+    const again = await pagePartsAclubs({
+      origin: 'https://secret.example.com',
+      widgetGuid: GUID,
+      headObject: s3.headObject,
+      putObject: s3.putObject,
+      getObject: s3.getObject,
+      listObjectsV2: s3.listObjectsV2,
+      copyObject: s3.copyObject,
+    });
+    assert.equal(partsResponseLeaksSecrets(again), false);
+    const againBody = JSON.stringify(again);
+    assert.equal(againBody.includes('hidden@example.com'), false);
+    assert.equal(againBody.includes('acct_FAKE_hidden'), false);
+    assert.equal(againBody.includes('cus_FAKE_hidden'), false);
   });
 });
 
@@ -510,9 +673,9 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
       mint: mintFixed([5, 5, 5, 5, 5, 5, 5]),
     });
     // Force init=1 so parts render from live.json without Searching promotion path
-    const wKey = widgetFileKey('live.example.com', GUID, 'widget.json');
-    const wObj = s3.objects.get(wKey);
-    wObj.Metadata = { ...wObj.Metadata, init: '1' };
+    const gKey = guidMarkerKey('live.example.com', GUID);
+    const gObj = s3.objects.get(gKey);
+    gObj.Metadata = { ...gObj.Metadata, init: '1' };
     const liveKey = widgetFileKey('live.example.com', GUID, 'live.json');
     s3.objects.set(liveKey, {
       Body: Buffer.from(
@@ -574,9 +737,13 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
     );
     assert.equal(live.length, 2);
     assert.equal(
-      s3.objects.get(widgetFileKey('promo.example.com', GUID, 'widget.json')).Metadata
-        .init,
+      s3.objects.get(guidMarkerKey('promo.example.com', GUID)).Metadata.init,
       '1',
+    );
+    assert.deepEqual(
+      s3.objects.get(widgetFileKey('promo.example.com', GUID, 'widget.json')).Metadata ||
+        {},
+      {},
     );
   });
 

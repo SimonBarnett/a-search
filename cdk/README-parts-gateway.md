@@ -20,19 +20,26 @@ This stack hardcodes CORS `allowOrigins: ['*']`. It does **not** call
 
 The Lambda expects the **existing** bucket `a-clubs` in the deploy account. It
 auto-creates `a-clubs/{hostkey}/` (Madeira checksum userid metadata;
-`customerNumber` === `userid`, plus `lastmod`) and `a-clubs/{hostkey}/{guid}/`
-seeded files on first request.
+`customerNumber` === `userid`, plus `lastmod`, empty `email` / `passwordhash` /
+`stripeaccountid` / `stripecustomerid`) and `a-clubs/{hostkey}/{guid}/` seeded
+files on first request.
 
 **Host** comes from the `Origin` header only (`?host=` is ignored). Missing or
 unparseable Origin returns `400` `origin_required`.
 
-**GUID marker metadata** on `widget.json` (create): `uri`, `seen=0`, `clicks=0`,
-`since`, `lastmod`, `annotated=0`, `init=0`. `uri` prefers the `Referer` path;
-else `pageUri` / `uri` query. Documented choice: Referer first.
+**GUID folder marker** (zero-byte `a-clubs/{hostkey}/{guid}/`): `uri`, `seen=0`,
+`clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`. `widget.json` is a plain
+seed file (no GUID folder metadata). `uri` prefers the `Referer` path; else
+`pageUri` / `uri` query. Documented choice: Referer first.
+
+Host claim helpers (shared `hostFolderMeta.js`): `setHostCredentials` (scrypt
+hash format `scrypt$N$r$p$saltHex$hashHex`; Madeira auth not vendored here) and
+`setHostStripe({accountId, customerId})`. `GET /parts` never returns email,
+passwordhash, or Stripe ids.
 
 `GET /parts` returns `init` (`0` or `1`). When `{guid}/IN/` has candidates and
 `init` is `0`, the gateway promotes them into `live.json` and sets `init=1`
-(via shared `setInit`, which also bumps `lastmod`).
+(via shared `setInit` on the GUID folder marker, which also bumps `lastmod`).
 
 Folder events: on **new host** and **new GUID**, the gateway sends
 `{hostkey, host, createdAt}` to `a-clubs-new-folders.fifo`
