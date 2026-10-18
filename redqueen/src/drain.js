@@ -116,6 +116,7 @@ async function drainOnce(opts) {
       fetchImpl: opts.fetchImpl,
       fetchTimeoutMs: opts.fetchTimeoutMs,
       fetchMaxBytes: opts.fetchMaxBytes,
+      reannotate: opts.reannotate,
     });
     } finally {
       if (beat) clearInterval(beat);
