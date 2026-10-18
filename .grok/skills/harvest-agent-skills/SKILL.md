@@ -387,3 +387,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX: after FR-228 jwt verify returns contactVerified+contactChannel, update jwt-auth and jwt.hostile-mrb35 deepEqual expectations (false/undefined when claim absent); fold alone does not heal if main tests still lag
 - a-search FIX: when tip already heals FR-236/237/238 contactVerified stubs but CI still fails jwt-auth deepEqual and #3887 is still open, treat jwt-auth as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649)
 - a-search MRB rematch: unique FR-3726 fold-push-before-DONE tip with MERGEABLE behind and ambient connect 403 --- PASS @ head without fold (FR #4649), re-arm --auto --merge
+- a-search FR: CLOSED-unmerged covering implement PR with Closes still Prefer ExistingPrUrl reopen + re-arm --auto + DONE FR — never a second implement PR (class of #1360/#3610)
