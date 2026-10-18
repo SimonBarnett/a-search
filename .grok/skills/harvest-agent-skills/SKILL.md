@@ -448,4 +448,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Harvest tip that re-appends an exact main Harvested-lessons bullet (period-only delta): CLOSED-duplicate, do not merge
 - FR #3968 successor MRB: run real npm ci + npm run synth:parts-gateway and paste APartsGateway resource list before PASS; unit pins alone are not enough when the PR body requires synth
 - FR #4030: reservedConcurrentExecutions 1 (not ESM maxConcurrency) for one-job-per-provider; SQL uses a-search-db-backed drained on redqueen reusing walrus poll helpers; agent /search is x-agent-api-key + hostkey/guid/queries -> 202
+- FR that only asks MRB to run ASearchStack synth for an already MERGED Closes tip: close as already covered citing the merged PR URL; DONE FR with that covering PR (no second implement PR)
 - MRB on FR #4030: never ship FAKE_ default for A_SEARCH_AGENT_API_KEY; stack fix PR into tip then PASS @ merge SHA; file child FR when helpers land but provider call sites do not
