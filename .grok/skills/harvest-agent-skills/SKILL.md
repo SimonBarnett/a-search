@@ -352,6 +352,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX assign for cancelled CI on open product PR: one behind-main fold, re-run claimed pin tests, re-arm gh pr merge --auto, DONE FIX with PR URL, no CI poll
 - Re-offered keep-both resolve helper MRB: one behind-main fold, re-run fr3708 pin + conflict markers, PASS @ new SHA, --auto, DONE.
 - MRB CONFLICTING runCdkSynth with FR-3764 shared cache vs FR-3763 registerCdkOutDir: keep-both reuse path without registering shared dirs for delete (FR #3790), re-run fr3764+fr3462+fr3763+fr3790 pins, PASS @ head SHA --auto
+- a-search FR #3611: harvest SKILL hostile pins must use includes() or newline-normalize before assert.match; do not PASS when the pin suite is red on CRLF files
 - Harvest-lesson re-offer tip unique vs main (wrap still-open first tip FAIL-supersede + Prefer ExistingPrUrl): one origin/main fold, re-run contiguous pin, PASS @ new SHA, re-arm --auto --squash (FR #3948 / FR #3317).
 - Before PASS, check local branches named for this seat; a matching product commit is self-MRB even when the commit author is the shared repo identity.
 - a-search Ecwid tip CONFLICTING with main Stripe entry routes: keep-both require+match for ecwidWebhooks and stripeWebhook, one fold, re-run fr246+mrb2186, PASS @ new SHA, re-arm --auto (FR #3948).
@@ -373,3 +374,28 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A new a-search providers/local/*/.env.example must set MSSQL_DATABASE=a_search. a_search_sandbox fails the FR-251 env-example pin even when A_SEARCH_ENV=sandbox.
 - a-search MRB: after FR-228 assertContactVerified, shop connect HTTP test stubs that expect 200/400 must set contactVerified: true like fr216; keep fail-closed negatives elsewhere
 - a-search FIX: when test-and-synth fails npm run synth with status null at about 180s, fold origin/main if main already has runCdkSynth 600s tree-kill and per-synth output (#3665). That is CI failed on a main-fixed issue (FR #4649), not a tip-only patch.
+- a-search docs/mrb FIX: CI red only on ambient FR-236/237/238 connect 403 with MERGEABLE tip --- DONE FIX at head without fold (FR #4649); re-arm --auto --squash
+- a-search product MRB rematch: MERGEABLE tip 1 behind with prior PASS boards --- re-verify claimed pins at head, PASS @ current SHA without fold (FR #4649), re-arm --auto --squash, DONE PASS
+- a-search FIX: a CONFLICTING harvest-agent-skills tip still gets one origin/main fold (FR #4649). Keep both tail bullets, the new lesson and the main line it collided with. Do not drop main because the lesson itself says not to fold a MERGEABLE tip.
+- a-search MRB: when test-and-synth fails jwt-auth deepEqual on contactVerified but tests/jwt-auth.test.js and entry/src/auth/jwt.js match origin/main, that red is not a tip patch and not a fold. PASS the docs/mrb head (FR #4649).
+- a-search FIX: when jwt-auth fails with unexpected contactVerified:false and tip jwt.js/jwt-auth match origin/main, treat as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649); file intake for the main expectation update
+- a-search MRB: jwt-auth deepEqual must include contactVerified/contactChannel from verifyJwt (FR-228); missing claim is false --- tests-only PASS closes ambient main red
+- a-search FIX CONFLICTING Agentic Searches tip: fold origin/main; resolve fr142/fr143 to main 30-floor + .fifo filter and keep tip widget-agent comment; if FR-228 connect stubs still 403 apply contactVerified:true even when sibling #3871 not yet merged
+- a-search product FIX: when CI fails only ambient FR-236/237/238 connect 403 while tip FR product suite is green and MERGEABLE, DONE FIX at head without fold (FR #4649)
+- a-search FR re-offer: when issue CLOSED and covering PR MERGED with Closes, DONE FR Prefer ExistingPrUrl with that PR URL --- do not open a second implement PR
+- a-search FR: when covering implement PR is CLOSED unmerged but branch still has Closes, Prefer ExistingPrUrl reopen that PR, re-arm --auto, DONE FR with its URL --- never open a second implement PR
+- a-search FIX: after FR-228 jwt verify returns contactVerified+contactChannel, update jwt-auth and jwt.hostile-mrb35 deepEqual expectations (false/undefined when claim absent); fold alone does not heal if main tests still lag
+- a-search FIX: when tip already heals FR-236/237/238 contactVerified stubs but CI still fails jwt-auth deepEqual and #3887 is still open, treat jwt-auth as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649)
+- a-search MRB rematch: unique FR-3726 fold-push-before-DONE tip with MERGEABLE behind and ambient connect 403 --- PASS @ head without fold (FR #4649), re-arm --auto --merge
+- a-search MRB FR-3344 IN/ folder: re-verify writeInSearchFile/listReadyInFiles/runIngestPass + hostile pins; heal jwt-auth deepEqual for FR-228 on tip before PASS when CI would red; do not fold for one harvest-behind (FR #4649)
+- a-search MRB: a worktree path that already exists can still be an older fold SHA. rev-parse HEAD against the PR tip before trusting pin results; a 403 on connect stubs is not a product fail until the tree matches the head.
+- MRB process-loop: harvest tip that only restates main Prefer ExistingPrUrl reopen CLOSED-unmerged covering PR -> close already-covered and DONE PASS (FR #3317); do not merge twin wording
+- a-search MRB rematch after sibling FIX stub patch: re-verify pin at new head, PASS without fold when MERGEABLE behind and ambient jwt-auth still open (#3887)
+- a-search FR: when mrb1404 asserts exactly N Phase-2 stay-dark against mrb668, trust the mrb668 it() title/stubs.length on main --- align the cross-pin, do not invent a third stub id
+- docs/mrb rematch: when tip-owned pins green and CI fails only ambient mrb1404 that also fails on origin/main, PASS @ MERGEABLE head without fold (FR #4649)
+- When jwt tip product pins are green and CI fails only ambient mrb1404 that also fails on tip and origin/main, DONE FIX at MERGEABLE head without fold (FR #4649)
+- a-search FR: when one covering OPEN PR already Closes the issue and a sibling implement PR is CLOSED unmerged, Prefer ExistingPrUrl the OPEN PR --- do not reopen the sibling or open a third PR
+- a-search docs/mrb rematch: MERGEABLE tip with FR-2611 hostile pins green after jwt+mrb1404 heals --- PASS @ head without fold when only a few commits behind (FR #4649)
+- a-search FIX: when mrb1871 expects WooCommerce comingSoon but registry merchantConnect is already true from FR-180 on both the tip and origin/main, align the pin to connectEnabled --- do not fold (FR #4649).
+- a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
+- When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.

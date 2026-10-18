@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * MRB #752 hostile pins for FR-087 webgains selftestProbe + rateLimit (stay-dark).
+ * MRB #752 hostile pins for FR-087 webgains selftestProbe + rateLimit.
+ * Webgains is enabled on both envs (same class as FR-180); the pin follows the registry.
  */
 
 const { describe, it } = require('node:test');
@@ -18,15 +19,15 @@ const {
 } = require('../providers/local/webgains/src/selftestProbe');
 
 describe('MRB-752 FR-087 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled true', () => {
     const rl = rateLimit('webgains');
     assert.deepEqual(rl, { maxConcurrency: 1, minIntervalMs: 250 });
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'webgains');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('PROBE_SQL pins Source=webgains', () => {
@@ -89,7 +90,7 @@ describe('MRB-752 FR-087 hostile', () => {
     assert.ok(!/assert\.equal\(rateLimit\('admitad'\),\s*undefined\)/.test(src));
   });
 
-  it('skill Selftest + pacing (FR-087) + stay-dark', () => {
+  it('skill Selftest + pacing (FR-087); enabled live and sandbox', () => {
     const skill = fs.readFileSync(
       path.join(
         root,
@@ -105,7 +106,7 @@ describe('MRB-752 FR-087 hostile', () => {
     );
     assert.match(skill, /FR-087/);
     assert.match(skill, /Selftest \+ pacing/);
-    assert.match(skill, /stay-dark|enabled\.live\s*=\s*false/i);
+    assert.match(skill, /Enabled: live=true, sandbox=true/);
     assert.match(skill, /rateLimit|minIntervalMs/);
   });
 
