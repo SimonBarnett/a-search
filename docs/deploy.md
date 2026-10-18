@@ -361,3 +361,29 @@ npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-1 -c stage=standby -c 
 - Default deploy (no stage / no includeRegionInNames) keeps primary names unchanged.
 
 DNS / custom-domain failover is FR-193 ([multi-region-dns.md](multi-region-dns.md)). S3 results are **region-local** per stack (FR-192 LOCKED; no CRR).
+
+## APartsGateway (FR #3968) --- standalone parts widget
+
+Separate CDK app (`cdk/bin/parts-gateway.js`, stack id `APartsGateway`). Does **not**
+modify or depend on `ASearchStack`. No MSSQL, no VPC, no Secrets Manager. Lambda
+IAM is limited to Get/Put/List + object tagging on `arn:aws:s3:::a-clubs` and
+`a-clubs/*`.
+
+Full notes: [cdk/README-parts-gateway.md](../cdk/README-parts-gateway.md).
+
+```bash
+npm ci
+npm run stage-parts-gateway
+npx cdk synth --app "node cdk/bin/parts-gateway.js" APartsGateway \
+  -c account=620257466932 -c region=eu-west-2
+
+npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
+  -c requireDeployEnv=true \
+  -c account=620257466932 -c region=eu-west-2 \
+  -c corsOrigins=https://your-club-host.example
+```
+
+`customerNumber` in host-folder metadata is the Madeira checksum **userid** (not a
+sequential counter). First request for a new host or GUID auto-creates the
+`a-clubs/{hostkey}/` marker and `{hostkey}/{guid}/` seed files; repeats are
+idempotent. Bob deploys after MRB PASS and merge.
