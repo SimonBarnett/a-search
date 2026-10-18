@@ -442,3 +442,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4001 redqueen affiliate import may PASS with in-memory MERGE stand-in + A_SEARCH_AFFILIATE_IMPORT_WIRED stub CLI when docs require site-local injectors; never madeiradb
 - a-clubs GUID uri/seen/clicks/since/init/lastmod live on trailing-slash marker a-clubs/{host}/{guid}/; widget.json is seed-only; setHostCredentials uses documented scrypt$ when Madeira auth is not vendored
 - FR #4008: pin AMerchants like #3999 (isolated CDK, shared/merchants keys+metadata with Stripe/email redaction, onCreated+runWeekly both buckets, never overwrite same-day parts); Prefer ExistingPrUrl; never log API secrets.
+- a-search FIX on CONFLICTING harvest tip after parallel main race: one keep-both fold of skill-book bullets (tip lesson + main lesson), push tip branch, leave --auto; do not drop either unique bullet.
