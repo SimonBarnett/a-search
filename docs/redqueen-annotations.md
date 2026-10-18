@@ -53,6 +53,24 @@ annotated and up to date, and after the host marker carries an `annotation`
 object annotation. If the host review fails or annotations are missing, the
 message returns to the queue (visibility timeout) and no GUIDs are touched.
 
+## searches.json and POST /search (FR #4265)
+
+After a GUID marker is saved with `annotated=1`, the agent writes
+`a-clubs/{hostkey}/{guid}/searches.json` and POSTs it to `/search`.
+
+Order: host review (`annotated=1`), GUID review (`annotated=1`), `searches.json`,
+then `/search`. No host review means no GUID review and no search. Queries come
+from the page review and `steering` (market and currency included). The free cap
+is 3 queries; an upgraded fullscreen widget (`upgraded=1`, `layout=fullscreen`)
+uses 15. Existing `exclude[]` entries are kept. The shape is
+`{ queries: [{ q, intent, maxResults }], exclude: [...] }`.
+
+`/search` records `search-fanout.json` for that GUID and returns the same
+`searchid` on a retry without sending again. If the write or the POST fails,
+the folder message is retried. The service needs `A_SEARCH_API_URL` and either
+`A_SEARCH_AGENT_API_KEY` or `A_SEARCH_AGENT_API_KEY_FILE`. Those values are
+never written to the log.
+
 ## Object annotations (not JSON sidecars)
 
 Annotations are **S3 object annotations** on the folder markers
