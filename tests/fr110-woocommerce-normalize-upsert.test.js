@@ -162,14 +162,16 @@ describe('FR-110 woocommerce normalize + Parts upsert (stay dark)', () => {
     assert.doesNotMatch(MERGE_SQL, /WHILE\s*@/i);
   });
 
-  it('registry woocommerce stays dark', () => {
+  it('registry woocommerce enabled both envs (FR-180)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const s = registry.sources.find((x) => x.id === 'woocommerce');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
+    assert.equal(s.class, 'merchant');
+    assert.equal(s.merchantConnect, true);
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {

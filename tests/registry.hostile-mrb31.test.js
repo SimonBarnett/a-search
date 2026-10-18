@@ -19,7 +19,9 @@ const DEFAULT_ON = [
   'shopify',
   'partnerize',
   'tradedoubler',
-  'wix', // FR-179
+  'wix',
+  'webgains',
+  'woocommerce',
 ];
 
 describe('MRB #31 hostile: loadRegistry contract', () => {
@@ -29,7 +31,7 @@ describe('MRB #31 hostile: loadRegistry contract', () => {
     assert.throws(() => enabled(undefined), /live|sandbox/);
   });
 
-  it('registry has exactly 22 sources (FR-242/243 squarespace+magento) with folder matching kind', () => {
+  it('registry has exactly 22 shortlist sources with folder matching kind', () => {
     const { sources } = loadRegistry();
     assert.equal(sources.length, 23);
     for (const s of sources) {
