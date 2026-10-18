@@ -29,9 +29,11 @@
     "README.md",
     "dns/",
     "merchantWizard.js",
+    "notify/",
     "extension/",
     "account/",
     "finance/",
+    "harvest/",
     "events/"
   ]
 }
