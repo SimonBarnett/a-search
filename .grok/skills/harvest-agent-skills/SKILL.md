@@ -529,3 +529,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Close a harvest tip that tells a FIX seat to re-arm --squash. FR #3948 is gh pr merge --auto --merge. Do not land a second keep-both fold sentence that changes the merge method.
 - APartsGateway annotator IAM: PutObjectTagging must sit on the RedqueenAClubsAnnotate statement itself; a Lambda-role grant is not enough and the next deploy drops an interim IAM patch.
 - Redqueen nssm search env must be set from -SearchApiUrl or redqueen\config\search-api.url plus a key file path, not only the registering process environment. An annotated GUID whose searches.json has queries and no searchid is posted once without a new review, and a failed POST must leave the FIFO message for retry.
+- A redqueen nssm bullet that only names AWS_PROFILE and GROK_CLI is not a twin of a tip that sets the search URL and key-file path at register time and leaves the FIFO message when the GUID search POST fails.
