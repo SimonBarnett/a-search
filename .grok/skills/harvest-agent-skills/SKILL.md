@@ -457,3 +457,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When two open PRs wire live providers to a-clubs IN/+backoff429, keep the fuller tip (handleSqsWith429 CMV + CDK a-clubs IN grant + docs) and FAIL-close the subset; leave the Closes issue OPEN for the kept tip
 - FIX CI after provider FIFO rename: update env-isolation-runtime (-live.fifo$), fanout-enqueue, fanout, sqs-send to assert queueName() not hardcoded a-search-{source}-{env}
 - FR #4043 annotations are AWS S3 object annotations (list/get-object-annotation), not annotations.json; Write-Error under Stop breaks Pester exit-code asserts --- use [Console]::Error.WriteLine then exit N
+- FR #4043 folder tools: meta reads S3 object annotations (not annotations.json); search posts HOST from metadata.host + GUID for a-clubs cwd; secrets always masked; Pester mocks cover mapping/masking/exits
