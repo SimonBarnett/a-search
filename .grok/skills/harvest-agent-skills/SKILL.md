@@ -505,3 +505,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR redqueen reviewer: grok 1.0.62 rejects --prompt and --output text; use -p or --prompt-file plus --output-format plain; treat .grok\bin\agent.exe as grok not Cursor
 - Harvest-lesson MRB: when the tip restates FIX CONFLICTING keep-both / re-arm --auto already on main, CLOSED-duplicate --- do not fold-to-merge a weaker twin.
 - FIX docs/mrb when FR #4195 rewrites docs/a-affiliates.md: restore contiguous awin-agent|FR #4123 section (fr4123 pin) and keep #4208 Download format; one main fold keep-both product tip over weekly alias.
+- FIX harvest tip CONFLICTING: one origin/main fold with keep-both unique SKILL.md bullets (ASCII); push tip; re-arm --auto; DONE FIX without polling CI.
