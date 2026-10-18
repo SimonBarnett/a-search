@@ -50,7 +50,11 @@ describe('FR-004 entry JWT verify', () => {
       iat: Math.floor(Date.now() / 1000),
     });
     const result = await verifyAuthorization(`Bearer ${token}`, { env });
-    assert.deepEqual(result, { userId: 'ABC12345' });
+    assert.deepEqual(result, {
+      userId: 'ABC12345',
+      contactVerified: false,
+      contactChannel: undefined,
+    });
   });
 
   it('missing token → unauthorized', async () => {
@@ -100,7 +104,11 @@ describe('FR-004 entry JWT verify', () => {
       env,
       body: { userId: 'BODYUSR1' },
     });
-    assert.deepEqual(result, { userId: 'JWTUSER1' });
+    assert.deepEqual(result, {
+      userId: 'JWTUSER1',
+      contactVerified: false,
+      contactChannel: undefined,
+    });
   });
 
   it('bad signature → unauthorized', async () => {

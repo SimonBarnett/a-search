@@ -9,10 +9,12 @@ on:
   pull_request:
     branches: [main]
 
-# One in-flight run per PR/ref; newer pushes cancel stale queued/running siblings.
+# One in-flight run per PR/ref. PR pushes cancel stale queued/running siblings.
+# Pushes to main never cancel an in-progress main run (docs merges were killing
+# every full main run); a newer main push only replaces a still-pending one.
 concurrency:
   group: a-search-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Cheap path classify on GitHub-hosted runners (never queues on whiterabbit).
