@@ -513,3 +513,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB harvest tip for redqueen GrokHome: keep Set-Acl elevated-skip clause even when ACL/Access-is-denied core already on main; hostile NEEDLE on tip; --auto when 0 behind.
 - docs/mrb hostile pins may stack the product commits but use Refs only; leave the product PR open so its Closes line still lands.
 - Redqueen drain: default MaxNumberOfMessages=1 (FIFO one group per host); batched receipts expire while only the current message is heartbeated during long host+GUID reviews.
+- FIX docs/mrb CONFLICTING while CI green: one origin/main fold (ort clean when tip only stacked product+hostile); re-arm --auto; do not poll CI.
