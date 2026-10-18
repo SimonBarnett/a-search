@@ -441,3 +441,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Affiliate import on redqueen: map (provider,affiliateid,partid) to Parts Source/FeedKey/MerchantProductId Env=live; prune live.json via PartLiveIndex not full scan; bump lastmod for #3987; delete S3 file only after commit; never madeiradb or credential logs.
 - FR #4001 redqueen affiliate import may PASS with in-memory MERGE stand-in + A_SEARCH_AFFILIATE_IMPORT_WIRED stub CLI when docs require site-local injectors; never madeiradb
 - FR #4008: pin AMerchants like #3999 (isolated CDK, shared/merchants keys+metadata with Stripe/email redaction, onCreated+runWeekly both buckets, never overwrite same-day parts); Prefer ExistingPrUrl; never log API secrets.
+- Harvest-lesson MRB: one clean main fold; if tip CONFLICTING again from parallel main race, do not fold twice (FR #3948) --- leave --auto armed, comment merge-on-green pending, DONE PASS.
