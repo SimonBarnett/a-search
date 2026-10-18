@@ -18,6 +18,7 @@ const {
   isCompleteGuidReview,
 } = require('./reviewers');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
+const { publishGuidSearch, localPostSearchAck } = require('./guidSearch');
 
 /** @deprecated FR #4098 --- sidecars removed; kept for test migration grep */
 function hostAnnotationsKey(hostkey) {
@@ -301,7 +302,28 @@ async function annotateOneGuid(args) {
   const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
   const need = annotationNeed(guidMd, { reannotate: Boolean(opts.reannotate) });
   if (need === 'skip') {
-    return { action: 'noop', detail: 'guid_unchanged' };
+    const ann = await getNamedAnnotationJson(opts, markerKey, 'annotation');
+    if (!ann) return { action: 'noop', detail: 'guid_unchanged' };
+    const steering = await getNamedAnnotationJson(opts, markerKey, 'steering');
+    try {
+      const published = await publishGuidSearch({
+        ...opts,
+        hostkey: event.hostkey,
+        guid,
+        review: ann,
+        steering: steering || undefined,
+        metadata: guidMd,
+        now,
+        postSearch: opts.postSearch || localPostSearchAck(),
+      });
+      if (!published.wrote) return { action: 'noop', detail: 'guid_unchanged' };
+      return { action: 'guid_searched', detail: 'search_completed' };
+    } catch (err) {
+      return {
+        action: 'retry',
+        detail: (err && err.code) || 'search_failed',
+      };
+    }
   }
 
   const uri = String(guidMd.uri || '').trim();
@@ -383,6 +405,24 @@ async function annotateOneGuid(args) {
       key: markerKey,
       uri,
     });
+  }
+
+  try {
+    await publishGuidSearch({
+      ...opts,
+      hostkey: event.hostkey,
+      guid,
+      review,
+      steering: review.steering,
+      metadata: { ...guidMd, annotated: '1' },
+      now,
+      postSearch: opts.postSearch || localPostSearchAck(),
+    });
+  } catch (err) {
+    return {
+      action: 'retry',
+      detail: (err && err.code) || 'search_failed',
+    };
   }
 
   return { action: need === 'create' ? 'guid_annotated' : 'guid_updated' };
