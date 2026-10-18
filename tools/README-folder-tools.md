@@ -11,6 +11,7 @@ Read-only view of the cwd (or `-Path`) folder marker:
 2. **Tags** on the marker.
 3. **Annotations** via S3 object annotations (`list-object-annotations` / `get-object-annotation`) --- names such as `annotation` and `steering`. Long payloads truncate unless you pass `-Full`.
 4. Folder **kind** (host, guid, provider, affiliate, merchant) from bucket + depth.
+   An `a-clubs` host marker identity is metadata `userid` only (FR #4287). The `{env}/x/{customerNumber}/` widget tree is unchanged.
 5. For a GUID folder, also the parent host's `annotation`.
 
 ```powershell

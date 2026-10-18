@@ -402,8 +402,10 @@ Lambda asset and runs `npm install --omit=dev` for `@aws-sdk/client-s3` and
 `node_modules/@aws-sdk/*` from the repo root omits `@aws-sdk/checksums` and
 breaks live `GET /parts`). Needs network on first stage.
 
-`customerNumber` in host-folder metadata is the Madeira checksum **userid** (not a
-sequential counter). First request for a new host or GUID auto-creates the
+a-clubs host-folder metadata identity is the Madeira checksum **userid** only
+(not a sequential counter, and not a second metadata key). `GET /parts` returns
+that `userid` field. The `{env}/x/{customerNumber}/` widget tree is a different
+path and is unchanged. First request for a new host or GUID auto-creates the
 `a-clubs/{hostkey}/` marker and `{hostkey}/{guid}/` seed files; repeats are
 idempotent. Bob deploys after MRB PASS and merge.
 

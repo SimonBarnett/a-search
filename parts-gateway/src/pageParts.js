@@ -202,7 +202,7 @@ async function pagePartsAclubs(opts) {
   const widgetInfo = await ensureAclubsWidget({
     host,
     widgetGuid: guid,
-    customerNumber: hostInfo.customerNumber,
+    userid: hostInfo.userid,
     layout: opts.layout,
     referer: opts.referer,
     pageUri: opts.pageUri,
@@ -267,7 +267,7 @@ async function pagePartsAclubs(opts) {
   const nextOffset = next < live.length ? next : null;
 
   const response = {
-    customerNumber: hostInfo.customerNumber,
+    userid: hostInfo.userid,
     widgetGuid: guid,
     layout: widgetInfo.layout,
     parts: slice,
