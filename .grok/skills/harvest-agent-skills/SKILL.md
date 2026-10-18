@@ -514,3 +514,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - docs/mrb hostile pins may stack the product commits but use Refs only; leave the product PR open so its Closes line still lands.
 - Redqueen drain: default MaxNumberOfMessages=1 (FIFO one group per host); batched receipts expire while only the current message is heartbeated during long host+GUID reviews.
 - When two open harvest tips in the same book state the same playbook, keep the earlier fuller bullet and close the later tip. Do not merge both.
+- Redqueen annotations: host = affiliate brief (club/audience/opportunities); GUID = page-only from host brief + title/meta; reject host-text copies; REDQUEEN_REANNOTATE=1 rewrites already-annotated markers.
