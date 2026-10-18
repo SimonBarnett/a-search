@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * FR #4001: list unprocessed parts files under a-affiliates/{provider}/{affiliateid}/parts/
- * Oldest first. Layout from #3999 (dated files); import deletes on success so no latest needed.
+ * FR #4001 / #4195: list unprocessed feed files under a-affiliates.
+ * Prefers flat `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` (already
+ * decompressed). Still accepts legacy `.../parts/{date}.{ext}` during cutover.
+ * Oldest first. Import deletes on success.
  */
 
 /**
@@ -25,13 +27,18 @@ async function listPendingPartsFiles(opts) {
     const contents = page.Contents || page.contents || [];
     for (const obj of contents) {
       const key = String(obj.Key || obj.key || '');
-      // {provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}
-      const m = key.match(
-        /^([a-z0-9_-]+)\/([^/]+)\/parts\/(\d{4}-\d{2}-\d{2})\.[^/]+$/i,
-      );
-      if (!m) continue;
-      // skip marker-only / latest pointer if still present from #3999
       if (/\/parts\/latest\./i.test(key)) continue;
+      // FR #4195 flat: {provider}/{affiliateid}/{yyyy-mm-dd}.{ext}
+      let m = key.match(
+        /^([a-z0-9_-]+)\/([^/]+)\/(\d{4}-\d{2}-\d{2})\.[^./]+$/i,
+      );
+      // Legacy #3999: {provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}
+      if (!m) {
+        m = key.match(
+          /^([a-z0-9_-]+)\/([^/]+)\/parts\/(\d{4}-\d{2}-\d{2})\.[^/]+$/i,
+        );
+      }
+      if (!m) continue;
       out.push({
         provider: m[1].toLowerCase(),
         affiliateid: m[2],
@@ -40,7 +47,7 @@ async function listPendingPartsFiles(opts) {
         dateStamp: m[3],
       });
     }
-    token = page.NextContinuationToken || page.IsTruncated || null;
+    token = page.NextContinuationToken || null;
     if (page.IsTruncated && !page.NextContinuationToken) break;
   } while (token);
 
@@ -55,6 +62,7 @@ async function listPendingPartsFiles(opts) {
 
 /**
  * Read affiliate marker metadata (format, compression). Never log secrets.
+ * compression describes the *source* feed; stored objects are decompressed (#4195).
  * @param {{ getObject: Function, bucket?: string, provider: string, affiliateid: string }} opts
  */
 async function loadAffiliateMeta(opts) {

@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-Download affiliate parts for the a-affiliates cwd (FR #4108).
+Download affiliate feed for the a-affiliates cwd (FR #4108 / #4195).
 
 .DESCRIPTION
 From an affiliate folder under the S3 mount, read folder-marker metadata and
-call affiliates downloadOne (via tools/run-folder-download.js). Writes
-{provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext} + parts/latest.{ext} and
-bumps lastdownload / laststatus / lastsize / lastmod.
+call affiliates downloadOne (via tools/run-folder-download.js). Writes one
+decompressed object {provider}/{affiliateid}/{yyyy-mm-dd}.{ext} and bumps
+lastdownload / lastok / laststatus / lastsize / lastmod. No parts/ or latest.
 
-Default skips when today's dated parts object already exists (parts_exists);
+Default skips when today's dated feed object already exists (exists);
 pass -Force to re-download. Provider cwd requires -All (one run per affiliate
 child). Never prints feed URLs, passwords, or tokens.
 
@@ -16,13 +16,13 @@ child). Never prints feed URLs, passwords, or tokens.
 Filesystem path under the S3 mount (default: cwd).
 
 .PARAMETER MountRoot
-Mount root (default D:\s3 or env A_SEARCH_S3_MOUNT).
+Mount root (default env A_SEARCH_S3_MOUNT, else S:\ if present, else D:\s3).
 
 .PARAMETER All
 Provider folder only: download each affiliate child.
 
 .PARAMETER Force
-Re-download even if today's dated parts file already exists.
+Re-download even if today's dated feed file already exists.
 
 .PARAMETER WhatIf
 Alias: -DryRun. Resolve cwd, read meta (redacted), print intended action;
@@ -200,6 +200,8 @@ function Write-FolderDownloadSummary {
     $status = [string](Get-FolderDownloadResultProp $Result 'status')
     $size = Get-FolderDownloadResultProp $Result 'size'
     $dated = [string](Get-FolderDownloadResultProp $Result 'datedKey')
+    $key = [string](Get-FolderDownloadResultProp $Result 'key')
+    if ([string]::IsNullOrEmpty($key)) { $key = $dated }
     $feedSet = Get-FolderDownloadResultProp $Result 'feedurlSet'
     $feed = 'n/a'
     if ($null -ne $feedSet) {
@@ -208,12 +210,12 @@ function Write-FolderDownloadSummary {
     if ($status -eq 'dry_run') {
         $fmt = Get-FolderDownloadResultProp $Result 'format'
         $comp = Get-FolderDownloadResultProp $Result 'compression'
-        Write-Output ("dry_run provider={0} affiliateid={1} feedurl={2} format={3} compression={4} dated={5}" -f `
-                $p, $a, $feed, $fmt, $comp, $dated)
+        Write-Output ("dry_run provider={0} affiliateid={1} feedurl={2} format={3} compression={4} key={5}" -f `
+                $p, $a, $feed, $fmt, $comp, $key)
         return
     }
-    Write-Output ("provider={0} affiliateid={1} status={2} size={3} dated={4}" -f `
-            $p, $a, $status, $size, $dated)
+    Write-Output ("provider={0} affiliateid={1} status={2} size={3} key={4}" -f `
+            $p, $a, $status, $size, $key)
 }
 
 try {
@@ -260,7 +262,7 @@ try {
             Write-FolderDownloadSummary -Result $r -Provider $parts[0] -AffiliateId $parts[1]
             $ok = Get-FolderDownloadResultProp $r 'ok'
             $st = [string](Get-FolderDownloadResultProp $r 'status')
-            if (-not $ok -and $st -ne 'parts_exists') { $failures += 1 }
+            if (-not $ok -and $st -ne 'exists' -and $st -ne 'parts_exists') { $failures += 1 }
             $feedSet = Get-FolderDownloadResultProp $r 'feedurlSet'
             if ($DryRun -and -not $feedSet) {
                 [Console]::Error.WriteLine('missing_feedurl: affiliate marker has no feedurl')
@@ -306,7 +308,7 @@ try {
                 $ok = Get-FolderDownloadResultProp $r 'ok'
                 $st = [string](Get-FolderDownloadResultProp $r 'status')
                 $feedSet = Get-FolderDownloadResultProp $r 'feedurlSet'
-                if (-not $ok -and $st -ne 'parts_exists') {
+                if (-not $ok -and $st -ne 'exists' -and $st -ne 'parts_exists') {
                     $failures += 1
                     $failedIds += $parts[1]
                 }

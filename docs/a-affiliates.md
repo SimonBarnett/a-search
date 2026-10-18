@@ -1,15 +1,15 @@
-# a-affiliates (FR #3999)
+# a-affiliates (FR #3999 / #4195)
 
-Private S3 bucket and weekly Lambda for affiliate network **provider login** and
-**affiliate parts** downloads. Deployed as standalone CDK stack `AAffiliates`
+Private S3 bucket and **daily** Lambda for affiliate network **provider login**
+and **affiliate feed** downloads. Deployed as standalone CDK stack `AAffiliates`
 (`cdk/bin/affiliates.js`). Does **not** modify `ASearchStack`, `APartsGateway`,
 `a-clubs`, or madeira resources.
 
 ## Why Lambda (not Fargate)
 
-v1 uses a **Node 20 Lambda** (15 min timeout, EventBridge `rate(7 days)`).
-Fargate is a documented follow-up if feeds exceed Lambda time or ephemeral
-storage limits.
+v1 uses a **Node 20 Lambda** (15 min timeout, EventBridge `rate(1 day)`). The
+job skips affiliates fresher than `refreshdays` (default **7**). Fargate is a
+documented follow-up if feeds exceed Lambda time or ephemeral storage limits.
 
 ## Bucket
 
@@ -21,33 +21,29 @@ storage limits.
 | Transport | `enforceSSL: true` (deny insecure) |
 | Encryption | SSE-S3 (`BucketEncryption.S3_MANAGED`) |
 | Removal | `RemovalPolicy.RETAIN`, `autoDeleteObjects: false` |
-| Lifecycle | Expire objects with size > 0 after 35 days (safety net; zero-byte markers kept). Lambda retention keeps last N=4 dated parts files. |
+| Lifecycle | Expire objects with size > 0 after 35 days (safety net; zero-byte markers kept). Import deletes feeds after DB load. |
 
 Account/region target: `620257466932` / `eu-west-2` (same as other a-search stacks).
 
-## Key layout
+## Key layout (FR #4195)
 
 Zero-byte marker objects carry S3 **user metadata** (name/value pairs), same idea
-as a-clubs host/GUID markers.
+as a-clubs host/GUID markers. Feeds are **one decompressed object** in the
+merchant folder (no `parts/`, no `latest`, no retention copies).
 
 ```
 a-affiliates/
   {provider}/                              # marker key `{provider}/`
   {provider}/provider.json                 # optional overflow when metadata > 2 KiB
   {provider}/{affiliateid}/                # marker key `{provider}/{affiliateid}/`
-  {provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}
-  {provider}/{affiliateid}/parts/latest.{ext}
+  {provider}/{affiliateid}/{yyyy-mm-dd}.{ext}   # decompressed feed (format = ext)
 ```
 
 Provider slug and `affiliateid` must match `[a-z0-9._-]+` (lower-case).
 
-`{ext}` comes from affiliate `format` + `compression`:
-
-| format | compression | ext |
-|--------|-------------|-----|
-| csv/xml/json | none | `csv` / `xml` / `json` |
-| csv/xml/json | gzip | `csv.gz` / `xml.gz` / `json.gz` |
-| csv/xml/json | zip | `csv.zip` / `xml.zip` / `json.zip` |
+`{ext}` is the affiliate/provider `format` (`csv` \| `tsv` \| `xml` \| `json`).
+Source `compression` (`gzip` \| `zip` \| `none`) is applied only while fetching;
+stored objects are always plain. Content-Type is `text/csv; charset=utf-8` (etc.).
 
 ## Provider metadata keys (`{provider}/`)
 
@@ -62,7 +58,11 @@ Everything an agent needs to log into that network:
 | `username` | Login username (**secret** --- never log) |
 | `password` | Login password (**secret** --- never log) |
 | `apitoken` | API token (**secret** --- never log) |
+| `feedapikey` / `darwinhash` | Feed URL placeholder secrets (**secret**) |
 | `authtype` | `password` \| `token` \| `oauth` |
+| `enabled` | `1` or `0` (skip whole provider when `0`) |
+| `refreshdays` | Days before re-download (default `7`) |
+| `format` / `compression` | Defaults for affiliates missing their own |
 | `lastmod` | ISO UTC last metadata change |
 
 If the combined user-metadata payload exceeds ~2 KiB, put overflow JSON at
@@ -71,83 +71,54 @@ If the combined user-metadata payload exceeds ~2 KiB, put overflow JSON at
 
 ## Affiliate metadata keys (`{provider}/{affiliateid}/`)
 
-Everything needed to download that affiliate's parts file. Affiliates pay
+Everything needed to download that affiliate's feed. Affiliates pay
 **commission** --- there are **no** Stripe fields.
 
 | Key | Notes |
 |-----|--------|
 | `affiliateid` | Lower-case slug id |
 | `name` | Display name |
-| `feedurl` | Direct feed URL (preferred) |
+| `feedurl` | Direct feed URL (may keep `{feedapikey}` placeholders; never store secrets) |
 | `feedid` | Alternate: provider feed id (+ template) |
-| `format` | `csv` \| `xml` \| `json` |
-| `compression` | `gzip` \| `zip` \| `none` |
-| `schedule` | Default `weekly` |
+| `format` | `csv` \| `tsv` \| `xml` \| `json` |
+| `compression` | Source feed: `gzip` \| `zip` \| `none` |
+| `schedule` | Default `daily` |
 | `enabled` | `1` or `0` |
 | `lastdownload` | ISO UTC of last attempt |
-| `laststatus` | `ok` or error code (e.g. `http_403`, `missing_feedurl`) |
-| `lastsize` | Bytes of last successful body |
+| `lastok` | ISO UTC of last **successful** download (refresh clock) |
+| `laststatus` | `ok`, `exists`, `unsupported_*`, `decompress_error`, `http_*`, ... |
+| `lastsize` | Bytes of last successful **decompressed** body |
 | `lastmod` | ISO UTC last metadata change |
 
 **Forbidden:** `stripeaccountid`, `stripecustomerid`, and any `stripe*` key.
 Normalizers throw `stripe_fields_forbidden`.
 
-## Weekly job
+## Daily job (FR #4195)
 
-1. EventBridge rule `rate(7 days)` invokes Lambda `a-search-affiliates-weekly`.
-2. Lambda lists provider markers, then affiliate markers under each.
-3. For `enabled=1`, downloads `feedurl` via injectable `fetch`, writes dated
-   parts file + `latest.{ext}`, updates `lastdownload` / `laststatus` /
-   `lastsize` / `lastmod` while preserving other keys.
-4. One affiliate failure does not stop others. Logs include **affiliate id**
+1. EventBridge rule `rate(1 day)` invokes Lambda `a-search-affiliates-weekly`
+   (legacy name; behaviour is daily).
+2. Lambda lists enabled provider markers (paginated), then affiliate markers.
+3. Downloads when `lastok` (or `lastdownload` with `laststatus=ok`) is missing or
+   older than `refreshdays`. Failures do **not** move `lastok`.
+4. Writes `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` only; skips with
+   `exists` when today's file is present (unless force). Older dated files are
+   left for import to delete.
+5. One affiliate failure does not stop others. Logs include **affiliate id**
    only --- never URLs with keys, never login values (`redactForLog`).
-5. Retention: delete dated parts beyond last N=4; lifecycle is backup.
+6. Optional `onImport` hook fires after the run (linked import FR).
+
+Manual `/tools download` is what the affiliate agent runs on first folder
+create; same flat key layout and `-Force` overwrite.
 
 IAM on the Lambda role: `s3:GetObject`, `PutObject`, `ListBucket`,
 `DeleteObject` on `a-affiliates` / `a-affiliates/*` only. No a-clubs, no madeira.
 
 ## Synth / deploy
 
-```bash
-npm ci
-npm run stage-affiliates
-npx cdk synth --app "node cdk/bin/affiliates.js" AAffiliates \
-  -c account=620257466932 -c region=eu-west-2
-
-npx cdk deploy --app "node cdk/bin/affiliates.js" AAffiliates \
-  -c requireDeployEnv=true \
-  -c account=620257466932 -c region=eu-west-2
+```powershell
+npm run synth:affiliates
+npm run deploy:affiliates
 ```
 
-Or: `npm run synth:affiliates` / `npm run deploy:affiliates`.
-
-`cdk diff` for this app should show **only** new `AAffiliates` resources.
-
-## Code map
-
-| Path | Role |
-|------|------|
-| `shared/affiliates/keys.js` | Slug + key path helpers |
-| `shared/affiliates/metadata.js` | Normalize/validate; `redactForLog` |
-| `shared/affiliates/retention.js` | Pick dated keys beyond N |
-| `affiliates/src/downloadOne.js` | One affiliate download + meta + retain |
-| `affiliates/src/runWeekly.js` | Orchestration |
-| `affiliates/src/handler.js` | Lambda entry |
-| `affiliates/src/memoryS3.js` | In-memory S3 for tests |
-| `cdk/lib/affiliates-stack.js` | Stack |
-| `cdk/bin/affiliates.js` | App entry (`resolveDeployEnv`) |
-| `scripts/stage-affiliates-lambda-asset.js` | Stage Lambda asset |
-
-## Daily Awin onboarding agent (FR #4123)
-
-On **redqueen**, `redqueen/awin-agent/` recreates Merc's Awin publisher
-onboarding: invite/join, approvals, feed links, and merge-writes to
-`a-affiliates/awin/{advertiserid}/` only. See `redqueen/awin-agent/README.md`
-(schedule, Grok-then-Cursor runtime, `-DryRun`, credentials file contract,
-report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
-
-## Out of scope
-
-- Parsing feeds into search candidates (walrus / SQS; parent #3944).
-- Adding `a-affiliates` to the walrus-rclone IAM user (raise with ops after deploy
-  if the bucket is not named `a-search-affiliates`).
+See `docs/deploy.md` and stack outputs `AffiliatesBucketName`,
+`AffiliatesWeeklyFunctionName`, `AffiliatesWeeklyRuleName`.

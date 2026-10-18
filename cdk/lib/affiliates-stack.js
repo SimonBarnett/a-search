@@ -2,7 +2,8 @@
 
 /**
  * FR #3999: standalone AAffiliates stack.
- * Private S3 bucket a-affiliates + weekly Node 20 Lambda (EventBridge rate 7 days).
+ * Private S3 bucket a-affiliates + daily Node 20 Lambda (EventBridge rate 1 day;
+ * FR #4195 7-day per-affiliate refresh inside the job).
  * Isolated from the main search stack, parts-gateway, clubs bucket, and club-db.
  *
  * v1 uses Lambda (not Fargate). Fargate is a follow-up if 15 min / ephemeral
@@ -41,9 +42,9 @@ class AffiliatesStack extends cdk.Stack {
     const repoRoot = path.join(__dirname, '..', '..');
     const assetDir = stageAffiliatesLambdaAsset(repoRoot);
 
-    // Private bucket: block public, SSE-S3, SSL, RETAIN. Lambda retention (N=4)
-    // is primary; lifecycle expires non-empty objects after 35 days as a safety
-    // net (zero-byte markers kept via objectSizeGreaterThan: 0).
+    // Private bucket: block public, SSE-S3, SSL, RETAIN. Import deletes files
+    // after DB load (FR #4001/#4195); lifecycle expires non-empty objects after
+    // 35 days as a safety net (zero-byte markers kept via objectSizeGreaterThan: 0).
     const bucket = new s3.Bucket(this, 'AffiliatesBucket', {
       bucketName: A_AFFILIATES_BUCKET,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -97,28 +98,29 @@ class AffiliatesStack extends cdk.Stack {
       }),
     );
 
-    // Weekly schedule (rate 7 days). Sunday cron alternative documented in README.
+    // Daily schedule (rate 1 day). Job skips affiliates fresher than refreshdays.
     const rule = new events.Rule(this, 'AffiliatesWeeklyRule', {
       ruleName: 'a-search-affiliates-weekly',
-      description: 'FR #3999 weekly affiliate parts download',
-      schedule: events.Schedule.rate(cdk.Duration.days(7)),
+      description:
+        'FR #4195 daily affiliate feed download (7-day refresh inside job)',
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
     });
     rule.addTarget(new targets.LambdaFunction(fn));
 
     new cdk.CfnOutput(this, 'AffiliatesBucketName', {
       value: bucket.bucketName,
       description:
-        'S3 bucket for affiliate provider/parts trees (a-affiliates; fallback a-search-affiliates if name taken)',
+        'S3 bucket for affiliate provider/feed trees (a-affiliates; fallback a-search-affiliates if name taken)',
     });
 
     new cdk.CfnOutput(this, 'AffiliatesWeeklyFunctionName', {
       value: fn.functionName,
-      description: 'Lambda name for weekly affiliate parts download',
+      description: 'Lambda name for daily affiliate feed download (legacy weekly name)',
     });
 
     new cdk.CfnOutput(this, 'AffiliatesWeeklyRuleName', {
       value: rule.ruleName,
-      description: 'EventBridge rule rate(7 days) for affiliates weekly job',
+      description: 'EventBridge rule rate(1 day) for affiliates daily job',
     });
   }
 }

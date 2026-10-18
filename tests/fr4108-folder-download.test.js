@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR #4108: folderDownloadOne wraps downloadOne with dry-run + parts_exists skip.
+ * FR #4108 / #4195: folderDownloadOne wraps downloadOne with dry-run + exists skip.
  */
 
 const { describe, it } = require('node:test');
@@ -45,12 +45,17 @@ describe('fr4108 folderDownloadOne', () => {
     assert.equal(fetched, 0);
     assert.equal(r.status, 'dry_run');
     assert.equal(r.feedurlSet, true);
-    assert.equal(r.datedKey, 'awin/aff1/parts/2026-10-18.csv');
+    assert.equal(r.datedKey, 'awin/aff1/2026-10-18.csv');
+    assert.equal(r.key, 'awin/aff1/2026-10-18.csv');
     const listed = await s3.listObjectsV2({
       Bucket: 'a-affiliates',
-      Prefix: 'awin/aff1/parts/',
+      Prefix: 'awin/aff1/',
     });
-    assert.equal((listed.Contents || []).length, 0);
+    // marker only (zero-byte) may exist; no feed object written on dry-run
+    const feeds = (listed.Contents || []).filter((c) =>
+      /\/\d{4}-\d{2}-\d{2}\./.test(c.Key),
+    );
+    assert.equal(feeds.length, 0);
     const red = redactResult(r);
     const text = JSON.stringify(red);
     assert.ok(!text.includes('SECRETLEAK'));
@@ -84,7 +89,7 @@ describe('fr4108 folderDownloadOne', () => {
     assert.equal((listed.Contents || []).length, 0);
   });
 
-  it('skips when dated parts exist unless force', async () => {
+  it('skips when dated feed exists unless force', async () => {
     const s3 = createMemoryS3();
     await s3.putObject({
       Bucket: 'a-affiliates',
@@ -98,7 +103,7 @@ describe('fr4108 folderDownloadOne', () => {
     });
     await s3.putObject({
       Bucket: 'a-affiliates',
-      Key: 'awin/aff3/parts/2026-10-18.csv',
+      Key: 'awin/aff3/2026-10-18.csv',
       Body: Buffer.from('old'),
     });
     let fetched = 0;
@@ -113,7 +118,7 @@ describe('fr4108 folderDownloadOne', () => {
         return { ok: true, status: 200, body: Buffer.from('new') };
       },
     });
-    assert.equal(skip.status, 'parts_exists');
+    assert.equal(skip.status, 'exists');
     assert.equal(fetched, 0);
 
     const forced = await folderDownloadOne({
@@ -133,12 +138,12 @@ describe('fr4108 folderDownloadOne', () => {
     assert.equal(fetched, 1);
     const got = await s3.getObject({
       Bucket: 'a-affiliates',
-      Key: 'awin/aff3/parts/2026-10-18.csv',
+      Key: 'awin/aff3/2026-10-18.csv',
     });
     assert.equal(got.Body.toString('utf8'), 'newdata');
   });
 
-  it('downloads and writes dated + latest via downloadOne', async () => {
+  it('downloads and writes one flat dated feed via downloadOne', async () => {
     const s3 = createMemoryS3();
     await s3.putObject({
       Bucket: 'a-affiliates',
@@ -166,14 +171,10 @@ describe('fr4108 folderDownloadOne', () => {
     assert.equal(r.size, Buffer.from('sku,name\n1,a\n').length);
     const dated = await s3.getObject({
       Bucket: 'a-affiliates',
-      Key: 'awin/aff4/parts/2026-10-18.csv',
+      Key: 'awin/aff4/2026-10-18.csv',
     });
     assert.ok(dated.Body.length > 0);
-    const latest = await s3.getObject({
-      Bucket: 'a-affiliates',
-      Key: 'awin/aff4/parts/latest.csv',
-    });
-    assert.ok(latest.Body.length > 0);
+    assert.equal(s3.objects.has('awin/aff4/parts/latest.csv'), false);
   });
 
   it('tools/download.ps1 shim and Invoke-FolderDownload exist', () => {

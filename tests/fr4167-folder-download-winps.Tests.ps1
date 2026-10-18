@@ -68,7 +68,7 @@ Describe 'FR #4167 download WinPS / profile / shim exit' {
                     feedurlSet  = $true
                     format      = 'csv'
                     compression = 'none'
-                    datedKey    = 'awin/aff1/parts/2026-10-18.csv'
+                    datedKey    = 'awin/aff1/2026-10-18.csv'
                 }
             }
             $null = & $scriptPath -Path (Join-Path $mount 'a-affiliates\awin\aff1') -MountRoot $mount -DryRun `
@@ -91,7 +91,7 @@ Describe 'FR #4167 download WinPS / profile / shim exit' {
         @"
 @echo off
 echo %*>"$argvOut"
-echo {"ok":true,"status":"dry_run","feedurlSet":true,"provider":"awin","affiliateId":"aff1","format":"csv","compression":"none","datedKey":"awin/aff1/parts/2026-10-18.csv"}
+echo {"ok":true,"status":"dry_run","feedurlSet":true,"provider":"awin","affiliateId":"aff1","format":"csv","compression":"none","datedKey":"awin/aff1/2026-10-18.csv"}
 exit /b 0
 "@ | Set-Content -LiteralPath $fakeNode -Encoding ASCII
         $head = {

@@ -1,7 +1,9 @@
 'use strict';
 
 /**
- * FR #4001: parse affiliate parts files (csv|json|xml) with optional gzip/zip.
+ * FR #4001 / #4195: parse affiliate feed files (csv|json|xml|tsv).
+ * Flat keys from #4195 are already decompressed; marker compression describes
+ * the *source* feed. Legacy .../parts/ keys may still be gzip/zip on disk.
  */
 
 const zlib = require('node:zlib');
@@ -9,12 +11,17 @@ const { normalizePartKey } = require('./partKey');
 
 /**
  * @param {Buffer|string} raw
- * @param {{ compression?: string }} meta
+ * @param {{ compression?: string, key?: string }} meta
  * @returns {Buffer}
  */
 function decompress(raw, meta) {
   const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(String(raw), 'utf8');
-  const c = String(meta.compression || 'none').toLowerCase();
+  const key = meta && meta.key != null ? String(meta.key) : '';
+  // FR #4195 flat dated feeds are stored decompressed.
+  if (key && !/\/parts\//i.test(key)) {
+    return buf;
+  }
+  const c = String((meta && meta.compression) || 'none').toLowerCase();
   if (c === 'none' || c === '' || c === 'identity') return buf;
   if (c === 'gzip' || c === 'gz') return zlib.gunzipSync(buf);
   if (c === 'zip') {
@@ -158,6 +165,7 @@ function parseXml(text, ctx) {
  *   affiliateid: string,
  *   format?: string,
  *   compression?: string,
+ *   key?: string,
  * }} meta
  */
 function parseAffiliateFeed(raw, meta) {
@@ -168,7 +176,7 @@ function parseAffiliateFeed(raw, meta) {
     provider: meta.provider,
     affiliateid: meta.affiliateid,
   };
-  if (format === 'csv') return parseCsv(text, ctx);
+  if (format === 'csv' || format === 'tsv') return parseCsv(text, ctx);
   if (format === 'json') return parseJson(text, ctx);
   if (format === 'xml') return parseXml(text, ctx);
   const err = new Error(`unsupported_format:${format}`);
