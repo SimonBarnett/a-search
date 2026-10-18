@@ -659,11 +659,11 @@ class ASearchStack extends cdk.Stack {
     dbBackedQueue.grantSendMessages(entry);
 
     // FR #4030: agent API key + HeadObject on a-clubs GUID markers for /search.
+    // Only set when -c agentApiKey= is supplied. Empty/missing => requireAgentAuth
+    // returns 401 agent_key_not_configured. Never ship a known FAKE_ default.
     const agentApiKeyCtx = this.node.tryGetContext('agentApiKey');
     if (typeof agentApiKeyCtx === 'string' && agentApiKeyCtx.trim()) {
       entry.addEnvironment('A_SEARCH_AGENT_API_KEY', agentApiKeyCtx.trim());
-    } else {
-      entry.addEnvironment('A_SEARCH_AGENT_API_KEY', 'FAKE_agent_key_set_at_deploy');
     }
     const aClubsBucket = s3.Bucket.fromBucketName(
       this,

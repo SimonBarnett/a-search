@@ -207,7 +207,7 @@ After deploy succeeds, note at least:
 
 | Output | Use |
 |--------|-----|
-| **SearchApiUrl** | HTTP API base - `POST {url}/search` (JWT legacy + FR #4030 agent fan-out), `GET\|POST {url}/selftest`. Agent `/search` docs: [search-fanout.md](./search-fanout.md). |
+| **SearchApiUrl** | HTTP API base - `POST {url}/search` (JWT legacy + FR #4030 agent fan-out), `GET\|POST {url}/selftest`. Agent `/search` docs: [search-fanout.md](./search-fanout.md). Deploy with `-c agentApiKey=<secret>` (never commit); omit => agent path 401 `agent_key_not_configured`. |
 | **RedqueenSqlDrainUserName** | FR #4030 redqueen SQL drain IAM user (mint keys out-of-band) |
 | `ResultsBucketName` | Pass to rclone / `S3_RESULTS_BUCKET` |
 | `EntryJwtSecretArn` / `MssqlSecretArn` / `*ProviderSecretArn` | Confirm secret wiring |

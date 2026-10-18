@@ -28,10 +28,11 @@ and SQS event source **`batchSize: 1`**. AWS ESM `maxConcurrency` cannot go
 below 2 (#542), so reserved concurrency enforces serial execution. Senders also
 set `MessageGroupId` for FIFO-ready queues.
 
-On HTTP **429**, workers use `shared/search/backoff429.js`: respect
+On HTTP **429**, workers **must** use `shared/search/backoff429.js`: respect
 `Retry-After`, `ChangeMessageVisibility`, and let SQS retry. A 429 must **not**
 fail straight to the DLQ. Visibility timeout remains longer than the Lambda
-timeout (#1007); queues use SQS-managed encryption (#1005).
+timeout (#1007); queues use SQS-managed encryption (#1005). Helper modules land
+in this FR; **live provider call-site wire-up is #4040**.
 
 ## Results: shared IN/ schema
 
@@ -42,7 +43,8 @@ Providers and the SQL drain write:
 Schema: `shared/search/inResultSchema.js` (`searchid`, `source`, `hostkey`,
 `guid`, `products[]`). Affiliate links keep the existing tenant + affiliate id
 rules. Writers bump GUID and host `lastmod` (#3968) via
-`shared/search/writeInResultS3.js`.
+`shared/search/writeInResultS3.js`. SQL/redqueen path uses the schema now;
+**provider workers wire `writeInResultToS3` in #4040**.
 
 ## SQL SQS: drained on redqueen
 
