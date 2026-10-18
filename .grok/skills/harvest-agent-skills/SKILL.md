@@ -392,3 +392,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB process-loop: harvest tip that only restates main Prefer ExistingPrUrl reopen CLOSED-unmerged covering PR -> close already-covered and DONE PASS (FR #3317); do not merge twin wording
 - a-search MRB rematch after sibling FIX stub patch: re-verify pin at new head, PASS without fold when MERGEABLE behind and ambient jwt-auth still open (#3887)
 - a-search FR: when mrb1404 asserts exactly N Phase-2 stay-dark against mrb668, trust the mrb668 it() title/stubs.length on main --- align the cross-pin, do not invent a third stub id
+- a-search FIX: when CI fails only ambient mrb1404 exactly-3 vs mrb668 exactly-2 and covering #3912 is still open, DONE FIX at MERGEABLE head without fold (FR #4649)
