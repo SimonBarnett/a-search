@@ -13,7 +13,73 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
+
+/** FR #4236: grok review must not block the event loop (spawnSync starved S3/SQS). */
+const REVIEWER_TIMEOUT_MS = 120000;
+
+/**
+ * Async spawn that collects stdout/stderr and kills the process tree on timeout.
+ * @param {string} exe
+ * @param {string[]} args
+ * @param {{ timeout: number, env?: NodeJS.ProcessEnv, windowsHide?: boolean, shell?: boolean }} opts
+ */
+function spawnCollect(exe, args, opts) {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(exe, args, {
+        env: opts.env,
+        windowsHide: opts.windowsHide !== false,
+        shell: Boolean(opts.shell),
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      resolve({ status: null, stdout: '', stderr: '', error });
+      return;
+    }
+    let stdout = '';
+    let stderr = '';
+    if (child.stdout) {
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', (d) => {
+        stdout += d;
+      });
+    }
+    if (child.stderr) {
+      child.stderr.setEncoding('utf8');
+      child.stderr.on('data', (d) => {
+        stderr += d;
+      });
+    }
+    let settled = false;
+    const finish = (status, error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ status, stdout, stderr, error });
+    };
+    const timer = setTimeout(() => {
+      try {
+        if (process.platform === 'win32' && child.pid) {
+          spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+            windowsHide: true,
+            stdio: 'ignore',
+          });
+        } else {
+          child.kill();
+        }
+      } catch {
+        /* ignore */
+      }
+      const error = new Error('timeout');
+      error.code = 'ETIMEDOUT';
+      finish(null, error);
+    }, opts.timeout);
+    child.on('error', (error) => finish(null, error));
+    child.on('close', (code) => finish(code, null));
+  });
+}
 
 /** FR #4223: grok 1.0.62 uses -p / --prompt-file, not --prompt. */
 const GROK_PROMPT_FILE_CHARS = 4000;
@@ -81,9 +147,9 @@ function isUsableReview(review) {
  * @param {{ prompt: string, timeoutMs?: number, env?: NodeJS.ProcessEnv }} opts
  * @returns {{ ok: boolean, text?: string, detail?: string }}
  */
-function tryGrokCli(opts) {
+async function tryGrokCli(opts) {
   const bin = process.env.A_SEARCH_GROK_BIN || 'grok';
-  const timeoutMs = opts.timeoutMs == null ? 120000 : opts.timeoutMs;
+  const timeoutMs = opts.timeoutMs == null ? REVIEWER_TIMEOUT_MS : opts.timeoutMs;
   const prompt = String(opts.prompt || '');
   let promptFile = null;
   const useFile = prompt.length > GROK_PROMPT_FILE_CHARS;
@@ -99,8 +165,7 @@ function tryGrokCli(opts) {
   const exe = nodeScript ? process.execPath : bin;
   const spawnArgv = nodeScript ? [nodeScript, ...argv] : argv;
   try {
-    const r = spawnSync(exe, spawnArgv, {
-      encoding: 'utf8',
+    const r = await spawnCollect(exe, spawnArgv, {
       timeout: timeoutMs,
       env: { ...process.env, ...(opts.env || {}) },
       windowsHide: true,
@@ -143,7 +208,7 @@ function tryGrokCli(opts) {
  * @param {{ prompt: string, timeoutMs?: number, env?: NodeJS.ProcessEnv }} opts
  * @returns {{ ok: boolean, text?: string, detail?: string }}
  */
-function tryCursorCli(opts) {
+async function tryCursorCli(opts) {
   let bin = process.env.A_SEARCH_CURSOR_BIN || 'agent';
   if (!/[\\/]/.test(bin) && process.platform === 'win32') {
     const w = spawnSync('where.exe', [bin], {
@@ -166,11 +231,10 @@ function tryCursorCli(opts) {
   // Real Cursor agent on Windows is often agent.cmd (needs a shell); .exe does not.
   const useShell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(bin);
   try {
-    const r = spawnSync(
+    const r = await spawnCollect(
       bin,
       ['-p', opts.prompt, '--output-format', 'text'],
       {
-        encoding: 'utf8',
         timeout: timeoutMs,
         env: { ...process.env, ...(opts.env || {}) },
         windowsHide: true,
@@ -279,12 +343,12 @@ async function reviewWithGrokThenCursor(input) {
           'Return JSON: {summary, intent, suggestedQueries[], steering?}',
         ].join('\n');
 
-  const grok = tryGrok({ prompt });
+  const grok = await Promise.resolve(tryGrok({ prompt }));
   if (grok.ok) {
     return coerceReview(grok.text, 'grok');
   }
   if (grok.detail === 'grok_exhausted' || grok.detail === 'grok_not_found') {
-    const cursor = tryCursor({ prompt });
+    const cursor = await Promise.resolve(tryCursor({ prompt }));
     if (cursor.ok) {
       return coerceReview(cursor.text, 'cursor');
     }
@@ -298,7 +362,7 @@ async function reviewWithGrokThenCursor(input) {
   }
   // Other grok failures: still try Cursor once (standing rule: Cursor when Grok exhausted;
   // also when Grok binary missing already handled; for exit errors try Cursor as fallback).
-  const cursor = tryCursor({ prompt });
+  const cursor = await Promise.resolve(tryCursor({ prompt }));
   if (cursor.ok) {
     return coerceReview(cursor.text, 'cursor');
   }
@@ -325,6 +389,8 @@ module.exports = {
   tryCursorCli,
   grokReviewArgv,
   cursorBinLooksLikeGrok,
+  REVIEWER_TIMEOUT_MS,
+  spawnCollect,
   reviewWithGrokThenCursor,
   defaultReviewHost,
   defaultReviewGuid,

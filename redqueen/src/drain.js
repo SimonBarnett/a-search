@@ -5,6 +5,16 @@
  */
 
 const { processFolderEvent } = require('./annotate');
+const { REVIEWER_TIMEOUT_MS } = require('./reviewers');
+const { withSocketRetry } = require('./socketRetry');
+
+/** FR #4236: receive visibility must exceed the grok reviewer timeout (120s). */
+const RECEIVE_VISIBILITY_SEC = 180;
+
+function wrapSocket(fn) {
+  if (typeof fn !== 'function') return fn;
+  return (input) => withSocketRetry(() => fn(input));
+}
 
 /**
  * @param {{
@@ -42,21 +52,55 @@ async function drainOnce(opts) {
     QueueUrl,
     MaxNumberOfMessages: opts.maxMessages || 5,
     WaitTimeSeconds: opts.waitTimeSeconds == null ? 5 : opts.waitTimeSeconds,
-    VisibilityTimeout: 60,
+    VisibilityTimeout:
+      opts.visibilityTimeoutSeconds == null
+        ? RECEIVE_VISIBILITY_SEC
+        : opts.visibilityTimeoutSeconds,
   });
   const messages = (resp && resp.Messages) || [];
   const actions = [];
+  const visSec =
+    opts.visibilityTimeoutSeconds == null
+      ? RECEIVE_VISIBILITY_SEC
+      : opts.visibilityTimeoutSeconds;
+  const beatMs =
+    opts.visibilityHeartbeatMs == null ? 30000 : opts.visibilityHeartbeatMs;
+  const io = {
+    headObject: wrapSocket(opts.headObject),
+    getObject: wrapSocket(opts.getObject),
+    putObject: wrapSocket(opts.putObject),
+    listObjectsV2: wrapSocket(opts.listObjectsV2),
+    copyObject: wrapSocket(opts.copyObject),
+    putObjectAnnotation: wrapSocket(opts.putObjectAnnotation),
+    getObjectAnnotation: wrapSocket(opts.getObjectAnnotation),
+    listObjectAnnotations: wrapSocket(opts.listObjectAnnotations),
+  };
   for (const msg of messages) {
-    const result = await processFolderEvent({
+    let beat;
+    if (typeof opts.changeMessageVisibility === 'function' && beatMs > 0) {
+      const extend = () =>
+        opts.changeMessageVisibility({
+          QueueUrl,
+          ReceiptHandle: msg.ReceiptHandle,
+          VisibilityTimeout: visSec,
+        });
+      beat = setInterval(() => {
+        extend().catch(() => {});
+      }, beatMs);
+      if (typeof beat.unref === 'function') beat.unref();
+    }
+    let result;
+    try {
+    result = await processFolderEvent({
       body: msg.Body,
-      headObject: opts.headObject,
-      getObject: opts.getObject,
-      putObject: opts.putObject,
-      listObjectsV2: opts.listObjectsV2,
-      copyObject: opts.copyObject,
-      putObjectAnnotation: opts.putObjectAnnotation,
-      getObjectAnnotation: opts.getObjectAnnotation,
-      listObjectAnnotations: opts.listObjectAnnotations,
+      headObject: io.headObject,
+      getObject: io.getObject,
+      putObject: io.putObject,
+      listObjectsV2: io.listObjectsV2,
+      copyObject: io.copyObject,
+      putObjectAnnotation: io.putObjectAnnotation,
+      getObjectAnnotation: io.getObjectAnnotation,
+      listObjectAnnotations: io.listObjectAnnotations,
       reviewHost: opts.reviewHost,
       reviewGuid: opts.reviewGuid,
       onNewFolder: opts.onNewFolder,
@@ -66,6 +110,9 @@ async function drainOnce(opts) {
       fetchTimeoutMs: opts.fetchTimeoutMs,
       fetchMaxBytes: opts.fetchMaxBytes,
     });
+    } finally {
+      if (beat) clearInterval(beat);
+    }
     actions.push({ messageId: msg.MessageId, ...result });
     if (result.action === 'retry') {
       if (typeof opts.changeMessageVisibility === 'function') {
@@ -95,14 +142,18 @@ async function drainOnce(opts) {
       }
       continue;
     }
-    await opts.deleteMessage({
-      QueueUrl,
-      ReceiptHandle: msg.ReceiptHandle,
-    });
+    await withSocketRetry(() =>
+      opts.deleteMessage({
+        QueueUrl,
+        ReceiptHandle: msg.ReceiptHandle,
+      }),
+    );
   }
   return { processed: messages.length, actions };
 }
 
 module.exports = {
   drainOnce,
+  RECEIVE_VISIBILITY_SEC,
+  REVIEWER_TIMEOUT_MS,
 };

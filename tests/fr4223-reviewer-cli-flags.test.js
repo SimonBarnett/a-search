@@ -73,7 +73,7 @@ describe('FR #4223 reviewer CLI flags', () => {
     assert.equal(argv.includes('--prompt'), false);
   });
 
-  it('fake grok 1.0.62 accepts -p --output-format plain and rejects --prompt', () => {
+  it('fake grok 1.0.62 accepts -p --output-format plain and rejects --prompt', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4223-'));
     const fake = writeFakeGrok(dir);
     const prev = process.env.A_SEARCH_GROK_BIN;
@@ -86,7 +86,7 @@ describe('FR #4223 reviewer CLI flags', () => {
       });
       assert.equal(bad.status, 2);
 
-      const r = tryGrokCli({ prompt: 'Reply OK', timeoutMs: 15000 });
+      const r = await tryGrokCli({ prompt: 'Reply OK', timeoutMs: 15000 });
       assert.equal(r.ok, true, r.detail);
       const seen = fs.readFileSync(fake.argvOut, 'utf8');
       assert.match(seen, /-p/);
@@ -102,7 +102,7 @@ describe('FR #4223 reviewer CLI flags', () => {
     }
   });
 
-  it('exit 2 detail includes first stderr line', () => {
+  it('exit 2 detail includes first stderr line', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4223-err-'));
     const script = path.join(dir, 'bad.js');
     fs.writeFileSync(
@@ -115,7 +115,7 @@ describe('FR #4223 reviewer CLI flags', () => {
     process.env.A_SEARCH_GROK_BIN = 'node';
     process.env.A_SEARCH_GROK_NODE_SCRIPT = script;
     try {
-      const r = tryGrokCli({ prompt: 'x', timeoutMs: 15000 });
+      const r = await tryGrokCli({ prompt: 'x', timeoutMs: 15000 });
       assert.equal(r.ok, false);
       assert.match(r.detail, /^grok_exit_2:/);
       assert.match(r.detail, /unexpected argument/);
@@ -128,12 +128,12 @@ describe('FR #4223 reviewer CLI flags', () => {
     }
   });
 
-  it('agent.exe under .grok\\bin is not treated as Cursor', () => {
+  it('agent.exe under .grok\\bin is not treated as Cursor', async () => {
     const prev = process.env.A_SEARCH_CURSOR_BIN;
     process.env.A_SEARCH_CURSOR_BIN =
       'C:\\Users\\Administrator\\.grok\\bin\\agent.exe';
     try {
-      const r = tryCursorCli({ prompt: 'x', timeoutMs: 1000 });
+      const r = await tryCursorCli({ prompt: 'x', timeoutMs: 1000 });
       assert.equal(r.ok, false);
       assert.equal(r.detail, 'cursor_is_grok_bin');
     } finally {
