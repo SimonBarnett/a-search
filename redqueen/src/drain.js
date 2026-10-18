@@ -62,6 +62,9 @@ async function drainOnce(opts) {
       onNewFolder: opts.onNewFolder,
       now: opts.now,
       bucket: opts.bucket,
+      fetchImpl: opts.fetchImpl,
+      fetchTimeoutMs: opts.fetchTimeoutMs,
+      fetchMaxBytes: opts.fetchMaxBytes,
     });
     actions.push({ messageId: msg.MessageId, ...result });
     if (result.action === 'retry') {

@@ -13,6 +13,7 @@ const {
   defaultReviewHost,
   defaultReviewGuid,
 } = require('./reviewers');
+const { fetchPageText, clubPageUrl } = require('./fetchPage');
 
 /** @deprecated FR #4098 --- sidecars removed; kept for test migration grep */
 function hostAnnotationsKey(hostkey) {
@@ -179,11 +180,26 @@ async function processFolderEvent(opts) {
   let hostAnnDoc = null;
 
   if (hostNeed !== 'skip') {
+    const hostUrl = clubPageUrl(event.host);
+    const hostPage = await fetchPageText({
+      url: hostUrl,
+      fetchImpl: opts.fetchImpl,
+      timeoutMs: opts.fetchTimeoutMs,
+      maxBytes: opts.fetchMaxBytes,
+    });
+    if (!hostPage.ok) {
+      return {
+        action: 'retry',
+        detail: `host_fetch_failed:${hostPage.detail || 'unknown'}`,
+      };
+    }
     let review;
     try {
       review = await reviewHost({
         host: event.host,
         hostkey: event.hostkey,
+        pageText: hostPage.text,
+        pageUrl: hostUrl,
       });
     } catch (err) {
       const detail = (err && err.message) || 'host_review_failed';
@@ -262,6 +278,19 @@ async function annotateOneGuid(args) {
   }
 
   const uri = String(guidMd.uri || '').trim();
+  const pageUrl = clubPageUrl(event.host, uri || '/');
+  const guidPage = await fetchPageText({
+    url: pageUrl,
+    fetchImpl: opts.fetchImpl,
+    timeoutMs: opts.fetchTimeoutMs,
+    maxBytes: opts.fetchMaxBytes,
+  });
+  if (!guidPage.ok) {
+    return {
+      action: 'retry',
+      detail: `guid_fetch_failed:${guidPage.detail || 'unknown'}`,
+    };
+  }
 
   let review;
   try {
@@ -271,6 +300,8 @@ async function annotateOneGuid(args) {
       guid,
       uri,
       hostAnnotations: hostAnn,
+      pageText: guidPage.text,
+      pageUrl,
     });
   } catch (err) {
     return {

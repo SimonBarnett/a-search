@@ -1,4 +1,4 @@
-# Redqueen a-clubs queue service (FR #3987 / #4098)
+# Redqueen a-clubs queue service (FR #3987 / #4098 / #4147)
 
 Outbound-only agent on redqueen that annotates a-clubs HOST and GUID folders
 created by the AWS parts gateway (FR #3968). No inbound ports on redqueen or walrus.
@@ -51,8 +51,8 @@ them if the rewrite dropped them.
 ## Reviewers (Grok first)
 
 Production reviewers call Grok first, then Cursor only when Grok is exhausted
-or unavailable (Simon's standing rule). Host review reads the host site; GUID
-review reads page `uri` from the GUID marker metadata.
+or unavailable (Simon's standing rule). Host review receives fetched text from `https://{host}/`; GUID review receives
+fetched text from `https://{host}{uri}` (FR #4147).
 
 A **stub** or unavailable reviewer **must never** set `annotated=1`. The message
 returns to the queue (`ChangeMessageVisibility`) until a real reviewer succeeds.
@@ -63,33 +63,59 @@ Optional `REDQUEEN_ON_NEW_FOLDER` env points at a CommonJS module exporting
 `onNewFolder({ kind, hostkey, host, guid?, key, uri? })` so other redqueen jobs
 can react without a second competing queue consumer.
 
-## Windows service on redqueen
+## Page fetch before review (FR #4147)
+
+Host step fetches `https://{host}/` (follow redirects, timeout, size cap) and
+passes readable text to the reviewer. GUID step fetches `https://{host}{uri}`
+from the GUID marker metadata. If the fetch fails (DNS, non-2xx, timeout, empty
+body), the agent **does not** write an annotation and **does not** set
+`annotated=1`; the SQS message stays for retry / DLQ after max receives.
+
+Stub or unavailable reviewers still never set `annotated=1`.
+
+## Windows service on redqueen (nssm)
+
+Bare `sc.exe` wrapping `node.exe` fails with error **1053**. Install with
+**nssm** (`C:\ai\bob\third_party\nssm\win64\nssm.exe` or PATH):
 
 ```powershell
 # From the install tree (e.g. C:\ai\a-search)
+cd C:\ai\a-search\redqueen
+npm ci --omit=dev
 $env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/.../a-clubs-new-folders.fifo'
-.\redqueen\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search
+# Dry-run first (prints nssm commands only):
+.\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search -WhatIf
+# Prefer -Credential of the admin that owns the annotator AWS profile / grok CLI:
+.\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search `
+  -AwsProfile a-search-redqueen-annotator `
+  -GrokCli 'C:\path\to\grok.exe' -AgentCli 'C:\path\to\agent.cmd'
 Start-Service a-search-aclubs-queue
 ```
 
-The script is idempotent (create or `sc.exe config`), auto-start, restart on
-failure, runs `node redqueen\src\run.js` under `AWS_PROFILE=a-search-redqueen-annotator`
-(never root keys). Logs to `%ProgramData%\a-search\aclubs-queue.log` with no secrets.
-Compatible with Windows PowerShell 5.1.
+The script is idempotent (`nssm install` / `nssm set`), auto-start, restart on
+failure, AppDirectory = InstallRoot, Application = node, AppParameters =
+`redqueen\src\run.js`. Environment includes `AWS_PROFILE` (never root keys),
+optional `GROK_CLI` / `AGENT_CLI`. Stdout/stderr rotate under
+`C:\ai\a-search\redqueen\logs\` with no secrets. Compatible with Windows
+PowerShell 5.1.
 
 Manual console:
 
 ```powershell
+cd C:\ai\a-search\redqueen
+npm ci --omit=dev
 $env:AWS_PROFILE = 'a-search-redqueen-annotator'
 $env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/.../a-clubs-new-folders.fifo'
 $env:A_CLUBS_BUCKET = 'a-clubs'
 $env:AWS_REGION = 'eu-west-2'
-$env:REDQUEEN_LOG_FILE = "$env:ProgramData\a-search\aclubs-queue.log"
-node redqueen\src\run.js
+$env:REDQUEEN_LOG_FILE = 'C:\ai\a-search\redqueen\logs\aclubs-queue.out.log'
+node src\run.js
 ```
 
-After merge, Bob installs on redqueen and verifies against test host
-`test.smartcatalogue.uk` (message already in the queue).
+After merge, Bob installs on redqueen and live-tests My Model Flying Club
+(`Origin https://www.mymodelflyingclub.co.uk`, GUID `/membersproductrequests`).
+Synthetic `test.smartcatalogue.uk` messages should fail fetch cleanly into the DLQ
+without `annotated=1`.
 
 ## IAM
 

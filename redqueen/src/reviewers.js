@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR #4098: real reviewers --- Grok first, Cursor only when Grok is exhausted.
- * Stub / unavailable reviews must never mark folders annotated (caller checks).
+ * FR #4098 / #4147: real reviewers --- Grok first, Cursor when Grok exhausted.
+ * Reviewers require fetched pageText (FR #4147); stub/unavailable never annotate.
  */
 
 const { spawnSync } = require('node:child_process');
@@ -137,12 +137,27 @@ function coerceReview(text, model) {
 async function reviewWithGrokThenCursor(input) {
   const tryGrok = input.tryGrok || tryGrokCli;
   const tryCursor = input.tryCursor || tryCursorCli;
+  const pageText = String(input.pageText || '').trim();
+  if (!pageText) {
+    return {
+      model: 'stub',
+      usable: false,
+      unavailable: true,
+      detail: 'page_text_required',
+      summary: '',
+    };
+  }
+  const pageSlice = pageText.slice(0, 12000);
   const prompt =
     input.kind === 'host'
       ? [
           'Review this a-clubs host site for parts/search annotation.',
           `host=${input.host}`,
           `hostkey=${input.hostkey}`,
+          `pageUrl=${input.pageUrl || ''}`,
+          'PAGE_TEXT_BEGIN',
+          pageSlice,
+          'PAGE_TEXT_END',
           'Return JSON: {summary, categories[], notes}',
         ].join('\n')
       : [
@@ -151,7 +166,11 @@ async function reviewWithGrokThenCursor(input) {
           `hostkey=${input.hostkey}`,
           `guid=${input.guid}`,
           `uri=${input.uri || ''}`,
+          `pageUrl=${input.pageUrl || ''}`,
           `hostAnnotations=${JSON.stringify(input.hostAnnotations || {}).slice(0, 2000)}`,
+          'PAGE_TEXT_BEGIN',
+          pageSlice,
+          'PAGE_TEXT_END',
           'Return JSON: {summary, intent, suggestedQueries[], steering?}',
         ].join('\n');
 
