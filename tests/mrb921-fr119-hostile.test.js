@@ -26,16 +26,17 @@ function walkEnvExamples(dir) {
 }
 
 describe('MRB-921 FR-119 hostile', () => {
-  it('environments.md: live madeiradb host, sandbox FR-121 separate DB, network PENDING, least-privilege, SIMPLE', () => {
+  it('environments.md: walrus host, sandbox FR-121 separate DB, network LOCKED C, least-privilege, SIMPLE', () => {
     const text = fs.readFileSync(path.join(root, 'docs', 'environments.md'), 'utf8');
     assert.match(text, /## MSSQL target \(FR-119\)/);
+    assert.match(text, /walrus/i);
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /madeiradb/);
     assert.match(text, /FR-121/);
     assert.match(text, /separate database on the same instance/i);
-    // FR-122: decision surface; chosen option may still be PENDING/UNKNOWN.
+    // FR-122 / FR-3948: Chosen option LOCKED C.
     assert.match(text, /## Network path \(FR-122\)/);
-    assert.match(text, /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN)/i);
+    assert.match(text, /Chosen option[\s\S]{0,120}LOCKED C/i);
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SIMPLE/);
     // FR #1280 / FR-146: recommended name OK when Treat-as-missing (not a deny-only pin).
