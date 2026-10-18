@@ -385,3 +385,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR re-offer: when issue CLOSED and covering PR MERGED with Closes, DONE FR Prefer ExistingPrUrl with that PR URL --- do not open a second implement PR
 - a-search FR: when covering implement PR is CLOSED unmerged but branch still has Closes, Prefer ExistingPrUrl reopen that PR, re-arm --auto, DONE FR with its URL --- never open a second implement PR
 - a-search FIX: after FR-228 jwt verify returns contactVerified+contactChannel, update jwt-auth and jwt.hostile-mrb35 deepEqual expectations (false/undefined when claim absent); fold alone does not heal if main tests still lag
+- a-search FIX: when PR CI fails shop connect HTTP with 403 because the merge includes main assertContactVerified and main tests still omit contactVerified, set contactVerified true on the success stubs. Do not fold origin/main for that (FR #4649); the pin is not already fixed on main.
