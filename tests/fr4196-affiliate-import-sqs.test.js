@@ -453,6 +453,7 @@ describe('FR #4196 docs + SQL + CDK pins', () => {
       'utf8',
     );
     assert.match(docs, /4196|#4196|affiliate-import|lastimportstatus/);
+    assert.match(docs, /Drain host is walrus|walrus/i);
     const sql = fs.readFileSync(
       path.join(ROOT, 'redqueen/affiliate-import/sql/002_ImportLog.sql'),
       'utf8',
@@ -464,6 +465,26 @@ describe('FR #4196 docs + SQL + CDK pins', () => {
     );
     assert.match(stack, /a-search-affiliate-import/);
     assert.match(stack, /A_SEARCH_AFFILIATE_IMPORT_QUEUE_URL/);
+  });
+
+  it('walrus affiliateImportDrain resolves queue URL and reuses drainImport', () => {
+    const {
+      resolveAffiliateImportQueueUrl,
+      drainAffiliateImportOnce,
+    } = require('../walrus/src/affiliateImportDrain');
+    assert.equal(
+      resolveAffiliateImportQueueUrl({
+        A_SEARCH_AFFILIATE_IMPORT_QUEUE_URL: 'https://sqs.example/import',
+      }),
+      'https://sqs.example/import',
+    );
+    assert.equal(typeof drainAffiliateImportOnce, 'function');
+    const src = fs.readFileSync(
+      path.join(ROOT, 'walrus/src/affiliateImportDrain.js'),
+      'utf8',
+    );
+    assert.match(src, /drainImportOnce/);
+    assert.match(src, /assertWritableDatabaseFromEnv/);
   });
 
   it('parseImportMessageBody + sortFilesOldestFirst', () => {
