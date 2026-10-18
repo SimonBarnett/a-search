@@ -467,3 +467,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB assign of already-merged fix PR into feature tip: board PASS already MERGED @ head/merge SHA; leave parent --auto; DONE PASS without re-merge
 - When FIFO rewires DLQ names, hostile contiguous pins must allow queueName: dlqName|queueDlqName and use a window long enough for maxReceiveCount after the fifo props.
 - WinPS 5.1 folder tools: join aws/rclone string[] stdout before ConvertFrom-Json; native calls Continue+LASTEXITCODE for head_failed; bare S:\ mount must not TrimEnd to S:; bucket root empty Key exits 5 bucket_root
+- Redqueen a-clubs drain: PutObjectAnnotation on folder markers (no sidecars); stub/unavailable reviewer must never set annotated=1; fold main once before handoff when tip is behind.
