@@ -474,3 +474,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB folder-tools download: fold main once, run fr4108 Node+Pester with fr4043 regression, PASS @ head SHA then --auto; leave downloadOne missing_feedurl follow-up #4113 open
 - APartsGateway a-search-redqueen-annotator needs s3:PutObjectAnnotation GetObjectAnnotation ListObjectAnnotations DeleteObjectAnnotation on a-clubs/* after #4098 object-annotation drain
 - Awin daily agent: merge a-affiliates folders never recreate; secrets never in reports; OTP stops for Simon; skill UI steps PENDING from Merc — do not invent ids.
+- FR that says Merc/Simon paste playbook and do not invent UI ids: ACK, comment blocked, GIVEUP — do not fabricate Awin operator steps
