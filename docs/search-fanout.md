@@ -48,8 +48,8 @@ provider queue names (SQS cannot convert standard → FIFO in place).
 
 **Choice:** provider queues are **FIFO** (FR #4039) **and** worker Lambdas keep
 **`reservedConcurrentExecutions: 1`** with SQS event source **`batchSize: 1`**.
-AWS ESM `maxConcurrency` cannot go below 2 (#542); FIFO + reserved concurrency
-together serialise work. Senders set `MessageGroupId` + `MessageDeduplicationId`.
+AWS ESM `maxConcurrency` cannot go below 2 (#542), so the event source does not
+set it (FR #4357). FIFO + reserved concurrency together serialise work. Senders set `MessageGroupId` + `MessageDeduplicationId`.
 
 On HTTP **429**, workers **must** use `shared/search/backoff429.js`: respect
 `Retry-After`, `ChangeMessageVisibility`, and let SQS retry. A 429 must **not**

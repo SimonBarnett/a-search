@@ -60,8 +60,8 @@ describe('FR-058f ebay SQS maxConcurrency', () => {
           : props.ScalingConfig && props.ScalingConfig.MaximumConcurrency;
       assert.equal(
         max,
-        2,
-        `ebay mapping missing MaximumConcurrency=2: ${JSON.stringify(props)}`,
+        undefined,
+        'FR #4357: omit MaximumConcurrency when reserved concurrency is 1',
       );
     }
   });

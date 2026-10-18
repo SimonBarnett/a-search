@@ -720,8 +720,8 @@ class ASearchStack extends cdk.Stack {
         entry.addEnvironment(urlKey, queue.queueUrl);
         queue.grantSendMessages(entry);
 
-        // FR #4030: reservedConcurrency 1 --- one job at a time per provider
-        // (ESM maxConcurrency floor is 2; reserved concurrency enforces serial).
+        // FR #4030 / FR #4357: reserved concurrency 1 is one job at a time.
+        // ESM MaximumConcurrency cannot be below 2, so it is not set here.
         const worker = new lambda.Function(
           this,
           `${pascal}${envPascal}WorkerFunction`,
@@ -766,8 +766,12 @@ class ASearchStack extends cdk.Stack {
           }
         }
         const sqsOpts = { batchSize: 1 };
+        const reservedConcurrency = 1;
         const maxConcurrency = sqsMaxConcurrencyForSource(src);
-        if (maxConcurrency != null) {
+        // FR #4357: Lambda rejects MaximumConcurrency above ReservedConcurrentExecutions.
+        // The helper's floor is 2, which is above reserved concurrency 1, so omit it.
+        // Awin and impact use the same helper; workers that are not deployed have no mapping.
+        if (maxConcurrency != null && maxConcurrency <= reservedConcurrency) {
           sqsOpts.maxConcurrency = maxConcurrency;
         }
         worker.addEventSource(new SqsEventSource(queue, sqsOpts));
