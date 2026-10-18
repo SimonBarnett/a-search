@@ -46,14 +46,14 @@ describe('MRB #1871 hostile FR-215 merchant picker', () => {
     const shopify = rows.find((r) => r.id === 'shopify');
     assert.equal(shopify.connectEnabled, true);
     assert.equal(canAdvanceToConnect('shopify', reg, { env: 'live' }), true);
-    // FR-179 enabled wix; woocommerce is still dark -> coming soon.
+    // FR-179 enabled wix; FR-180 enabled woocommerce (no longer coming soon).
     const wix = rows.find((r) => r.id === 'wix');
     assert.equal(wix.connectEnabled, true);
     assert.equal(canAdvanceToConnect('wix', reg, { env: 'live' }), true);
     const woo = rows.find((r) => r.id === 'woocommerce');
-    assert.equal(woo.comingSoon, true);
-    assert.equal(needsInterestCapture('woocommerce', reg, { env: 'live' }), true);
-    assert.equal(canAdvanceToConnect('woocommerce', reg, { env: 'live' }), false);
+    assert.equal(woo.connectEnabled, true);
+    assert.equal(needsInterestCapture('woocommerce', reg, { env: 'live' }), false);
+    assert.equal(canAdvanceToConnect('woocommerce', reg, { env: 'live' }), true);
 
     const fr = fs.readFileSync(path.join(ROOT, 'docs', 'fr', 'FR-215.md'), 'utf8');
     assert.match(fr, /merchantWizard\.js/);

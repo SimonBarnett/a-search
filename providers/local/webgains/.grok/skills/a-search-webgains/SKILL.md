@@ -12,28 +12,28 @@ description: >
 > Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
 > Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
-Registry folder `providers/local/webgains`. Enabled: live=false, sandbox=false
-(CAST IRON stay-dark -- see `docs/phase2-providers.md`).
+Registry folder `providers/local/webgains`. Enabled: live=true, sandbox=true
+(FR-173 enable-provider; see `docs/phase3-enable-provider.md`).
 
 ## Search path (FR-086)
 
 `src/queryParts.js` -- parameterized `SELECT` from `dbo.Parts` where
 `Source='webgains'` and `DeletedAt IS NULL`. Injectable `connect` for unit tests
-(no live SQL). Stay-dark.
+(no live SQL).
 
 ## Worker (FR-086)
 
 `src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `defaultQueryParts` ->
 `normalizePart` (+ `buildTrackedUrl` with `WEBGAINS_CAMPAIGN_ID` /
 `wgcampaignid`) -> `writeResults`. Optional `handler` for SQS Records.
-Stay-dark; no "not wired" stub on the happy path.
+No "not wired" stub on the happy path.
 
 ## Maintainer feed-parser (FR-088)
 
 `src/parseFeed.js` -- `parseWebgainsFeedRows(body, meta)` / `webgainsParseFeedRowsHook`
 for maintainer `deps.parseFeedRows`. Fixture CSV: `fixtures/products-ok.csv`.
 Maps Webgains product CSV/JSON into Parts staging columns
-(`MerchantProductId`, `Title`, `Url`, `Price`, ...). Stay-dark; no live network in unit tests.
+(`MerchantProductId`, `Title`, `Url`, `Price`, ...). No live network in unit tests.
 
 Credential / locator placeholders (never commit real values):
 
@@ -48,7 +48,7 @@ Credential / locator placeholders (never commit real values):
 `src/selftestProbe.js` -- MSSQL Parts reachability (injectable `connect`) or
 `WEBGAINS_API_TOKEN` feed-ready; returns `{ ok, source, latencyMs, error? }`
 for `/selftest`. Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250`
-(stay-dark; do not flip `enabled`).
+(FR-173: registry enabled both envs).
 
 ## Env
 

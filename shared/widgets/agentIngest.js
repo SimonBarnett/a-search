@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * FR-206: Agent ingest in.json -> live.json then delete.
- * Safe consume: rename in.json -> in.processing.json -> merge -> delete.
+ * FR-206 / FR-3344: Agent ingest IN/ folder -> live.json then delete consumed files.
+ * Writers push one JSON file per search under IN/ (never merge into a single in.json).
+ * Safe consume: move ready IN/*.json into IN/.processing/ -> merge -> delete processing.
+ * Files written to IN/ during a pass remain for the next in_ready event.
  * Skips searches.json exclude[]; enforces live part cap on write (#1345):
  * free=10, fullTier (upgraded+fullscreen)=500. Agent is only writer of live.json.
  * Out of scope: prune / top10 roll (FR-207).
@@ -16,8 +18,9 @@ const { readLiveArray } = require('./parts');
 
 const LIVE_PART_CAP_FREE = 10;
 const LIVE_PART_CAP_FULL = 500;
-const IN_NAME = 'in.json';
-const PROCESSING_NAME = 'in.processing.json';
+/** FR-3344: inbound search results folder (replaces single in.json). */
+const IN_DIR_NAME = 'IN';
+const IN_PROCESSING_DIR_NAME = '.processing';
 const LIVE_NAME = 'live.json';
 const SEARCHES_NAME = 'searches.json';
 
@@ -39,7 +42,7 @@ function livePartCap(fullTier) {
 }
 
 /**
- * Map normalised in.json item to live.json part shape.
+ * Map normalised IN item to live.json part shape.
  * @param {object} item
  * @param {number} index
  * @returns {object|null}
@@ -97,7 +100,6 @@ function mapInItem(item, index) {
     ingestedAt: new Date().toISOString(),
     ingestIndex: index,
   };
-  // Drop undefined keys for stable JSON.
   for (const k of Object.keys(part)) {
     if (part[k] === undefined) delete part[k];
   }
@@ -172,7 +174,7 @@ function selectWithinCap(parts, cap) {
 }
 
 /**
- * Read in.json / processing payload as array.
+ * Read IN file payload as array.
  * @param {string} abs
  * @returns {object[]}
  */
@@ -189,7 +191,6 @@ function readInArray(abs) {
 }
 
 /**
- * Write live.json (agent-only writer for this tree).
  * @param {string} abs
  * @param {object[]} parts
  */
@@ -199,7 +200,97 @@ function writeLive(abs, parts) {
 }
 
 /**
- * Run FR-206 ingest pass for one widgetGuid.
+ * Sanitize searchId for a single path segment filename.
+ * @param {unknown} searchId
+ * @returns {string}
+ */
+function assertSearchId(searchId) {
+  const s = searchId == null ? '' : String(searchId).trim();
+  if (!s) {
+    const err = new Error('empty_search_id');
+    err.code = 'empty_search_id';
+    throw err;
+  }
+  if (s.includes('..') || s.includes('/') || s.includes('\\') || s.includes('\0')) {
+    const err = new Error('invalid_search_id');
+    err.code = 'invalid_search_id';
+    throw err;
+  }
+  return s;
+}
+
+/**
+ * Absolute path to widget IN/ directory.
+ * @param {{ root: string, env: string, customerNumber: string|number, widgetGuid: string }} opts
+ * @returns {string}
+ */
+function inDirAbs(opts) {
+  const guid = assertWidgetGuid(opts.widgetGuid);
+  return underRoot(
+    opts.root,
+    `${widgetDir(opts.env, opts.customerNumber, guid)}/${IN_DIR_NAME}`,
+  );
+}
+
+/**
+ * List ready IN/*.json (excludes .processing and non-json).
+ * @param {{ root: string, env: string, customerNumber: string|number, widgetGuid: string }} opts
+ * @returns {string[]} absolute paths
+ */
+function listReadyInFiles(opts) {
+  const dir = inDirAbs(opts);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((n) => n.toLowerCase().endsWith('.json') && !n.startsWith('.'))
+    .map((n) => path.join(dir, n))
+    .filter((abs) => {
+      try {
+        return fs.statSync(abs).isFile();
+      } catch {
+        return false;
+      }
+    })
+    .sort();
+}
+
+/**
+ * Writer helper: one search -> one file under IN/{searchId}.json (FR-3344).
+ * Never merges into a single in.json.
+ *
+ * @param {{
+ *   root: string,
+ *   env: string,
+ *   customerNumber: string|number,
+ *   widgetGuid: string,
+ *   searchId: string,
+ *   parts: object[],
+ * }} opts
+ * @returns {string} absolute path written
+ */
+function writeInSearchFile(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('write_in_opts_required');
+  }
+  const root = opts.root == null ? '' : String(opts.root);
+  if (!root) throw new Error('empty_root');
+  const searchId = assertSearchId(opts.searchId);
+  const guid = assertWidgetGuid(opts.widgetGuid);
+  const dir = inDirAbs({
+    root,
+    env: opts.env,
+    customerNumber: opts.customerNumber,
+    widgetGuid: guid,
+  });
+  fs.mkdirSync(dir, { recursive: true });
+  const abs = path.join(dir, `${searchId}.json`);
+  const parts = Array.isArray(opts.parts) ? opts.parts : [];
+  fs.writeFileSync(abs, `${JSON.stringify(parts, null, 2)}\n`, 'utf8');
+  return abs;
+}
+
+/**
+ * Run FR-206 / FR-3344 ingest pass for one widgetGuid.
  *
  * @param {{
  *   root: string,
@@ -230,14 +321,13 @@ function runIngestPass(opts) {
   );
   fs.mkdirSync(dirAbs, { recursive: true });
 
-  const inAbs = underRoot(
+  const inAbsDir = inDirAbs({
     root,
-    widgetFile(opts.env, opts.customerNumber, guid, IN_NAME),
-  );
-  const processingAbs = underRoot(
-    root,
-    widgetFile(opts.env, opts.customerNumber, guid, PROCESSING_NAME),
-  );
+    env: opts.env,
+    customerNumber: opts.customerNumber,
+    widgetGuid: guid,
+  });
+  const processingDir = path.join(inAbsDir, IN_PROCESSING_DIR_NAME);
   const liveAbs = underRoot(
     root,
     widgetFile(opts.env, opts.customerNumber, guid, LIVE_NAME),
@@ -249,24 +339,55 @@ function runIngestPass(opts) {
 
   const liveBefore = readLiveArray(liveAbs);
 
-  // Resume crashed processing first; else claim in.json.
-  if (!fs.existsSync(processingAbs)) {
-    if (!fs.existsSync(inAbs)) {
+  // Resume crashed processing first.
+  let claimed = [];
+  if (fs.existsSync(processingDir)) {
+    claimed = fs
+      .readdirSync(processingDir)
+      .filter((n) => n.toLowerCase().endsWith('.json'))
+      .map((n) => path.join(processingDir, n))
+      .filter((abs) => {
+        try {
+          return fs.statSync(abs).isFile();
+        } catch {
+          return false;
+        }
+      })
+      .sort();
+  }
+
+  if (!claimed.length) {
+    const ready = listReadyInFiles({
+      root,
+      env: opts.env,
+      customerNumber: opts.customerNumber,
+      widgetGuid: guid,
+    });
+    if (!ready.length) {
       return {
         skipped: true,
-        reason: 'no_in_json',
+        reason: 'no_in',
         widgetGuid: guid,
         fullTier,
         liveCap: cap,
         livePath: liveAbs,
         liveLength: liveBefore.length,
         ingested: 0,
+        inGone: true,
       };
     }
-    fs.renameSync(inAbs, processingAbs);
+    fs.mkdirSync(processingDir, { recursive: true });
+    for (const abs of ready) {
+      const dest = path.join(processingDir, path.basename(abs));
+      fs.renameSync(abs, dest);
+      claimed.push(dest);
+    }
   }
 
-  const rawIncoming = readInArray(processingAbs);
+  const rawIncoming = [];
+  for (const abs of claimed) {
+    rawIncoming.push(...readInArray(abs));
+  }
   const mapped = [];
   for (let i = 0; i < rawIncoming.length; i++) {
     const p = mapInItem(rawIncoming[i], i);
@@ -278,14 +399,29 @@ function runIngestPass(opts) {
   const nextLive = selectWithinCap(merged, cap);
   writeLive(liveAbs, nextLive);
 
-  fs.unlinkSync(processingAbs);
-
-  // Fail-when: consumed in.json / processing must be gone.
-  if (fs.existsSync(processingAbs)) {
-    const err = new Error('processing_not_deleted');
-    err.code = 'processing_not_deleted';
-    throw err;
+  for (const abs of claimed) {
+    try {
+      fs.unlinkSync(abs);
+    } catch {
+      /* ignore */
+    }
   }
+  // Fail-when: processing files must be gone.
+  if (fs.existsSync(processingDir)) {
+    const left = fs.readdirSync(processingDir).filter((n) => n.toLowerCase().endsWith('.json'));
+    if (left.length) {
+      const err = new Error('processing_not_deleted');
+      err.code = 'processing_not_deleted';
+      throw err;
+    }
+  }
+
+  const readyLeft = listReadyInFiles({
+    root,
+    env: opts.env,
+    customerNumber: opts.customerNumber,
+    widgetGuid: guid,
+  });
 
   return {
     skipped: false,
@@ -296,13 +432,15 @@ function runIngestPass(opts) {
     liveLength: nextLive.length,
     ingested: mapped.length,
     excludedSkipped: mapped.filter((p) => isExcluded(p, exclude)).length,
-    inGone: !fs.existsSync(inAbs),
+    filesConsumed: claimed.length,
+    inGone: readyLeft.length === 0,
   };
 }
 
 module.exports = {
   LIVE_PART_CAP_FREE,
   LIVE_PART_CAP_FULL,
+  IN_DIR_NAME,
   livePartCap,
   mapInItem,
   isExcluded,
@@ -310,4 +448,8 @@ module.exports = {
   selectWithinCap,
   runIngestPass,
   writeLive,
+  writeInSearchFile,
+  listReadyInFiles,
+  inDirAbs,
+  assertSearchId,
 };

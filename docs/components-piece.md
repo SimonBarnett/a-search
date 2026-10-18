@@ -24,7 +24,7 @@ x:/{customerNumber}/
   {widgetGuid}/
     context.md                 # page-specific skill context
     searches.json              # queries the agent keeps for this widget
-    in.json                    # normalised inbound search results (consumed then deleted)
+    IN/                        # FR-3344: one JSON file per search (consumed then deleted)
     live.json                  # parts the widget serves
 ```
 
@@ -32,7 +32,7 @@ x:/{customerNumber}/
 
 `searches.json` shape: `{ queries: [{ q, intent, maxResults }] }`.
 
-`in.json` item: `{ id, title, price, currency, merchant, image, url, seenAt }`.
+`IN/{searchId}.json` item: `{ id, title, price, currency, merchant, image, url, seenAt }` (FR-3344; replaces single `in.json`).
 
 ## Contracts
 
@@ -61,7 +61,7 @@ CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes liv
 
 - No Lambda handlers
 - No CDK routes
-- No Chrome extension / agent dispatch implementation (see #1343 / #1344)
+- No Chrome extension implementation (see #1344). Agent dispatch: #1343 / FR-258 / docs/components-piece-agent-dispatch.md
 - FR-233 amendment text inside the feature-request file
 
 ## Related
@@ -71,4 +71,5 @@ CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes liv
 - FR-232 widgetGuid: #1346
 - FR-233 docs amendments: #1347
 - FR-251 a-search DB: #1365
+- FR-3373 host folder S3 Metadata/tags/annotations: #3373 ([FR-3373.md](fr/FR-3373.md)) --- zero-byte `{env}/x/{customerNumber}/` marker with `userid` Metadata; tags `hasdns` / `partnerid` / `hasupg`; annotation sidecars `_host.annotations.json` and `{widgetGuid}/_annotations.json`
 - Mocks: `docs/mocks/components-piece/` (vision Screens W1-W3)

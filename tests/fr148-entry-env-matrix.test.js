@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-148: entry Lambda is env-agnostic for accept (no CDK A_SEARCH_ENV=sandbox).
  */
@@ -42,11 +44,7 @@ describe('FR-148 entry env matrix (multi-env accept)', () => {
   it('synth: EntryFunction has no A_SEARCH_ENV; a worker still has it', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr148');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const tpl = JSON.parse(
       fs.readFileSync(path.join(outdir, 'ASearchStack.template.json'), 'utf8'),

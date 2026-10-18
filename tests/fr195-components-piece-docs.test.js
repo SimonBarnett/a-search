@@ -49,7 +49,7 @@ describe('FR-195 ComponentsPiece docs lock', () => {
     assert.match(text, /site\.md/);
     assert.match(text, /context\.md/);
     assert.match(text, /searches\.json/);
-    assert.match(text, /in\.json/);
+    assert.match(text, /IN\//);
     // uri-slug must not be required needle for FR-195 (FR-232 replaces it)
     assert.doesNotMatch(
       text,

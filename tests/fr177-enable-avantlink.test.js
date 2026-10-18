@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-177 / #1024: enable avantlink only; FR-138 secret wiring; others stay dark.
  */
@@ -13,7 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = ['webgains', 'admitad', 'flexoffers', 'woocommerce'];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -85,11 +87,7 @@ describe('FR-177 enable avantlink', () => {
     () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-hold-avantlink');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));

@@ -62,10 +62,12 @@ describe('FR-3663 / #3665 spawnSyncTreeKill does not busy-wait', () => {
     assert.notEqual(r.status, 0);
   });
 
-  it('Windows supervisor quotes .cmd when shell is used', () => {
+  it('Windows supervisor quotes .cmd via cmd.exe /s /c', () => {
     const text = fs.readFileSync(HELPER, 'utf8');
-    assert.match(text, /const useShell = isWin/);
-    assert.match(text, /command = useShell \? .". \+ spec\.command/);
+    assert.match(text, /function quoteWinArg/);
+    assert.match(text, /needsCmdShell/);
+    assert.match(text, /ComSpec|cmd\.exe/);
+    assert.match(text, /windowsVerbatimArguments:\s*true/);
   });
 
   it('helper has no event-loop busy-wait', () => {
@@ -90,7 +92,7 @@ describe('FR-3663 / #3665 spawnSyncTreeKill does not busy-wait', () => {
       const script = `
 const fs = require('fs');
 const { runCdkSynth } = require(${JSON.stringify(HELPER)});
-const r = runCdkSynth(${JSON.stringify(root)}, { timeout: 120000 });
+const r = runCdkSynth(${JSON.stringify(root)}, { timeout: 120000, fresh: true });
 if (r.status !== 0) { console.error(r.stderr); process.exit(2); }
 if (!fs.existsSync(require('path').join(r.outDir, 'ASearchStack.template.json'))) process.exit(3);
 console.log('OUTDIR=' + r.outDir);
