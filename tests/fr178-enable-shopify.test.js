@@ -4,6 +4,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 /**
  * FR-178 / #1025: enable shopify (merchant) only; FR-138 secret wiring; no affiliate stamp.
+ * FR-3949: local/DB-backed share a-search-db-backed (no per-source AWS workers).
  */
 
 const { describe, it } = require('node:test');
@@ -79,16 +80,15 @@ describe('FR-178 enable shopify', () => {
     );
   });
 
-  it('synth: shopify live+sandbox workers+queues; secret refs; dark ids absent', () => {
+  it('synth: FR-3949 no per-source shopify workers/queues; shared db-backed present', () => {
     let cdk;
     try {
       cdk = require('aws-cdk-lib');
     } catch (err) {
-      // Local seats without cdk deps still pin source; CI runs synth.
       assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
       return;
     }
-    const { ASearchStack } = require('../cdk/lib/a-search-stack');
+    void cdk;
     const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
@@ -101,41 +101,49 @@ describe('FR-178 enable shopify', () => {
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
 
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
-
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-shopify-worker-${env}`);
-      assert.ok(envVars.SHOPIFY_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.SHOPIFY_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.SHOPIFY_API_KEY === 'object',
-        `SHOPIFY_API_KEY must be Secrets Manager ref (${env})`,
+      const workerName = 'a-search-shopify-worker-' + env;
+      const workerHit = fns.find(
+        (res) =>
+          res.Properties &&
+          res.Properties.FunctionName === workerName,
       );
+      assert.equal(
+        workerHit,
+        undefined,
+        'FR-3949: no ' + workerName,
+      );
+      const qName = 'a-search-shopify-' + env;
       const qHit = queues.find(
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-shopify-${env}`,
+          q.Properties.QueueName === qName,
       );
-      assert.ok(qHit, `missing queue a-search-shopify-${env}`);
+      assert.equal(
+        qHit,
+        undefined,
+        'FR-3949: no ' + qName + ' queue',
+      );
     }
 
-    for (const dark of STILL_DARK) {
+    const dbQ = queues.find(
+      (q) =>
+        q.Properties &&
+        typeof q.Properties.QueueName === 'string' &&
+        q.Properties.QueueName === 'a-search-db-backed',
+    );
+    assert.ok(dbQ, 'shared a-search-db-backed queue required');
+
+    const darkIds = typeof STILL_DARK !== 'undefined' ? STILL_DARK : ['admitad'];
+    for (const dark of darkIds) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
+          res.Properties.FunctionName.includes('-' + dark + '-worker-'),
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(hit, undefined, 'stay-dark ' + dark + ' must not have worker');
     }
   });
 });
