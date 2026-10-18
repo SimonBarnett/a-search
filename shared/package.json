@@ -37,6 +37,7 @@
     "events/",
     "aClubs/",
     "affiliates/",
-    "merchants/"
+    "merchants/",
+    "search/"
   ]
 }

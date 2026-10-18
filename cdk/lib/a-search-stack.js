@@ -567,6 +567,8 @@ class ASearchStack extends cdk.Stack {
         entry.addEnvironment(urlKey, queue.queueUrl);
         queue.grantSendMessages(entry);
 
+        // FR #4030: reservedConcurrency 1 --- one job at a time per provider
+        // (ESM maxConcurrency floor is 2; reserved concurrency enforces serial).
         const worker = new lambda.Function(
           this,
           `${pascal}${envPascal}WorkerFunction`,
@@ -577,6 +579,7 @@ class ASearchStack extends cdk.Stack {
             code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
             memorySize: WORKER_LAMBDA_MEMORY_MB,
+            reservedConcurrentExecutions: 1,
             environment: {
               A_SEARCH_ENV: env,
             },
@@ -651,10 +654,29 @@ class ASearchStack extends cdk.Stack {
       },
     });
     entry.addEnvironment('SQS_DB_BACKED_URL', dbBackedQueue.queueUrl);
+    // FR #4030: alias for agent fan-out SQL target (same queue; redqueen drains).
+    entry.addEnvironment('SQS_SQL_URL', dbBackedQueue.queueUrl);
     dbBackedQueue.grantSendMessages(entry);
+
+    // FR #4030: agent API key + HeadObject on a-clubs GUID markers for /search.
+    const agentApiKeyCtx = this.node.tryGetContext('agentApiKey');
+    if (typeof agentApiKeyCtx === 'string' && agentApiKeyCtx.trim()) {
+      entry.addEnvironment('A_SEARCH_AGENT_API_KEY', agentApiKeyCtx.trim());
+    } else {
+      entry.addEnvironment('A_SEARCH_AGENT_API_KEY', 'FAKE_agent_key_set_at_deploy');
+    }
+    const aClubsBucket = s3.Bucket.fromBucketName(
+      this,
+      'AClubsBucketRef',
+      'a-clubs',
+    );
+    entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
+    aClubsBucket.grantRead(entry);
+
     new cdk.CfnOutput(this, 'DbBackedQueueUrl', {
       value: dbBackedQueue.queueUrl,
-      description: 'FR-3949 shared SQS for DB-backed merchant/affiliate search',
+      description:
+        'FR-3949/FR-4030 shared SQL SQS (agent fan-out + redqueen drain)',
     });
     new cdk.CfnOutput(this, 'DbBackedDeadLetterQueueUrl', {
       value: dbBackedDlq.queueUrl,
@@ -662,6 +684,7 @@ class ASearchStack extends cdk.Stack {
     });
 
     // FR-3949 / walrus: least-privilege IAM user (no access keys in template).
+    // FR #4030: SQL drain moves to redqueen; walrus user retained for transition.
     // SQS consume on db-backed queue+DLQ; S3 live/ + sandbox/ on ResultsBucket.
     const walrusConsumerUser = new iam.User(this, 'WalrusConsumerUser', {
       userName: stagedName('a-search-walrus-consumer'),
@@ -678,6 +701,37 @@ class ASearchStack extends cdk.Stack {
         resources: [dbBackedQueue.queueArn, dbBackedDlq.queueArn],
       }),
     );
+
+    // FR #4030: redqueen SQL-search drain principal (long-poll SQL queue + a-clubs IN/).
+    const redqueenSqlUser = new iam.User(this, 'RedqueenSqlDrainUser', {
+      userName: stagedName('a-search-redqueen-sql-drain'),
+    });
+    redqueenSqlUser.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'RedqueenSqlSqs',
+        actions: [
+          'sqs:ReceiveMessage',
+          'sqs:DeleteMessage',
+          'sqs:ChangeMessageVisibility',
+          'sqs:GetQueueAttributes',
+        ],
+        resources: [dbBackedQueue.queueArn, dbBackedDlq.queueArn],
+      }),
+    );
+    redqueenSqlUser.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'RedqueenAclubsInWrite',
+        actions: ['s3:GetObject', 's3:PutObject', 's3:ListBucket'],
+        resources: [
+          'arn:aws:s3:::a-clubs',
+          'arn:aws:s3:::a-clubs/*',
+        ],
+      }),
+    );
+    new cdk.CfnOutput(this, 'RedqueenSqlDrainUserName', {
+      value: redqueenSqlUser.userName,
+      description: 'FR #4030 redqueen SQL drain IAM user (mint keys out-of-band)',
+    });
     walrusConsumerUser.addToPolicy(
       new iam.PolicyStatement({
         sid: 'WalrusResultsList',

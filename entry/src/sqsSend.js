@@ -40,18 +40,24 @@ function createSqsSendMessage(opts = {}) {
     if (!payload || !payload.source || !payload.env) {
       throw new Error('sendMessage payload requires source and env');
     }
-    const { sources } = load();
-    const entry = (sources || []).find((s) => s && s.id === payload.source);
-    if (!entry) {
-      throw new Error(`registry missing source ${payload.source}`);
-    }
+    const sourceId = String(payload.source);
     let queueEnv;
-    try {
-      queueEnv = queueEnvForSource(entry);
-    } catch (err) {
-      throw new Error(
-        `registry missing queueEnv for source ${payload.source}: ${err.message}`,
-      );
+    // FR #4030: synthetic "sql" target uses the shared DB/SQL queue (redqueen drain).
+    if (sourceId === 'sql') {
+      queueEnv = 'SQS_DB_BACKED_URL';
+    } else {
+      const { sources } = load();
+      const entry = (sources || []).find((s) => s && s.id === sourceId);
+      if (!entry) {
+        throw new Error(`registry missing source ${sourceId}`);
+      }
+      try {
+        queueEnv = queueEnvForSource(entry);
+      } catch (err) {
+        throw new Error(
+          `registry missing queueEnv for source ${sourceId}: ${err.message}`,
+        );
+      }
     }
     const queueUrl = resolve({
       queueEnv,
@@ -60,10 +66,21 @@ function createSqsSendMessage(opts = {}) {
     });
 
     ensureClient();
-    const cmd = new SendMessageCommand({
+    /** @type {Record<string, unknown>} */
+    const input = {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(payload),
-    });
+    };
+    // FR #4030: when provider queues are FIFO, one MessageGroupId per provider
+    // serialises work (one job at a time). Harmless on standard queues.
+    if (payload.messageGroupId) {
+      input.MessageGroupId = String(payload.messageGroupId);
+      const dedupe =
+        payload.messageDeduplicationId ||
+        `${payload.searchid || payload.searchId || ''}-${sourceId}-${Date.now()}`;
+      input.MessageDeduplicationId = String(dedupe).slice(0, 128);
+    }
+    const cmd = new SendMessageCommand(input);
     await client.send(cmd);
   };
 }
