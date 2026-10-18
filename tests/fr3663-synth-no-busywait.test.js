@@ -62,6 +62,14 @@ describe('FR-3663 / #3665 spawnSyncTreeKill does not busy-wait', () => {
     assert.notEqual(r.status, 0);
   });
 
+  it('Windows supervisor quotes .cmd via cmd.exe /s /c', () => {
+    const text = fs.readFileSync(HELPER, 'utf8');
+    assert.match(text, /function quoteWinArg/);
+    assert.match(text, /needsCmdShell/);
+    assert.match(text, /ComSpec|cmd\.exe/);
+    assert.match(text, /windowsVerbatimArguments:\s*true/);
+  });
+
   it('helper has no event-loop busy-wait', () => {
     const text = fs.readFileSync(HELPER, 'utf8');
     assert.doesNotMatch(text, /while\s*\(\s*!settled/);

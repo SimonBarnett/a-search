@@ -181,6 +181,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search behind-main FR-158 stack conflict: keep resolveStageSuffix+costTags then FR-149/FR-158 no-VPC egress comment; release-gap Yes for 153-157 + FR-158
 - Phase-4 enable FR: after enabling an id, retarget mrb668 Phase-2 stub count (and fr166 PHASE2_STUB_IDS) down by 1 and FR-142/143 floors to 2*enabled_count before CI; concurrent open enable tips stay dark until merged
 - Phase-4 enable: after flipping registry+stay-dark lists, also flip leftover hostile pins that still assert the id enabled=false (title may already say FR-N enabled while asserts stay false)
+- When Phase-4 enables a Madeira merchant stub (wix/shopify/woocommerce), update FR-607/mrb608 so only remaining dark stubs assert enabled=false; keep class=merchant merchantConnect pins for the enabled id
 - Phase-4 enable MRB: after one origin/main keep-both fold, confirm FR-142/143 floors are 2*enabled_count and clear cdk/entry-lambda-asset before retrying a sequential synth EPERM - treat Windows asset-lock as env flake, not product FAIL
 - After concurrent Phase-4 enable keep-both, retarget each sibling enable-FR synth stay-dark list so neither lists the other as dark (fr172 must not assert tradedoubler dark; fr174 must not assert partnerize dark).
 - Multi-region second stack (FR-191): deploy same source with -c region= -c stage=standby -c includeRegionInNames=true so names/stack id get stage+region tokens; default names unchanged
@@ -264,6 +265,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search MRB CONFLICTING tip with comment-only overlap (FR-179 wix enable vs FR-248 merchant unstamp): keep-both FR citations and restore newlines after conflict-marker replace so // comments do not swallow the next statement.
 - a-search docs/mrb stacked on product tip when tip lacks on-tip hostile: after PASS, put Closes on the docs/mrb, arm --auto --squash on docs/mrb, close the parent product tip citing the docs/mrb URL --- do not leave both armed to race
 - Re-offered Phase5 FR when open stack tip already Closes it: verify closingIssuesReferences + acceptance tests on tip, comment covering PR, DONE with that PR URL; never open a second implement PR
+- Harvest-lesson tip that already carries its hostile pin: light triage PASS when the bullet is absent on main, arm --auto --squash, DONE without a second docs/mrb. Do not tip-fix fr106/108 back to wix stay-dark; main asserts enabled true (FR-179).
 - Harvest-lesson re-offer: if tip already carries lesson+hostile, close any docs/mrb as twin (do not reopen); if tip lacks hostile and docs/mrb-N is already open, reuse that docs/mrb (do not open another); arm --auto --squash (FR #3948).
 - When a harvest-lesson tip keep-both merge doubles SKILL.md mojibake or edits unrelated queue-floor assertions, FAIL and close that tip. Land one ASCII-only bullet plus a BOM-free hostile pin from origin/main; do not merge the dirty head.
 - An a-search shop SQL migration must open with -- target: a_search and must not USE madeiradb; pin that first non-empty line in the MRB test, and PASS a 0-behind FR-239 tip when the subscribe suite and that pin are green.
@@ -410,4 +412,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
 - When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS --- tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
 - Stacked Phase5 ComponentsPiece tips: retarget tip to main, merge origin/main, Closes full open FR stack, close earlier stack heads as superseded, board PASS + --auto --squash, DONE without CI poll
-
+- a-search MRB CONFLICTING on runCdkSynth superviseMain: prefer main quoteWinArg+cmd.exe /s /c over tip shell:true quote; update fr3663 pin to match; one fold then PASS (FR #4649)
