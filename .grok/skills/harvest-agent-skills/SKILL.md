@@ -440,4 +440,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Isolated AAffiliates CDK stack may PASS without multipart upload when docs mark Lambda v1 + Fargate follow-up for large feeds; keep #4001 redqueen import open as sibling OOS
 - Affiliate import on redqueen: map (provider,affiliateid,partid) to Parts Source/FeedKey/MerchantProductId Env=live; prune live.json via PartLiveIndex not full scan; bump lastmod for #3987; delete S3 file only after commit; never madeiradb or credential logs.
 - FR #4001 redqueen affiliate import may PASS with in-memory MERGE stand-in + A_SEARCH_AFFILIATE_IMPORT_WIRED stub CLI when docs require site-local injectors; never madeiradb
+- a-clubs GUID uri/seen/clicks/since/init/lastmod live on trailing-slash marker a-clubs/{host}/{guid}/; widget.json is seed-only; setHostCredentials uses documented scrypt$ when Madeira auth is not vendored
 - FR #4008: pin AMerchants like #3999 (isolated CDK, shared/merchants keys+metadata with Stripe/email redaction, onCreated+runWeekly both buckets, never overwrite same-day parts); Prefer ExistingPrUrl; never log API secrets.
