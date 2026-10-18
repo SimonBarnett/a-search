@@ -405,4 +405,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
 - When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
 - When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
-- When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS — tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
+- When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS --- tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
