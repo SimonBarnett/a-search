@@ -146,6 +146,26 @@ onboarding: invite/join, approvals, feed links, and merge-writes to
 (schedule, Grok-then-Cursor runtime, `-DryRun`, credentials file contract,
 report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
 
+## Provider AGENT.md --- Download format (FR #4208 / #4195)
+
+Live playbooks live in S3 (not the git tree): `s3://a-affiliates/{provider}/AGENT.md`
+plus root `s3://a-affiliates/AGENTS.md`. Repo has no AGENT.md copies.
+
+Each provider `AGENT.md` must include a contiguous markdown heading
+`## Download format` that states what the network delivers when known
+(e.g. Awin: CSV + gzip), otherwise tells the agent to set `format` /
+`compression` on the marker. Shared bullets under that heading cover:
+
+- Marker values: `format` = `csv` | `tsv` | `xml` | `json`; `compression` =
+  `gzip` | `zip` | `none` (affiliate marker wins, else provider marker).
+- Download writes one decompressed object
+  `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` (no `parts/`, no `latest`).
+- Unknown format/compression -> `unsupported_*` status and zero writes.
+
+Verified on live bucket 2026-10-18 for: awin, impact, partnerize, webgains,
+tradedoubler, admitad, flexoffers, avantlink. Root `AGENTS.md` points at the
+per-provider "Download format" section for the `format` metadata key.
+
 ## Out of scope
 
 - Parsing feeds into search candidates (walrus / SQS; parent #3944).
