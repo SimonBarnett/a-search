@@ -399,3 +399,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX: when mrb1871 expects WooCommerce comingSoon but registry merchantConnect is already true from FR-180 on both the tip and origin/main, align the pin to connectEnabled --- do not fold (FR #4649).
 - a-search docs/mrb rematch: after sibling FIX aligns mrb1871 woo pin to FR-180 merchantConnect, re-PASS at new MERGEABLE head without fold (FR #4649)
 - When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
+- On CONFLICTING rematch of wix .env.example live-target tip (FR #3478 / PR #3494): keep tip for providers/local/wix/.env.example, re-run fr3478 pin, fold/push, PASS, re-arm --auto --merge; main may already say a_search via #3495 sweep — tip uniqueness is the pin test plus Closes #3478 (ACCEPTABLE drift)
