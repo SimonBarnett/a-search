@@ -32,7 +32,9 @@ Stay-dark / not-yet-enabled sources get **no** Secrets Manager construct and
 
 Deploy: `-c jwtSecretArn=arn:aws:secretsmanager:...:secret:name-XXXXXX`
 (complete ARN with 6-char suffix). Omit to let the stack create
-`EntryJwtSecret` for ops to fill. Entry gets `grantRead` on that secret only.
+`EntryJwtSecret` with JSON placeholder `GenerateSecretString` (FR-3945) so
+CloudFormation `:SecretString:JWT_*` refs resolve on first deploy; ops then
+replace placeholders. Entry gets `grantRead` on that secret only.
 
 Entry must **never** hold provider marketplace credentials.
 

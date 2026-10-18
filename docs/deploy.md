@@ -67,8 +67,13 @@ Secret JSON string fields:
 | `JWT_SECRET` | HS256 lab/fixtures; optional if JWKS set |
 | `JWT_HS256_SECRET` | Optional alias - entry also accepts this name |
 
-When `jwtSecretArn` is omitted, the stack creates `EntryJwtSecret`; output
-`EntryJwtSecretArn` prints the ARN. Populate that secret, then continue.
+When `jwtSecretArn` is omitted, the stack creates `EntryJwtSecret` with
+`GenerateSecretString` / `secretStringTemplate` JSON placeholders for
+`JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_JWKS_URL`, plus a generated `JWT_SECRET`
+(FR-3945). Output `EntryJwtSecretArn` prints the ARN. Replace the placeholder
+values with real issuer/JWKS/secret before serving traffic (dynamic refs resolve
+at deploy time so a fresh stack no longer rolls back on EntryFunction).
+Secret uses RemovalPolicy RETAIN.
 
 Entry receives `secretsmanager:GetSecretValue` on that secret only (`grantRead`) -
 never `Resource *` for secrets.
