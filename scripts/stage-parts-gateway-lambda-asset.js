@@ -1,22 +1,44 @@
 'use strict';
 
 /**
- * FR #3968: stage parts-gateway Lambda zip contents.
+ * FR #3968 / FR #4078: stage parts-gateway Lambda zip contents.
  * Layout:
  *   parts-gateway/src/**
  *   shared/identity/**
  *   shared/widgets/hostFolderMeta.js + widgetPath.js
  *   shared/components/customers.js (normalizeHost)
  *   shared/aClubs/**
- *   node_modules/@aws-sdk/client-s3 + client-sqs (when present)
+ *   node_modules from `npm install` of @aws-sdk/client-s3 + client-sqs
+ *   (full transitive tree --- do not cherry-pick SDK packages)
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+
+/**
+ * @param {string} root
+ * @returns {{ s3: string, sqs: string }}
+ */
+function readRootSdkVersions(root) {
+  const pkgPath = path.join(root, 'package.json');
+  /** @type {{ dependencies?: Record<string, string> }} */
+  let pkg = {};
+  try {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  } catch {
+    pkg = {};
+  }
+  const deps = pkg.dependencies || {};
+  return {
+    s3: deps['@aws-sdk/client-s3'] || '^3.1147.0',
+    sqs: deps['@aws-sdk/client-sqs'] || '^3.758.0',
+  };
+}
 
 /**
  * @param {string} [repoRoot]
- * @param {{ outDir?: string }} [opts]
+ * @param {{ outDir?: string, skipNpmInstall?: boolean, npmInstall?: (cwd: string) => void }} [opts]
  * @returns {string}
  */
 function stagePartsGatewayLambdaAsset(repoRoot, opts) {
@@ -51,43 +73,46 @@ function stagePartsGatewayLambdaAsset(repoRoot, opts) {
     }
   }
 
-  const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
-  if (fs.existsSync(sdkSrc)) {
-    const sdkDest = path.join(outDir, 'node_modules', '@aws-sdk');
-    fs.mkdirSync(sdkDest, { recursive: true });
-    for (const name of [
-      'client-s3',
-      'client-sqs',
-      'types',
-      'middleware-sdk-s3',
-    ]) {
-      const from = path.join(sdkSrc, name);
-      if (fs.existsSync(from)) {
-        fs.cpSync(from, path.join(sdkDest, name), { recursive: true });
-      }
-    }
-    const nm = path.join(root, 'node_modules');
-    for (const name of [
-      '@smithy',
-      'tslib',
-      'bowser',
-      'fast-xml-parser',
-      'strnum',
-    ]) {
-      const from = path.join(nm, name);
-      if (fs.existsSync(from)) {
-        fs.cpSync(from, path.join(outDir, 'node_modules', name), {
-          recursive: true,
-        });
-      }
-    }
-  }
-
+  // FR #4078: install full client-s3 + client-sqs trees into the asset.
+  // Cherry-picking @aws-sdk/* from the repo root leaves out transitive deps
+  // (@aws-sdk/checksums, @aws/lambda-invoke-store, …) and breaks live GET /parts.
+  const versions = readRootSdkVersions(root);
   fs.writeFileSync(
     path.join(outDir, 'package.json'),
-    `${JSON.stringify({ name: 'parts-gateway-lambda', private: true, type: 'commonjs' }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        name: 'parts-gateway-lambda',
+        private: true,
+        type: 'commonjs',
+        dependencies: {
+          '@aws-sdk/client-s3': versions.s3,
+          '@aws-sdk/client-sqs': versions.sqs,
+        },
+      },
+      null,
+      2,
+    )}\n`,
     'utf8',
   );
+
+  if (!(opts && opts.skipNpmInstall)) {
+    const installer =
+      typeof (opts && opts.npmInstall) === 'function'
+        ? opts.npmInstall
+        : (cwd) => {
+            execFileSync(
+              'npm',
+              ['install', '--omit=dev', '--no-audit', '--no-fund'],
+              {
+                cwd,
+                stdio: 'inherit',
+                shell: true,
+                env: process.env,
+              },
+            );
+          };
+    installer(outDir);
+  }
 
   return outDir;
 }
@@ -99,4 +124,5 @@ if (require.main === module) {
 
 module.exports = {
   stagePartsGatewayLambdaAsset,
+  readRootSdkVersions,
 };

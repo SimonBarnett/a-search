@@ -393,6 +393,12 @@ npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
   -c account=620257466932 -c region=eu-west-2
 ```
 
+`npm run stage-parts-gateway` (FR #4078) writes a small `package.json` into the
+Lambda asset and runs `npm install --omit=dev` for `@aws-sdk/client-s3` and
+`@aws-sdk/client-sqs` so the full transitive tree is packaged (cherry-picking
+`node_modules/@aws-sdk/*` from the repo root omits `@aws-sdk/checksums` and
+breaks live `GET /parts`). Needs network on first stage.
+
 `customerNumber` in host-folder metadata is the Madeira checksum **userid** (not a
 sequential counter). First request for a new host or GUID auto-creates the
 `a-clubs/{hostkey}/` marker and `{hostkey}/{guid}/` seed files; repeats are
