@@ -18,6 +18,20 @@ const SCRIPT = path.join(ROOT, 'redqueen', 'install', 'Register-AClubsQueueServi
 const REVIEWERS = path.join(ROOT, 'redqueen', 'src', 'reviewers.js');
 const DOCS = path.join(ROOT, 'docs', 'redqueen-annotations.md');
 
+function windowsElevated() {
+  if (process.platform !== 'win32') return false;
+  const r = spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      '[bool]([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)',
+    ],
+    { encoding: 'utf8', timeout: 20_000 },
+  );
+  return r.status === 0 && String(r.stdout || '').trim() === 'True';
+}
+
 describe('FR #4240 GrokHome LocalSystem reviewer mode', () => {
   it('script has GrokHome/ServiceHome and ACL language', () => {
     const src = fs.readFileSync(SCRIPT, 'utf8');
@@ -102,7 +116,14 @@ describe('FR #4240 GrokHome LocalSystem reviewer mode', () => {
 
   it(
     'GrokHome creates .grok dir and prints device-auth hint',
-    { skip: process.platform !== 'win32' ? 'Windows only' : false },
+    {
+      skip:
+        process.platform !== 'win32'
+          ? 'Windows only'
+          : windowsElevated()
+            ? false
+            : 'Set-Acl SYSTEM ACE needs an elevated process',
+    },
     () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4240-acl-'));
       const installRoot = path.join(tmp, 'install');

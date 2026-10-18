@@ -173,8 +173,9 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     assert.equal(r.created, true);
     assert.equal(r.hostkey, 'club.example.com');
     assert.equal(isChecksumValid(r.userid), true);
-    assert.equal(r.customerNumber, r.userid);
-    assert.equal(r.metadata.customerNumber, r.userid);
+    assert.equal(r.metadata.userid, r.userid);
+    assert.equal(r.metadata.customerNumber, undefined);
+    assert.equal(r.metadata.customernumber, undefined);
     assert.ok(r.metadata.lastmod);
     assert.match(r.metadata.lastmod, /^\d{4}-\d{2}-\d{2}T.*Z$/);
     assert.ok(s3.objects.has(hostMarkerKey('club.example.com')));
@@ -220,7 +221,7 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     const w = await ensureAclubsWidget({
       host: 'w.example.com',
       widgetGuid: GUID,
-      customerNumber: host.customerNumber,
+      userid: host.userid,
       referer: 'https://w.example.com/page/one',
       headObject: s3.headObject,
       putObject: s3.putObject,
@@ -296,7 +297,6 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
         userid: 'ABC12345',
         host: 'touch.example.com',
         hostkey: 'touch.example.com',
-        customerNumber: 'ABC12345',
         lastmod: '2020-01-01T00:00:00.000Z',
         annotated: '0',
       },
@@ -376,7 +376,7 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
     await ensureAclubsWidget({
       host: 'bump.example.com',
       widgetGuid: GUID,
-      customerNumber: host.customerNumber,
+      userid: host.userid,
       headObject: s3.headObject,
       putObject: s3.putObject,
       getObject: s3.getObject,
@@ -434,7 +434,6 @@ describe('FR #3968 host credentials + Stripe ids', () => {
         userid: 'ABC12345',
         host: 'cred.example.com',
         hostkey: 'cred.example.com',
-        customerNumber: 'ABC12345',
         lastmod: '2020-01-01T00:00:00.000Z',
         email: '',
         passwordhash: '',
@@ -478,7 +477,6 @@ describe('FR #3968 host credentials + Stripe ids', () => {
         userid: 'ABC12345',
         host: 'stripe.example.com',
         hostkey: 'stripe.example.com',
-        customerNumber: 'ABC12345',
         lastmod: '2020-01-01T00:00:00.000Z',
         email: '',
         passwordhash: '',
@@ -639,7 +637,8 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
     assert.deepEqual(page.parts, []);
     assert.equal(page.nextOffset, null);
     assert.equal(page.init, 0);
-    assert.equal(isChecksumValid(page.customerNumber), true);
+    assert.equal(isChecksumValid(page.userid), true);
+    assert.equal(page.customerNumber, undefined);
   });
 
   it('ignores ?host= and uses Origin', async () => {

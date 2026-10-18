@@ -291,6 +291,158 @@ function coerceReview(text, model) {
   };
 }
 
+/** FR #4251: page summary this close to the host brief is a copy, not a page review. */
+const PAGE_HOST_SIMILARITY_MAX = 0.72;
+
+function reviewTokens(text) {
+  return new Set(
+    String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  );
+}
+
+/**
+ * Jaccard similarity. Exact or contained copies count as too similar.
+ * @param {string} pageText
+ * @param {string} hostText
+ */
+function annotationSimilarity(pageText, hostText) {
+  const a = String(pageText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const b = String(hostText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.length > 40 && (b.includes(a) || a.includes(b))) return 0.95;
+  const ta = reviewTokens(a);
+  const tb = reviewTokens(b);
+  if (!ta.size || !tb.size) return 0;
+  let inter = 0;
+  for (const t of ta) {
+    if (tb.has(t)) inter += 1;
+  }
+  return inter / (ta.size + tb.size - inter);
+}
+
+function annotationsTooSimilar(pageText, hostText) {
+  return annotationSimilarity(pageText, hostText) >= PAGE_HOST_SIMILARITY_MAX;
+}
+
+function hostBriefText(hostAnnotations) {
+  const h = hostAnnotations || {};
+  return [h.summary, h.club, h.audience, h.affiliateOpportunities, h.notes]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function formatHead(head) {
+  const h = head || {};
+  const og = h.og && typeof h.og === 'object' ? h.og : {};
+  const ogLines = Object.keys(og)
+    .sort()
+    .map((k) => `${k}=${og[k]}`);
+  return [
+    `title=${h.title || ''}`,
+    `description=${h.description || ''}`,
+    `keywords=${h.keywords || ''}`,
+    ...ogLines,
+  ].join('\n');
+}
+
+function isNarrationSummary(summary) {
+  return /\b(i'll|i will|i am going to|i'm going to|let me)\b/i.test(String(summary || ''));
+}
+
+function isCompleteHostBrief(review) {
+  if (!review || typeof review !== 'object') return false;
+  const club = String(review.club || '').trim();
+  const audience = String(review.audience || '').trim();
+  const aff = String(review.affiliateOpportunities || '').trim();
+  if (!club || !audience || !aff) return false;
+  if (isNarrationSummary(review.summary)) return false;
+  return true;
+}
+
+function isCompleteGuidReview(review) {
+  if (!review || typeof review !== 'object') return false;
+  const summary = String(review.summary || '').trim();
+  if (!summary || isNarrationSummary(summary)) return false;
+  const steering = review.steering;
+  if (steering == null) return false;
+  if (typeof steering === 'string') return steering.trim().length > 0;
+  if (typeof steering === 'object') return Object.keys(steering).length > 0;
+  return false;
+}
+
+function formatExtraPages(pages) {
+  const list = Array.isArray(pages) ? pages : [];
+  if (!list.length) return '(none)';
+  return list
+    .map((p, i) => {
+      const text = String((p && p.text) || '').slice(0, 4000);
+      return [`#${i + 1} url=${(p && p.url) || ''}`, `title=${(p && p.title) || ''}`, text].join('\n');
+    })
+    .join('\n---\n');
+}
+
+/**
+ * @param {object} input
+ */
+function hostReviewPrompt(input) {
+  const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
+  return [
+    'Answer in one shot from the supplied text only. Do not browse, do not open other pages, and do not say what you will do next.',
+    'Write an affiliate-targeting brief of this CLUB. Do not restate the home page.',
+    'Club specifics: what the club is and does, its discipline or niche, size or activity if visible, location or region, and governing-body affiliation.',
+    'Audience: who the members and visitors are, and what they buy or need.',
+    'Affiliate opportunities: product categories, brands and retailers that fit this audience, existing shop or affiliate activity, gaps where products could be offered, and seasonal or event hooks.',
+    'club, audience and affiliateOpportunities must be non-empty. summary must be the brief, not a plan to fetch more pages.',
+    `host=${input.host}`,
+    `hostkey=${input.hostkey}`,
+    `pageUrl=${input.pageUrl || ''}`,
+    'HEAD_META_BEGIN',
+    formatHead(input.pageHead),
+    'HEAD_META_END',
+    'PAGE_TEXT_BEGIN',
+    pageSlice,
+    'PAGE_TEXT_END',
+    'EXTRA_PAGES_BEGIN',
+    formatExtraPages(input.extraPages),
+    'EXTRA_PAGES_END',
+    'Return JSON: {summary, club, audience, affiliateOpportunities, categories[], notes}',
+  ].join('\n');
+}
+
+/**
+ * @param {object} input
+ */
+function guidReviewPrompt(input) {
+  const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
+  const hostJson = JSON.stringify(input.hostAnnotations || {}).slice(0, 4000);
+  return [
+    'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
+    'Describe ONLY this page. The host review is context. Do not repeat the host review.',
+    'Use the page title, meta description, meta keywords, og tags, and H1/H2 to say how THIS page narrows search beyond the club.',
+    'steering must list concrete narrowing signals from this page: title and meta terms, categories, price band, include terms, exclude terms, plus market, currency and locale.',
+    `host=${input.host}`,
+    `hostkey=${input.hostkey}`,
+    `guid=${input.guid}`,
+    `uri=${input.uri || ''}`,
+    `pageUrl=${input.pageUrl || ''}`,
+    'HOST_REVIEW_BEGIN',
+    hostJson,
+    'HOST_REVIEW_END',
+    'HEAD_META_BEGIN',
+    formatHead(input.pageHead),
+    'HEAD_META_END',
+    'PAGE_TEXT_BEGIN',
+    pageSlice,
+    'PAGE_TEXT_END',
+    'Return JSON: {summary, intent, suggestedQueries[], steering}',
+  ].join('\n');
+}
+
 /**
  * @param {{
  *   kind: 'host'|'guid',
@@ -299,6 +451,7 @@ function coerceReview(text, model) {
  *   guid?: string,
  *   uri?: string,
  *   hostAnnotations?: object,
+ *   pageHead?: object,
  *   tryGrok?: Function,
  *   tryCursor?: Function,
  * }} input
@@ -307,7 +460,10 @@ async function reviewWithGrokThenCursor(input) {
   const tryGrok = input.tryGrok || tryGrokCli;
   const tryCursor = input.tryCursor || tryCursorCli;
   const pageText = String(input.pageText || '').trim();
-  if (!pageText) {
+  const headSignal = String(
+    (input.pageHead && (input.pageHead.title || input.pageHead.description)) || '',
+  ).trim();
+  if (!pageText && !headSignal) {
     return {
       model: 'stub',
       usable: false,
@@ -316,32 +472,7 @@ async function reviewWithGrokThenCursor(input) {
       summary: '',
     };
   }
-  const pageSlice = pageText.slice(0, 12000);
-  const prompt =
-    input.kind === 'host'
-      ? [
-          'Review this a-clubs host site for parts/search annotation.',
-          `host=${input.host}`,
-          `hostkey=${input.hostkey}`,
-          `pageUrl=${input.pageUrl || ''}`,
-          'PAGE_TEXT_BEGIN',
-          pageSlice,
-          'PAGE_TEXT_END',
-          'Return JSON: {summary, categories[], notes}',
-        ].join('\n')
-      : [
-          'Review this a-clubs GUID page for parts/search annotation.',
-          `host=${input.host}`,
-          `hostkey=${input.hostkey}`,
-          `guid=${input.guid}`,
-          `uri=${input.uri || ''}`,
-          `pageUrl=${input.pageUrl || ''}`,
-          `hostAnnotations=${JSON.stringify(input.hostAnnotations || {}).slice(0, 2000)}`,
-          'PAGE_TEXT_BEGIN',
-          pageSlice,
-          'PAGE_TEXT_END',
-          'Return JSON: {summary, intent, suggestedQueries[], steering?}',
-        ].join('\n');
+  const prompt = input.kind === 'host' ? hostReviewPrompt(input) : guidReviewPrompt(input);
 
   const grok = await Promise.resolve(tryGrok({ prompt }));
   if (grok.ok) {
@@ -392,6 +523,15 @@ module.exports = {
   REVIEWER_TIMEOUT_MS,
   spawnCollect,
   reviewWithGrokThenCursor,
+  hostReviewPrompt,
+  guidReviewPrompt,
+  annotationSimilarity,
+  annotationsTooSimilar,
+  hostBriefText,
+  isNarrationSummary,
+  isCompleteHostBrief,
+  isCompleteGuidReview,
+  PAGE_HOST_SIMILARITY_MAX,
   defaultReviewHost,
   defaultReviewGuid,
   coerceReview,

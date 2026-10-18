@@ -313,7 +313,8 @@ describe('FR #4008 weekly both buckets + failure isolation + no overwrite', () =
     assert.ok(summary.merchants.ok >= 1);
     assert.ok(summary.affiliates.ok >= 1);
     assert.ok(s3.objects.has('shopify/m1/parts/2026-10-18.jsonl'));
-    assert.ok(s3.objects.has('awin/a1/parts/2026-10-18.csv'));
+    // FR #4269 / #4195: affiliates downloadOne writes flat dated keys
+    assert.ok(s3.objects.has('awin/a1/2026-10-18.csv'));
   });
 
   it('does not overwrite existing unprocessed parts for that day', async () => {
@@ -462,8 +463,8 @@ describe('FR #4008 CDK source pins (no aws-cdk-lib runtime)', () => {
     assert.match(stack, /RemovalPolicy\.RETAIN/);
     assert.match(stack, /autoDeleteObjects:\s*false/);
     assert.match(stack, /objectSizeGreaterThan:\s*0/);
-    assert.match(stack, /Schedule\.rate\(cdk\.Duration\.days\(7\)\)/);
-    assert.match(stack, /NODEJS_20_X/);
+    assert.match(stack, /Schedule\.rate\(cdk\.Duration\.days\(1\)\)/);
+    assert.match(stack, /NODEJS_24_X/);
     assert.match(stack, /A_MERCHANTS_BUCKET/);
     assert.match(stack, /A_AFFILIATES_BUCKET/);
     assert.match(stack, /onCreated/);
@@ -498,7 +499,7 @@ describe('FR #4008 CDK source pins (no aws-cdk-lib runtime)', () => {
     assert.match(doc, /Shopify/i);
     assert.match(doc, /A_AFFILIATES_BUCKET/);
     assert.match(doc, /ObjectCreated|on.creation|on-create/i);
-    assert.match(doc, /ONE weekly Lambda|one weekly Lambda|single weekly/i);
+    assert.match(doc, /ONE daily Lambda|one daily Lambda|single daily|ONE weekly Lambda|single weekly/i);
     const deploy = fs.readFileSync(path.join(ROOT, 'docs', 'deploy.md'), 'utf8');
     assert.match(deploy, /AMerchants/);
   });

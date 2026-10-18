@@ -92,6 +92,9 @@ describe('FR #4098 object annotations (no sidecars)', () => {
         fetchImpl: okFetch(),
         reviewHost: async () => ({
           summary: 'Parts shop',
+          club: 'Parts club',
+          audience: 'members who buy brakes',
+          affiliateOpportunities: 'brake pads and fluid',
           categories: ['brakes'],
           model: 'test-host',
         }),
@@ -254,8 +257,14 @@ describe('FR #4098 object annotations (no sidecars)', () => {
         event: { hostkey: host, host, createdAt: 't' },
         copyObject: clearCopy,
         fetchImpl: okFetch(),
-        reviewHost: async () => ({ summary: 'H', model: 'h' }),
-        reviewGuid: async () => ({ summary: 'G', model: 'g' }),
+        reviewHost: async () => ({
+          summary: 'H',
+          club: 'club',
+          audience: 'members',
+          affiliateOpportunities: 'kits',
+          model: 'h',
+        }),
+        reviewGuid: async () => ({ summary: 'G', steering: { include: ['g'] }, model: 'g' }),
       }),
     );
     const listed = await s3.listObjectAnnotations({ Key: hostMarkerKey(host) });
@@ -273,8 +282,14 @@ describe('FR #4098 object annotations (no sidecars)', () => {
       s3Deps(s3, {
         event: { hostkey: host, host, createdAt: 't' },
         fetchImpl: okFetch(),
-        reviewHost: async () => ({ summary: 'H', model: 'h' }),
-        reviewGuid: async () => ({ summary: 'G', model: 'g' }),
+        reviewHost: async () => ({
+          summary: 'H',
+          club: 'club',
+          audience: 'members',
+          affiliateOpportunities: 'kits',
+          model: 'h',
+        }),
+        reviewGuid: async () => ({ summary: 'G', steering: { include: ['g'] }, model: 'g' }),
         onNewFolder: async (e) => {
           events.push(e.kind);
         },

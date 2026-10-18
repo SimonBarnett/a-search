@@ -47,8 +47,8 @@ function resolveS3(deps) {
 }
 
 /**
- * Weekly EventBridge entry: downloads enabled=1 across a-merchants and
- * optional a-affiliates (A_AFFILIATES_BUCKET).
+ * Daily EventBridge entry (FR #4269): downloads enabled=1 + lastdownload stale
+ * across a-merchants and optional a-affiliates (A_AFFILIATES_BUCKET).
  */
 async function handler(event, context, deps) {
   const merchantsBucket =

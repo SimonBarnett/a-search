@@ -25,7 +25,25 @@ For the host marker, then each GUID folder marker:
 |-------|--------|
 | no `annotated=1` | write object annotations, set `annotated=1`, set `lastupdate` and `lastmod` to the same ISO UTC timestamp |
 | `annotated=1` and `lastmod` > `lastupdate` | regenerate annotations, refresh `lastupdate` (= `lastmod`) |
-| `annotated=1` and `lastmod` <= `lastupdate` | skip |
+| `annotated=1` and `lastmod` <= `lastupdate` | skip, unless `REDQUEEN_REANNOTATE=1` |
+
+## Re-annotate (FR #4251)
+
+Set `REDQUEEN_REANNOTATE=1` for one console run of `node redqueen/src/run.js`
+(or one service start) to rewrite host and GUID annotations even when
+`annotated=1` and `lastmod` <= `lastupdate`. Unset it after that pass so the
+poll loop does not rewrite the same markers on every tick. The host marker
+must still be on the folder-events queue (replay the host message).
+
+Host `annotation` is an affiliate brief: club specifics, audience, and
+affiliate opportunities. Those three fields must be non-empty, and `summary`
+must be the brief rather than a plan to browse more pages. An incomplete
+brief writes nothing, leaves `annotated` unset, and does not review GUIDs.
+The annotator fetches a few same-host about/shop/training links and passes
+that text in; the model is told not to browse.
+GUID `annotation` describes only that page (title,
+meta, purpose) using the host brief as context and must not copy it.
+`steering` is required and lists the page's narrowing terms plus market, currency and locale.
 
 The agent writes `lastupdate` and `lastmod` together so its own annotation write
 does not look like a content change and loop.
@@ -34,6 +52,24 @@ Host before GUID: GUIDs are only processed after the host step leaves the host
 annotated and up to date, and after the host marker carries an `annotation`
 object annotation. If the host review fails or annotations are missing, the
 message returns to the queue (visibility timeout) and no GUIDs are touched.
+
+## searches.json and POST /search (FR #4265)
+
+After a GUID marker is saved with `annotated=1`, the agent writes
+`a-clubs/{hostkey}/{guid}/searches.json` and POSTs it to `/search`.
+
+Order: host review (`annotated=1`), GUID review (`annotated=1`), `searches.json`,
+then `/search`. No host review means no GUID review and no search. Queries come
+from the page review and `steering` (market and currency included). The free cap
+is 3 queries; an upgraded fullscreen widget (`upgraded=1`, `layout=fullscreen`)
+uses 15. Existing `exclude[]` entries are kept. The shape is
+`{ queries: [{ q, intent, maxResults }], exclude: [...] }`.
+
+`/search` records `search-fanout.json` for that GUID and returns the same
+`searchid` on a retry without sending again. If the write or the POST fails,
+the folder message is retried. The service needs `A_SEARCH_API_URL` and either
+`A_SEARCH_AGENT_API_KEY` or `A_SEARCH_AGENT_API_KEY_FILE`. Those values are
+never written to the log.
 
 ## Object annotations (not JSON sidecars)
 
@@ -54,8 +90,24 @@ Production reviewers call Grok first, then Cursor only when Grok is exhausted
 or unavailable (Simon's standing rule). Host review receives fetched text from `https://{host}/`; GUID review receives
 fetched text from `https://{host}{uri}` (FR #4147).
 
+Host and page prompts tell the model to answer in one shot from the supplied text only and not to browse, fetch URLs, or use tools (FR #4279). The grok argv also passes `--disable-web-search`. The reviewer timeout stays 120s; receive visibility stays strictly above it (180s) with the visibility heartbeat (FR #4236 / #4246). A GUID `retry` (including reviewer timeout) changes visibility and does not delete the host message, and that GUID's `annotated` stays unset.
+
 A **stub** or unavailable reviewer **must never** set `annotated=1`. The message
 returns to the queue (`ChangeMessageVisibility`) until a real reviewer succeeds.
+
+## Drain receive + visibility heartbeat (FR #4236 / #4246)
+
+`drainOnce` receives **one** SQS message at a time (`MaxNumberOfMessages=1`).
+The queue is FIFO with one group per host, so batching does not help throughput
+and leaves idle receipts on a fixed visibility window while only the current
+message is heartbeated. A host+GUID review can exceed 180s; batched receipts
+then expire (`ReceiptHandle is invalid ... expired`) before the loop reaches
+them (FR #4246).
+
+Receive `VisibilityTimeout` is 180s (strictly greater than the 120s grok
+reviewer timeout, FR #4236). While a message is processed, a
+`ChangeMessageVisibility` heartbeat keeps extending that same receipt for the
+whole host+GUID work.
 
 ## Hook point
 
@@ -136,7 +188,7 @@ without `annotated=1`.
 | Principal | Permissions |
 |-----------|-------------|
 | Parts-gateway Lambda | `sqs:SendMessage` on the FIFO only; S3 R/W on `a-clubs` |
-| `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 `GetObject` / `PutObject` / `ListBucket` / `GetObjectTagging` plus object-annotation actions `s3:PutObjectAnnotation` / `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:DeleteObjectAnnotation` on `arn:aws:s3:::a-clubs` and `arn:aws:s3:::a-clubs/*` (FR #4122) |
+| `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 `GetObject` / `PutObject` / `ListBucket` / `GetObjectTagging` / `PutObjectTagging` plus object-annotation actions `s3:PutObjectAnnotation` / `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:DeleteObjectAnnotation` on `arn:aws:s3:::a-clubs` and `arn:aws:s3:::a-clubs/*` (FR #4122 / #4241) |
 
 Never use root keys. Redeploy **APartsGateway** after #4122 so the annotator user policy is live before installing the redqueen queue service.
 
