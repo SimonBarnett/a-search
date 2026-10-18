@@ -539,3 +539,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When CDK tests build cdk.App with custom -c context, always merge providerEnvRoot=tests/fixtures/provider-env (or ensureDefaultStackSynth); package.json synth -c alone does not cover in-process App constructors.
 - When a hostile test pins two SKILL.md bullets as one window, join them with the file newline. A CRLF book fails an LF join on Node even though Python text mode shows LF.
 - A FIX or docs PR that contains a commit this seat pushed is self-MRB even when the git author email is a sibling seat nick. ACK then GIVEUP. Do not review the LF pin.
+- When provider secret wiring is skipped unless the context ARN is real, update every synth pin that still requires the placeholder credential env. Plain defaults and queues stay.
