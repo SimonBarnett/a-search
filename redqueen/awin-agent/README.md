@@ -68,7 +68,7 @@ those skills. Do not invent Awin UI element ids beyond what Merc documented.
 Sign-in on redqueen is in-process from C:\passwords\awin.secret.txt. Join /
 invite messages are unique per advertiser and at most 149 characters (Awin).
 
-Instruction load order: s3://a-affiliates/AGENTS.md then win/AGENT.md
+Instruction load order: s3://a-affiliates/AGENTS.md then awin/AGENT.md
 (see AGENTS.md in this folder).
 
 ## Manual run

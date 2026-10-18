@@ -19,11 +19,11 @@ CWD for the daily Awin onboarding agent. Follow README.md and
    missing_agents_md / missing_provider_agent_md (plus the path) **before**
    sign-in or any S3 write. Never fall back silently.
 
-Folder writes still follow win/AGENT.md. Join/invite messages are per invitee
+Folder writes still follow awin/AGENT.md. Join/invite messages are per invitee
 with the Awin hard cap of **149 characters**.
 
 Runtime fuel: **Grok first**, Cursor when Grok is exhausted. Prefer -DryRun
 before the first live schedule on redqueen.
 
 Skill playbooks (FR #4126): Merc operator bodies are pasted into
--search-awin-agent-* skills (no PENDING stubs).
+a-search-awin-agent-* skills (no PENDING stubs).

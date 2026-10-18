@@ -55,7 +55,7 @@ description: >
   word boundary. Never let Awin truncate.
 - Never reuse the same text for two advertisers in one run.
 - Persist the sent message (or first 149 chars) on
-  win/_invites/{advertiserid}/ as metadata invitemsg (stay under 2 KB total
+  awin/_invites/{advertiserid}/ as metadata invitemsg (stay under 2 KB total
   metadata).
 - Do **not** use a fixed over-length template from older AGENT.md drafts.
 
