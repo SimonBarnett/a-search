@@ -14,7 +14,7 @@ var GO_BOUND_ATTR = 'data-a-search-go-bound';
 var DEFAULT_N = 10;
 
 /**
- * FR #4107: parent page origin for embed frames (Wix filesusr, …).
+ * FR #4107: parent page origin for embed frames (Wix filesusr, ...).
  * Prefer location.ancestorOrigins[0], else document.referrer origin.
  * @param {{ location?: Location, document?: Document }} deps
  * @returns {string} absolute origin or ''
