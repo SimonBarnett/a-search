@@ -385,5 +385,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR re-offer: when issue CLOSED and covering PR MERGED with Closes, DONE FR Prefer ExistingPrUrl with that PR URL --- do not open a second implement PR
 - a-search FR: when covering implement PR is CLOSED unmerged but branch still has Closes, Prefer ExistingPrUrl reopen that PR, re-arm --auto, DONE FR with its URL --- never open a second implement PR
 - a-search FIX: after FR-228 jwt verify returns contactVerified+contactChannel, update jwt-auth and jwt.hostile-mrb35 deepEqual expectations (false/undefined when claim absent); fold alone does not heal if main tests still lag
-- a-search FIX: when tip already heals FR-236/237/238 contactVerified stubs but CI still fails jwt-auth deepEqual and #3887 is still open, treat jwt-auth as ambient --- DONE FIX at MERGEABLE head without fold (FR #4649)
 - a-search MRB rematch: unique FR-3726 fold-push-before-DONE tip with MERGEABLE behind and ambient connect 403 --- PASS @ head without fold (FR #4649), re-arm --auto --merge
+- a-search MRB FR-3344 IN/ folder: re-verify writeInSearchFile/listReadyInFiles/runIngestPass + hostile pins; heal jwt-auth deepEqual for FR-228 on tip before PASS when CI would red; do not fold for one harvest-behind (FR #4649)
