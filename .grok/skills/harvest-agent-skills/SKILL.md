@@ -531,3 +531,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Redqueen nssm search env must be set from -SearchApiUrl or redqueen\config\search-api.url plus a key file path, not only the registering process environment. An annotated GUID whose searches.json has queries and no searchid is posted once without a new review, and a failed POST must leave the FIFO message for retry.
 - Search q is product keywords only. Pass steering market and currency as their own fields. Match excludes as whole words and drop tokens shorter than 3 characters.
 - When a GUID search retry posts an existing searches.json, the success write must keep market and currency on the file. Do not replace the doc with queries, exclude and searchid only.
+- FIX CONFLICTING harvest-agent-skills tip: one origin/main keep-both fold; keep the tip bullet; re-arm --auto; do not poll CI.
