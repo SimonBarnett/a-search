@@ -20,6 +20,7 @@ const {
 const { hostMarkerKey, useridClaimKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
 const { publishFolderEvent } = require('./publishFolderEvent');
+const { isEmbedFrameHost } = require('./embedHostPatterns');
 
 /**
  * @param {{
@@ -50,6 +51,12 @@ async function ensureAclubsHost(opts) {
   }
 
   const host = normalizeHost(opts.host);
+  // FR #4107: never create an embed-frame host folder (defense in depth).
+  if (isEmbedFrameHost(host) || isEmbedFrameHost(safeHostFolderName(host))) {
+    const err = new Error('club_domain_unresolved');
+    err.code = 'club_domain_unresolved';
+    throw err;
+  }
   const hostkey = safeHostFolderName(host);
   const markerKey = hostMarkerKey(host);
 
