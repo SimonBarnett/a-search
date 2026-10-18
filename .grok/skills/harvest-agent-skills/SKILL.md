@@ -450,3 +450,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4030: reservedConcurrentExecutions 1 (not ESM maxConcurrency) for one-job-per-provider; SQL uses a-search-db-backed drained on redqueen reusing walrus poll helpers; agent /search is x-agent-api-key + hostkey/guid/queries -> 202
 - FR that only asks MRB to run ASearchStack synth for an already MERGED Closes tip: close as already covered citing the merged PR URL; DONE FR with that covering PR (no second implement PR)
 - MRB on FR #4030: never ship FAKE_ default for A_SEARCH_AGENT_API_KEY; stack fix PR into tip then PASS @ merge SHA; file child FR when helpers land but provider call sites do not
+- FR #4038: live workers write a-clubs IN/ when hostkey+guid present via writeLiveProviderInResult; handlers use handleSqsWith429 (never 429-to-DLQ); legacy msgs without hostkey keep writeResults so unit fixtures stay green.
