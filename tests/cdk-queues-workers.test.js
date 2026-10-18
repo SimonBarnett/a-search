@@ -1,7 +1,9 @@
 'use strict';
 
 /**
- * FR-036: CDK queues + worker Lambdas for enabled shortlist.
+ * FR-036: CDK queues + worker Lambdas for enabled marketplace shortlist.
+ * FR-3949: kind:local / DB-backed sources skip per-source queues; shared
+ * a-search-db-backed (+ SQS_DB_BACKED_URL on entry) instead.
  */
 
 const { describe, it } = require('node:test');
@@ -14,7 +16,10 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+/** Marketplace (kind:live) ids that still get per-source AWS workers. */
+const LIVE_ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj'];
+/** Local/DB-backed ids: worker modules remain, but CDK no longer wires queues. */
+const LOCAL_ENABLED_IDS = ['awin', 'impact'];
 
 describe('FR-036 CDK queues + workers for enabled shortlist', () => {
   it('stack source loops registry and wires SQS event source', () => {
@@ -27,11 +32,13 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     assert.match(text, /workerHandlerPath\(src\)|worker\.handler/);
     // functionName template: a-search-${src.id}-worker-${env}
     assert.match(text, /a-search-\$\{src\.id\}-worker-\$\{env\}/);
+    // FR-3949: local providers skipped in the worker loop
+    assert.match(text, /isLocalProviderFolder/);
   });
 
   it('enabled providers export worker.handler', () => {
     const { sources } = loadRegistry();
-    for (const id of ENABLED_IDS) {
+    for (const id of [...LIVE_ENABLED_IDS, ...LOCAL_ENABLED_IDS]) {
       const src = sources.find((s) => s.id === id);
       assert.ok(src, id);
       const workerPath = path.join(root, src.folder, 'src', 'worker.js');
@@ -55,19 +62,25 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     );
     const tpl = fs.readFileSync(templatePath, 'utf8');
 
-    for (const id of ENABLED_IDS) {
+    for (const id of LIVE_ENABLED_IDS) {
       assert.match(tpl, new RegExp(queueName(id, 'live')));
       assert.match(tpl, new RegExp(queueName(id, 'sandbox')));
       assert.match(tpl, new RegExp(`a-search-${id}-worker-live`));
       assert.match(tpl, new RegExp(`a-search-${id}-worker-sandbox`));
     }
 
+    // FR-3949: no per-source local queues/workers; shared db-backed instead
+    assert.doesNotMatch(tpl, /a-search-awin-live/);
+    assert.doesNotMatch(tpl, /a-search-awin-sandbox/);
+    assert.doesNotMatch(tpl, /a-search-awin-worker-/);
+    assert.doesNotMatch(tpl, /a-search-impact-worker-/);
+    assert.match(tpl, /a-search-db-backed/);
+    assert.match(tpl, /SQS_DB_BACKED_URL/);
+
     // Fail-when: only amazon queues exist
     assert.match(tpl, /a-search-ebay-live/);
-    assert.match(tpl, /a-search-awin-sandbox/);
 
     assert.match(tpl, /AWS::Lambda::EventSourceMapping/);
     assert.match(tpl, /SQS_EBAY_LIVE_URL|SQS_EBAY_SANDBOX_URL/);
-    assert.match(tpl, /SQS_AWIN_LIVE_URL|SQS_AWIN_SANDBOX_URL/);
   });
 });
