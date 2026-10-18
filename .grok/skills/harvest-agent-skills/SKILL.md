@@ -530,3 +530,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - APartsGateway annotator IAM: PutObjectTagging must sit on the RedqueenAClubsAnnotate statement itself; a Lambda-role grant is not enough and the next deploy drops an interim IAM patch.
 - Redqueen nssm search env must be set from -SearchApiUrl or redqueen\config\search-api.url plus a key file path, not only the registering process environment. An annotated GUID whose searches.json has queries and no searchid is posted once without a new review, and a failed POST must leave the FIFO message for retry.
 - When searches.json already has a searchid, REDQUEEN_REANNOTATE must not review the host or GUID and must not POST again. A failed POST of a queries-only file is a guid retry and drainOnce must not delete the FIFO message.
+- Search q is product keywords only. Pass steering market and currency as their own fields. Match excludes as whole words and drop tokens shorter than 3 characters.
