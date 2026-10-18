@@ -28,12 +28,16 @@ Backends: `aws` (redqueen: `head-object` + `get-object-tagging` + annotation API
 
 ## search / Invoke-FolderSearch.ps1
 
-POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, SigV4-signs with the redqueen agents profile. Never writes S3. Never prints credentials.
+POST `/search` (#4030, FR #4334) for an `a-clubs` GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, and POSTs the annotator shape: `host`, `hostkey`, `guid`, `queries`, `exclude`, plus `market` and `currency` when the file has them, and metadata `userid` only (never `customernumber`). SigV4-signs with the redqueen agents profile. Never writes S3. Never prints the agent key.
+
+A missing `searches.json` exits `1` with `searches_json_missing` (it does not POST empty queries). A folder that is not a GUID exits `3` (`not_guid_folder`) or `4` when the cwd is a host folder without `-All`. A missing URL or key exits `1` with `search_api_url_required` or `agent_api_key_required`.
+
+`-WhatIf` prints `whatif=1` and the payload and does not POST. `-Json` prints `searchid`, `query_count`, and `providers_queued`. Text output also prints `searchid`, `query_count`, and `providers_queued`.
 
 ```powershell
-# GUID folder
-.\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111' `
-  -SearchApiUrl 'https://EXAMPLE.execute-api.eu-west-2.amazonaws.com'
+# GUID folder (annotator env, or the older names below)
+.\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111'
+.\tools\search.ps1 -WhatIf -Json
 
 # Host folder: require -All (one POST per GUID child)
 .\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com' -All
@@ -42,8 +46,8 @@ POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` 
 Config (optional): copy `folder-tools.config.example.json` to `tools/folder-tools.config.json`
 or `%ProgramData%\a-search\folder-tools.config.json`, or set:
 
-- `A_SEARCH_SEARCH_API_URL`
-- `A_SEARCH_AGENT_API_KEY` (or name in config `AgentApiKeyEnv`)
+- `A_SEARCH_API_URL` (base URL; `/search` is appended). Fallback: `A_SEARCH_SEARCH_API_URL`, then config `SearchApiUrl`, then `-SearchApiUrl`
+- `A_SEARCH_AGENT_API_KEY_FILE` (file contents, trimmed). Fallback: `A_SEARCH_AGENT_API_KEY` (or name in config `AgentApiKeyEnv`)
 - `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
 
@@ -76,6 +80,7 @@ Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate fold
 
 ```powershell
 Invoke-Pester .\tests\fr4043-folder-tools.Tests.ps1
+Invoke-Pester .\tests\fr4334-folder-search.Tests.ps1
 Invoke-Pester .\tests\fr4108-folder-download.Tests.ps1
 Invoke-Pester .\tests\fr4167-folder-download-winps.Tests.ps1
 node --test tests/fr4108-folder-download.test.js
