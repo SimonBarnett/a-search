@@ -460,4 +460,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4043 folder tools: meta reads S3 object annotations (not annotations.json); search posts HOST from metadata.host + GUID for a-clubs cwd; secrets always masked; Pester mocks cover mapping/masking/exits
 - Umbrella FR with all child FRs CLOSED+MERGED: verify acceptance on main, close umbrella with child PR table, DONE FR citing a covering product PR URL; do not re-implement
 - After FR #4038 live IN/ wire, supersede mrb710/718/722 hostile writeResults pins to writeLiveProviderInResult + update provider SKILL Worker sections before PASS rematch
+- FR #4078 parts-gateway stage: npm install --omit=dev client-s3+sqs into asset (never cherry-pick); pin @aws-sdk/checksums and/or @smithy after real install
 - Provider FIFO DLQ is a-search-provider-{id}-{env}-dlq.fifo not {queue}.fifo-dlq; fr142/fr162 must call queueDlqName and must not drop all .fifo names when counting marketplace queues
