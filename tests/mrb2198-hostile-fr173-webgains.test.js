@@ -56,6 +56,6 @@ describe('MRB-2198 FR-173 webgains enable hostile', () => {
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 30 primary queues/);
+    assert.match(fr142, /expected 14 marketplace primary queues/);
   });
 });

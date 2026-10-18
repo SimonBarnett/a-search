@@ -15,7 +15,16 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact', 'kelkoo', 'etsy', 'skimlinks', 'partnerize', 'shopify', 'tradedoubler', 'wix', 'webgains', 'woocommerce']; // FR-179 wix + FR-173 webgains + FR-180 woocommerce; GBP/UK hold bol/aliexpress/avantlink; worker floors 30 (exclude FR-2139 shop-sync .fifo)
+// FR-3949: marketplace only (local/DB-backed providers share a-search-db-backed).
+const ENABLED_IDS = [
+  'amazon',
+  'ebay',
+  'rakuten',
+  'cj',
+  'kelkoo',
+  'etsy',
+  'skimlinks',
+];
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
@@ -93,19 +102,36 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // 15 enabled x live+sandbox = 30. Exclude shop-sync FIFO and widget-events.
+    // FR-3949: 7 marketplace x live+sandbox = 14. Exclude shop-sync FIFO,
+    // widget-events, and the shared db-backed pair (asserted below).
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
       // #2139 shop-sync FIFO (+DLQ) and #1343 widget-agent FIFO are not provider worker queues
       .filter((n) => !String(n).includes('.fifo'))
       .filter((n) => !/^a-search-shop-sync/.test(String(n)))
-      .filter((n) => !/^a-search-widget-events/.test(String(n)));
+      .filter((n) => !/^a-search-widget-events/.test(String(n)))
+      .filter((n) => !/^a-search-db-backed/.test(String(n)));
     const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
     const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
-    // FR-180+FR-179: 30 worker primaries (15 enabled). Exclude FR-2139 shop-sync .fifo.
-    assert.equal(primaries.length, 30, `expected 30 primary queues, got ${primaries.length}`);
-    assert.equal(dlqs.length, 30, `expected 30 DLQs, got ${dlqs.length}`);
+    assert.equal(
+      primaries.length,
+      14,
+      `expected 14 marketplace primary queues, got ${primaries.length}`,
+    );
+    assert.equal(dlqs.length, 14, `expected 14 DLQs, got ${dlqs.length}`);
+
+    // FR-3949: one shared DB-backed queue + DLQ with FR-142 redrive.
+    const dbPrimary = findQueueByName('a-search-db-backed');
+    const dbDlq = findQueueByName('a-search-db-backed-dlq');
+    const dbRedrive = dbPrimary.resource.Properties.RedrivePolicy;
+    assert.ok(dbRedrive, 'a-search-db-backed missing RedrivePolicy');
+    assert.equal(Number(dbRedrive.maxReceiveCount), MAX_RECEIVE_COUNT);
+    assert.equal(
+      dbDlq.resource.Properties.RedrivePolicy,
+      undefined,
+      'a-search-db-backed-dlq must not have its own RedrivePolicy',
+    );
   });
 
   it('docs: FR-142 Decision LOCKED + release-gap SQS DLQ Yes', () => {

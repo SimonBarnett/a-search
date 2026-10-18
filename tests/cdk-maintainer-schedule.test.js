@@ -1,38 +1,48 @@
 'use strict';
 
+/**
+ * FR-024 maintainer schedules — superseded in CDK by FR-3949 (walrus).
+ * Staging helpers may remain; stack no longer deploys maintainer Lambdas.
+ */
+
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { runCdkSynth } = require('./helpers/runCdkSynth');
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 
-describe('FR-024 EventBridge maintainer schedules', () => {
-  it('stack has two env targets with A_SEARCH_ENV live and sandbox', () => {
+describe('FR-024 EventBridge maintainer schedules (removed FR-3949)', () => {
+  it('stack no longer has MaintainerLive/Sandbox Lambdas or 15m schedules', () => {
     const text = fs.readFileSync(
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    assert.match(text, /MaintainerLive/);
-    assert.match(text, /MaintainerSandbox/);
-    assert.match(text, /A_SEARCH_ENV:\s*'live'/);
-    assert.match(text, /A_SEARCH_ENV:\s*'sandbox'/);
+    assert.doesNotMatch(text, /MaintainerLiveFunction|MaintainerSandboxFunction/);
+    assert.doesNotMatch(text, /a-search-maintainer-live|a-search-maintainer-sandbox/);
+    assert.doesNotMatch(text, /stageMaintainerLambdaAsset/);
+    assert.match(text, /FR-3949/);
+    // Onboarding / widget still use EventBridge
     assert.match(text, /aws-events/);
     assert.match(text, /Schedule\.rate/);
   });
 
-  it('npm run synth exits 0 with schedule wiring', () => {
-    const r = runCdkSynth(root);
-    assert.equal(r.status, 0, r.stderr || r.stdout);
-    // Synthesized template should mention both maintainer rules/functions
-    const outDir = r.outDir;
-    const templates = fs.existsSync(outDir)
-      ? fs.readdirSync(outDir).filter((f) => f.endsWith('.template.json'))
-      : [];
-    assert.ok(templates.length >= 1, 'expected cdk.out template');
-    const tpl = fs.readFileSync(path.join(outDir, templates[0]), 'utf8');
-    assert.match(tpl, /a-search-maintainer-live/);
-    assert.match(tpl, /a-search-maintainer-sandbox/);
+  it('synth template has no maintainer function names', () => {
+    let cdk;
+    try {
+      cdk = require('aws-cdk-lib');
+    } catch (err) {
+      assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
+      return;
+    }
+    void cdk;
+    const { outDir } = ensureDefaultStackSynth(root);
+    const tpl = fs.readFileSync(
+      path.join(outDir, 'ASearchStack.template.json'),
+      'utf8',
+    );
+    assert.doesNotMatch(tpl, /a-search-maintainer-live/);
+    assert.doesNotMatch(tpl, /a-search-maintainer-sandbox/);
   });
 });

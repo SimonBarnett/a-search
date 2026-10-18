@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-2139: CDK SQS FIFO a-search-shop-sync.fifo + DLQ + shopSyncWorker.
+ * FR-2139: CDK SQS FIFO a-search-shop-sync.fifo + DLQ.
+ * FR-3949: shopSyncWorker Lambda removed from AWS (queue+DLQ kept for entry enqueue).
  */
 
 const { describe, it } = require('node:test');
@@ -21,7 +22,7 @@ function utf8NoBom(abs) {
 }
 
 describe('FR-2139 shop-sync FIFO CDK wiring', () => {
-  it('stack wires FIFO queue + DLQ maxReceiveCount 5 + shopSyncWorker event source', () => {
+  it('stack wires FIFO queue + DLQ maxReceiveCount 5; no shopSyncWorker Lambda (FR-3949)', () => {
     const text = utf8NoBom(STACK);
     assert.match(text, /FR-2139/);
     assert.match(text, /a-search-shop-sync\.fifo/);
@@ -29,12 +30,14 @@ describe('FR-2139 shop-sync FIFO CDK wiring', () => {
     assert.match(text, /fifo:\s*true/);
     assert.match(text, /SHOP_SYNC_MAX_RECEIVE_COUNT\s*=\s*5|maxReceiveCount:\s*SHOP_SYNC_MAX_RECEIVE_COUNT/);
     assert.match(text, /ShopSyncFifoQueue|ShopSyncDeadLetterQueue/);
-    assert.match(text, /shopSyncWorker\.handler/);
     assert.match(text, /SQS_SHOP_SYNC_URL/);
     assert.match(text, /SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC/);
-    assert.match(text, /SqsEventSource\(shopSyncQueue/);
     assert.match(text, /grantSendMessages\(entry\)/);
     assert.match(text, /onShopLive|FR-239/);
+    // FR-3949: queue+DLQ stay; consumer Lambda removed from AWS
+    assert.doesNotMatch(text, /shopSyncWorker\.handler/);
+    assert.doesNotMatch(text, /SqsEventSource\(shopSyncQueue/);
+    assert.match(text, /Worker Lambda removed in FR-3949|no consumer Lambda/);
   });
 
   it('shopSyncWorker maps SQS records and throws on backoff', async () => {

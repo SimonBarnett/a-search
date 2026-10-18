@@ -14,7 +14,8 @@ const { queueName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
-const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj', 'awin', 'impact'];
+// FR-3949: marketplace only (local providers no longer have per-source workers).
+const ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj'];
 
 describe('FR-164 SQS visibilityTimeout > worker Lambda timeout', () => {
   it('stack constants: visibility is 6x worker timeout and wired', () => {

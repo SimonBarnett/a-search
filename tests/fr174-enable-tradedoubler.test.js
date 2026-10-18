@@ -4,6 +4,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 /**
  * FR-174 / #1021: enable tradedoubler only; FR-138 secret wiring; others stay dark.
+ * FR-3949: local/DB-backed share a-search-db-backed (no per-source AWS workers).
  */
 
 const { describe, it } = require('node:test');
@@ -74,9 +75,15 @@ describe('FR-174 enable tradedoubler', () => {
     );
   });
 
-  it('synth: tradedoubler live+sandbox workers+queues; secret refs; dark ids absent', () => {
-    const cdk = require('aws-cdk-lib');
-    const { ASearchStack } = require('../cdk/lib/a-search-stack');
+  it('synth: FR-3949 no per-source tradedoubler workers/queues; shared db-backed present', () => {
+    let cdk;
+    try {
+      cdk = require('aws-cdk-lib');
+    } catch (err) {
+      assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
+      return;
+    }
+    void cdk;
     const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
@@ -89,45 +96,49 @@ describe('FR-174 enable tradedoubler', () => {
       (res) => res && res.Type === 'AWS::SQS::Queue',
     );
 
-    function envOf(name) {
-      const fn = fns.find(
-        (res) => res.Properties && res.Properties.FunctionName === name,
-      );
-      assert.ok(fn, `missing Lambda ${name}`);
-      return fn.Properties.Environment.Variables || {};
-    }
-
     for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-tradedoubler-worker-${env}`);
-      assert.ok(envVars.TRADEDOUBLER_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.TRADEDOUBLER_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.TRADEDOUBLER_API_KEY === 'object',
-        `TRADEDOUBLER_API_KEY must be Secrets Manager ref (${env})`,
+      const workerName = 'a-search-tradedoubler-worker-' + env;
+      const workerHit = fns.find(
+        (res) =>
+          res.Properties &&
+          res.Properties.FunctionName === workerName,
       );
-      assert.ok(
-        envVars.TRADEDOUBLER_AFFILIATE_ID,
-        `missing affiliate ${env}`,
+      assert.equal(
+        workerHit,
+        undefined,
+        'FR-3949: no ' + workerName,
       );
+      const qName = 'a-search-tradedoubler-' + env;
       const qHit = queues.find(
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-tradedoubler-${env}`,
+          q.Properties.QueueName === qName,
       );
-      assert.ok(qHit, `missing queue a-search-tradedoubler-${env}`);
+      assert.equal(
+        qHit,
+        undefined,
+        'FR-3949: no ' + qName + ' queue',
+      );
     }
 
-    for (const dark of STILL_DARK) {
+    const dbQ = queues.find(
+      (q) =>
+        q.Properties &&
+        typeof q.Properties.QueueName === 'string' &&
+        q.Properties.QueueName === 'a-search-db-backed',
+    );
+    assert.ok(dbQ, 'shared a-search-db-backed queue required');
+
+    const darkIds = typeof STILL_DARK !== 'undefined' ? STILL_DARK : ['admitad'];
+    for (const dark of darkIds) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
-          res.Properties.FunctionName.includes(`-${dark}-worker-`),
+          res.Properties.FunctionName.includes('-' + dark + '-worker-'),
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(hit, undefined, 'stay-dark ' + dark + ' must not have worker');
     }
   });
 });

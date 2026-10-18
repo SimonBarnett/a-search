@@ -29,17 +29,22 @@ describe('MRB #2209 hostile FR-251 madeiradb', () => {
     assert.deepEqual(DEFAULT_ALLOWLIST, ['a_search', 'a_search_sandbox']);
   });
 
-  it('fr251 test file does not top-level require cdk stack (seat without aws-cdk-lib)', () => {
+  it('fr251 test file does not require wireMssqlSecretEnv (removed FR-3949)', () => {
     const text = fs.readFileSync(
       path.join(ROOT, 'tests', 'fr251-madeiradb-readonly.test.js'),
       'utf8',
     );
+    // May mention the name in doesNotMatch pins / comments; must not import it.
     assert.doesNotMatch(
       text,
-      /^(const|let|var)\s*\{[^}]*wireMssqlSecretEnv[^}]*\}\s*=\s*require\(\s*['\"]\.\.\/cdk\/lib\/a-search-stack['\"]/m,
+      /require\(\s*['\"]\.\.\/cdk\/lib\/a-search-stack['\"]/,
+    );
+    assert.doesNotMatch(
+      text,
+      /\{\s*[^}]*wireMssqlSecretEnv[^}]*\}\s*=\s*require/,
     );
     assert.match(text, /STACK_PATH|readFileSync\(STACK_PATH/);
-    assert.match(text, /MODULE_NOT_FOUND/);
+    assert.match(text, /FR-3949|FR-251/);
   });
 
   it('db-migrate refuses madeiradb; every migration has target header; no INSTEAD OF', async () => {

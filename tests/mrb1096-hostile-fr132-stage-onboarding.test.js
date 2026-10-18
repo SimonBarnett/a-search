@@ -1,6 +1,10 @@
 'use strict';
 
-/** docs/mrb-1096: hostile pins for FR-132 stage onboarding + shared/ (PR #1096). */
+/**
+ * docs/mrb-1096: hostile pins for FR-132 stage onboarding + shared/ (PR #1096).
+ * FR-3949: stack no longer imports stage-maintainer-lambda-asset (maintainers removed);
+ * onboarding staging + handlers stay.
+ */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -14,10 +18,9 @@ function read(rel) {
 }
 
 describe('MRB #1096 hostile FR-132 stage onboarding shared', () => {
-  it('stack imports stageOnboarding + stageMaintainer; uses staged handlers', () => {
+  it('stack imports stageOnboarding; no stageMaintainer (FR-3949); uses staged handlers', () => {
     const t = read('cdk/lib/a-search-stack.js');
     assert.match(t, /stage-onboarding-lambda-asset/);
-    assert.match(t, /stage-maintainer-lambda-asset/);
     assert.match(t, /stageOnboardingLambdaAsset/);
     assert.match(t, /onboardingHandlerPath/);
     assert.match(t, /providers\/local\/awin\/onboarding/);
@@ -29,6 +32,9 @@ describe('MRB #1096 hostile FR-132 stage onboarding shared', () => {
     );
     assert.match(t, /wireResultsBucketAccess\(\s*awinOnboardingLive/);
     assert.match(t, /wireResultsBucketAccess\(\s*impactOnboardingLive/);
+    // FR-3949 cutover: maintainer Lambdas gone from stack.
+    assert.doesNotMatch(t, /stage-maintainer-lambda-asset/);
+    assert.doesNotMatch(t, /stageMaintainerLambdaAsset/);
   });
 
   it('stage script allowlists awin+impact and copies shared/identity', () => {
@@ -47,6 +53,7 @@ describe('MRB #1096 hostile FR-132 stage onboarding shared', () => {
   it('gitignore covers onboarding + maintainer staged dirs; FR-132 Decision present', () => {
     const gi = read('.gitignore');
     assert.match(gi, /onboarding-lambda-asset/);
+    // Staging helper may remain on disk; gitignore still lists it.
     assert.match(gi, /maintainer-lambda-asset/);
     const park = read('docs/fr/FR-132.md');
     assert.match(park, /Decision/);

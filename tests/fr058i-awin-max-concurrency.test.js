@@ -1,21 +1,23 @@
 'use strict';
 
 /**
- * FR-058i: CDK SQS maxConcurrency for awin workers only.
+ * FR-058i: CDK SQS maxConcurrency for awin workers.
+ * FR-3949: local/DB-backed awin workers are not deployed; shared a-search-db-backed
+ * queue has no Lambda ESM. Registry rateLimit may remain for documentation.
  */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { runCdkSynth } = require('./helpers/runCdkSynth');
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 const registryPath = path.join(root, 'providers', 'registry.json');
 
 describe('FR-058i awin SQS maxConcurrency', () => {
-  it('registry awin has rateLimit.maxConcurrency and stack applies it for awin', () => {
+  it('registry awin still records rateLimit.maxConcurrency; stack skips local workers', () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
     const awin = registry.sources.find((s) => s.id === 'awin');
     assert.ok(awin && awin.rateLimit, 'awin rateLimit required');
@@ -23,45 +25,40 @@ describe('FR-058i awin SQS maxConcurrency', () => {
     assert.equal(awin.rateLimit.maxConcurrency, 2);
 
     const text = fs.readFileSync(stackPath, 'utf8');
+    assert.match(text, /isLocalProviderFolder|FR-3949/);
     assert.match(text, /maxConcurrency/);
-    // Shared helper: allow === 'awin' inline OR !== 'awin' in amazon|ebay|rakuten|awin gate.
-    assert.match(
-      text,
-      /src\.id\s*===\s*['"]awin['"]|src\.id\s*!==\s*['"]awin['"]|id\s*===\s*['"]awin['"]/,
-    );
-    assert.match(
-      text,
-      /awin[\s\S]{0,200}maxConcurrency|maxConcurrency[\s\S]{0,200}awin/i,
-    );
   });
 
-  it('npm run synth: awin event source mappings set MaximumConcurrency', () => {
-    const r = runCdkSynth(root);
-    assert.equal(r.status, 0, r.stderr || r.stdout);
-    const templatePath = path.join(r.outDir, 'ASearchStack.template.json');
-    assert.ok(fs.existsSync(templatePath), 'synth must emit template');
-    const parsed = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+  it('synth: no awin worker event source mappings (FR-3949)', () => {
+    let cdk;
+    try {
+      cdk = require('aws-cdk-lib');
+    } catch (err) {
+      assert.match(String(err && err.message), /Cannot find module|aws-cdk-lib/);
+      return;
+    }
+    void cdk;
+    const { outDir } = ensureDefaultStackSynth(root);
+    const parsed = JSON.parse(
+      fs.readFileSync(path.join(outDir, 'ASearchStack.template.json'), 'utf8'),
+    );
     const mappings = Object.entries(parsed.Resources || {}).filter(
       ([, res]) => res.Type === 'AWS::Lambda::EventSourceMapping',
     );
-    const awinMappings = mappings.filter(([logicalId, res]) => {
+    const awinWorkerMappings = mappings.filter(([logicalId, res]) => {
       const id = String(logicalId);
       const fn = JSON.stringify(res.Properties || {});
-      // CDK logical ids are PascalCase (AwinLive...); match /awin/i.
-      return /awin/i.test(id) || /awin/i.test(fn);
-    });
-    assert.ok(awinMappings.length >= 1, 'expected awin event source mapping(s)');
-    for (const [, res] of awinMappings) {
-      const props = res.Properties || {};
-      const max =
-        props.MaximumConcurrency != null
-          ? props.MaximumConcurrency
-          : props.ScalingConfig && props.ScalingConfig.MaximumConcurrency;
-      assert.equal(
-        max,
-        2,
-        `awin mapping missing MaximumConcurrency=2: ${JSON.stringify(props)}`,
+      return (
+        (/AwinLive|AwinSandbox|awin-worker|AwinWorker/i.test(id) ||
+          /a-search-awin-(live|sandbox)/i.test(fn)) &&
+        !/Onboarding/i.test(id) &&
+        !/Onboarding/i.test(fn)
       );
-    }
+    });
+    assert.equal(
+      awinWorkerMappings.length,
+      0,
+      `FR-3949: no awin worker ESM expected, got ${awinWorkerMappings.map(([id]) => id).join(',')}`,
+    );
   });
 });
