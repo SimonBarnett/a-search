@@ -458,3 +458,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX CI after provider FIFO rename: update env-isolation-runtime (-live.fifo$), fanout-enqueue, fanout, sqs-send to assert queueName() not hardcoded a-search-{source}-{env}
 - FR #4043 annotations are AWS S3 object annotations (list/get-object-annotation), not annotations.json; Write-Error under Stop breaks Pester exit-code asserts --- use [Console]::Error.WriteLine then exit N
 - FR #4043 folder tools: meta reads S3 object annotations (not annotations.json); search posts HOST from metadata.host + GUID for a-clubs cwd; secrets always masked; Pester mocks cover mapping/masking/exits
+- After FR #4038 live IN/ wire, supersede mrb710/718/722 hostile writeResults pins to writeLiveProviderInResult + update provider SKILL Worker sections before PASS rematch
