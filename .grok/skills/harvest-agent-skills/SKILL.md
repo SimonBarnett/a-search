@@ -391,3 +391,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search MRB: a worktree path that already exists can still be an older fold SHA. rev-parse HEAD against the PR tip before trusting pin results; a 403 on connect stubs is not a product fail until the tree matches the head.
 - MRB process-loop: harvest tip that only restates main Prefer ExistingPrUrl reopen CLOSED-unmerged covering PR -> close already-covered and DONE PASS (FR #3317); do not merge twin wording
 - a-search MRB rematch after sibling FIX stub patch: re-verify pin at new head, PASS without fold when MERGEABLE behind and ambient jwt-auth still open (#3887)
+- When FIX tip already heals FR-236/237/238 contactVerified stubs and CI fails only jwt-auth/mrb35 deepEqual while #3887 remains OPEN, DONE FIX at MERGEABLE head without fold (FR #4649); re-arm --auto
