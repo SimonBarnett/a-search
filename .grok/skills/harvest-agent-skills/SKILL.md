@@ -483,3 +483,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB harvest tip: PASS re-offer FAIL-supersede twin lesson; pin contiguous NEEDLE on docs/mrb-N from new main
 - Redqueen a-clubs: inject fetchImpl for host/GUID pages before review; failed fetch must retry without annotated=1; register Windows service with nssm (not sc.exe+node/1053) and AWS_PROFILE/GROK_CLI env; update fr4098 pins when replacing sc.exe.
 - FIX docs/mrb CI red on FR-221 widget JS ASCII: scan widget for U+2026/non-ASCII in comments from later FRs; replace with ASCII before --auto
+- FR paste-from-a-affiliates-AGENT.md jobs: ACK then GIVEUP reason=needs_human when flamingo lacks S3/S: read; never invent publisher signup steps.
