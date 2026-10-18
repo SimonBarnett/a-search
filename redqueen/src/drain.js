@@ -110,6 +110,7 @@ async function drainOnce(opts) {
       listObjectAnnotations: io.listObjectAnnotations,
       reviewHost: opts.reviewHost,
       reviewGuid: opts.reviewGuid,
+      postSearch: opts.postSearch,
       onNewFolder: opts.onNewFolder,
       now: opts.now,
       bucket: opts.bucket,

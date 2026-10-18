@@ -757,6 +757,8 @@ async function handleSearch(event, deps = {}) {
           body: parsedEarly,
         },
         headObject,
+        getObject: deps.getObject,
+        putObject: deps.putObject,
         sendMessage: deps.sendMessage,
         env,
         newSearchId: deps.newSearchId || makeId,
@@ -766,6 +768,7 @@ async function handleSearch(event, deps = {}) {
       return jsonResponse(202, {
         searchid: result.searchid,
         queued: result.queued,
+        ...(result.idempotent ? { idempotent: true } : {}),
       });
     } catch (err) {
       if (err instanceof AgentSearchError) {

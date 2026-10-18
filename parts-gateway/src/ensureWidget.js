@@ -28,7 +28,7 @@ const { resolvePageUri } = require('./pageUri');
  * @param {{
  *   host: string,
  *   widgetGuid: string,
- *   customerNumber: string,
+ *   userid: string,
  *   layout?: string,
  *   createdVia?: string,
  *   referer?: string,
@@ -52,10 +52,10 @@ async function ensureAclubsWidget(opts) {
   }
   const host = normalizeHost(opts.host);
   const guid = assertWidgetGuid(opts.widgetGuid);
-  const customerNumber = String(opts.customerNumber || '').trim();
-  if (!customerNumber) {
-    const err = new Error('customer_number_required');
-    err.code = 'customer_number_required';
+  const userid = String(opts.userid || '').trim();
+  if (!userid) {
+    const err = new Error('userid_required');
+    err.code = 'userid_required';
     throw err;
   }
   const layout =
@@ -104,7 +104,7 @@ async function ensureAclubsWidget(opts) {
   const widgetDoc = {
     widgetGuid: guid,
     host,
-    customerNumber,
+    userid,
     layout,
     createdVia,
     createdAt,

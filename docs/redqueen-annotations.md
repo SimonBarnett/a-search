@@ -36,9 +36,14 @@ poll loop does not rewrite the same markers on every tick. The host marker
 must still be on the folder-events queue (replay the host message).
 
 Host `annotation` is an affiliate brief: club specifics, audience, and
-affiliate opportunities. GUID `annotation` describes only that page (title,
+affiliate opportunities. Those three fields must be non-empty, and `summary`
+must be the brief rather than a plan to browse more pages. An incomplete
+brief writes nothing, leaves `annotated` unset, and does not review GUIDs.
+The annotator fetches a few same-host about/shop/training links and passes
+that text in; the model is told not to browse.
+GUID `annotation` describes only that page (title,
 meta, purpose) using the host brief as context and must not copy it.
-`steering` lists the page's narrowing terms plus market, currency and locale.
+`steering` is required and lists the page's narrowing terms plus market, currency and locale.
 
 The agent writes `lastupdate` and `lastmod` together so its own annotation write
 does not look like a content change and loop.
@@ -47,6 +52,24 @@ Host before GUID: GUIDs are only processed after the host step leaves the host
 annotated and up to date, and after the host marker carries an `annotation`
 object annotation. If the host review fails or annotations are missing, the
 message returns to the queue (visibility timeout) and no GUIDs are touched.
+
+## searches.json and POST /search (FR #4265)
+
+After a GUID marker is saved with `annotated=1`, the agent writes
+`a-clubs/{hostkey}/{guid}/searches.json` and POSTs it to `/search`.
+
+Order: host review (`annotated=1`), GUID review (`annotated=1`), `searches.json`,
+then `/search`. No host review means no GUID review and no search. Queries come
+from the page review and `steering` (market and currency included). The free cap
+is 3 queries; an upgraded fullscreen widget (`upgraded=1`, `layout=fullscreen`)
+uses 15. Existing `exclude[]` entries are kept. The shape is
+`{ queries: [{ q, intent, maxResults }], exclude: [...] }`.
+
+`/search` records `search-fanout.json` for that GUID and returns the same
+`searchid` on a retry without sending again. If the write or the POST fails,
+the folder message is retried. The service needs `A_SEARCH_API_URL` and either
+`A_SEARCH_AGENT_API_KEY` or `A_SEARCH_AGENT_API_KEY_FILE`. Those values are
+never written to the log.
 
 ## Object annotations (not JSON sidecars)
 

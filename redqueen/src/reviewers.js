@@ -350,17 +350,54 @@ function formatHead(head) {
   ].join('\n');
 }
 
+function isNarrationSummary(summary) {
+  return /\b(i'll|i will|i am going to|i'm going to|let me)\b/i.test(String(summary || ''));
+}
+
+function isCompleteHostBrief(review) {
+  if (!review || typeof review !== 'object') return false;
+  const club = String(review.club || '').trim();
+  const audience = String(review.audience || '').trim();
+  const aff = String(review.affiliateOpportunities || '').trim();
+  if (!club || !audience || !aff) return false;
+  if (isNarrationSummary(review.summary)) return false;
+  return true;
+}
+
+function isCompleteGuidReview(review) {
+  if (!review || typeof review !== 'object') return false;
+  const summary = String(review.summary || '').trim();
+  if (!summary || isNarrationSummary(summary)) return false;
+  const steering = review.steering;
+  if (steering == null) return false;
+  if (typeof steering === 'string') return steering.trim().length > 0;
+  if (typeof steering === 'object') return Object.keys(steering).length > 0;
+  return false;
+}
+
+function formatExtraPages(pages) {
+  const list = Array.isArray(pages) ? pages : [];
+  if (!list.length) return '(none)';
+  return list
+    .map((p, i) => {
+      const text = String((p && p.text) || '').slice(0, 4000);
+      return [`#${i + 1} url=${(p && p.url) || ''}`, `title=${(p && p.title) || ''}`, text].join('\n');
+    })
+    .join('\n---\n');
+}
+
 /**
  * @param {object} input
  */
 function hostReviewPrompt(input) {
   const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
   return [
-    'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
+    'Answer in one shot from the supplied text only. Do not browse, do not open other pages, and do not say what you will do next.',
     'Write an affiliate-targeting brief of this CLUB. Do not restate the home page.',
     'Club specifics: what the club is and does, its discipline or niche, size or activity if visible, location or region, and governing-body affiliation.',
     'Audience: who the members and visitors are, and what they buy or need.',
     'Affiliate opportunities: product categories, brands and retailers that fit this audience, existing shop or affiliate activity, gaps where products could be offered, and seasonal or event hooks.',
+    'club, audience and affiliateOpportunities must be non-empty. summary must be the brief, not a plan to fetch more pages.',
     `host=${input.host}`,
     `hostkey=${input.hostkey}`,
     `pageUrl=${input.pageUrl || ''}`,
@@ -370,6 +407,9 @@ function hostReviewPrompt(input) {
     'PAGE_TEXT_BEGIN',
     pageSlice,
     'PAGE_TEXT_END',
+    'EXTRA_PAGES_BEGIN',
+    formatExtraPages(input.extraPages),
+    'EXTRA_PAGES_END',
     'Return JSON: {summary, club, audience, affiliateOpportunities, categories[], notes}',
   ].join('\n');
 }
@@ -488,6 +528,9 @@ module.exports = {
   annotationSimilarity,
   annotationsTooSimilar,
   hostBriefText,
+  isNarrationSummary,
+  isCompleteHostBrief,
+  isCompleteGuidReview,
   PAGE_HOST_SIMILARITY_MAX,
   defaultReviewHost,
   defaultReviewGuid,

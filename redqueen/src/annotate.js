@@ -14,8 +14,11 @@ const {
   defaultReviewGuid,
   annotationsTooSimilar,
   hostBriefText,
+  isCompleteHostBrief,
+  isCompleteGuidReview,
 } = require('./reviewers');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
+const { publishGuidSearch, localPostSearchAck } = require('./guidSearch');
 
 /** @deprecated FR #4098 --- sidecars removed; kept for test migration grep */
 function hostAnnotationsKey(hostkey) {
@@ -196,6 +199,21 @@ async function processFolderEvent(opts) {
         detail: `host_fetch_failed:${hostPage.detail || 'unknown'}`,
       };
     }
+    const extraPages = [];
+    for (const extraUrl of hostPage.contextLinks || []) {
+      const extra = await fetchPageText({
+        url: extraUrl,
+        fetchImpl: opts.fetchImpl,
+        timeoutMs: opts.fetchTimeoutMs,
+        maxBytes: opts.fetchMaxBytes,
+      });
+      if (!extra.ok) continue;
+      extraPages.push({
+        url: extraUrl,
+        title: extra.head && extra.head.title,
+        text: String(extra.text || '').slice(0, 4000),
+      });
+    }
     let review;
     try {
       review = await reviewHost({
@@ -204,15 +222,18 @@ async function processFolderEvent(opts) {
         pageText: hostPage.text,
         pageHead: hostPage.head,
         pageUrl: hostUrl,
+        extraPages,
       });
     } catch (err) {
       const detail = (err && err.message) || 'host_review_failed';
       return { action: 'retry', detail: `host_review_failed:${detail}` };
     }
-    if (!isUsableReview(review)) {
+    if (!isUsableReview(review) || !isCompleteHostBrief(review)) {
       return {
         action: 'retry',
-        detail: `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+        detail: !isUsableReview(review)
+          ? `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`
+          : 'host_brief_incomplete',
       };
     }
     hostAnnDoc = {
@@ -281,7 +302,28 @@ async function annotateOneGuid(args) {
   const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
   const need = annotationNeed(guidMd, { reannotate: Boolean(opts.reannotate) });
   if (need === 'skip') {
-    return { action: 'noop', detail: 'guid_unchanged' };
+    const ann = await getNamedAnnotationJson(opts, markerKey, 'annotation');
+    if (!ann) return { action: 'noop', detail: 'guid_unchanged' };
+    const steering = await getNamedAnnotationJson(opts, markerKey, 'steering');
+    try {
+      const published = await publishGuidSearch({
+        ...opts,
+        hostkey: event.hostkey,
+        guid,
+        review: ann,
+        steering: steering || undefined,
+        metadata: guidMd,
+        now,
+        postSearch: opts.postSearch || localPostSearchAck(),
+      });
+      if (!published.wrote) return { action: 'noop', detail: 'guid_unchanged' };
+      return { action: 'guid_searched', detail: 'search_completed' };
+    } catch (err) {
+      return {
+        action: 'retry',
+        detail: (err && err.code) || 'search_failed',
+      };
+    }
   }
 
   const uri = String(guidMd.uri || '').trim();
@@ -317,10 +359,12 @@ async function annotateOneGuid(args) {
       detail: `guid_review_failed:${(err && err.message) || err}`,
     };
   }
-  if (!isUsableReview(review)) {
+  if (!isUsableReview(review) || !isCompleteGuidReview(review)) {
     return {
       action: 'retry',
-      detail: `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+      detail: !isUsableReview(review)
+        ? `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`
+        : 'guid_review_incomplete',
     };
   }
   if (annotationsTooSimilar(review.summary, hostBriefText(hostAnn))) {
@@ -361,6 +405,24 @@ async function annotateOneGuid(args) {
       key: markerKey,
       uri,
     });
+  }
+
+  try {
+    await publishGuidSearch({
+      ...opts,
+      hostkey: event.hostkey,
+      guid,
+      review,
+      steering: review.steering,
+      metadata: { ...guidMd, annotated: '1' },
+      now,
+      postSearch: opts.postSearch || localPostSearchAck(),
+    });
+  } catch (err) {
+    return {
+      action: 'retry',
+      detail: (err && err.code) || 'search_failed',
+    };
   }
 
   return { action: need === 'create' ? 'guid_annotated' : 'guid_updated' };

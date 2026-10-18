@@ -286,6 +286,13 @@ $envPairs = @(
 if ($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL) {
   $envPairs += "A_CLUBS_FOLDER_EVENTS_QUEUE_URL=$($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL)"
 }
+# FR #4265: pass the API base and a key-file path. Never put the key value on the nssm command line.
+if ($env:A_SEARCH_API_URL) {
+  $envPairs += "A_SEARCH_API_URL=$($env:A_SEARCH_API_URL)"
+}
+if ($env:A_SEARCH_AGENT_API_KEY_FILE) {
+  $envPairs += "A_SEARCH_AGENT_API_KEY_FILE=$($env:A_SEARCH_AGENT_API_KEY_FILE)"
+}
 if ($env:AWS_SHARED_CREDENTIALS_FILE) {
   $envPairs += "AWS_SHARED_CREDENTIALS_FILE=$($env:AWS_SHARED_CREDENTIALS_FILE)"
 }

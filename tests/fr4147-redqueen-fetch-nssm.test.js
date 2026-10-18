@@ -217,6 +217,9 @@ describe('FR #4147 reviewer receives fetched page text', () => {
           assert.match(seen.host, /My Model Flying Club/);
           return {
             summary: 'Real club site',
+            club: 'flying club',
+            audience: 'members',
+            affiliateOpportunities: 'kits',
             categories: ['club'],
             model: 'test-host',
           };

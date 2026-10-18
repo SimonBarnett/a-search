@@ -12,6 +12,8 @@
  *   REDQUEEN_ON_NEW_FOLDER           (optional path to .js hook module exporting onNewFolder)
  *   REDQUEEN_LOG_FILE                (optional rotating log path)
  *   REDQUEEN_REANNOTATE              (1/true/yes: rewrite markers even when already annotated)
+ *   A_SEARCH_API_URL                 (POST /search base; required for GUID search)
+ *   A_SEARCH_AGENT_API_KEY           (or A_SEARCH_AGENT_API_KEY_FILE; never logged)
  *
  * Never logs secrets. Uses named AWS profile --- never root keys.
  */
@@ -20,6 +22,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { drainOnce } = require('./drain');
 const { defaultReviewHost, defaultReviewGuid } = require('./reviewers');
+const { createHttpPostSearch } = require('./guidSearch');
 
 function logLine(obj) {
   const line = JSON.stringify({ ts: new Date().toISOString(), ...obj });
@@ -260,6 +263,7 @@ async function buildAwsDeps() {
     listObjectAnnotations,
     reviewHost: defaultReviewHost,
     reviewGuid: defaultReviewGuid,
+    postSearch: createHttpPostSearch(process.env),
     reannotate: /^(1|true|yes)$/i.test(String(process.env.REDQUEEN_REANNOTATE || '')),
     onNewFolder: loadOnNewFolderHook(),
   };
@@ -273,6 +277,10 @@ async function main() {
     event: 'start',
     profile: process.env.AWS_PROFILE || '(keys)',
     bucket: process.env.A_CLUBS_BUCKET || 'a-clubs',
+    searchConfigured: Boolean(
+      process.env.A_SEARCH_API_URL &&
+        (process.env.A_SEARCH_AGENT_API_KEY || process.env.A_SEARCH_AGENT_API_KEY_FILE),
+    ),
   });
   // eslint-disable-next-line no-constant-condition
   while (true) {
