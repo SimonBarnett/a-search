@@ -356,6 +356,7 @@ function formatHead(head) {
 function hostReviewPrompt(input) {
   const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
   return [
+    'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
     'Write an affiliate-targeting brief of this CLUB. Do not restate the home page.',
     'Club specifics: what the club is and does, its discipline or niche, size or activity if visible, location or region, and governing-body affiliation.',
     'Audience: who the members and visitors are, and what they buy or need.',
@@ -380,6 +381,7 @@ function guidReviewPrompt(input) {
   const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
   const hostJson = JSON.stringify(input.hostAnnotations || {}).slice(0, 4000);
   return [
+    'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
     'Describe ONLY this page. The host review is context. Do not repeat the host review.',
     'Use the page title, meta description, meta keywords, og tags, and H1/H2 to say how THIS page narrows search beyond the club.',
     'steering must list concrete narrowing signals from this page: title and meta terms, categories, price band, include terms, exclude terms, plus market, currency and locale.',
