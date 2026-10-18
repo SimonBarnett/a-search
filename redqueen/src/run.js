@@ -86,8 +86,8 @@ async function buildAwsDeps() {
     process.env.AWS_PROFILE = 'a-search-redqueen-annotator';
   }
 
-  const s3 = new S3Client({ region });
-  const sqs = new SQSClient({ region });
+  const s3 = new S3Client({ region, maxAttempts: 5 });
+  const sqs = new SQSClient({ region, maxAttempts: 5 });
 
   /** PutObjectAnnotation may be missing on older SDKs --- fall back to CLI. */
   async function putObjectAnnotation(input) {
