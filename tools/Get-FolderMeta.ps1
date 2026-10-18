@@ -42,6 +42,80 @@ $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
 
+function Get-MarkerMetaValue {
+    param($Metadata, [string]$Name)
+    if (-not $Metadata) { return '' }
+    foreach ($k in @($Metadata.Keys)) {
+        if ($k -and ([string]$k).ToLowerInvariant() -eq $Name.ToLowerInvariant()) {
+            if ($null -eq $Metadata[$k]) { return '' }
+            return [string]$Metadata[$k]
+        }
+    }
+    return ''
+}
+
+function Get-NamedFolderAnnotation {
+    param($Items, [string]$Name)
+    return @($Items) | Where-Object { $_.Name -eq $Name } | Select-Object -First 1
+}
+
+function New-FolderReviewField {
+    param($Ann, [string]$Annotated, [string]$LastUpdate)
+    if (-not $Ann) { return $null }
+    $text = ''
+    $names = @($Ann.PSObject.Properties.Name)
+    if (($names -contains 'FullPayload') -and $null -ne $Ann.FullPayload) {
+        $text = [string]$Ann.FullPayload
+    }
+    elseif ($null -ne $Ann.Payload) {
+        $text = [string]$Ann.Payload
+    }
+    return [ordered]@{
+        text       = $text
+        annotated  = $Annotated
+        lastupdate = $LastUpdate
+    }
+}
+
+function Read-LegacyReviewFile {
+    param([string]$FilePath)
+    if (-not $FilePath) { return $null }
+    if (-not (Test-Path -LiteralPath $FilePath)) { return $null }
+    $text = [System.IO.File]::ReadAllText($FilePath)
+    return [pscustomobject]@{
+        Name        = 'legacy'
+        Payload     = $text
+        FullPayload = $text
+    }
+}
+
+function Write-GuidReviewSections {
+    param($HostName, $GuidName, $HostReview, $PageReview, $Steering)
+    Write-Output ("Host review ({0})" -f $HostName)
+    if ($null -eq $HostReview) {
+        Write-Output 'Host not reviewed yet'
+    }
+    else {
+        Write-Output $HostReview.text
+    }
+    Write-Output ''
+    Write-Output ("Page review ({0})" -f $GuidName)
+    if ($null -eq $PageReview) {
+        Write-Output 'Page not reviewed yet'
+    }
+    else {
+        Write-Output $PageReview.text
+    }
+    Write-Output ''
+    Write-Output 'Steering'
+    if ($null -eq $Steering) {
+        Write-Output '(none)'
+    }
+    else {
+        Write-Output $Steering.text
+    }
+}
+
 function Write-HumanMeta {
     param($Report)
     Write-Output ("folder: {0}" -f $Report.kind)
@@ -98,20 +172,63 @@ try {
         -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
         -RcloneLsJson $RcloneLsJson
 
-    $ann = Get-FolderS3Annotations -Bucket $loc.Bucket -Key $loc.Key -Full:$Full `
+    # GUID reviews are always complete (FR #4270). Host folders still truncate unless -Full.
+    $reviewFull = [bool]$Full -or ($loc.Kind -eq 'guid')
+    $ann = Get-FolderS3Annotations -Bucket $loc.Bucket -Key $loc.Key -Full:$reviewFull `
         -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
 
     $hostAnn = $null
+    $hostReview = $null
+    $pageReview = $null
+    $steeringReview = $null
+    $isGuidFolder = ($loc.Kind -eq 'guid')
     if ($loc.Kind -eq 'guid' -or $loc.Kind -eq 'guid-child') {
         $hostKey = Get-FolderS3ParentHostKey -Location $loc
         if ($hostKey) {
-            $hostAnns = Get-FolderS3Annotations -Bucket $loc.Bucket -Key ($hostKey + '/') -Full:$Full `
+            $hostAnns = Get-FolderS3Annotations -Bucket $loc.Bucket -Key ($hostKey + '/') -Full:$reviewFull `
                 -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
             $hostAnn = @($hostAnns.Items) | Where-Object { $_.Name -eq 'annotation' } | Select-Object -First 1
             if (-not $hostAnn -and @($hostAnns.Items).Count) {
                 $hostAnn = @($hostAnns.Items) | Select-Object -First 1
             }
         }
+    }
+    if ($isGuidFolder) {
+        $guidLabel = Get-FolderS3Guid -Location $loc
+        $hostLabel = Get-FolderS3ParentHostKey -Location $loc
+        $hostMeta = @{}
+        if ($hostLabel) {
+            try {
+                $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key ($hostLabel + '/') -Backend $Backend `
+                    -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
+                    -RcloneLsJson $RcloneLsJson
+                if ($hostMarker -and $hostMarker.Metadata) { $hostMeta = $hostMarker.Metadata }
+            }
+            catch {
+                $hostMeta = @{}
+            }
+        }
+        $namedHost = $null
+        if ($hostAnn -and $hostAnn.Name -eq 'annotation') { $namedHost = $hostAnn }
+        if (-not $namedHost) {
+            $hostDir = Split-Path -Parent $loc.Path
+            $namedHost = Read-LegacyReviewFile -FilePath (Join-Path $hostDir 'annotations.json')
+        }
+        $pageAnn = Get-NamedFolderAnnotation -Items $ann.Items -Name 'annotation'
+        if (-not $pageAnn) {
+            $pageAnn = Read-LegacyReviewFile -FilePath (Join-Path $loc.Path 'annotations.json')
+        }
+        $steerAnn = Get-NamedFolderAnnotation -Items $ann.Items -Name 'steering'
+        if (-not $steerAnn) {
+            $steerAnn = Read-LegacyReviewFile -FilePath (Join-Path $loc.Path 'steering.json')
+        }
+        $pageAnnotated = Get-MarkerMetaValue -Metadata $marker.Metadata -Name 'annotated'
+        $pageUpdated = Get-MarkerMetaValue -Metadata $marker.Metadata -Name 'lastupdate'
+        $hostAnnotated = Get-MarkerMetaValue -Metadata $hostMeta -Name 'annotated'
+        $hostUpdated = Get-MarkerMetaValue -Metadata $hostMeta -Name 'lastupdate'
+        $hostReview = New-FolderReviewField -Ann $namedHost -Annotated $hostAnnotated -LastUpdate $hostUpdated
+        $pageReview = New-FolderReviewField -Ann $pageAnn -Annotated $pageAnnotated -LastUpdate $pageUpdated
+        $steeringReview = New-FolderReviewField -Ann $steerAnn -Annotated $pageAnnotated -LastUpdate $pageUpdated
     }
 
     $displayMeta = Convert-FolderS3MetadataForDisplay -Metadata $marker.Metadata
@@ -148,6 +265,11 @@ try {
             annotations     = $annOut
             hostAnnotation  = $hostAnnOut
         }
+        if ($isGuidFolder) {
+            $jsonReport.hostReview = $hostReview
+            $jsonReport.pageReview = $pageReview
+            $jsonReport.steering = $steeringReview
+        }
         $jsonReport | ConvertTo-Json -Depth 10
     }
     else {
@@ -163,6 +285,11 @@ try {
             hostAnnotation = $hostAnnOut
         }
         Write-HumanMeta -Report $report
+        if ($isGuidFolder) {
+            Write-Output ''
+            Write-GuidReviewSections -HostName $hostLabel -GuidName $guidLabel `
+                -HostReview $hostReview -PageReview $pageReview -Steering $steeringReview
+        }
     }
     exit 0
 }

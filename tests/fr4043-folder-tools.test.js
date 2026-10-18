@@ -33,7 +33,9 @@ test('FR-4043 folder tools scripts and README exist', () => {
   assert.match(meta, /bucket_root/);
   assert.match(folderS3, /ConvertFrom-FolderS3Json/);
   assert.match(folderS3, /AllowEmptyString/);
-  assert.doesNotMatch(meta, /annotations\.json/);
+  // FR #4270: object annotations first; legacy annotations.json / steering.json only as fallback
+  assert.match(meta, /Read-LegacyReviewFile/);
+  assert.match(meta, /annotations\.json/);
   const pester = fs.readFileSync(
     path.join(root, 'tests', 'fr4043-folder-tools.Tests.ps1'),
     'utf8',

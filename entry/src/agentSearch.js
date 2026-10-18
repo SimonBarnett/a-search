@@ -84,6 +84,72 @@ function newSearchId() {
 }
 
 /**
+ * FR #4265: one fan-out record per GUID. A retry returns this searchid and does not send again.
+ * @param {string} hostkey
+ * @param {string} guid
+ */
+function searchFanoutKey(hostkey, guid) {
+  const host = String(hostkey).replace(/\/+$/, '');
+  const id = String(guid).trim().toLowerCase();
+  return `${host}/${id}/search-fanout.json`;
+}
+
+function isMissingObject(err) {
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  const code = err && (err.name || err.code);
+  return status === 404 || code === 'NotFound' || code === 'NoSuchKey';
+}
+
+async function readStoredFanout(getObject, Key) {
+  if (typeof getObject !== 'function') return null;
+  try {
+    const obj = await getObject({ Key });
+    let text = '';
+    const body = obj && obj.Body;
+    if (Buffer.isBuffer(body)) text = body.toString('utf8');
+    else if (typeof body === 'string') text = body;
+    else if (body && typeof body.transformToString === 'function') {
+      text = await body.transformToString();
+    } else if (body != null) text = String(body);
+    const parsed = JSON.parse(text);
+    if (!parsed || !parsed.searchid) return null;
+    return parsed;
+  } catch (err) {
+    if (isMissingObject(err) || err instanceof SyntaxError) return null;
+    throw err;
+  }
+}
+
+let defaultS3;
+function defaultAclubsIo() {
+  if (defaultS3) return defaultS3;
+  const {
+    S3Client,
+    HeadObjectCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+  } = require('@aws-sdk/client-s3');
+  const client = new S3Client({});
+  const bucket = process.env.A_CLUBS_BUCKET || 'a-clubs';
+  defaultS3 = {
+    headObject: (input) =>
+      client.send(new HeadObjectCommand({ Bucket: bucket, Key: input.Key })),
+    getObject: (input) =>
+      client.send(new GetObjectCommand({ Bucket: bucket, Key: input.Key })),
+    putObject: (input) =>
+      client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: input.Key,
+          Body: input.Body,
+          ContentType: input.ContentType,
+        }),
+      ),
+  };
+  return defaultS3;
+}
+
+/**
  * @param {unknown} raw
  */
 function parseJsonBody(raw) {
@@ -146,12 +212,16 @@ function resolveFanOutTargets(envName, deps = {}) {
  * }} opts
  */
 async function handleAgentSearch(opts) {
-  if (!opts || typeof opts.headObject !== 'function') {
+  if (!opts || typeof opts !== 'object') {
     throw new AgentSearchError('s3_required', 500);
   }
-  requireAgentAuth(opts.event, { env: opts.env });
+  const io = typeof opts.headObject === 'function' ? opts : { ...opts, ...defaultAclubsIo() };
+  if (typeof io.headObject !== 'function') {
+    throw new AgentSearchError('s3_required', 500);
+  }
+  requireAgentAuth(io.event, { env: io.env });
 
-  const body = parseJsonBody(opts.event && opts.event.body);
+  const body = parseJsonBody(io.event && io.event.body);
   if (!body || typeof body !== 'object') {
     throw new AgentSearchError('invalid_json', 400);
   }
@@ -168,26 +238,36 @@ async function handleAgentSearch(opts) {
 
   const markerKey = `${hostkey}/${guid}/`;
   try {
-    await opts.headObject({ Key: markerKey });
+    await io.headObject({ Key: markerKey });
   } catch (err) {
-    const status = err && err.$metadata && err.$metadata.httpStatusCode;
-    const code = err && (err.name || err.code);
-    if (status === 404 || code === 'NotFound' || code === 'NoSuchKey') {
+    if (isMissingObject(err)) {
       throw new AgentSearchError('guid_not_found', 404);
     }
     throw err;
   }
 
-  const searchid = (opts.newSearchId || newSearchId)();
+  const fanoutKey = searchFanoutKey(hostkey, guid);
+  const prior = await readStoredFanout(io.getObject, fanoutKey);
+  if (prior && prior.searchid) {
+    return {
+      searchid: String(prior.searchid),
+      queued: Array.isArray(prior.queued) ? prior.queued : [],
+      idempotent: true,
+    };
+  }
+
+  const searchid = body.searchid
+    ? String(body.searchid)
+    : (io.newSearchId || newSearchId)();
   const jobEnv = body.sandbox === true ? 'sandbox' : 'live';
   const queued = resolveFanOutTargets(jobEnv, {
-    enabled: opts.enabled,
-    loadRegistry: opts.loadRegistry,
+    enabled: io.enabled,
+    loadRegistry: io.loadRegistry,
   });
 
   const send =
-    opts.sendMessage ||
-    createSqsSendMessage({ envVars: opts.env || process.env });
+    io.sendMessage ||
+    createSqsSendMessage({ envVars: io.env || process.env });
 
   for (const source of queued) {
     const payload = {
@@ -204,11 +284,24 @@ async function handleAgentSearch(opts) {
       sandbox: jobEnv === 'sandbox',
       // FIFO single-flight group per provider (FR #4030).
       messageGroupId: source === 'sql' ? 'sql' : source,
+      // Stable per GUID+source so a lost-response retry does not double-enqueue.
+      messageDeduplicationId: `${searchid}-${source}`,
     };
     await send(payload);
   }
 
-  return { searchid, queued };
+  if (typeof io.putObject === 'function') {
+    await io.putObject({
+      Key: fanoutKey,
+      Body: Buffer.from(
+        `${JSON.stringify({ searchid, queued, at: new Date().toISOString() })}\n`,
+        'utf8',
+      ),
+      ContentType: 'application/json',
+    });
+  }
+
+  return { searchid, queued, idempotent: false };
 }
 
 module.exports = {
@@ -219,6 +312,7 @@ module.exports = {
   resolveFanOutTargets,
   isAgentSearchBody,
   newSearchId,
+  searchFanoutKey,
   headerGet,
   parseJsonBody,
 };
