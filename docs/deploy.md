@@ -419,3 +419,26 @@ npx cdk deploy --app "node cdk/bin/affiliates.js" AAffiliates \
   -c account=620257466932 -c region=eu-west-2
 ```
 
+## AMerchants (FR #4008) --- standalone merchants bucket + on-create/weekly download
+
+Separate CDK app (`cdk/bin/merchants.js`, stack id `AMerchants`). Does **not**
+modify or depend on `ASearchStack` or `APartsGateway`. Creates private bucket
+`a-merchants` (fallback name `a-search-merchants` if taken), ObjectCreated Lambda
+for immediate one-merchant download, and **one** weekly Node 20 Lambda
+(EventBridge `rate(7 days)`) that covers `a-merchants` plus optional
+`a-affiliates` via env `A_MERCHANTS_BUCKET` + `A_AFFILIATES_BUCKET`.
+
+Full notes: [a-merchants.md](a-merchants.md) and
+[cdk/README-merchants.md](../cdk/README-merchants.md).
+
+```bash
+npm ci
+npm run stage-merchants
+npx cdk synth --app "node cdk/bin/merchants.js" AMerchants \
+  -c account=620257466932 -c region=eu-west-2
+
+npx cdk deploy --app "node cdk/bin/merchants.js" AMerchants \
+  -c requireDeployEnv=true \
+  -c account=620257466932 -c region=eu-west-2
+```
+
