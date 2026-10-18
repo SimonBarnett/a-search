@@ -127,7 +127,9 @@ class PartsGatewayStack extends cdk.Stack {
       description:
         'FR #3968 standalone GET /parts for parts widget (a-clubs S3, auto-create host+GUID)',
       corsPreflight: {
-        allowHeaders: ['content-type'],
+        // FR #4177: widget sends X-Parent-Origin when embedded (Wix); preflight
+        // must allow it or browsers block GET /parts.
+        allowHeaders: ['content-type', 'x-parent-origin'],
         allowMethods: [apigwv2.CorsHttpMethod.GET, apigwv2.CorsHttpMethod.OPTIONS],
         allowOrigins: ['*'],
         allowCredentials: false,

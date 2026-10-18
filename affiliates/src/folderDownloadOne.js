@@ -8,7 +8,12 @@
 
 const { downloadOne } = require('./downloadOne');
 const {
+  listFeedUrlPlaceholders,
+  resolveFeedUrlForFetch,
+} = require('./resolveFeedUrl');
+const {
   affiliateMarkerKey,
+  providerMarkerKey,
   partsDatedKey,
   extFromMeta,
   assertSlug,
@@ -57,6 +62,27 @@ async function folderDownloadOne(opts) {
   const latestKey = `${provider}/${affiliateId}/parts/latest.${ext}`;
 
   if (dryRun) {
+    let placeholdersResolved = false;
+    if (feedurl && listFeedUrlPlaceholders(feedurl).length) {
+      let providerMeta = coerceStringMap(opts.providerMeta);
+      if (!Object.keys(providerMeta).length) {
+        try {
+          const pHead = await s3.headObject({
+            Bucket: bucket,
+            Key: providerMarkerKey(provider),
+          });
+          providerMeta = coerceStringMap(pHead.Metadata);
+        } catch {
+          providerMeta = Object.create(null);
+        }
+      }
+      const resolved = resolveFeedUrlForFetch({
+        feedurl,
+        affiliateMeta: meta,
+        providerMeta,
+      });
+      placeholdersResolved = Boolean(resolved.ok && resolved.placeholdersResolved);
+    }
     return {
       ok: true,
       provider,
@@ -65,6 +91,7 @@ async function folderDownloadOne(opts) {
       dryRun: true,
       force,
       feedurlSet: Boolean(feedurl),
+      placeholdersResolved,
       format: String(meta.format || 'csv'),
       compression: String(meta.compression || 'none'),
       datedKey,
@@ -143,6 +170,7 @@ async function folderDownloadOne(opts) {
     provider,
     affiliateId,
     affiliateMeta: meta,
+    providerMeta: opts.providerMeta,
     fetchImpl: opts.fetchImpl,
     now,
     keep: opts.keep,
@@ -169,6 +197,10 @@ function redactResult(r) {
     dryRun: Boolean(r && r.dryRun),
     force: Boolean(r && r.force),
     feedurlSet: Boolean(r && r.feedurlSet),
+    placeholdersResolved:
+      r && r.placeholdersResolved != null
+        ? Boolean(r.placeholdersResolved)
+        : null,
     format: (r && r.format) || null,
     compression: (r && r.compression) || null,
     datedKey: (r && r.datedKey) || null,
