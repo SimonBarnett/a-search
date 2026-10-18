@@ -1,9 +1,7 @@
 'use strict';
 
 /**
- * Etsy live provider worker (FR-077 / FR-170).
- * search -> normalize -> writeResults (injectable HTTP + putObject).
- * Registry enabled true (FR-170).
+ * Etsy live provider worker (FR-077 / FR-170 / FR #4040).
  */
 
 const path = require('node:path');
@@ -11,7 +9,10 @@ const {
   assertWorkerEnv,
   EnvIsolationError,
 } = require('../../../../shared/assertEnv');
-const { writeResults } = require('../../../../shared/writeResults');
+const {
+  finishProviderSearch,
+  runSearchWith429Backoff,
+} = require('../../../../shared/search/finishProviderSearch');
 const {
   searchEtsy,
   assertEtsyCreds,
@@ -19,23 +20,12 @@ const {
 } = require('./search');
 const { normalizeSearchResponse } = require('./normalize');
 
-/**
- * @param {object} msg - SQS fan-out payload
- * @param {{
- *   env?: Record<string, string|undefined>,
- *   httpRequest?: Function,
- *   putObject?: Function,
- *   searchEtsy?: Function,
- *   normalizeSearchResponse?: Function,
- * }} [deps]
- */
 async function run(msg, deps) {
   if (!msg || typeof msg !== 'object') {
     throw new Error('run(msg) requires a message object');
   }
   const envVars = (deps && deps.env) || process.env;
   assertWorkerEnv(msg, envVars.A_SEARCH_ENV);
-
   assertEtsyCreds(envVars);
 
   const doSearch =
@@ -43,10 +33,14 @@ async function run(msg, deps) {
       ? deps.searchEtsy
       : searchEtsy;
 
-  const raw = await doSearch(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
+  const raw = await runSearchWith429Backoff(
+    () =>
+      doSearch(msg, {
+        env: envVars,
+        httpRequest: deps && deps.httpRequest,
+      }),
+    deps,
+  );
 
   const normalizeFn =
     deps && typeof deps.normalizeSearchResponse === 'function'
@@ -59,39 +53,30 @@ async function run(msg, deps) {
     envVars,
   });
 
-  const written = await writeResults({
-    env: msg.env,
+  return finishProviderSearch({
+    msg,
     source: 'etsy',
-    userId: msg.userId,
-    catalogId: msg.catalogId,
-    searchId: msg.searchId,
     products,
     envVars,
     putObject: deps && deps.putObject,
+    headObject: deps && deps.headObject,
+    getObject: deps && deps.getObject,
+    copyObject: deps && deps.copyObject,
+    getObjectTagging: deps && deps.getObjectTagging,
+    putObjectTagging: deps && deps.putObjectTagging,
+    touchLastmod: deps && deps.touchLastmod,
   });
-
-  return {
-    ok: true,
-    source: 'etsy',
-    searchId: msg.searchId,
-    env: msg.env,
-    products,
-    key: written.key,
-    bucket: written.bucket,
-  };
 }
 
-/**
- * SQS Lambda entry. Parses Records and calls run(msg).
- * @param {{ Records?: Array<{ body: string }> }} event
- */
 async function handler(event) {
   const records = (event && event.Records) || [];
   const results = [];
   for (const record of records) {
     const body = record && record.body;
     const msg = typeof body === 'string' ? JSON.parse(body) : body;
-    results.push(await run(msg));
+    results.push(
+      await run(msg, { receiptHandle: record && record.receiptHandle }),
+    );
   }
   return { ok: true, results };
 }

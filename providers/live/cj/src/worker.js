@@ -1,8 +1,7 @@
 'use strict';
 
 /**
- * CJ live provider worker (FR-041).
- * GraphQL Product Search -> normalize -> writeResults (injectable HTTP + putObject).
+ * CJ live provider worker (FR-041 / FR #4040).
  */
 
 const path = require('node:path');
@@ -10,22 +9,16 @@ const {
   assertWorkerEnv,
   EnvIsolationError,
 } = require('../../../../shared/assertEnv');
-const { writeResults } = require('../../../../shared/writeResults');
+const {
+  finishProviderSearch,
+  runSearchWith429Backoff,
+} = require('../../../../shared/search/finishProviderSearch');
 const {
   searchCj,
   assertCjCreds,
   CjCredsError,
 } = require('./search');
 
-/**
- * @param {object} msg
- * @param {{
- *   env?: Record<string, string|undefined>,
- *   httpRequest?: Function,
- *   putObject?: Function,
- *   searchCj?: Function,
- * }} [deps]
- */
 async function run(msg, deps) {
   if (!msg || typeof msg !== 'object') {
     throw new Error('run(msg) requires a message object');
@@ -36,44 +29,39 @@ async function run(msg, deps) {
 
   const searchFn =
     deps && typeof deps.searchCj === 'function' ? deps.searchCj : searchCj;
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
+  const products = await runSearchWith429Backoff(
+    () =>
+      searchFn(msg, {
+        env: envVars,
+        httpRequest: deps && deps.httpRequest,
+      }),
+    deps,
+  );
 
-  const written = await writeResults({
-    env: msg.env,
+  return finishProviderSearch({
+    msg,
     source: 'cj',
-    userId: msg.userId,
-    catalogId: msg.catalogId,
-    searchId: msg.searchId,
     products,
     envVars,
     putObject: deps && deps.putObject,
+    headObject: deps && deps.headObject,
+    getObject: deps && deps.getObject,
+    copyObject: deps && deps.copyObject,
+    getObjectTagging: deps && deps.getObjectTagging,
+    putObjectTagging: deps && deps.putObjectTagging,
+    touchLastmod: deps && deps.touchLastmod,
   });
-
-  return {
-    ok: true,
-    source: 'cj',
-    searchId: msg.searchId,
-    env: msg.env,
-    products,
-    key: written.key,
-    bucket: written.bucket,
-  };
 }
 
-/**
- * SQS Lambda entry (FR-036).
- * @param {{ Records?: Array<{ body: string }> }} event
- */
 async function handler(event) {
   const records = (event && event.Records) || [];
   const results = [];
   for (const record of records) {
     const body = record && record.body;
     const msg = typeof body === 'string' ? JSON.parse(body) : body;
-    results.push(await run(msg));
+    results.push(
+      await run(msg, { receiptHandle: record && record.receiptHandle }),
+    );
   }
   return { ok: true, results };
 }

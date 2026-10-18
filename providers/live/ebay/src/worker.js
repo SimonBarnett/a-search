@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * eBay live provider worker (FR-039).
- * Browse API search -> normalize -> writeResults (injectable HTTP + putObject).
+ * eBay live provider worker (FR-039 / FR #4040).
+ * Browse API search -> normalize -> a-clubs IN/ (agent jobs) or writeResults.
  */
 
 const path = require('node:path');
@@ -10,7 +10,10 @@ const {
   assertWorkerEnv,
   EnvIsolationError,
 } = require('../../../../shared/assertEnv');
-const { writeResults } = require('../../../../shared/writeResults');
+const {
+  finishProviderSearch,
+  runSearchWith429Backoff,
+} = require('../../../../shared/search/finishProviderSearch');
 const {
   searchEbay,
   assertEbayCreds,
@@ -25,6 +28,8 @@ const {
  *   putObject?: Function,
  *   searchEbay?: Function,
  *   accessToken?: string,
+ *   changeMessageVisibility?: Function,
+ *   receiptHandle?: string,
  * }} [deps]
  */
 async function run(msg, deps) {
@@ -40,37 +45,34 @@ async function run(msg, deps) {
     deps && typeof deps.searchEbay === 'function'
       ? deps.searchEbay
       : searchEbay;
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-    accessToken: deps && deps.accessToken,
-  });
+  const products = await runSearchWith429Backoff(
+    () =>
+      searchFn(msg, {
+        env: envVars,
+        httpRequest: deps && deps.httpRequest,
+        accessToken: deps && deps.accessToken,
+      }),
+    deps,
+  );
 
-  const written = await writeResults({
-    env: msg.env,
+  return finishProviderSearch({
+    msg,
     source: 'ebay',
-    userId: msg.userId,
-    catalogId: msg.catalogId,
-    searchId: msg.searchId,
     products,
     envVars,
     putObject: deps && deps.putObject,
+    headObject: deps && deps.headObject,
+    getObject: deps && deps.getObject,
+    copyObject: deps && deps.copyObject,
+    getObjectTagging: deps && deps.getObjectTagging,
+    putObjectTagging: deps && deps.putObjectTagging,
+    touchLastmod: deps && deps.touchLastmod,
   });
-
-  return {
-    ok: true,
-    source: 'ebay',
-    searchId: msg.searchId,
-    env: msg.env,
-    products,
-    key: written.key,
-    bucket: written.bucket,
-  };
 }
 
 /**
  * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
- * @param {{ Records?: Array<{ body: string }> }} event
+ * @param {{ Records?: Array<{ body: string, receiptHandle?: string }> }} event
  */
 async function handler(event) {
   const records = (event && event.Records) || [];
@@ -78,7 +80,11 @@ async function handler(event) {
   for (const record of records) {
     const body = record && record.body;
     const msg = typeof body === 'string' ? JSON.parse(body) : body;
-    results.push(await run(msg));
+    results.push(
+      await run(msg, {
+        receiptHandle: record && record.receiptHandle,
+      }),
+    );
   }
   return { ok: true, results };
 }
