@@ -481,3 +481,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Re-offered harvest-lesson MRB that was already FAIL-supersede closed as twin of a merged tip: ACK, re-verify CLOSED+board, DONE PASS with assigned URL; do not reopen or open a worktree
 - Re-offered harvest-lesson MRB already FAIL-supersede closed as twin of a merged tip: ACK, re-verify CLOSED+board, DONE PASS with assigned URL; do not reopen or open a worktree
 - MRB harvest tip: PASS re-offer FAIL-supersede twin lesson; pin contiguous NEEDLE on docs/mrb-N from new main
+- Redqueen a-clubs: inject fetchImpl for host/GUID pages before review; failed fetch must retry without annotated=1; register Windows service with nssm (not sc.exe+node/1053) and AWS_PROFILE/GROK_CLI env; update fr4098 pins when replacing sc.exe.
