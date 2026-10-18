@@ -67,9 +67,24 @@ uses 15. Existing `exclude[]` entries are kept. The shape is
 
 `/search` records `search-fanout.json` for that GUID and returns the same
 `searchid` on a retry without sending again. If the write or the POST fails,
-the folder message is retried. The service needs `A_SEARCH_API_URL` and either
-`A_SEARCH_AGENT_API_KEY` or `A_SEARCH_AGENT_API_KEY_FILE`. Those values are
-never written to the log.
+the folder message stays on the queue (visibility change, not delete) until
+`searchid` is saved. It is not deleted early, so it reaches the DLQ only after
+the queue's max receives. A GUID that is already `annotated=1` and has
+`searches.json` with queries and no `searchid` is posted once from that file.
+The reviews are not run again for that retry, including when
+`REDQUEEN_REANNOTATE=1`. An existing `searchid` still skips the POST.
+
+The service needs `A_SEARCH_API_URL` and `A_SEARCH_AGENT_API_KEY_FILE` (or
+`A_SEARCH_AGENT_API_KEY`). `Register-AClubsQueueService.ps1` always sets both
+on the nssm service: `-SearchApiUrl` (else the process env, else
+`redqueen\config\search-api.url`) and `-AgentApiKeyFile` (default
+`redqueen\config\agent-api.key`). The key file is granted SYSTEM and
+Administrators read. The key value is never logged and never put on the nssm
+command line. The start log's `searchConfigured` is true when both are set.
+
+Deploy the redqueen tree with `shared/widgets/` (or all of `shared/`) next to
+`shared/aClubs/`. `guidSearch.js` loads `shared/widgets/agentWidgetContext`.
+A copy of only `redqueen/` plus `shared/aClubs/` fails with `MODULE_NOT_FOUND`.
 
 ## Object annotations (not JSON sidecars)
 
@@ -136,14 +151,18 @@ cd C:\ai\a-search\redqueen
 npm ci --omit=dev
 $env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/.../a-clubs-new-folders.fifo'
 # Dry-run first (prints nssm commands only):
-.\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search -WhatIf
+.\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search -WhatIf `
+    -SearchApiUrl 'https://example.invalid/search-api'
 # FR #4240: preferred --- LocalSystem + dedicated GROK_HOME (SYSTEM ACL).
 # Pointing at Administrator ~/.grok fails with Access is denied on auth.json.
 .\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search `
     -AwsProfile a-search-redqueen-annotator `
     -GrokHome 'C:\ProgramData\a-search\grok-system-home' `
     -GrokCli 'C:\Users\Administrator\.grok\bin\grok.exe' `
-    -AgentCli 'C:\Users\Administrator\AppData\Local\cursor-agent\agent.cmd'
+    -AgentCli 'C:\Users\Administrator\AppData\Local\cursor-agent\agent.cmd' `
+    -SearchApiUrl 'https://example.invalid/search-api'
+# Agent key file (never the key value): redqueen\config\agent-api.key
+# or -AgentApiKeyFile. SYSTEM read is granted when the file already exists.
 # First time: follow the printed one-shot SYSTEM `grok login --device-auth`
 # instructions so GROK_HOME\auth.json exists.
 # Alternative: -Credential / redqueen\config\service.password for admin ObjectName.

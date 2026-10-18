@@ -71,6 +71,17 @@
   Permit LocalSystem when -GrokCli is set without -GrokHome or -Credential
   (tests / AWS-only drains). Default: off. Preferred reviewer LocalSystem mode is -GrokHome.
 
+.PARAMETER SearchApiUrl
+  A_SEARCH_API_URL for the service (FR #4311). Else the process env, else the
+  text in InstallRoot\redqueen\config\search-api.url. Required unless
+  -AllowLocalSystem. Never a secret.
+
+.PARAMETER AgentApiKeyFile
+  Path to the agent API key file (A_SEARCH_AGENT_API_KEY_FILE). Default
+  InstallRoot\redqueen\config\agent-api.key. The file contents are never logged
+  and never placed on the nssm command line. When the file exists, SYSTEM and
+  Administrators are granted read.
+
 .PARAMETER WhatIf
   Alias DryRun: print nssm commands only; do not change the machine.
 
@@ -93,6 +104,8 @@ param(
   [string]$ServiceUser = '.\Administrator',
   [string]$ServicePasswordFile,
   [switch]$AllowLocalSystem,
+  [string]$SearchApiUrl,
+  [string]$AgentApiKeyFile,
   [Alias('DryRun')][switch]$WhatIf,
   [switch]$Unregister
 )
@@ -227,6 +240,53 @@ ObjectName, or -AllowLocalSystem for tests / AWS-only drains without reviewers.
 '@
 }
 
+# FR #4311: always put the search URL and key-file path on the service.
+# The key value stays in the file. A registering shell that lacks the env
+# vars must still leave searchConfigured true.
+$resolvedSearchApiUrl = ''
+if ($SearchApiUrl) { $resolvedSearchApiUrl = $SearchApiUrl.Trim() }
+elseif ($env:A_SEARCH_API_URL) { $resolvedSearchApiUrl = $env:A_SEARCH_API_URL.Trim() }
+else {
+  $searchUrlFile = Join-Path $InstallRoot 'redqueen\config\search-api.url'
+  if (Test-Path -LiteralPath $searchUrlFile) {
+    $resolvedSearchApiUrl = (Get-Content -LiteralPath $searchUrlFile -Raw).Trim()
+  }
+}
+$resolvedAgentKeyFile = ''
+if ($AgentApiKeyFile) { $resolvedAgentKeyFile = $AgentApiKeyFile.Trim() }
+elseif ($env:A_SEARCH_AGENT_API_KEY_FILE) { $resolvedAgentKeyFile = $env:A_SEARCH_AGENT_API_KEY_FILE.Trim() }
+else { $resolvedAgentKeyFile = Join-Path $InstallRoot 'redqueen\config\agent-api.key' }
+
+if (-not $Unregister -and -not $resolvedSearchApiUrl -and -not $AllowLocalSystem) {
+  throw @'
+search_api_url_required: pass -SearchApiUrl, set A_SEARCH_API_URL, or write
+InstallRoot\redqueen\config\search-api.url (FR #4311). -AllowLocalSystem skips
+this check for tests.
+'@
+}
+
+if (-not $Unregister -and $resolvedAgentKeyFile) {
+  if (-not (Test-Path -LiteralPath $resolvedAgentKeyFile)) {
+    Write-Host 'agent key file missing (path not a secret; contents never logged). Place the key before start.'
+  }
+  elseif ($DryRun) {
+    Write-Host '[DryRun] icacls agent key file SYSTEM:R Administrators:R'
+  }
+  else {
+    & icacls $resolvedAgentKeyFile /inheritance:r /grant:r '*S-1-5-18:R' '*S-1-5-32-544:R' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "warn: icacls on agent key file returned $LASTEXITCODE"
+    }
+  }
+}
+
+if (-not $Unregister -and $resolvedSearchApiUrl -and ($SearchApiUrl -or $env:A_SEARCH_API_URL) -and -not $DryRun) {
+  $searchCfgDir = Join-Path $InstallRoot 'redqueen\config'
+  New-Item -ItemType Directory -Force -Path $searchCfgDir | Out-Null
+  $searchUrlFile = Join-Path $searchCfgDir 'search-api.url'
+  Set-Content -LiteralPath $searchUrlFile -Value $resolvedSearchApiUrl -Encoding ascii
+}
+
 if (-not $DryRun) {
   New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 }
@@ -286,13 +346,15 @@ $envPairs = @(
 if ($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL) {
   $envPairs += "A_CLUBS_FOLDER_EVENTS_QUEUE_URL=$($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL)"
 }
-# FR #4265: pass the API base and a key-file path. Never put the key value on the nssm command line.
-if ($env:A_SEARCH_API_URL) {
-  $envPairs += "A_SEARCH_API_URL=$($env:A_SEARCH_API_URL)"
+# FR #4265 / #4311: always pass the API base and a key-file path.
+# Never put the key value on the nssm command line.
+if ($resolvedSearchApiUrl) {
+  $envPairs += "A_SEARCH_API_URL=$resolvedSearchApiUrl"
 }
-if ($env:A_SEARCH_AGENT_API_KEY_FILE) {
-  $envPairs += "A_SEARCH_AGENT_API_KEY_FILE=$($env:A_SEARCH_AGENT_API_KEY_FILE)"
+if ($resolvedAgentKeyFile) {
+  $envPairs += "A_SEARCH_AGENT_API_KEY_FILE=$resolvedAgentKeyFile"
 }
+Write-Host ("searchConfigured: " + [bool]($resolvedSearchApiUrl -and $resolvedAgentKeyFile))
 if ($env:AWS_SHARED_CREDENTIALS_FILE) {
   $envPairs += "AWS_SHARED_CREDENTIALS_FILE=$($env:AWS_SHARED_CREDENTIALS_FILE)"
 }

@@ -276,7 +276,7 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
         postSearch,
       }),
     );
-    assert.equal(second.guids[0].detail, 'search_completed');
+    assert.equal(second.guids[0].detail, 'search_reposted');
     assert.equal(sent.length, 2);
     assert.equal(sent[0].messageDeduplicationId, 'srch_once-ebay');
     const saved = await s3.getObject({ Key: `${host}/${GUID}/searches.json` });
