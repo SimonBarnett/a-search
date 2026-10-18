@@ -524,3 +524,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-clubs host marker identity is userid only. Do not rename the locked {env}/x/{customerNumber}/ widget tree in the same change. Migration of the old metadata key is dry-run by default, copy-in-place, and must not bump lastmod or lastupdate.
 - FIX when FR #4277 host-brief gate lands: update fr4246 (and other) fake reviewHost fixtures to return non-empty club/audience/affiliateOpportunities or drain returns retry instead of host_processed.
 - FIX on a PR already CLOSED as superseded by a Closes successor: ACK, verify covering tip still open with Closes, DONE FIX with the assigned PR URL, do not reopen
+- Harvest-lesson CONFLICTING tip: one origin/main keep-both fold then PASS; second parallel CONFLICTING race leave --auto armed DONE PASS without second fold
