@@ -8,7 +8,7 @@ Lambdas.
 
 | Resource | Notes |
 |----------|--------|
-| HTTP API | `GET /parts` + CORS `allowOrigins: ['*']` (GET+OPTIONS; credentials false) |
+| HTTP API | `GET /parts` + CORS `allowOrigins: ['*']` (GET+OPTIONS; credentials false; `allowHeaders`: `content-type`, `x-parent-origin` FR #4177) |
 | Node 20 Lambda | `parts-gateway/src/handler.handler` |
 | IAM | `s3:GetObject` / `PutObject` / `ListBucket` / tagging on `arn:aws:s3:::a-clubs` and `a-clubs/*` only |
 | SQS FIFO `a-clubs-new-folders.fifo` | SSE-SQS; visibility 90s; `MessageGroupId=hostkey` |
@@ -17,6 +17,9 @@ Lambdas.
 
 This stack hardcodes CORS `allowOrigins: ['*']`. It does **not** call
 `resolveCorsOrigins` (that helper rejects `*` for `ASearchStack` FR-153).
+Preflight `allowHeaders` includes `content-type` and `x-parent-origin` so
+embedded widgets (FR #4107) that send `X-Parent-Origin` are not blocked by
+browsers (FR #4177).
 
 The Lambda expects the **existing** bucket `a-clubs` in the deploy account. It
 auto-creates `a-clubs/{hostkey}/` (Madeira checksum userid metadata;
