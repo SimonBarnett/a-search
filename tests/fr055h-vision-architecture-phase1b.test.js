@@ -14,8 +14,11 @@ const vision = path.join(root, 'docs', 'vision.md');
 function architectureFence(text) {
   const start = text.indexOf('## Architecture');
   assert.ok(start >= 0, 'missing ## Architecture');
-  const locked = text.indexOf('\nLOCKED\n', start);
-  assert.ok(locked > start, 'missing LOCKED after Architecture');
+  // FR #4185: tolerate CRLF working copies; prefer LF in docs/vision.md (eol=lf).
+  const rest = text.slice(start);
+  const m = /\r?\nLOCKED\r?\n/.exec(rest);
+  assert.ok(m, 'missing LOCKED after Architecture');
+  const locked = start + m.index;
   return text.slice(start, locked);
 }
 
