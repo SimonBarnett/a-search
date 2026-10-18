@@ -17,6 +17,9 @@
     "stage-entry": "node scripts/stage-entry-lambda-asset.js",
     "stage-parts-gateway": "node scripts/stage-parts-gateway-lambda-asset.js",
     "stage-maintainer": "node scripts/stage-maintainer-lambda-asset.js",
+    "stage-affiliates": "node scripts/stage-affiliates-lambda-asset.js",
+    "synth:affiliates": "npm run stage-affiliates && npx --no-install cdk synth --app \"node cdk/bin/affiliates.js\" --quiet",
+    "deploy:affiliates": "npm run stage-affiliates && npx --no-install cdk deploy --app \"node cdk/bin/affiliates.js\" AAffiliates -c requireDeployEnv=true",
     "stage-merchants": "node scripts/stage-merchants-lambda-asset.js",
     "synth:merchants": "npm run stage-merchants && npx --no-install cdk synth --app \"node cdk/bin/merchants.js\" --quiet",
     "deploy:merchants": "npm run stage-merchants && npx --no-install cdk deploy --app \"node cdk/bin/merchants.js\" AMerchants -c requireDeployEnv=true"
