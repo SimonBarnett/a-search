@@ -7,6 +7,9 @@
 
 const { downloadOne } = require('./downloadOne');
 const { coerceStringMap } = require('../../shared/affiliates/metadata');
+const {
+  enqueueImportAfterDownload,
+} = require('../../redqueen/affiliate-import/src/enqueueImport');
 
 /**
  * @param {object} s3
@@ -171,12 +174,43 @@ async function runWeekly(opts) {
     }
   }
 
+  // FR #4196: one import SQS message listing files written; empty run -> none.
+  const written = [];
+  for (const r of results) {
+    if (!r || !r.ok) continue;
+    const key = r.datedKey || r.key || null;
+    if (!key) continue;
+    written.push({
+      provider: r.provider,
+      affiliateid: r.affiliateId,
+      key,
+    });
+  }
+  let importEnqueue = { sent: false, skipped: 'none' };
+  if (typeof opts.enqueueImport === 'function') {
+    importEnqueue = await opts.enqueueImport({ files: written, results });
+  } else if (written.length) {
+    importEnqueue = await enqueueImportAfterDownload({
+      files: written,
+      runId: opts.runId,
+      at: now,
+      queueUrl: opts.importQueueUrl,
+      sendMessage: opts.sendImportMessage,
+      notifyUrl: opts.importNotifyUrl,
+      fetchImpl: opts.fetchImpl,
+      log,
+    });
+  } else {
+    importEnqueue = { sent: false, skipped: 'empty' };
+  }
+
   return {
     providers: providers.length,
     affiliates,
     ok,
     failed,
     results,
+    importEnqueue,
   };
 }
 

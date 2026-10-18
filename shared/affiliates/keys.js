@@ -93,6 +93,27 @@ function partsLatestKey(provider, affiliateId, ext) {
 }
 
 /**
+ * FR #4195 / #4196: flat decompressed feed key (no parts/).
+ * @param {unknown} provider
+ * @param {unknown} affiliateId
+ * @param {string} yyyyMmDd
+ * @param {string} ext
+ * @returns {string}
+ */
+function feedDatedKey(provider, affiliateId, yyyyMmDd, ext) {
+  const p = assertSlug(provider, 'provider');
+  const a = assertSlug(affiliateId, 'affiliateid');
+  const date = String(yyyyMmDd || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const err = new Error('invalid_feed_date');
+    err.code = 'invalid_feed_date';
+    throw err;
+  }
+  const e = normalizeExt(ext);
+  return `${p}/${a}/${date}.${e}`;
+}
+
+/**
  * @param {unknown} ext
  * @returns {string}
  */
@@ -140,6 +161,7 @@ module.exports = {
   partsPrefix,
   partsDatedKey,
   partsLatestKey,
+  feedDatedKey,
   normalizeExt,
   extFromMeta,
 };

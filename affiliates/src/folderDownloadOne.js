@@ -8,6 +8,9 @@
 
 const { downloadOne } = require('./downloadOne');
 const {
+  enqueueImportAfterDownload,
+} = require('../../redqueen/affiliate-import/src/enqueueImport');
+const {
   listFeedUrlPlaceholders,
   resolveFeedUrlForFetch,
 } = require('./resolveFeedUrl');
@@ -175,12 +178,34 @@ async function folderDownloadOne(opts) {
     now,
     keep: opts.keep,
   });
-  return {
+  const out = {
     provider,
     datedKey,
     latestKey,
     ...r,
   };
+  // FR #4196: manual first-run download fires the same one-file import message.
+  if (out.ok && !out.skipped && !out.dryRun && opts.enqueueImport !== false) {
+    const key = out.datedKey || out.key || datedKey;
+    if (key) {
+      out.importEnqueue = await enqueueImportAfterDownload({
+        files: [
+          {
+            provider,
+            affiliateid: affiliateId,
+            key,
+          },
+        ],
+        runId: opts.runId,
+        at: now,
+        queueUrl: opts.importQueueUrl,
+        sendMessage: opts.sendImportMessage,
+        notifyUrl: opts.importNotifyUrl,
+        fetchImpl: opts.fetchImpl,
+      });
+    }
+  }
+  return out;
 }
 
 /**

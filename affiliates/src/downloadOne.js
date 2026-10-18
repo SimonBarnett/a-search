@@ -234,6 +234,9 @@ async function downloadOne(opts) {
       affiliateId,
       size: body.length,
       status: 'ok',
+      datedKey,
+      latestKey,
+      key: datedKey,
       placeholdersResolved: resolved.placeholdersResolved,
     };
   } catch (err) {

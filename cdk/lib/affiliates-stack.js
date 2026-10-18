@@ -21,6 +21,7 @@ const iam = require('aws-cdk-lib/aws-iam');
 const logs = require('aws-cdk-lib/aws-logs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+const sqs = require('aws-cdk-lib/aws-sqs');
 const {
   stageAffiliatesLambdaAsset,
 } = require('../../scripts/stage-affiliates-lambda-asset');
@@ -68,6 +69,23 @@ class AffiliatesStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // FR #4196: import queue + DLQ (on-prem drain; Lambda only SendMessage).
+    // Not deployed by this issue alone --- CDK defines the resource for later synth.
+    const importDlq = new sqs.Queue(this, 'AffiliateImportDeadLetterQueue', {
+      queueName: 'a-search-affiliate-import-dlq',
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const importQueue = new sqs.Queue(this, 'AffiliateImportQueue', {
+      queueName: 'a-search-affiliate-import',
+      visibilityTimeout: cdk.Duration.minutes(5),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: importDlq,
+        maxReceiveCount: 3,
+      },
+    });
+
     const fn = new lambda.Function(this, 'AffiliatesWeeklyFunction', {
       functionName: 'a-search-affiliates-weekly',
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -77,9 +95,11 @@ class AffiliatesStack extends cdk.Stack {
       memorySize: 512,
       environment: {
         A_AFFILIATES_BUCKET: A_AFFILIATES_BUCKET,
+        A_SEARCH_AFFILIATE_IMPORT_QUEUE_URL: importQueue.queueUrl,
       },
       logGroup,
     });
+    importQueue.grantSendMessages(fn);
 
     fn.addToRolePolicy(
       new iam.PolicyStatement({
@@ -119,6 +139,16 @@ class AffiliatesStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'AffiliatesWeeklyRuleName', {
       value: rule.ruleName,
       description: 'EventBridge rule rate(7 days) for affiliates weekly job',
+    });
+
+    new cdk.CfnOutput(this, 'AffiliateImportQueueUrl', {
+      value: importQueue.queueUrl,
+      description:
+        'FR #4196 affiliate import SQS (download enqueues; redqueen drains)',
+    });
+    new cdk.CfnOutput(this, 'AffiliateImportDeadLetterQueueUrl', {
+      value: importDlq.queueUrl,
+      description: 'FR #4196 DLQ for a-search-affiliate-import',
     });
   }
 }

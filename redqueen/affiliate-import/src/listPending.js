@@ -1,16 +1,67 @@
 'use strict';
 
 /**
- * FR #4001: list unprocessed parts files under a-affiliates/{provider}/{affiliateid}/parts/
- * Oldest first. Layout from #3999 (dated files); import deletes on success so no latest needed.
+ * FR #4001 / #4196: list unprocessed feed files under a-affiliates.
+ * Layouts:
+ *   - #4195 flat: {provider}/{affiliateid}/{yyyy-mm-dd}.{ext}
+ *   - #3999 legacy: {provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}
+ * Oldest first. Ignore markers, AGENT.md, SKILLS.md, _invites/, parts/latest.
  */
+
+const FLAT_RE =
+  /^([a-z0-9_-]+)\/([^/]+)\/(\d{4}-\d{2}-\d{2})\.([a-z0-9]+)$/i;
+const PARTS_RE =
+  /^([a-z0-9_-]+)\/([^/]+)\/parts\/(\d{4}-\d{2}-\d{2})\.([^/]+)$/i;
+
+/**
+ * @param {string} key
+ * @returns {boolean}
+ */
+function shouldIgnoreKey(key) {
+  const k = String(key || '');
+  if (!k || k.endsWith('/')) return true;
+  if (/\/parts\/latest\./i.test(k)) return true;
+  if (/\/(AGENT|SKILLS)\.md$/i.test(k)) return true;
+  if (/\/_invites\//i.test(k)) return true;
+  if (/\/provider\.json$/i.test(k)) return true;
+  return false;
+}
+
+/**
+ * @param {string} key
+ * @returns {{ provider: string, affiliateid: string, key: string, dateStamp: string, layout: 'flat'|'parts' }|null}
+ */
+function matchFeedKey(key) {
+  if (shouldIgnoreKey(key)) return null;
+  let m = key.match(FLAT_RE);
+  if (m) {
+    return {
+      provider: m[1].toLowerCase(),
+      affiliateid: m[2],
+      key,
+      dateStamp: m[3],
+      layout: 'flat',
+    };
+  }
+  m = key.match(PARTS_RE);
+  if (m) {
+    return {
+      provider: m[1].toLowerCase(),
+      affiliateid: m[2],
+      key,
+      dateStamp: m[3],
+      layout: 'parts',
+    };
+  }
+  return null;
+}
 
 /**
  * @param {{
  *   listObjectsV2: Function,
  *   bucket?: string,
  * }} opts
- * @returns {Promise<{ provider: string, affiliateid: string, key: string, lastModified?: Date }[]>}
+ * @returns {Promise<{ provider: string, affiliateid: string, key: string, lastModified?: Date, dateStamp: string, layout: string }[]>}
  */
 async function listPendingPartsFiles(opts) {
   const bucket = opts.bucket || 'a-affiliates';
@@ -25,22 +76,14 @@ async function listPendingPartsFiles(opts) {
     const contents = page.Contents || page.contents || [];
     for (const obj of contents) {
       const key = String(obj.Key || obj.key || '');
-      // {provider}/{affiliateid}/parts/{yyyy-mm-dd}.{ext}
-      const m = key.match(
-        /^([a-z0-9_-]+)\/([^/]+)\/parts\/(\d{4}-\d{2}-\d{2})\.[^/]+$/i,
-      );
-      if (!m) continue;
-      // skip marker-only / latest pointer if still present from #3999
-      if (/\/parts\/latest\./i.test(key)) continue;
+      const matched = matchFeedKey(key);
+      if (!matched) continue;
       out.push({
-        provider: m[1].toLowerCase(),
-        affiliateid: m[2],
-        key,
+        ...matched,
         lastModified: obj.LastModified || obj.lastModified || null,
-        dateStamp: m[3],
       });
     }
-    token = page.NextContinuationToken || page.IsTruncated || null;
+    token = page.NextContinuationToken || null;
     if (page.IsTruncated && !page.NextContinuationToken) break;
   } while (token);
 
@@ -52,6 +95,9 @@ async function listPendingPartsFiles(opts) {
   });
   return out;
 }
+
+/** Alias for FR #4196 naming. */
+const listPendingFeedFiles = listPendingPartsFiles;
 
 /**
  * Read affiliate marker metadata (format, compression). Never log secrets.
@@ -76,5 +122,8 @@ async function loadAffiliateMeta(opts) {
 
 module.exports = {
   listPendingPartsFiles,
+  listPendingFeedFiles,
   loadAffiliateMeta,
+  matchFeedKey,
+  shouldIgnoreKey,
 };

@@ -18,21 +18,23 @@
  * }} opts
  */
 async function triggerFixingAgent(opts) {
+  const rules = [
+    'Code fixes go through a PR on SimonBarnett/a-search, never a hotpatch',
+    'Data fixes only in asearch DB on walrus, never madeiradb',
+    'Never print or log provider credentials',
+    'Do not loosen the safety guard',
+    'If unfixed, file/update one a-search issue with the log; leave the file',
+  ].concat(Array.isArray(opts.rulesExtra) ? opts.rulesExtra : []);
   const brief = {
     kind: 'affiliate-import-fix',
-    fr: '#4001',
+    fr: opts.fr || '#4001',
     provider: opts.provider,
     affiliateid: opts.affiliateid,
     fileKey: opts.fileKey,
     reason: opts.reason,
     logPath: opts.logPath || null,
-    rules: [
-      'Code fixes go through a PR on SimonBarnett/a-search, never a hotpatch',
-      'Data fixes only in asearch DB on walrus, never madeiradb',
-      'Never print or log provider credentials',
-      'Do not loosen the safety guard',
-      'If unfixed, file/update one a-search issue with the log; leave the file',
-    ],
+    cwdHint: opts.cwdHint || null,
+    rules,
   };
   // Redact accidental secret-shaped fields if a caller stuffed meta in
   const safe = JSON.parse(JSON.stringify(brief));
