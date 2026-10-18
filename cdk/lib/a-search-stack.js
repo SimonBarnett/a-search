@@ -690,13 +690,29 @@ class ASearchStack extends cdk.Stack {
     entry.addEnvironment('SQS_SQL_URL', dbBackedQueue.queueUrl);
     dbBackedQueue.grantSendMessages(entry);
 
-    // FR #4030: agent API key + HeadObject on a-clubs GUID markers for /search.
-    // Only set when -c agentApiKey= is supplied. Empty/missing => requireAgentAuth
-    // returns 401 agent_key_not_configured. Never ship a known FAKE_ default.
-    const agentApiKeyCtx = this.node.tryGetContext('agentApiKey');
-    if (typeof agentApiKeyCtx === 'string' && agentApiKeyCtx.trim()) {
-      entry.addEnvironment('A_SEARCH_AGENT_API_KEY', agentApiKeyCtx.trim());
-    }
+    // FR #4311: generate the agent API key in Secrets Manager. The value is
+    // created at deploy time (GenerateSecretString). The Lambda env is a
+    // CloudFormation dynamic reference; grantRead lets the function resolve it.
+    // Never a -c agentApiKey context string (that would land in the template).
+    const agentApiKeySecret = new secretsmanager.Secret(this, 'AgentApiKeySecret', {
+      description:
+        'a-search agent /search key (FR #4311). Generated at deploy. Copy into the redqueen SYSTEM key file from this secret; never print the value.',
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      generateSecretString: {
+        excludePunctuation: true,
+        passwordLength: 32,
+      },
+    });
+    entry.addEnvironment(
+      'A_SEARCH_AGENT_API_KEY',
+      agentApiKeySecret.secretValue.unsafeUnwrap(),
+    );
+    agentApiKeySecret.grantRead(entry);
+    new cdk.CfnOutput(this, 'AgentApiKeySecretArn', {
+      value: agentApiKeySecret.secretArn,
+      description:
+        'FR #4311 agent API key secret ARN. The key value is not an output.',
+    });
     entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
     aClubsBucket.grantRead(entry);
     // FR #4265: remember one searchid per GUID so a retry does not fan out twice.
