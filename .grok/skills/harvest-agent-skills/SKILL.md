@@ -520,3 +520,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - AMerchants dual-bucket job: daily schedule, missing enabled=disabled, only refresh when lastdownload is 7+ days stale, and always call affiliates/src/downloadOne (never a merchants copy) so placeholders and flat keys stay current.
 - When a grok page review hits the 120s limit after a larger prompt, tell the model to answer in one shot from the supplied text and not to browse. Keep the timeout, and a GUID retry must not delete the host SQS message.
 - Reject a redqueen host brief unless club, audience and affiliateOpportunities are non-empty and the summary is not a plan to browse. Fetch about/shop/training pages in the annotator. Do not set annotated and do not review GUIDs until that brief is complete.
+- After a GUID is annotated, write searches.json from the page review and steering, then POST /search once. A later retry must reuse searchid and must not fan out again.
