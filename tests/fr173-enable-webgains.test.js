@@ -12,7 +12,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
