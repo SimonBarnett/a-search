@@ -23,7 +23,7 @@ describe('MRB #2219 hostile FR-2021 CI queue starvation', () => {
   it('job id test-and-synth unchanged; Synth gated; main push always synths', () => {
     const text = fs.readFileSync(CI, 'utf8');
     assert.match(text, /^\s*test-and-synth:\s*$/m);
-    assert.match(text, /cancel-in-progress:\s*true/);
+    assert.match(text, /cancel-in-progress:\s*\$\{\{ github\.event_name == 'pull_request' \}\}/);
     // FR-2611 (#3133) prefixes the gate with the classify heavy check.
     assert.match(text, /if:[^\n]*steps\.need_synth\.outputs\.synth == 'true'/);
     assert.match(text, /reason=main-push/);
