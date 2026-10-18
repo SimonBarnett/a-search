@@ -8,6 +8,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { queueName } = require('../providers/queueName');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -103,7 +104,7 @@ describe('FR-169 enable aliexpress', () => {
       const q = queues.find(
         (q) =>
           q.Properties &&
-          q.Properties.QueueName === `a-search-aliexpress-${env}`,
+          q.Properties.QueueName === queueName('aliexpress', env),
       );
       assert.equal(q, undefined, `hold aliexpress must not have queue ${env}`);
     }

@@ -21,12 +21,24 @@ written to MSSQL from AWS.
 Payloads carry `messageGroupId=<provider|sql>` so FIFO queues serialise per
 provider. SQL messages use group `sql`.
 
+## Provider queues (FR #4039)
+
+Each live marketplace provider queue is FIFO:
+
+`a-search-provider-{name}-{live|sandbox}.fifo`
+
+with sibling DLQ `a-search-provider-{name}-{live|sandbox}-dlq.fifo`. CDK sets
+`fifo: true` and `contentBasedDeduplication: false`; senders set
+`MessageGroupId=<provider>` and a `MessageDeduplicationId`. The SQL queue
+(`a-search-db-backed`) stays standard. Deploy replaces existing standard
+provider queue names (SQS cannot convert standard → FIFO in place).
+
 ## One job at a time (no 429 storms)
 
-**Choice (PR):** provider worker Lambdas use **`reservedConcurrentExecutions: 1`**
-and SQS event source **`batchSize: 1`**. AWS ESM `maxConcurrency` cannot go
-below 2 (#542), so reserved concurrency enforces serial execution. Senders also
-set `MessageGroupId` for FIFO-ready queues.
+**Choice:** provider queues are **FIFO** (FR #4039) **and** worker Lambdas keep
+**`reservedConcurrentExecutions: 1`** with SQS event source **`batchSize: 1`**.
+AWS ESM `maxConcurrency` cannot go below 2 (#542); FIFO + reserved concurrency
+together serialise work. Senders set `MessageGroupId` + `MessageDeduplicationId`.
 
 On HTTP **429**, workers **must** use `shared/search/backoff429.js`: respect
 `Retry-After`, `ChangeMessageVisibility`, and let SQS retry. A 429 must **not**

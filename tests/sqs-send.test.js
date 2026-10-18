@@ -12,6 +12,7 @@ const path = require('node:path');
 const { fanOutEnqueue } = require('../entry/src/enqueue');
 const { createSqsSendMessage } = require('../entry/src/sqsSend');
 const { resolveQueueUrl } = require('../providers/resolveQueueUrl');
+const { queueName } = require('../providers/queueName');
 
 describe('FR-032 resolveQueueUrl', () => {
   it('live prefers *_LIVE_URL', () => {
@@ -102,7 +103,7 @@ describe('FR-032 createSqsSendMessage + fanOutEnqueue', () => {
       assert.equal(payload.userId, 'U1');
       assert.equal(payload.env, 'live');
       assert.ok(['amazon', 'ebay'].includes(payload.source));
-      assert.equal(payload.queueName, `a-search-${payload.source}-live`);
+      assert.equal(payload.queueName, queueName(payload.source, 'live'));
     }
   });
 

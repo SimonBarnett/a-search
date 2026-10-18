@@ -19,16 +19,23 @@ describe('MRB-1173 hostile FR-142 SQS DLQ', () => {
     assert.match(text, /FR-142/);
     const i = text.indexOf('FR-142');
     assert.ok(i >= 0);
-    const window = text.slice(i, i + 900);
+    // FIFO provider block is longer (fifo + contentBasedDeduplication); keep
+    // maxReceiveCount in the contiguous window (was 900, too short).
+    const window = text.slice(i, i + 1400);
     assert.match(window, /DeadLetterQueue/);
-    assert.match(window, /\$\{qName\}-dlq|`-dlq`|-dlq`/);
+    // FR #4039: FIFO DLQ uses queueDlqName -> stagedFifoName (queueName: dlqName),
+    // not `${qName}-dlq` (that would produce illegal `.fifo-dlq`).
+    assert.match(
+      window,
+      /queueName:\s*dlqName|queueDlqName|\$\{qName\}-dlq|`-dlq`|-dlq`/,
+    );
     assert.match(window, /retentionPeriod:\s*cdk\.Duration\.days\(14\)/);
     assert.match(window, /deadLetterQueue\s*:/);
     assert.match(window, /maxReceiveCount:\s*3/);
     assert.match(text, /DeadLetterQueueUrl/);
     assert.match(text, /description:\s*`FR-142 DLQ/);
-    // Alarms stay out of this FR
-    assert.doesNotMatch(window, /Alarm|alarm/);
+    // Alarms stay out of this FR (DLQ depth alarms are FR-143, later in file).
+    assert.doesNotMatch(window, /new cloudwatch\.Alarm/);
   });
 
   it('product pin + Decision LOCKED + release-gap SQS DLQ Yes + cdk README', () => {

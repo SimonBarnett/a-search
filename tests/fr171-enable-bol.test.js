@@ -8,6 +8,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { queueName } = require('../providers/queueName');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -115,7 +116,7 @@ describe('FR-171 enable bol', () => {
       const q = queues.find(
         (q) =>
           q.Properties &&
-          q.Properties.QueueName === `a-search-bol-${env}`,
+          q.Properties.QueueName === queueName('bol', env),
       );
       assert.equal(q, undefined, `hold bol must not have queue ${env}`);
     }
