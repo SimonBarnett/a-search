@@ -11,6 +11,11 @@ const crypto = require('node:crypto');
 const { verifyAuthorization, AuthError } = require('./auth/jwt');
 const { fanOutEnqueue, EnqueueError } = require('./enqueue');
 const {
+  handleAgentSearch,
+  isAgentSearchBody,
+  AgentSearchError,
+} = require('./agentSearch');
+const {
   emptyPerformancePayload,
   resolvePerformanceInput,
   queryParams,
@@ -736,6 +741,43 @@ async function handleSearch(event, deps = {}) {
         sendMessage: deps.sendMessage,
       }));
 
+  const rawBody = event && event.body;
+  const parsedEarly = parseBody(rawBody);
+  // FR #4030: agent fan-out when body carries hostkey+guid+queries.
+  if (parsedEarly && isAgentSearchBody(parsedEarly)) {
+    try {
+      const headObject =
+        deps.headObject ||
+        (() => {
+          throw new AgentSearchError('s3_required', 500);
+        });
+      const result = await handleAgentSearch({
+        event: {
+          ...event,
+          body: parsedEarly,
+        },
+        headObject,
+        sendMessage: deps.sendMessage,
+        env,
+        newSearchId: deps.newSearchId || makeId,
+        enabled: deps.enabled,
+        loadRegistry: deps.loadRegistry,
+      });
+      return jsonResponse(202, {
+        searchid: result.searchid,
+        queued: result.queued,
+      });
+    } catch (err) {
+      if (err instanceof AgentSearchError) {
+        return jsonResponse(err.statusCode || 400, {
+          accepted: false,
+          error: err.code,
+        });
+      }
+      throw err;
+    }
+  }
+
   const authHeader =
     headerGet(event && event.headers, 'authorization') ||
     headerGet(event && event.headers, 'Authorization');
@@ -751,8 +793,7 @@ async function handleSearch(event, deps = {}) {
     return jsonResponse(401, { accepted: false, error: 'unauthorized' });
   }
 
-  const rawBody = event && event.body;
-  const parsed = parseBody(rawBody);
+  const parsed = parsedEarly;
   if (parsed === null) {
     return jsonResponse(400, {
       accepted: false,
