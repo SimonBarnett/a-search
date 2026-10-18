@@ -25,23 +25,23 @@ function walkEnvExamples(dir) {
 }
 
 describe('FR-119 docs/environments.md MSSQL target', () => {
-  it('names WIN-MPRE8VI4U6U / madeiradb for live; sandbox LOCKED separate DB (FR-121)', () => {
+  it('names walrus (+ historical WIN-MPRE) / madeiradb read-only; sandbox LOCKED separate DB (FR-121)', () => {
     const text = fs.readFileSync(
       path.join(root, 'docs', 'environments.md'),
       'utf8',
     );
+    assert.match(text, /walrus/i);
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /madeiradb/);
     assert.match(text, /## MSSQL target \(FR-119\)/);
     // FR-121 locked sandbox = separate database on the same instance.
     assert.match(text, /FR-121/);
     assert.match(text, /separate database on the same instance/i);
-    // FR-122 expanded the bare UNKNOWN one-liner into a decision surface;
-    // chosen option may still be PENDING/UNKNOWN until ops locks A/B/C.
+    // FR-122 / FR-3948: Chosen option LOCKED C (on-box / walrus).
     assert.match(text, /## Network path \(FR-122\)/);
     assert.match(
       text,
-      /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN)/i,
+      /Chosen option[\s\S]{0,120}LOCKED C/i,
     );
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SELECT/);

@@ -20,6 +20,7 @@ describe('FR-122 docs/environments.md network path decision surface', () => {
       'utf8',
     );
     assert.match(text, /## Network path \(FR-122\)/);
+    assert.match(text, /walrus/i);
     assert.match(text, /WIN-MPRE8VI4U6U/);
     assert.match(text, /fixed egress/i);
     assert.match(text, /allowlist/i);
@@ -28,9 +29,9 @@ describe('FR-122 docs/environments.md network path decision surface', () => {
     assert.match(text, /Ops checklist/i);
     assert.match(text, /Least-privilege/i);
     assert.match(text, /SELECT/);
-    assert.match(text, /never[\s\S]{0,80}firewall[\s\S]{0,80}git/i);
-    // Choice may stay PENDING; surface itself is documented (not a bare one-liner).
-    assert.match(text, /Chosen option[\s\S]{0,120}(PENDING|UNKNOWN|LOCKED)/i);
+    assert.match(text, /never[\s\S]{0,100}firewall[\s\S]{0,80}git/i);
+    // FR-3948: Chosen option LOCKED C (on-box / walrus).
+    assert.match(text, /Chosen option[\s\S]{0,120}LOCKED C/i);
   });
 
   it('environments.md network surface has no private IPs or password assignments', () => {
