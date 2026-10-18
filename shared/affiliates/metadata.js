@@ -177,10 +177,18 @@ function normalizeAffiliateMeta(raw, opts) {
     out.enabled = e;
   }
 
+  // FR #4113: downloadOne stamps laststatus=missing_feedurl when neither
+  // feedurl nor feedid is set. Allow that marker update through normalize;
+  // create/update paths that omit both still throw.
   if (!out.feedurl && !out.feedid) {
-    const err = new Error('feedurl_or_feedid_required');
-    err.code = 'feedurl_or_feedid_required';
-    throw err;
+    const status = String(out.laststatus || '')
+      .trim()
+      .toLowerCase();
+    if (status !== 'missing_feedurl') {
+      const err = new Error('feedurl_or_feedid_required');
+      err.code = 'feedurl_or_feedid_required';
+      throw err;
+    }
   }
 
   if (!out.lastmod) {
