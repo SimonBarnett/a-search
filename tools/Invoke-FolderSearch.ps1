@@ -1,17 +1,29 @@
 <#
 .SYNOPSIS
-POST /search for the a-clubs host/GUID folder under the mapped S3 drive (FR #4043).
+POST /search for the a-clubs GUID folder under the mapped S3 drive (FR #4043, FR #4334).
 
 .DESCRIPTION
-In a-clubs/{hostkey}/{guid}: reads host metadata.host + GUID, loads searches.json
-queries, SigV4-signs POST /search (redqueen agents profile). Never writes S3.
-In a host folder: requires -All to search each GUID child sequentially.
+In a-clubs/{hostkey}/{guid}: reads searches.json and POSTs /search.
+Payload matches the annotator: host, hostkey, guid, queries, exclude, plus
+market and currency when present, and metadata userid (never customernumber).
+Never writes S3. Never prints the agent key.
+Env: A_SEARCH_API_URL and A_SEARCH_AGENT_API_KEY_FILE, with
+A_SEARCH_SEARCH_API_URL, A_SEARCH_AGENT_API_KEY, and folder-tools config as fallbacks.
+Missing searches.json, a non-GUID folder, or a missing URL/key fails clearly.
+-WhatIf prints the payload and does not POST. -Json prints searchid, query_count,
+and providers_queued. A host folder still needs -All.
 
 .PARAMETER Path
 Filesystem path (default cwd).
 
 .PARAMETER All
 Host folder only: invoke /search once per GUID subfolder.
+
+.PARAMETER Json
+Print one JSON object per GUID (searchid, query_count, providers_queued). No key.
+
+.PARAMETER WhatIf
+Print the POST payload and do not call /search. No key.
 
 .PARAMETER ConfigPath
 JSON config with SearchApiUrl (and optional AgentApiKeyEnv / AwsProfile).
@@ -21,6 +33,8 @@ param(
     [string]$Path,
     [string]$MountRoot,
     [switch]$All,
+    [switch]$Json,
+    [switch]$WhatIf,
     [string]$ConfigPath,
     [string]$AwsProfile,
     [string]$SearchApiUrl,
@@ -59,19 +73,32 @@ function Get-FolderToolsConfig {
 function Resolve-SearchEndpoint {
     param($Config, [string]$SearchApiUrl)
     if ($SearchApiUrl) { return $SearchApiUrl.TrimEnd('/') }
+    if ($env:A_SEARCH_API_URL) { return $env:A_SEARCH_API_URL.TrimEnd('/') }
     if ($env:A_SEARCH_SEARCH_API_URL) { return $env:A_SEARCH_SEARCH_API_URL.TrimEnd('/') }
     if ($Config -and $Config.SearchApiUrl) { return ([string]$Config.SearchApiUrl).TrimEnd('/') }
-    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_SEARCH_API_URL, or folder-tools.config.json'
+    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_API_URL, A_SEARCH_SEARCH_API_URL, or folder-tools.config.json'
 }
 
 function Resolve-AgentKey {
     param($Config, [string]$AgentApiKey)
     if ($AgentApiKey) { return $AgentApiKey }
+    $file = [Environment]::GetEnvironmentVariable('A_SEARCH_AGENT_API_KEY_FILE')
+    if ($file) {
+        $file = $file.Trim()
+        if (-not $file -or -not (Test-Path -LiteralPath $file)) {
+            throw 'agent_api_key_file_unreadable: A_SEARCH_AGENT_API_KEY_FILE is set but the file cannot be read'
+        }
+        $text = [System.IO.File]::ReadAllText($file).Trim()
+        if (-not $text) {
+            throw 'agent_api_key_required: A_SEARCH_AGENT_API_KEY_FILE is empty'
+        }
+        return $text
+    }
     $envName = 'A_SEARCH_AGENT_API_KEY'
     if ($Config -and $Config.AgentApiKeyEnv) { $envName = [string]$Config.AgentApiKeyEnv }
     $v = [Environment]::GetEnvironmentVariable($envName)
     if ($v) { return $v }
-    throw "agent_api_key_required: set env $envName (never pass on CLI in production)"
+    throw "agent_api_key_required: set A_SEARCH_AGENT_API_KEY_FILE or env $envName"
 }
 
 function Resolve-AwsProfileName {
@@ -131,15 +158,30 @@ function Read-SearchesQueries {
     param($Location, $Backend, $AwsGetObject, $RcloneCat)
     $raw = Get-FolderS3TextObject -Bucket $Location.Bucket -Key ($Location.Key + 'searches.json') `
         -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat
-    if (-not $raw) {
-        return @{ queries = @(); exclude = @() }
+        if (-not $raw) {
+        throw 'searches_json_missing'
     }
     $doc = ConvertFrom-FolderS3Json $raw
     $queries = @()
     if ($doc -and $doc.queries) { $queries = @($doc.queries) }
     $exclude = @()
     if ($doc -and $doc.exclude) { $exclude = @($doc.exclude) }
-    return @{ queries = $queries; exclude = $exclude }
+    $market = ''
+    $currency = ''
+    if ($doc -and $doc.PSObject.Properties['market'] -and $doc.market) { $market = [string]$doc.market }
+    if ($doc -and $doc.PSObject.Properties['currency'] -and $doc.currency) { $currency = [string]$doc.currency }
+    return @{ queries = $queries; exclude = $exclude; market = $market; currency = $currency }
+}
+
+function Get-HostUserId {
+    param($HostMeta)
+    if (-not $HostMeta) { return '' }
+    foreach ($name in @('userid', 'UserId', 'userId')) {
+        if ($HostMeta.ContainsKey($name) -and $HostMeta[$name]) {
+            return [string]$HostMeta[$name]
+        }
+    }
+    return ''
 }
 
 function Invoke-OneGuidSearch {
@@ -152,7 +194,8 @@ function Invoke-OneGuidSearch {
         $Backend,
         $AwsGetObject,
         $RcloneCat,
-        $InvokeSearch
+        $InvokeSearch,
+        [switch]$WhatIf
     )
     $guid = Get-FolderS3Guid -Location $GuidLocation
     $hostkey = Get-FolderS3ParentHostKey -Location $GuidLocation
@@ -164,12 +207,29 @@ function Invoke-OneGuidSearch {
     $sq = Read-SearchesQueries -Location $GuidLocation -Backend $Backend `
         -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat
 
+    $userid = Get-HostUserId -HostMeta $HostMeta
     $body = @{
         host    = $hostForApi
         hostkey = $hostkey
         guid    = $guid
         queries = @($sq.queries)
         exclude = @($sq.exclude)
+    }
+    if ($userid) { $body.userid = $userid }
+    if ($sq.market) { $body.market = [string]$sq.market }
+    if ($sq.currency) { $body.currency = [string]$sq.currency }
+
+    if ($WhatIf) {
+        return [pscustomobject]@{
+            hostkey  = $hostkey
+            host     = $hostForApi
+            guid     = $guid
+            userid   = $userid
+            queries  = $sq.queries
+            body     = $body
+            whatif   = $true
+            response = $null
+        }
     }
 
     $raw = Invoke-AgentSearchHttp -Endpoint $Endpoint -Body $body `
@@ -183,6 +243,9 @@ function Invoke-OneGuidSearch {
         host     = $hostForApi
         guid     = $guid
         queries  = $sq.queries
+        userid   = $userid
+        body     = $body
+        whatif   = $false
         response = $parsed
     }
 }
@@ -196,7 +259,7 @@ try {
         exit 3
     }
     if ($loc.Kind -notin @('host', 'guid')) {
-        [Console]::Error.WriteLine("not_host_or_guid: kind=$($loc.Kind); run inside a-clubs/{hostkey} or a-clubs/{hostkey}/{guid}")
+        [Console]::Error.WriteLine("not_guid_folder: not_host_or_guid: kind=$($loc.Kind); run inside a-clubs/{hostkey}/{guid}")
         exit 3
     }
 
@@ -212,16 +275,16 @@ try {
         $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key ($hostKeyName + '/') `
             -Backend $Backend -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
             -RcloneLsJson $RcloneLsJson
-        $one = Invoke-OneGuidSearch -GuidLocation $loc -HostMeta $hostMarker.Metadata `
+            $one = Invoke-OneGuidSearch -GuidLocation $loc -HostMeta $hostMarker.Metadata `
             -Endpoint $endpoint -AgentApiKey $apiKey -AwsProfile $profile `
             -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat `
-            -InvokeSearch $InvokeSearch
+            -InvokeSearch $InvokeSearch -WhatIf:$WhatIf
         $results += $one
     }
     else {
         # host folder
         if (-not $All) {
-            [Console]::Error.WriteLine('host_folder_needs_all: cwd is a host folder; pass -All to POST /search for each GUID child')
+            [Console]::Error.WriteLine('not_guid_folder: host_folder_needs_all: cwd is a host folder; pass -All to POST /search for each GUID child')
             exit 4
         }
         $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key `
@@ -245,22 +308,52 @@ try {
             exit 0
         }
         foreach ($g in $children) {
-            $results += Invoke-OneGuidSearch -GuidLocation $g -HostMeta $hostMarker.Metadata `
+                $results += Invoke-OneGuidSearch -GuidLocation $g -HostMeta $hostMarker.Metadata `
                 -Endpoint $endpoint -AgentApiKey $apiKey -AwsProfile $profile `
                 -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat `
-                -InvokeSearch $InvokeSearch
+                -InvokeSearch $InvokeSearch -WhatIf:$WhatIf
         }
     }
 
     # Print results without credentials
     foreach ($r in $results) {
+        $queryCount = @($r.queries).Count
+        $providers = ''
+        $searchId = ''
+        if ($r.response) {
+            $sidProp = $r.response.PSObject.Properties['searchid']
+            if ($sidProp -and $sidProp.Value) { $searchId = [string]$sidProp.Value }
+            $qProp = $r.response.PSObject.Properties['queued']
+            if ($qProp -and $qProp.Value) { $providers = (@($qProp.Value) -join ',') }
+        }
+        if ($r.whatif) {
+            Write-Output 'whatif=1'
+            Write-Output ($r.body | ConvertTo-Json -Compress -Depth 8)
+            Write-Output '---'
+            continue
+        }
+        if ($Json) {
+            $doc = [ordered]@{
+                host              = $r.host
+                hostkey           = $r.hostkey
+                guid              = $r.guid
+                userid            = $r.userid
+                query_count       = $queryCount
+                searchid          = $searchId
+                providers_queued  = $providers
+            }
+            Write-Output ($doc | ConvertTo-Json -Compress -Depth 6)
+            continue
+        }
         Write-Output ("host={0} hostkey={1} guid={2}" -f $r.host, $r.hostkey, $r.guid)
         Write-Output ("queries={0}" -f (($r.queries | ConvertTo-Json -Compress -Depth 5)))
-        if ($r.response -and $r.response.searchid) {
-            Write-Output ("searchid={0}" -f $r.response.searchid)
+        Write-Output ("query_count={0}" -f $queryCount)
+        if ($searchId) {
+            Write-Output ("searchid={0}" -f $searchId)
         }
-        if ($r.response -and $r.response.queued) {
-            Write-Output ("queued={0}" -f (($r.response.queued) -join ','))
+        if ($providers) {
+            Write-Output ("queued={0}" -f $providers)
+            Write-Output ("providers_queued={0}" -f $providers)
         }
         else {
             Write-Output ("response={0}" -f ($r.response | ConvertTo-Json -Compress -Depth 6))
