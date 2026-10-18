@@ -286,6 +286,12 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'SHOPIFY_ACCESS_TOKEN',
     'SHOPIFY_STORE_URL',
   ],
+  // FR-180: enable woocommerce merchant
+  woocommerce: [
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+    'WOOCOMMERCE_STORE_URL',
+  ],
   // FR-174: enable tradedoubler
   tradedoubler: [
     'TRADEDOUBLER_API_KEY',
@@ -301,6 +307,14 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'AVANTLINK_FEED_TOKEN',
     'AVANTLINK_PUBLISHER_ID',
     'AVANTLINK_AFFILIATE_ID',
+  ],
+    // FR-173: enable webgains
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
   ],
   // FR-172: enable partnerize
   partnerize: [
@@ -491,6 +505,8 @@ class ASearchStack extends cdk.Stack {
       publicReadAccess: false,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       autoDeleteObjects: false,
+      // #1343 / FR-258: S3 -> EventBridge for widget-agent trigger suffixes
+      eventBridgeEnabled: true,
     });
 
 
@@ -921,6 +937,12 @@ class ASearchStack extends cdk.Stack {
       methods: [apigwv2.HttpMethod.POST],
       integration: entryIntegration('EntryWixShopWebhookIntegration'),
     });
+    // FR-246: Ecwid application.uninstalled webhook
+    httpApi.addRoutes({
+      path: '/webhooks/shop/ecwid',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryEcwidShopWebhookIntegration'),
+    });
     // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
     httpApi.addRoutes({
       path: '/webhooks/shop/bigcommerce',
@@ -937,7 +959,9 @@ class ASearchStack extends cdk.Stack {
     httpApi.addRoutes({
       path: '/webhooks/shop/bigcommerce/load',
       methods: [apigwv2.HttpMethod.POST],
-      integration: entryIntegration('EntryBigCommerceShopLoadWebhookIntegration'),
+      integration: entryIntegration(
+        'EntryBigCommerceShopLoadWebhookIntegration',
+      ),
     });
     // FR-229: shared login session mint + post-login redirect (public; JWT not required)
     httpApi.addRoutes({
@@ -1382,6 +1406,101 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
+    // #1343 / FR-258: ComponentsPiece widget-agent FIFO + enqueue Lambda + EventBridge rules
+    const AGENT_JOB_TIMEOUT_S = 900;
+    const widgetAgentDlq = new sqs.Queue(this, 'WidgetAgentDeadLetterQueue', {
+      queueName: stagedFifoName('a-search-widget-agent-dlq.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetAgentQueue = new sqs.Queue(this, 'WidgetAgentQueue', {
+      queueName: stagedFifoName('a-search-widget-agent.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(AGENT_JOB_TIMEOUT_S + 60),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetAgentDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    const widgetAgentEnqueue = new lambda.Function(this, 'WidgetAgentEnqueueFunction', {
+      functionName: stagedName('a-search-widget-agent-enqueue'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(
+        path.join(repoRoot, 'components-piece', 'dispatcher', 'enqueue'),
+      ),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: ENTRY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_WIDGET_AGENT_QUEUE_URL: widgetAgentQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'WidgetAgentEnqueueLogGroup'),
+    });
+    widgetAgentQueue.grantSendMessages(widgetAgentEnqueue);
+
+    const widgetAgentSuffixes = [
+      '_host.json',
+      'widget.json',
+      'feedback.json',
+    ];
+    for (const suffix of widgetAgentSuffixes) {
+      const idSuffix = suffix.replace(/[^a-zA-Z0-9]/g, '');
+      new events.Rule(this, `WidgetAgentS3_${idSuffix}`, {
+        ruleName: stagedName(`a-search-widget-agent-${idSuffix}`),
+        description: `#1343 S3 Object Created suffix ${suffix} -> widget-agent enqueue`,
+        eventPattern: {
+          source: ['aws.s3'],
+          detailType: ['Object Created'],
+          detail: {
+            bucket: { name: [resultsBucket.bucketName] },
+            object: { key: [{ suffix }] },
+          },
+        },
+        targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+      });
+    }
+    new events.Rule(this, 'WidgetAgentS3_INjson', {
+      ruleName: stagedName('a-search-widget-agent-INjson'),
+      description: '#3479 S3 Object Created IN/*.json -> widget-agent enqueue',
+      eventPattern: {
+        source: ['aws.s3'],
+        detailType: ['Object Created'],
+        detail: {
+          bucket: { name: [resultsBucket.bucketName] },
+          object: { key: [{ wildcard: '*/IN/*.json' }] },
+        },
+      },
+      targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+    });
+    new events.Rule(this, 'WidgetAgentSweepDaily', {
+      ruleName: stagedName('a-search-widget-agent-sweep'),
+      description: '#1343 daily sweep tick for widget-agent (expand per active widget)',
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
+      targets: [
+        new targets.LambdaFunction(widgetAgentEnqueue, {
+          event: events.RuleTargetInput.fromObject({
+            eventType: 'sweep',
+            widgets: [],
+            note: 'ops/expander fills widgets[] from a_search.dbo.Widgets',
+          }),
+        }),
+      ],
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentQueueUrl', {
+      value: widgetAgentQueue.queueUrl,
+      description: '#1343 SQS FIFO a-search-widget-agent.fifo',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentDlqUrl', {
+      value: widgetAgentDlq.queueUrl,
+      description: '#1343 widget-agent DLQ (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentEnqueueFunctionName', {
+      value: widgetAgentEnqueue.functionName,
+    });
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
       description:

@@ -21,11 +21,11 @@ function utf8NoBom(rel) {
 }
 
 describe('FR-2021 CI queue starvation gate', () => {
-  it('ci.yml keeps test-and-synth + concurrency cancel-in-progress + path-aware synth', () => {
+  it('ci.yml keeps test-and-synth + PR-only cancel-in-progress + path-aware synth', () => {
     const text = utf8NoBom('.github/workflows/ci.yml');
     assert.match(text, /test-and-synth:/);
     assert.match(text, /\bconcurrency:\s*\n/);
-    assert.match(text, /cancel-in-progress:\s*true/);
+    assert.match(text, /cancel-in-progress:\s*\$\{\{ github\.event_name == 'pull_request' \}\}/);
     assert.match(text, /a-search-ci-/);
     assert.match(text, /need_synth|Detect CDK-relevant paths/);
     assert.match(text, /synth=false|docs-harvest-or-tests-only/);
