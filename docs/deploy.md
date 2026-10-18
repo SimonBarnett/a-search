@@ -396,3 +396,26 @@ npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
 sequential counter). First request for a new host or GUID auto-creates the
 `a-clubs/{hostkey}/` marker and `{hostkey}/{guid}/` seed files; repeats are
 idempotent. Bob deploys after MRB PASS and merge.
+
+## AAffiliates (FR #3999) --- standalone affiliates bucket + weekly download
+
+Separate CDK app (`cdk/bin/affiliates.js`, stack id `AAffiliates`). Does **not**
+modify or depend on `ASearchStack` or `APartsGateway`. Creates private bucket
+`a-affiliates` (fallback name `a-search-affiliates` if taken), Node 20 Lambda,
+and EventBridge `rate(7 days)`. IAM is limited to Get/Put/List/DeleteObject on
+this bucket only. v1 uses Lambda; Fargate is a follow-up if size/time limits hit.
+
+Full notes: [a-affiliates.md](a-affiliates.md) and
+[cdk/README-affiliates.md](../cdk/README-affiliates.md).
+
+```bash
+npm ci
+npm run stage-affiliates
+npx cdk synth --app "node cdk/bin/affiliates.js" AAffiliates \
+  -c account=620257466932 -c region=eu-west-2
+
+npx cdk deploy --app "node cdk/bin/affiliates.js" AAffiliates \
+  -c requireDeployEnv=true \
+  -c account=620257466932 -c region=eu-west-2
+```
+

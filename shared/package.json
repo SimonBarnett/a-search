@@ -35,6 +35,7 @@
     "finance/",
     "harvest/",
     "events/",
-    "aClubs/"
+    "aClubs/",
+    "affiliates/"
   ]
 }
