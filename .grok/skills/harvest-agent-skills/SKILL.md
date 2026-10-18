@@ -330,6 +330,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Re-offered MRB with synth status null at ~600s and tip already 0 behind: ACCEPTABLE drift, PASS @ SHA, leave --auto, DONE at once --- do not start another fold or wait on CI.
 - Long-lived FR-239 rematch: one behind-main fold, re-run fr239+mrb2172 pins, PASS @ new SHA, leave --auto, DONE --- do not re-litigate prior PASS boards.
 - docs/mrb hostile pin 0 behind with local pin green and CI only sequential synth status-null: PASS and leave --auto; do not GIVEUP on a closed-unmerged parent when the lesson line is already on the docs tip.
+- MRB behind-main fold: if git push of the fold is rejected, do not DONE on the pre-fold SHA; retry the push and DONE only after headRefOid matches the fold commit (class of #3726 / #3357).
 - harvest-agent-skills GitGuardian placeholder: use pure ASCII AKIA...EXAMPLE (three dots); never unicode ellipsis in SKILL.md --- pin with fr2746 hostile ASCII test
 - When a-search tip adds widget-agent FIFO DLQ, fr143 must assert 26 provider worker alarms and exclude a-search-widget-agent (and shop-sync) FIFO alarms --- not 27 (class of MRB #2075 FAIL then tip-fix)
 - a-search keep-both enable MRB: when hostile it() titles still say floors 28 but asserts are both.length===15 / expected 30, treat as title nit and PASS --- do not FAIL or open a fix PR for stale it() names alone
