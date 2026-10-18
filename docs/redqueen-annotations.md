@@ -25,7 +25,20 @@ For the host marker, then each GUID folder marker:
 |-------|--------|
 | no `annotated=1` | write object annotations, set `annotated=1`, set `lastupdate` and `lastmod` to the same ISO UTC timestamp |
 | `annotated=1` and `lastmod` > `lastupdate` | regenerate annotations, refresh `lastupdate` (= `lastmod`) |
-| `annotated=1` and `lastmod` <= `lastupdate` | skip |
+| `annotated=1` and `lastmod` <= `lastupdate` | skip, unless `REDQUEEN_REANNOTATE=1` |
+
+## Re-annotate (FR #4251)
+
+Set `REDQUEEN_REANNOTATE=1` for one console run of `node redqueen/src/run.js`
+(or one service start) to rewrite host and GUID annotations even when
+`annotated=1` and `lastmod` <= `lastupdate`. Unset it after that pass so the
+poll loop does not rewrite the same markers on every tick. The host marker
+must still be on the folder-events queue (replay the host message).
+
+Host `annotation` is an affiliate brief: club specifics, audience, and
+affiliate opportunities. GUID `annotation` describes only that page (title,
+meta, purpose) using the host brief as context and must not copy it.
+`steering` lists the page's narrowing terms plus market, currency and locale.
 
 The agent writes `lastupdate` and `lastmod` together so its own annotation write
 does not look like a content change and loop.
