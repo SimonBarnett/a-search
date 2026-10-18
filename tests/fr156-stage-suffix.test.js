@@ -88,7 +88,13 @@ describe('FR-156 stack stage suffix', () => {
     const { resolveStackId } = require('../cdk/lib/resolve-stage-suffix');
     const outdir = path.join(root, 'cdk.out-fr156-dev');
     fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir, context: { stage: 'dev' } });
+    const app = new cdk.App({
+      outdir,
+      context: {
+        stage: 'dev',
+        providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
+      },
+    });
     const stackId = resolveStackId({ stage: 'dev' });
     assert.equal(stackId, 'ASearchStack-dev');
     new ASearchStack(app, stackId);

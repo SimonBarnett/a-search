@@ -96,14 +96,17 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     }
 
     const amazonLive = envOf('a-search-amazon-worker-live');
-    assertSecretRef(amazonLive, 'AMAZON_ACCESS_KEY', 'amazon-live');
-    assertSecretRef(amazonLive, 'AMAZON_SECRET_KEY', 'amazon-live');
-    assertSecretRef(amazonLive, 'AMAZON_PARTNER_TAG', 'amazon-live');
+    assert.equal(amazonLive.AMAZON_ACCESS_KEY, 'FAKE_AK');
+    assert.equal(amazonLive.AMAZON_SECRET_KEY, 'FAKE_SK');
+    assert.equal(amazonLive.AMAZON_PARTNER_TAG, 'FAKE_PT');
     assert.equal(amazonLive.AMAZON_HOST, 'webservices.amazon.co.uk');
+    assert.equal(amazonLive.AMAZON_REGION, 'eu-west-1');
 
     const ebaySandbox = envOf('a-search-ebay-worker-sandbox');
-    assertSecretRef(ebaySandbox, 'EBAY_CLIENT_ID', 'ebay-sandbox');
-    assertSecretRef(ebaySandbox, 'EBAY_CLIENT_SECRET', 'ebay-sandbox');
+    assert.equal(ebaySandbox.EBAY_CLIENT_ID, 'FAKE_ID');
+    assert.equal(ebaySandbox.EBAY_CLIENT_SECRET, 'FAKE_ES');
+    assert.equal(ebaySandbox.EBAY_CAMPAIGN_ID, 'FAKE_CP');
+    assert.equal(ebaySandbox.EBAY_MARKETPLACE_ID, 'EBAY_GB');
     assert.equal(ebaySandbox.EBAY_ENV, 'sandbox');
 
     assertSecretRef(
@@ -199,6 +202,8 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     );
 
     const raw = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(raw, /a-search\/provider\/amazon/);
+    assert.doesNotMatch(raw, /a-search\/provider\/ebay/);
     assert.doesNotMatch(raw, /"AMAZON_SECRET_KEY"\s*:\s*"[^{][^"]{8,}"/);
     assert.doesNotMatch(raw, /"EBAY_CLIENT_SECRET"\s*:\s*"[^{][^"]{8,}"/);
   });

@@ -449,7 +449,12 @@ function ensureDefaultStackSynth(root, opts = {}) {
   const cdk = require('aws-cdk-lib');
   const { ASearchStack } = require(path.join(root, 'cdk', 'lib', 'a-search-stack'));
   fs.mkdirSync(outDir, { recursive: true });
-  const app = new cdk.App({ outdir: outDir });
+  const app = new cdk.App({
+    outdir: outDir,
+    context: {
+      providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
+    },
+  });
   new ASearchStack(app, 'ASearchStack', opts.stackProps);
   app.synth();
   return { outDir, reused: false };

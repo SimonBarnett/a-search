@@ -73,7 +73,10 @@ describe('FR-155 CDK cost allocation tags', () => {
     fs.rmSync(outdir, { recursive: true, force: true });
     const app = new cdk.App({
       outdir,
-      context: { stage: 'dev' },
+      context: {
+        stage: 'dev',
+        providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
+      },
     });
     new ASearchStack(app, 'ASearchStack');
     app.synth();

@@ -58,7 +58,11 @@ describe('FR-157 API access logs + throttle', () => {
     fs.rmSync(outdir, { recursive: true, force: true });
     const app = new cdk.App({
       outdir,
-      context: { apiThrottleRate: '25', apiThrottleBurst: '55' },
+      context: {
+        apiThrottleRate: '25',
+        apiThrottleBurst: '55',
+        providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
+      },
     });
     new ASearchStack(app, 'ASearchStack');
     app.synth();

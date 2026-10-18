@@ -98,13 +98,15 @@ Secret JSON keys: `SERVER`, `USER`, `PASSWORD`. `MSSQL_DATABASE` is plain CDK
 context (live default **`a_search`**, FR-251). Legacy targets were maintainer,
 local workers, awin/impact onboarding - not live marketplace workers.
 
-### Provider credentials (FR-138)
+### Provider credentials (FR-138 / FR #4336)
 
-Per-source secrets for enabled ids only (amazon, ebay, rakuten, cj, awin, impact).
-Context pattern: `-c amazonProviderSecretArn=...` (same for each id). JSON keys
-match that provider's `.env.example` credential names. Stay-dark sources get no
-grants until an enable-provider FR. See [secrets-matrix.md](secrets-matrix.md)
-when present; otherwise [cdk/README.md](../cdk/README.md).
+Amazon and eBay take credentials from `providers/live/amazon/.env` and
+`providers/live/ebay/.env` at synth (gitignored). Do not pass
+`amazonProviderSecretArn` or `ebayProviderSecretArn`. Other enabled ids
+(rakuten, cj, awin, impact) stay on per-source Secrets Manager JSON.
+Context pattern: `-c rakutenProviderSecretArn=...` (same for each remaining id).
+Stay-dark sources get no grants until an enable-provider FR. See
+[secrets-matrix.md](secrets-matrix.md).
 
 ## 5. cdk deploy
 
@@ -125,8 +127,6 @@ npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
   -c jwtSecretArn=arn:aws:secretsmanager:... \
   # legacy only (omit for new stack / FR-3948): -c mssqlSecretArn=arn:aws:secretsmanager:... \
   # legacy only: -c mssqlSandboxDatabase=YOUR_SANDBOX_DB \
-  -c amazonProviderSecretArn=arn:... \
-  -c ebayProviderSecretArn=arn:... \
   -c rakutenProviderSecretArn=arn:... \
   -c cjProviderSecretArn=arn:... \
   -c awinProviderSecretArn=arn:... \

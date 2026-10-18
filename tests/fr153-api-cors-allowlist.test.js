@@ -102,6 +102,7 @@ describe('FR-153 API Gateway CORS allowlist', () => {
       outdir,
       context: {
         corsOrigins: 'https://club.example,https://app.club.example',
+        providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
       },
     });
     new ASearchStack(app, 'ASearchStack');
