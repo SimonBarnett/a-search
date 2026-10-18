@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 const { enabled, loadRegistry } = require('../providers/loadRegistry');
 
-// FR-167 kijiji + FR-168 skimlinks + FR-169 aliexpress enabled; keep in DEFAULT_ON.
+// GBP/UK market hold: bol, aliexpress, avantlink off (FR-253..255); keep UK-capable DEFAULT_ON.
 const DEFAULT_ON = [
   'amazon',
   'ebay',
@@ -14,21 +14,21 @@ const DEFAULT_ON = [
   'awin',
   'impact',
   'kelkoo',
-  'aliexpress',
   'etsy',
   'skimlinks',
-  'bol',
+  'shopify',
   'partnerize',
+  'tradedoubler',
+  'webgains',
+  'woocommerce',
+  'wix',
 ];
 const DEFAULT_OFF = [
-  'webgains',
-  'tradedoubler',
   'admitad',
   'flexoffers',
+  'bol',
+  'aliexpress',
   'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
 ];
 
 describe('providers/loadRegistry', () => {

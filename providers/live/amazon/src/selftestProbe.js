@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * FR-059f: Amazon selftest probe — credential check + recorded fixture path
- * (or injectable HTTP) proving the PA-API client wiring works.
- * Other providers are out of scope.
+ * FR-059f / FR-184: Amazon selftest probe.
+ * Default: PA-API credential check + recorded fixture (or injectable HTTP).
+ * When Creators flag is on (FR-181/182/183): Creators creds + creators fixture /
+ * injectable HTTP. Fail-closed codes stay redacted (no secret values).
  */
 
 const fs = require('node:fs');
@@ -15,12 +16,26 @@ const {
   signPaapiRequest,
   readAmazonCreds,
 } = require('./search');
+const {
+  isCreatorsSearchEnabled,
+  assertCreatorsCreds,
+  AmazonCreatorsCredsError,
+  buildCreatorsSearchRequest,
+  readCreatorsCreds,
+} = require('./creatorsSearch');
 
 const DEFAULT_FIXTURE = path.join(
   __dirname,
   '..',
   'fixtures',
   'search-items-ok.json',
+);
+
+const DEFAULT_CREATORS_FIXTURE = path.join(
+  __dirname,
+  '..',
+  'fixtures',
+  'creators-search-ok.json',
 );
 
 /**
@@ -38,25 +53,99 @@ function fixtureLooksOk(json) {
 }
 
 /**
+ * @param {unknown} json
+ * @returns {boolean}
+ */
+function creatorsFixtureLooksOk(json) {
+  const list =
+    json && typeof json === 'object' && Array.isArray(json.items)
+      ? json.items
+      : json && typeof json === 'object' && Array.isArray(json.results)
+        ? json.results
+        : null;
+  return Boolean(list && list.length > 0);
+}
+
+/**
  * @param {{
  *   env?: Record<string, string|undefined>,
  *   now?: () => number,
  *   fixturePath?: string,
- *   httpRequest?: (signed: object) => Promise<object>,
+ *   httpRequest?: (req: object) => Promise<object>,
  *   useFixture?: boolean,
  * }} [deps]
- * @returns {Promise<{ ok: boolean, source: string, latencyMs: number, error?: string }>}
+ * @returns {Promise<{ ok: boolean, source: string, latencyMs: number, error?: string, searchApi?: string }>}
  */
 async function probeAmazonSelftest(deps = {}) {
   const now = typeof deps.now === 'function' ? deps.now : () => Date.now();
   const t0 = now();
   const source = 'amazon';
   const env = deps.env || process.env;
+  const useCreators = isCreatorsSearchEnabled(env);
 
   const elapsed = () => {
     const ms = now() - t0;
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
+
+  if (useCreators) {
+    try {
+      assertCreatorsCreds(env);
+    } catch (err) {
+      const code =
+        err && typeof err === 'object' && err.code
+          ? String(err.code)
+          : 'amazon_creators_missing_credentials';
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: code,
+        searchApi: 'creators',
+      };
+    }
+
+    try {
+      let json;
+      if (typeof deps.httpRequest === 'function') {
+        const creds = readCreatorsCreds(env);
+        const req = buildCreatorsSearchRequest({ q: 'selftest' }, creds);
+        json = await deps.httpRequest(req);
+      } else {
+        const fixturePath = deps.fixturePath || DEFAULT_CREATORS_FIXTURE;
+        json = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+      }
+
+      if (!creatorsFixtureLooksOk(json)) {
+        return {
+          ok: false,
+          source,
+          latencyMs: elapsed(),
+          error: 'amazon_creators_fixture_invalid',
+          searchApi: 'creators',
+        };
+      }
+
+      return {
+        ok: true,
+        source,
+        latencyMs: elapsed(),
+        searchApi: 'creators',
+      };
+    } catch (err) {
+      const msg =
+        err && typeof err === 'object' && err.message
+          ? String(err.message).slice(0, 200)
+          : 'amazon_creators_probe_failed';
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: msg || 'amazon_creators_probe_failed',
+        searchApi: 'creators',
+      };
+    }
+  }
 
   try {
     assertAmazonCreds(env);
@@ -70,6 +159,7 @@ async function probeAmazonSelftest(deps = {}) {
       source,
       latencyMs: elapsed(),
       error: code,
+      searchApi: 'paapi',
     };
   }
 
@@ -88,7 +178,7 @@ async function probeAmazonSelftest(deps = {}) {
       });
       json = await deps.httpRequest(signed);
     } else {
-      // Recorded fixture path (default) — no live PA-API call.
+      // Recorded fixture path (default) - no live PA-API call.
       const fixturePath = deps.fixturePath || DEFAULT_FIXTURE;
       json = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     }
@@ -99,6 +189,7 @@ async function probeAmazonSelftest(deps = {}) {
         source,
         latencyMs: elapsed(),
         error: 'amazon_fixture_invalid',
+        searchApi: 'paapi',
       };
     }
 
@@ -106,6 +197,7 @@ async function probeAmazonSelftest(deps = {}) {
       ok: true,
       source,
       latencyMs: elapsed(),
+      searchApi: 'paapi',
     };
   } catch (err) {
     const msg =
@@ -117,6 +209,7 @@ async function probeAmazonSelftest(deps = {}) {
       source,
       latencyMs: elapsed(),
       error: msg || 'amazon_probe_failed',
+      searchApi: 'paapi',
     };
   }
 }
@@ -142,6 +235,9 @@ module.exports = {
   probeAmazonSelftest,
   amazonSelftestProbe,
   fixtureLooksOk,
+  creatorsFixtureLooksOk,
   DEFAULT_FIXTURE,
+  DEFAULT_CREATORS_FIXTURE,
   AmazonCredsError,
+  AmazonCreatorsCredsError,
 };

@@ -43,7 +43,7 @@ const track = {
   env: 'sandbox',
   envVars: {
     A_SEARCH_ENV: 'sandbox',
-    ETSY_TRACKING_ID: 'mrb-track',
+    ETSY_RAKUTEN_MID: 'mid-test', RAKUTEN_PUBLISHER_ID: 'pub-test',
   },
 };
 
@@ -68,7 +68,7 @@ describe('mrb716 hostile FR-076 etsy normalize', () => {
     });
   });
 
-  it('enabled FR-170; skill FR-076 ASCII; ETSY_TRACKING_ID in env', () => {
+  it('enabled FR-170; skill FR-076/244 ASCII; affiliate env keys', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
@@ -80,8 +80,8 @@ describe('mrb716 hostile FR-076 etsy normalize', () => {
     assert.ok(!skill.includes('\ufffd'));
     assert.ok(!skill.includes('<<<<<<'));
     assert.ok(!/\u00c3|\u00e2\u20ac/.test(skill));
-    assert.match(skill, /## Normalize \(FR-076\)/);
-    assert.match(skill, /ETSY_TRACKING_ID/);
+    assert.match(skill, /## Normalize \(FR-076/);
+    assert.match(skill, /affiliate|Rakuten|FR-244/i);
     assert.doesNotMatch(
       skill,
       /Normalize \(FR-076\) and worker wiring \(FR-077\) are separate later FRs/,
@@ -90,8 +90,11 @@ describe('mrb716 hostile FR-076 etsy normalize', () => {
     const env = fs.readFileSync(envPath, 'utf8');
     assert.ok(!env.includes('\ufffd'));
     assert.ok(!env.includes('<<<<<<'));
-    assert.match(env, /^ETSY_TRACKING_ID=(a-search)?$/m);
+    assert.match(env, /^ETSY_AFFILIATE_NETWORK=rakuten$/m);
+    assert.match(env, /^ETSY_RAKUTEN_MID=$/m);
+    assert.doesNotMatch(env, /^ETSY_TRACKING_ID=/m);
   });
+
 
   it('missing track throws TrackedUrlError when url present', () => {
     const { normalizeEtsyListing, TrackedUrlError } = require(normalizePath);

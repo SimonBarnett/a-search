@@ -17,7 +17,7 @@ const {
 } = require('../providers/local/wix/src/selftestProbe');
 
 describe('MRB-866 FR-108 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled per FR-179', () => {
     assert.deepEqual(rateLimit('wix'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
@@ -26,8 +26,8 @@ describe('MRB-866 FR-108 hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'wix');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {

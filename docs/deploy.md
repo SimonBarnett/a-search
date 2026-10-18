@@ -169,7 +169,7 @@ can sit beside production:
 npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2 -c stage=dev
 ```
 
-ResultsBucket stays CDK auto-named (unique per stack). Multi-region active-active
+ResultsBucket stays CDK auto-named (unique per stack). Multi-region strategy is LOCKED active-passive (see [multi-region.md](multi-region.md) FR-190). Multi-region active-active
 is out of scope. Same `stage` key feeds FR-155 cost `Env` tags.
 
 ### API access logs + throttle (FR-157)
@@ -332,3 +332,18 @@ out of scope.
 - Enabling stay-dark providers
 - Creating sandbox DB DDL on IONOS - ops follow [sql/apply-ddl-runbook.md](sql/apply-ddl-runbook.md) (FR-146); agents do not execute DDL
 - Opening IONOS firewall ports (ops; FR-149 / FR-122)
+
+## Multi-region second stack (FR-191)
+
+Active-passive (FR-190). Deploy a standby stack from the same source without renaming it:
+
+```bash
+npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-1 -c stage=standby -c includeRegionInNames=true
+```
+
+- `region` selects the AWS region for the stack (FR-141).
+- `stage` adds the FR-156 name suffix.
+- `includeRegionInNames=true` (or `regionSuffix=euwest1`) appends a sanitized region token so function/queue names and the stack id differ across regions (e.g. `a-search-entry-standby-euwest1`, stack `ASearchStack-standby-euwest1`).
+- Default deploy (no stage / no includeRegionInNames) keeps primary names unchanged.
+
+DNS / custom-domain failover is FR-193 ([multi-region-dns.md](multi-region-dns.md)). S3 results are **region-local** per stack (FR-192 LOCKED; no CRR).

@@ -24,9 +24,13 @@ try {
   process.exit(1);
 }
 
-// FR-156: ASearchStack or ASearchStack-<stage> for parallel installs
+// FR-156 / FR-191: ASearchStack[-stage][-regionToken] for parallel / multi-region installs
 const stackId = resolveStackId({
   stage: app.node.tryGetContext('stage'),
+  region: app.node.tryGetContext('region') || deployEnv.region,
+  deployRegion: app.node.tryGetContext('deployRegion'),
+  includeRegionInNames: app.node.tryGetContext('includeRegionInNames'),
+  regionSuffix: app.node.tryGetContext('regionSuffix'),
 });
 
 new ASearchStack(app, stackId, {

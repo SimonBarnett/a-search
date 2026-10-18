@@ -109,7 +109,7 @@ describe('FR-100 avantlink feed-parser hook', () => {
     assert.match(String(creds.defaultFeedUrl), /avantlink\.csv/);
   });
 
-  it('registry keeps avantlink enabled false both envs', () => {
+  it('registry holds avantlink disabled both envs (GBP/UK market hold)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

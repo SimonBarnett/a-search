@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['ADMITAD_WEBSITE_ID'],
-      accountQueryMap: { ADMITAD_WEBSITE_ID: 'tag' },
+      source: 'admitad',
     });
   }
 

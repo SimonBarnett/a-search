@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>a-search Add shop - catalogue provider</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 42rem; color: #122; }
+    h1 { font-size: 1.25rem; }
+    .step { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    .meta { color: #556; font-size: 0.9rem; }
+    label.row { display: flex; align-items: center; gap: 0.5rem; margin: 0.4rem 0; }
+    .soon { color: #886600; font-size: 0.85rem; }
+    .err { color: #a20; font-weight: 600; display: none; }
+    .interest { display: none; margin-top: 0.75rem; padding: 0.75rem; background: #f7f7f0; border-radius: 4px; }
+    button { margin-top: 0.75rem; padding: 0.4rem 0.9rem; }
+    code { background: #f4f6f8; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+  <h1>Add shop</h1>
+  <p class="meta">FR-215 merchant picker. Reused for every Add shop (many shops per merchant). Connect OAuth is FR-216+; Stripe is FR-239.</p>
+
+  <div class="step" id="picker">
+    <h2>1. Catalogue provider</h2>
+    <p class="meta">Select a MERCHANT platform. Selection is required before Connect.</p>
+
+    <label class="row"><input type="radio" name="provider" value="shopify" data-connect="1" /> Shopify <code>shopify</code></label>
+    <label class="row"><input type="radio" name="provider" value="wix" data-connect="0" /> Wix <code>wix</code> <span class="soon">coming soon</span></label>
+    <label class="row"><input type="radio" name="provider" value="woocommerce" data-connect="0" /> WooCommerce <code>woocommerce</code> <span class="soon">coming soon</span></label>
+    <label class="row"><input type="radio" name="provider" value="squarespace" data-connect="0" /> Squarespace <code>squarespace</code> <span class="soon">coming soon</span></label>
+    <label class="row"><input type="radio" name="provider" value="magento" data-connect="0" /> Magento / Adobe Commerce <code>magento</code> <span class="soon">coming soon</span></label>
+    <label class="row"><input type="radio" name="provider" value="bigcommerce" data-connect="0" /> BigCommerce <code>bigcommerce</code> <span class="soon">coming soon</span></label>
+    <label class="row"><input type="radio" name="provider" value="ecwid" data-connect="0" /> Ecwid <code>ecwid</code> <span class="soon">coming soon</span></label>
+
+    <p class="err" id="need-select">Select a provider before Connect.</p>
+    <div class="interest" id="interest">
+      <p><strong>Coming soon</strong> - we captured your interest for <code id="interest-id"></code>. This is not an error. You can pick Shopify to connect now, or wait for this adapter.</p>
+    </div>
+    <button type="button" id="btn-connect">Continue to Connect</button>
+  </div>
+
+  <script>
+    (function () {
+      var err = document.getElementById('need-select');
+      var interest = document.getElementById('interest');
+      var interestId = document.getElementById('interest-id');
+      document.getElementById('btn-connect').addEventListener('click', function () {
+        var chosen = document.querySelector('input[name="provider"]:checked');
+        err.style.display = 'none';
+        interest.style.display = 'none';
+        if (!chosen) {
+          err.style.display = 'block';
+          return;
+        }
+        if (chosen.getAttribute('data-connect') !== '1') {
+          interestId.textContent = chosen.value;
+          interest.style.display = 'block';
+          return;
+        }
+        // FR-216 owns the real connect redirect; wireframe only.
+        window.location.hash = 'connect=' + encodeURIComponent(chosen.value);
+      });
+    })();
+  </script>
+</body>
+</html>

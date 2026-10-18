@@ -3,7 +3,7 @@
 /**
  * Shopify local provider worker (FR-607 stub + FR-103 SqlClient SELECT).
  * Search reads MSSQL Parts (ingest is maintainer / FR-101..102) -> normalize -> writeResults.
- * Stay-dark: registry enabled stays false.
+ * Enabled both envs (FR-178); merchant class, no affiliate stamp.
  *
  * @param {object} msg - SQS fan-out payload
  * @param {object} [deps]
@@ -24,7 +24,6 @@ const {
   assertProductSchema,
 } = require('../../../../worker/lib/normalizeProduct');
 const {
-  buildTrackedUrl,
   TrackedUrlError,
 } = require('../../../../shared/links/buildTrackedUrl');
 const {
@@ -74,21 +73,9 @@ function normalizePart(row, track) {
 
   let url;
   if (row && row.Url != null && String(row.Url).trim() !== '') {
-    if (!track || typeof track !== 'object') {
-      throw new TrackedUrlError(
-        'shopify normalizePart requires track context { userId, envVars } for Url',
-        'tracked_url_missing_userId',
-      );
-    }
-    const absolute = resolveShopifyProductUrl(row.Url, track.envVars || {});
-    url = buildTrackedUrl({
-      url: absolute,
-      userId: track.userId,
-      env: track.env,
-      envVars: track.envVars || {},
-      requiredAccountKeys: ['SHOPIFY_AFFILIATE_ID'],
-      accountQueryMap: { SHOPIFY_AFFILIATE_ID: 'sid' },
-    });
+    // FR-178 merchant: plain absolute shop URLs (no affiliate sid stamp).
+    const envVars = (track && typeof track === 'object' && track.envVars) || {};
+    url = resolveShopifyProductUrl(row.Url, envVars);
   }
 
   const product = normalizeProduct({

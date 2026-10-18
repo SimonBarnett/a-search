@@ -64,6 +64,8 @@ Agent (offline)
 
 ### Storage layout (LOCKED for this FR)
 
+**SUPERSEDED 2026-10-10** by FR-232 widgetGuid tree (see Amendment 2026-10-10 below). Kept for history:
+
 ```
 x:/{customerNumber}/
   site.md                 # site URL + affiliate skillbook
@@ -185,9 +187,19 @@ clubmadeira.uk.
 | CP17 | Payout Stripe optional | Partner/club can operate without payout Stripe until payout requested | docs + pin | Forced Connect at partner register |
 | CP18 | Monthly partner no commission | Partner on monthly plan is not charged commission | billing pin / docs rule | Commission charged to monthly-paying partner |
 
+### Amendment 2026-10-10 - FR-214 docs lock (#1219) supersedes CP12/CP13/CP18
+
+Durable lock: [components-piece-merchant.md](components-piece-merchant.md).
+
+- **CP12:** payment gate is **per shop going live** (GBP 20/shop/month `merchant_shop`), not account signup.
+- **CP13:** merchants **never** generate commission / affiliate stamps (taxonomy MERCHANT).
+- **CP18:** monthly partner plan **dropped**; partners are never billed (payouts only, FR-222).
+- Stripe products only: `merchant_shop`, `widget_upgrade` (never `partner_monthly`).
+
 ### New small FRs
 
-FR-214..FR-224 (see `docs/fr/`). File after approve.
+FR-214..FR-224 (see `docs/fr/`). File after approve. FR-214 durable doc:
+[components-piece-merchant.md](components-piece-merchant.md).
 
 
 
@@ -258,9 +270,8 @@ FR-225..FR-231 (see `docs/fr/`). File after approve.
 
 - Exact public DNS TXT record names (values carry clubId / optional partnerId); signup page URL
 - Whether Parts/Click share entry Lambda or a new `components/` (or `widget/`) folder
-- Mapping of logical `x:` customer tree onto the existing results bucket vs a
-  dedicated prefix/bucket (rclone letter may differ from search results mount)
-- Customers table physical name / schema in MSSQL vs a small DynamoDB table
+- ~~Mapping of logical `x:` customer tree~~ **RESOLVED 2026-10-10**: physical prefix = `{env}/x/` in `S3_RESULTS_BUCKET` (env = `live`|`sandbox`, never mixed; docs/environments.md), overridable by `A_SEARCH_WIDGET_PREFIX`. rclone = `{A_SEARCH_RCLONE_ROOT}\{env}\x\{customerNumber}\...`.
+- Customers table: a_search DB only (FR-251); not DynamoDB for Widgets/Customers writes
 - Rate limits / abuse controls on public `/parts` and `/go`
 
 
@@ -292,3 +303,115 @@ Implementation issues (leave open; docs park PR uses Refs not Closes):
 
 - Refs #1235 #1236 #1237 #1238 #1239 #1240 #1241
 - Index: docs/fr/ISSUED-PHASE5C.tsv
+
+
+## Amendment 2026-10-10 - widgetGuid, agent dispatch, upgrade cap, extension
+
+**Status:** Decision LOCKED (docs only; no handlers in this FR).
+**Related:** FR-232 (#1346), #1343 (Agentic Searches / FR-258), #1344 (Chrome extension), #1345 (cap), FR-212 (#1200), FR-210 (#1198), FR-234 (#1348), FR-251 (#1365).
+
+Where this amendment conflicts with the 2026-10-09 body above (including uri-slug contracts), **this section wins**.
+
+### Glossary (LOCKED taxonomy)
+
+- **AFFILIATE** = we download parts and earn commission (Awin, Impact, Partnerize, Webgains, Tradedoubler, Admitad, FlexOffers, AvantLink). Outbound links carry our affiliate id + `tenantId`.
+- **MERCHANT** = we download parts and charge GBP 20/shop/month (Shopify, Wix, WooCommerce, Squarespace, Magento/Adobe Commerce, BigCommerce, Ecwid). No affiliate stamping. PrestaShop dropped (FR-247 closed not planned).
+- **PROVIDER** = external live search (Amazon, eBay, Etsy, Rakuten, CJ, Kelkoo, Skimlinks, AliExpress, bol). Outbound links carry our affiliate id + `tenantId`.
+- **widgetGuid** = server-minted lowercase RFC 4122 UUID (FR-232); folder key under the customer tree.
+- **live.json** = ordered parts array the Parts API always serves (one serving file; cap enforced on agent write).
+- **stats.json** = host/widget rollup views/impressions/clicks/CTR (FR-234); written by rollup job only; **not an agent trigger**.
+
+### Storage layout (current)
+
+```
+{env}/x/{customerNumber}/
+  site.md
+  top10.json
+  stats.json                 # host-level rollup (FR-234), hourly, read-only for agents
+  {widgetGuid}/
+    context.md
+    searches.json            # may include exclude[]
+    widget.json
+    feedback.json
+    live.json                # Parts API always serves this file
+    stats.json               # widget + per-part stats (FR-234), not an agent trigger
+```
+
+Physical prefix = `{env}/x/` in `S3_RESULTS_BUCKET` (`live`|`sandbox`, never mixed). Overridable by `A_SEARCH_WIDGET_PREFIX`. rclone path = `{A_SEARCH_RCLONE_ROOT}\{env}\x\{customerNumber}\...`. Logical short form: `{customerNumber}/{widgetGuid}/`.
+
+The `{uri-slug}/` tree above remains **SUPERSEDED 2026-10-10** (history only).
+
+### Contracts (minimal) - updated
+
+- `GET /parts?host&widgetGuid&offset&n` -> `{ customerNumber, widgetGuid, layout, parts[], nextOffset }`
+- `GET /go?host&widgetGuid&part` -> `{ url }`
+- `POST /widgets` -> mint/bind widgetGuid (FR-232)
+- `feedback.json`, `widget.json`, `searches.json` (with `exclude[]`) shapes per FR-212
+- Other host for a bound widgetGuid -> 403 `widget_host_mismatch`
+
+### Upgrade-dependent live.json (#1345)
+
+Parts API always serves `live.json`. There is no second serving file/endpoint for upgraded widgets. Cap is enforced only by the agent on write:
+
+- `cap = LIVE_PART_CAP_FULL` (default 500) when the customer is upgraded AND widget layout is `fullscreen`
+- otherwise `LIVE_PART_CAP_FREE` = 10
+
+Query budget in `searches.json`: free <= 3 queries; upgraded fullscreen <= 15 (config). Source of truth = active GBP 10/month Stripe subscription (`widget_upgrade`), cached on the Customers row by webhook.
+
+### Agent dispatch + CWD (#1343 / FR-258)
+
+S3 ObjectCreated under `{env}/x/` -> EventBridge -> enqueue Lambda -> SQS FIFO `a-search-widget-agent.fifo` -> deterministic dispatcher -> agent pool (rclone server). Idle workers use **no tokens while idle** and do not touch the mount.
+
+Agent CWD rules:
+
+- host pass: CWD = `{mount}\{env}\x\{customerNumber}\` (reads/writes `site.md`, `top10.json`)
+- widget pass: CWD = `{mount}\{env}\x\{customerNumber}\{widgetGuid}\` (reads `..\site.md`, owns that folder, may update `..\top10.json`)
+
+Generic skill text: FR-210 skillbook `.grok/skills/a-search-components-piece/SKILL.md`. Per-host / per-widget context: `site.md` / `context.md` in the S3 tree.
+
+Architecture (updated):
+
+```
+Host page
+  [JS widget] -- host + widgetGuid --> Parts/Click APIs --> a_search DB + S3
+S3 event -> EventBridge -> SQS FIFO -> dispatcher -> agent pool (rclone server)
+```
+
+### Chrome extension (#1344)
+
+Extension summary: DNS TXT / Club gate enables the extension only when the host has a Club record. Full behaviour lives in #1344; this amendment only locks the gate cue for docs readers.
+
+### Widget events / stats.json (FR-234)
+
+- `POST /w/events` records views/impressions/clicks (no PII, no device storage; IPs hashed in memory for rate limit only).
+- `GET /widgets/stats` serves rollups to the extension.
+- Agents read `stats.json` on normal passes; writing stats is never an agent job and **not an agent trigger**.
+
+### Consent banner
+
+None. Widget events carry no personal data, set no cookies, use no localStorage. If future work adds device storage or identifiers, consent must be revisited first.
+
+### Success rows (amendment)
+
+| id | metric |
+|----|--------|
+| CP23 | GUID identity: widgetGuid minted and used as folder key |
+| CP24 | Multi-widget page: one host, many widgetGuids |
+| CP25 | Host mismatch: other host -> 403 widget_host_mismatch |
+| CP26 | Event dispatch: S3 -> EventBridge -> SQS FIFO -> dispatcher |
+| CP27 | Zero idle tokens: idle pool uses no tokens while idle |
+| CP28 | Free cap 10: LIVE_PART_CAP_FREE on agent write |
+| CP29 | Downgrade trim: agent trims live.json when upgrade ends |
+| CP30 | Extension DNS gate: Club required (#1344) |
+| CP31 | Widget events recorded + deduped (FR-234) |
+| CP32 | stats visible to agent (stats.json) and extension (stats endpoints) |
+
+### a-search database (FR-251)
+
+All SQL tables this FR creates or writes live in `a_search` / `a_search_sandbox` via `db/migrations/`. madeiradb is read-only through `mdb.*` views.
+
+
+## Issued Phase 5d (Refs)
+
+- Refs #1346 #1347 #1348 #1343 #1344 #1345
+- Index: docs/fr/ISSUED-PHASE5D.tsv

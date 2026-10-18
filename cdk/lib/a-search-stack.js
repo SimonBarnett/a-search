@@ -19,7 +19,7 @@ const apigw = require('aws-cdk-lib/aws-apigateway');
 const { Construct } = require('constructs');
 const { resolveApiThrottle } = require('./resolve-api-throttle');
 const {
-  resolveStageSuffix,
+  resolveDeployNameSuffix,
   withStageSuffix,
 } = require('./resolve-stage-suffix');
 const { resolveCorsOrigins } = require('./resolve-cors-origins');
@@ -33,6 +33,15 @@ const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
  */
 const WORKER_LAMBDA_TIMEOUT_SEC = 60;
 const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
+
+/**
+ * FR-2139 / FR-240: shop-sync FIFO consumer. Catalogue pages can run long;
+ * visibility must be strictly greater than Lambda timeout (6x buffer).
+ */
+const SHOP_SYNC_LAMBDA_TIMEOUT_SEC = 300;
+const SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC = SHOP_SYNC_LAMBDA_TIMEOUT_SEC * 6;
+const SHOP_SYNC_FIFO_BASE = 'a-search-shop-sync.fifo';
+const SHOP_SYNC_MAX_RECEIVE_COUNT = 5;
 
 /**
  * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
@@ -75,7 +84,8 @@ const {
 } = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
- * Title-case construct id fragment from source id (amazon Ã¢â€ â€™ Amazon).
+ * Title-case construct id fragment from source id (amazon ------------------- Amazon).
+ * Title-case construct id fragment from source id (amazon -------- Amazon).
  * @param {string} id
  */
 function pascalSource(id) {
@@ -83,7 +93,8 @@ function pascalSource(id) {
 }
 
 /**
- * Registry queueEnv `SQS_AMAZON_URL` Ã¢â€ â€™ entry env keys SQS_AMAZON_LIVE_URL /
+ * Registry queueEnv `SQS_AMAZON_URL` ------------------- entry env keys SQS_AMAZON_LIVE_URL /
+ * Registry queueEnv `SQS_AMAZON_URL` -------- entry env keys SQS_AMAZON_LIVE_URL /
  * SQS_AMAZON_SANDBOX_URL (FR-034 resolveQueueUrl preferred keys).
  * @param {string} queueEnv
  * @param {'live'|'sandbox'} env
@@ -154,7 +165,8 @@ function resolveEntryJwtSecret(scope, stack) {
 
 /**
  * FR-136: wire JWT_* env from Secrets Manager JSON fields + grant read.
- * CloudFormation dynamic refs â€” no secret strings in the synth snapshot.
+ * CloudFormation dynamic refs -------- no secret strings in the synth snapshot.
+ * CloudFormation dynamic refs --- no secret strings in the synth snapshot.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
  */
@@ -171,11 +183,13 @@ function wireResultsBucketAccess(fn, bucket) {
   bucket.grantReadWrite(fn);
 }
 
-const MSSQL_LIVE_DATABASE = 'madeiradb';
-const MSSQL_SANDBOX_DATABASE_DEFAULT = '<sandbox-mssql-database>';
-/** Synth/deploy placeholder when -c mssqlSecretArn is omitted (never a real account). */
+/** FR-251: a-search owns a_search / a_search_sandbox; madeiradb is read-only. */
+const MSSQL_LIVE_DATABASE = 'a_search';
+const MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox';
+const MADEIRADB_DATABASE_DEFAULT = 'madeiradb';
+/** Synth/deploy placeholder when -c mssqlAppSecretArn / mssqlSecretArn is omitted. */
 const MSSQL_SECRET_ARN_PLACEHOLDER =
-  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-fr137-AbCdEf';
+  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-app-AbCdEf';
 
 /**
  * @param {string} [folder] registry src.folder
@@ -188,17 +202,23 @@ function isLocalProviderFolder(folder) {
 }
 
 /**
- * FR-137: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
+ * FR-137 / FR-251: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
  * Secret string JSON keys: SERVER, USER, PASSWORD (optional TRUSTED_CONNECTION / DOMAIN).
- * DATABASE is env-specific plain text (live madeiradb / sandbox placeholder from context).
+ * DATABASE is env-specific plain text (live a_search / sandbox a_search_sandbox).
+ * Synth fails closed if database is madeiradb.
  * @param {lambda.Function} fn
  * @param {secretsmanager.ISecret} secret
- * @param {{ database: string }} opts
+ * @param {{ database: string, madeiradbDatabase?: string }} opts
  */
 function wireMssqlSecretEnv(fn, secret, opts) {
   const database = opts && opts.database;
   if (!database) {
     throw new Error('wireMssqlSecretEnv: opts.database required');
+  }
+  if (String(database).toLowerCase() === 'madeiradb') {
+    throw new Error(
+      'wireMssqlSecretEnv: MSSQL_DATABASE=madeiradb forbidden (FR-251); use a_search / a_search_sandbox',
+    );
   }
   fn.addEnvironment(
     'MSSQL_SERVER',
@@ -215,12 +235,18 @@ function wireMssqlSecretEnv(fn, secret, opts) {
   fn.addEnvironment('MSSQL_DATABASE', database);
   fn.addEnvironment('MSSQL_ENCRYPT', 'true');
   fn.addEnvironment('MSSQL_TRUST_SERVER_CERTIFICATE', 'true');
+  fn.addEnvironment(
+    'MADEIRADB_DATABASE',
+    (opts && opts.madeiradbDatabase) || MADEIRADB_DATABASE_DEFAULT,
+  );
+  fn.addEnvironment('A_SEARCH_DB_ALLOWLIST', 'a_search,a_search_sandbox');
   secret.grantRead(fn);
 }
 
 /**
  * FR-138: credential env keys from each enabled provider `.env.example`
- * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* â€” those are wired elsewhere).
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* -------- those are wired elsewhere).
+ * (excludes SQS_*, S3_*, A_SEARCH_ENV, MSSQL_* --- those are wired elsewhere).
  * Stay-dark sources are omitted until an enable-provider FR adds them here.
  */
 const PROVIDER_CREDENTIAL_KEYS = {
@@ -250,15 +276,59 @@ const PROVIDER_CREDENTIAL_KEYS = {
   // FR-169: aliexpress enabled -> FR-138 secret wiring
   aliexpress: ['ALIEXPRESS_API_KEY'],
   // FR-170: enable etsy
-  etsy: ['ETSY_API_KEY'],
+  etsy: ['ETSY_API_KEY', 'ETSY_SHARED_SECRET'],
   // FR-171: bol enabled -> FR-138 secret wiring
   bol: ['BOL_API_KEY'],
+  // FR-178: enable shopify merchant -> FR-138 secret wiring
+  shopify: [
+    'SHOPIFY_API_KEY',
+    'SHOPIFY_API_SECRET_KEY',
+    'SHOPIFY_ACCESS_TOKEN',
+    'SHOPIFY_STORE_URL',
+  ],
+  // FR-180: enable woocommerce merchant
+  woocommerce: [
+    'WOOCOMMERCE_CONSUMER_KEY',
+    'WOOCOMMERCE_CONSUMER_SECRET',
+    'WOOCOMMERCE_STORE_URL',
+  ],
+  // FR-174: enable tradedoubler
+  tradedoubler: [
+    'TRADEDOUBLER_API_KEY',
+    'TRADEDOUBLER_API_TOKEN',
+    'TRADEDOUBLER_FEED_TOKEN',
+    'TRADEDOUBLER_AFFILIATE_ID',
+    'TRADEDOUBLER_PUBLISHER_ID',
+  ],
+  // FR-177: enable avantlink -> FR-138 secret wiring
+  avantlink: [
+    'AVANTLINK_API_KEY',
+    'AVANTLINK_API_TOKEN',
+    'AVANTLINK_FEED_TOKEN',
+    'AVANTLINK_PUBLISHER_ID',
+    'AVANTLINK_AFFILIATE_ID',
+  ],
+    // FR-173: enable webgains
+  webgains: [
+    'WEBGAINS_API_KEY',
+    'WEBGAINS_API_TOKEN',
+    'WEBGAINS_FEED_TOKEN',
+    'WEBGAINS_PUBLISHER_ID',
+    'WEBGAINS_CAMPAIGN_ID',
+  ],
   // FR-172: enable partnerize
   partnerize: [
     'PARTNERIZE_API_KEY',
     'PARTNERIZE_API_TOKEN',
     'PARTNERIZE_FEED_TOKEN',
     'PARTNERIZE_PUBLISHER_ID',
+  ],
+  // FR-179: enable wix (merchant app + selftest fallback) -> FR-138
+  wix: [
+    'WIX_CLIENT_ID',
+    'WIX_API_TOKEN',
+    'WIX_SITE_ID',
+    'WIX_STORE_URL',
   ],
 };
 
@@ -290,11 +360,16 @@ const PROVIDER_PLAIN_DEFAULTS = {
     ALIEXPRESS_TRACKING_ID: 'a-search',
   },
   etsy: {
-    ETSY_TRACKING_ID: 'a-search',
+    ETSY_AFFILIATE_NETWORK: 'rakuten',
+    // ETSY_RAKUTEN_MID / RAKUTEN_PUBLISHER_ID from secrets; no plain publisher default
   },
   // FR-171
   bol: {
     BOL_TRACKING_ID: 'a-search',
+  },
+  // FR-179 merchant API base default
+  wix: {
+    WIX_API_BASE: 'https://www.wixapis.com',
   },
 };
 
@@ -369,12 +444,16 @@ class ASearchStack extends cdk.Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
-    // FR-156: optional -c stage= suffix on physical names (default unchanged).
-    const stageSuffix = resolveStageSuffix({
+    // FR-156 / FR-191: optional -c stage= and optional region token on physical names.
+    const nameSuffix = resolveDeployNameSuffix({
       stage: this.node.tryGetContext('stage'),
+      region: this.node.tryGetContext('region'),
+      deployRegion: this.node.tryGetContext('deployRegion'),
+      includeRegionInNames: this.node.tryGetContext('includeRegionInNames'),
+      regionSuffix: this.node.tryGetContext('regionSuffix'),
     });
     /** @param {string} base */
-    const stagedName = (base) => withStageSuffix(base, stageSuffix);
+    const stagedName = (base) => withStageSuffix(base, nameSuffix);
 
     // FR-155: cost allocation tags on all taggable stack resources.
     // Env from -c stage= / -c env= (default "default"); Project always a-search.
@@ -400,11 +479,23 @@ class ASearchStack extends cdk.Stack {
     // Job env comes from body.sandbox (default live); workers/maintainer stay pinned.
     /** @type {Record<string, string>} */
     const entryEnv = {};
+    // FR-208: signup URL + DNS negative TTL via CDK context (never secrets in git).
+    const signupUrlCtx = this.node.tryGetContext('signupUrl');
+    if (typeof signupUrlCtx === 'string' && signupUrlCtx.trim()) {
+      entryEnv.A_SEARCH_SIGNUP_URL = signupUrlCtx.trim();
+    }
+    const negTtlCtx = this.node.tryGetContext('extStatusNegTtlS');
+    if (negTtlCtx != null && String(negTtlCtx).trim() !== '') {
+      entryEnv.EXT_STATUS_NEG_TTL_S = String(negTtlCtx).trim();
+    }
 
     // FR-129: one dedicated results bucket (FR-124 live/sandbox key prefixes).
     // Auto-named - do not invent production account IDs or hard-code bucket names.
+    // FR-192 LOCKED: region-local ResultsBucket per stack (no S3 CRR). Standby region
+    // gets its own bucket via FR-191 second stack; SQL/rclone stay primary/IONOS.
     // FR-130 wires env + IAM below.
-    // FR-154: deepen security defaults â€” SSE-S3, BlockPublicAccess ALL,
+    // FR-154: deepen security defaults -------- SSE-S3, BlockPublicAccess ALL,
+    // FR-154: deepen security defaults --- SSE-S3, BlockPublicAccess ALL,
     // enforceSSL, BucketOwnerEnforced (no public ACL). CMK KMS is OOS.
     const resultsBucket = new s3.Bucket(this, 'ResultsBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -414,13 +505,17 @@ class ASearchStack extends cdk.Stack {
       publicReadAccess: false,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       autoDeleteObjects: false,
+      // #1343 / FR-258: S3 -> EventBridge for widget-agent trigger suffixes
+      eventBridgeEnabled: true,
     });
 
 
-    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlSecretArn=...).
-    // JSON keys SERVER/USER/PASSWORD; DATABASE is plain per env (FR-121 sandbox name).
+    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlAppSecretArn / mssqlSecretArn=...).
+    // JSON keys SERVER/USER/PASSWORD; DATABASE plain per env (FR-251 live a_search / sandbox a_search_sandbox).
     const mssqlSecretArn =
-      this.node.tryGetContext('mssqlSecretArn') || MSSQL_SECRET_ARN_PLACEHOLDER;
+      this.node.tryGetContext('mssqlAppSecretArn') ||
+      this.node.tryGetContext('mssqlSecretArn') ||
+      MSSQL_SECRET_ARN_PLACEHOLDER;
     const mssqlSecret = secretsmanager.Secret.fromSecretCompleteArn(
       this,
       'MssqlConnSecret',
@@ -431,6 +526,18 @@ class ASearchStack extends cdk.Stack {
     const mssqlSandboxDatabase =
       this.node.tryGetContext('mssqlSandboxDatabase') ||
       MSSQL_SANDBOX_DATABASE_DEFAULT;
+    const madeiradbDatabase =
+      this.node.tryGetContext('madeiradbDatabase') || MADEIRADB_DATABASE_DEFAULT;
+    if (String(mssqlLiveDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlLiveDatabase must not be madeiradb (use a_search)',
+      );
+    }
+    if (String(mssqlSandboxDatabase).toLowerCase() === 'madeiradb') {
+      throw new Error(
+        'FR-251: mssqlSandboxDatabase must not be madeiradb (use a_search_sandbox)',
+      );
+    }
 
     // FR-138: per-enabled-source provider credential secrets (context override
     // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
@@ -457,7 +564,7 @@ class ASearchStack extends cdk.Stack {
     const entryAssetDir = stageEntryLambdaAsset(repoRoot);
     const entry = new lambda.Function(this, 'EntryFunction', {
       functionName: stagedName('a-search-entry'),
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: 'entry/src/index.handler',
       code: lambda.Code.fromAsset(entryAssetDir),
       timeout: cdk.Duration.seconds(30),
@@ -528,7 +635,7 @@ class ASearchStack extends cdk.Stack {
           `${pascal}${envPascal}WorkerFunction`,
           {
             functionName: stagedName(`a-search-${src.id}-worker-${env}`),
-            runtime: lambda.Runtime.NODEJS_20_X,
+            runtime: lambda.Runtime.NODEJS_24_X,
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
@@ -605,7 +712,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + GET|POST /selftest + /account/performance -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + FR-228 auth email/SMS OTP + account routes -> entry Lambda',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -614,6 +721,7 @@ class ASearchStack extends cdk.Stack {
         allowMethods: [
           apigwv2.CorsHttpMethod.GET,
           apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.PATCH,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Authorization', 'Content-Type', 'Accept'],
@@ -647,6 +755,252 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
+    // FR-198: public GET /parts?host&widgetGuid&offset&n (JWT not required; verified in Lambda)
+    httpApi.addRoutes({
+      path: '/parts',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartsIntegration',
+        entry,
+      ),
+    });
+    // FR-199 + FR-200: public GET /go (approved path + DNS TXT signup gate; JWT not required)
+    httpApi.addRoutes({
+      path: '/go',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryGoIntegration',
+        entry,
+      ),
+    });
+    // FR-200: public GET /ext/status?host (Club TXT gate for extension; JWT not required)
+    httpApi.addRoutes({
+      path: '/ext/status',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryExtStatusIntegration',
+        entry,
+      ),
+    });
+
+    // FR-208: ComponentsPiece + extension account routes (handlers owned by sibling FRs;
+    // entry stubs return 501 until those land). Public routes share FR-157 stage throttle.
+    const entryIntegration = (id) =>
+      new integrations.HttpLambdaIntegration(id, entry);
+
+    // FR-232: anonymous POST /widgets (public, throttled)
+    httpApi.addRoutes({
+      path: '/widgets',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetsCreateIntegration'),
+    });
+    // FR-232 / #1344: JWT PATCH /widgets/{widgetGuid}
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}',
+      methods: [apigwv2.HttpMethod.PATCH],
+      integration: entryIntegration('EntryWidgetsPatchIntegration'),
+    });
+    // #1344: JWT POST /widgets/{widgetGuid}/feedback
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}/feedback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetsFeedbackIntegration'),
+    });
+    // FR-234: JWT GET /widgets/stats and /widgets/{widgetGuid}/stats
+    httpApi.addRoutes({
+      path: '/widgets/stats',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryWidgetsStatsIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/widgets/{widgetGuid}/stats',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryWidgetStatsIntegration'),
+    });
+    // FR-234: public POST /w/events (beacon; throttled; JWT not required)
+    httpApi.addRoutes({
+      path: '/w/events',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWidgetEventsIntegration'),
+    });
+    // #1344: JWT account commission / Stripe / payouts / upgrade
+    httpApi.addRoutes({
+      path: '/account/commission',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryAccountCommissionIntegration'),
+    });
+    // FR-249: club revenue-share statement (JWT club role)
+    httpApi.addRoutes({
+      path: '/club/revenue-share',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryClubRevenueShareIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/stripe/link',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountStripeLinkIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/payouts',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountPayoutsIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/account/upgrade',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAccountUpgradeIntegration'),
+    });
+    // #1345: Stripe webhook for upgrade status (signature verified in handler FR)
+    httpApi.addRoutes({
+      path: '/webhooks/stripe',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryStripeWebhookIntegration'),
+    });
+    // FR-218: partner registration (mint DNS partner code + instructions)
+    httpApi.addRoutes({
+      path: '/partner/register',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryPartnerRegisterIntegration',
+        entry,
+      ),
+    });
+    // FR-216: merchant shop connect (JWT) + provider callback (state nonce)
+    httpApi.addRoutes({
+      path: '/merchant/shops/connect',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsConnectIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/callback/{provider}',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCallbackIntegration',
+        entry,
+      ),
+    });
+    // FR-243: Magento Integration identity link
+    httpApi.addRoutes({
+      path: '/merchant/shops/magento/identity',
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsMagentoIdentityIntegration',
+        entry,
+      ),
+    });
+    // FR-235 / #1349: list + delete own shops
+    httpApi.addRoutes({
+      path: '/merchant/shops',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsListIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}',
+      methods: [apigwv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsDeleteIntegration',
+        entry,
+      ),
+    });
+    // FR-239: per-shop subscribe (Checkout) + cancel_at_period_end
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/subscribe',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsSubscribeIntegration',
+        entry,
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/merchant/shops/{shopId}/cancel',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'EntryMerchantShopsCancelIntegration',
+        entry,
+      ),
+    });
+    // FR-236: Shopify webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/shopify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryShopifyShopWebhookIntegration'),
+    });
+    // FR-237: Wix App Removed webhooks
+    httpApi.addRoutes({
+      path: '/webhooks/shop/wix',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryWixShopWebhookIntegration'),
+    });
+    // FR-246: Ecwid application.uninstalled webhook
+    httpApi.addRoutes({
+      path: '/webhooks/shop/ecwid',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryEcwidShopWebhookIntegration'),
+    });
+    // FR-245: BigCommerce Load + Uninstall (signed_payload_jwt)
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryBigCommerceShopWebhookIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/uninstall',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration(
+        'EntryBigCommerceShopUninstallWebhookIntegration',
+      ),
+    });
+    httpApi.addRoutes({
+      path: '/webhooks/shop/bigcommerce/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration(
+        'EntryBigCommerceShopLoadWebhookIntegration',
+      ),
+    });
+    // FR-229: shared login session mint + post-login redirect (public; JWT not required)
+    httpApi.addRoutes({
+      path: '/auth/session',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSessionIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/redirect',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: entryIntegration('EntryAuthRedirectIntegration'),
+    });
+    // FR-231: OAuth callback fail-closed without email|phone|contact (AL3)
+    httpApi.addRoutes({
+      path: '/auth/oauth/callback',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthOAuthCallbackIntegration'),
+    });
+    // FR-228: email magic/OTP + merchant SMS OTP (public; rate-limited in handler)
+    httpApi.addRoutes({
+      path: '/auth/email/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/email/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthEmailVerifyIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/request',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsRequestIntegration'),
+    });
+    httpApi.addRoutes({
+      path: '/auth/sms/verify',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: entryIntegration('EntryAuthSmsVerifyIntegration'),
+    });
 
     // FR-157: access logs + conservative default-route throttle (context-overridable)
     const apiAccessLogGroup = new logs.LogGroup(this, 'HttpApiAccessLogGroup', {
@@ -677,7 +1031,7 @@ class ASearchStack extends cdk.Stack {
     const maintainerCode = lambda.Code.fromAsset(maintainerAssetDir);
     const maintainerLive = new lambda.Function(this, 'MaintainerLiveFunction', {
       functionName: stagedName('a-search-maintainer-live'),
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: maintainerHandlerPath(),
       code: maintainerCode,
       timeout: cdk.Duration.minutes(5),
@@ -697,7 +1051,7 @@ class ASearchStack extends cdk.Stack {
       'MaintainerSandboxFunction',
       {
         functionName: stagedName('a-search-maintainer-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: maintainerHandlerPath(),
         code: maintainerCode,
         timeout: cdk.Duration.minutes(5),
@@ -729,6 +1083,169 @@ class ASearchStack extends cdk.Stack {
       targets: [new targets.LambdaFunction(maintainerSandbox)],
     });
 
+    // FR-2139 / FR-240 follow-up: SQS FIFO a-search-shop-sync.fifo + DLQ + consumer.
+    // MessageGroupId=shopId; maxReceiveCount 5; visibility > Lambda timeout.
+    // FR-239 live transition will call onShopLive (enqueue); grant send to entry + maintainers now.
+    /** @param {string} fifoBase e.g. a-search-shop-sync.fifo */
+    const stagedFifoName = (fifoBase) => {
+      const raw = String(fifoBase || '');
+      if (!raw.endsWith('.fifo')) return stagedName(raw);
+      return `${stagedName(raw.slice(0, -'.fifo'.length))}.fifo`;
+    };
+    const shopSyncQueueName = stagedFifoName(SHOP_SYNC_FIFO_BASE);
+    const shopSyncDlqName = stagedFifoName('a-search-shop-sync-dlq.fifo');
+    const shopSyncDlq = new sqs.Queue(this, 'ShopSyncDeadLetterQueue', {
+      queueName: shopSyncDlqName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const shopSyncQueue = new sqs.Queue(this, 'ShopSyncFifoQueue', {
+      queueName: shopSyncQueueName,
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(
+        SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC,
+      ),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: shopSyncDlq,
+        maxReceiveCount: SHOP_SYNC_MAX_RECEIVE_COUNT,
+      },
+    });
+    entry.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerLive.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
+    maintainerSandbox.addEnvironment(
+      'SQS_SHOP_SYNC_URL',
+      shopSyncQueue.queueUrl,
+    );
+    shopSyncQueue.grantSendMessages(entry);
+    shopSyncQueue.grantSendMessages(maintainerLive);
+    shopSyncQueue.grantSendMessages(maintainerSandbox);
+
+    const shopSyncWorker = new lambda.Function(this, 'ShopSyncWorkerFunction', {
+      functionName: stagedName('a-search-shop-sync-worker'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'maintainer/src/shopSyncWorker.handler',
+      code: maintainerCode,
+      timeout: cdk.Duration.seconds(SHOP_SYNC_LAMBDA_TIMEOUT_SEC),
+      memorySize: HEAVY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_ENV: 'live',
+        SQS_SHOP_SYNC_URL: shopSyncQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'ShopSyncWorkerLogGroup'),
+    });
+    wireResultsBucketAccess(shopSyncWorker, resultsBucket);
+    wireMssqlSecretEnv(shopSyncWorker, mssqlSecret, {
+      database: mssqlLiveDatabase,
+    });
+    shopSyncQueue.grantConsumeMessages(shopSyncWorker);
+    shopSyncWorker.addEventSource(
+      new SqsEventSource(shopSyncQueue, { batchSize: 1 }),
+    );
+
+    new cdk.CfnOutput(this, 'ShopSyncFifoQueueUrl', {
+      value: shopSyncQueue.queueUrl,
+      description: 'FR-2139/FR-240 SQS FIFO a-search-shop-sync.fifo',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncDeadLetterQueueUrl', {
+      value: shopSyncDlq.queueUrl,
+      description: 'FR-2139 DLQ for shop-sync FIFO (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
+      value: shopSyncWorker.functionName,
+    });
+
+    // FR-234: SQS standard a-search-widget-events + DLQ + aggregator + hourly rollup.
+    const widgetEventsDlq = new sqs.Queue(this, 'WidgetEventsDeadLetterQueue', {
+      queueName: stagedName('a-search-widget-events-dlq'),
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetEventsQueue = new sqs.Queue(this, 'WidgetEventsQueue', {
+      queueName: stagedName('a-search-widget-events'),
+      visibilityTimeout: cdk.Duration.seconds(180),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetEventsDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    entry.addEnvironment('SQS_WIDGET_EVENTS_URL', widgetEventsQueue.queueUrl);
+    widgetEventsQueue.grantSendMessages(entry);
+    const widgetEventsAggregator = new lambda.Function(
+      this,
+      'WidgetEventsAggregatorFunction',
+      {
+        functionName: stagedName('a-search-widget-events-aggregator'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetEventsAggregator.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(30),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetEventsAggregatorLogGroup'),
+      },
+    );
+    widgetEventsQueue.grantConsumeMessages(widgetEventsAggregator);
+    widgetEventsAggregator.addEventSource(
+      // batchSize > 10 requires maxBatchingWindow (aws-cdk-lib ValidationError
+      // MaximumBatchSizeInclusiveGiven); 5s << 180s queue visibility timeout.
+      new SqsEventSource(widgetEventsQueue, {
+        batchSize: 100,
+        maxBatchingWindow: cdk.Duration.seconds(5),
+      }),
+    );
+    const widgetStatsRollup = new lambda.Function(
+      this,
+      'WidgetStatsRollupFunction',
+      {
+        functionName: stagedName('a-search-widget-stats-rollup'),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: 'entry/src/widgetStatsRollup.handler',
+        code: lambda.Code.fromAsset(entryAssetDir),
+        timeout: cdk.Duration.seconds(60),
+        memorySize: ENTRY_LAMBDA_MEMORY_MB,
+        environment: {
+          A_SEARCH_ENV: 'live',
+        },
+        logGroup: lambdaLogGroup(this, 'WidgetStatsRollupLogGroup'),
+      },
+    );
+    wireResultsBucketAccess(widgetStatsRollup, resultsBucket);
+    new events.Rule(this, 'WidgetStatsRollupSchedule', {
+      ruleName: stagedName('a-search-widget-stats-rollup'),
+      description: 'FR-234 hourly stats.json rollup (no agent enqueue)',
+      schedule: events.Schedule.rate(cdk.Duration.hours(1)),
+      targets: [new targets.LambdaFunction(widgetStatsRollup)],
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsQueueUrl', {
+      value: widgetEventsQueue.queueUrl,
+      description: 'FR-234 SQS a-search-widget-events',
+    });
+    new cdk.CfnOutput(this, 'WidgetEventsDeadLetterQueueUrl', {
+      value: widgetEventsDlq.queueUrl,
+      description: 'FR-234 DLQ for widget-events',
+    });
+
+    const shopSyncDlqAlarm = new cloudwatch.Alarm(this, 'ShopSyncDlqDepthAlarm', {
+      alarmName: stagedName('a-search-shop-sync-dlq-depth'),
+      alarmDescription:
+        'FR-2139: shop-sync DLQ ApproximateNumberOfMessagesVisible >= 1',
+      metric: shopSyncDlq.metricApproximateNumberOfMessagesVisible(),
+      threshold: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    shopSyncDlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
+
     // FR-056a/b: Awin onboarding live + sandbox Lambdas (A_SEARCH_ENV fixed).
     // FR-132: stage onboarding/src + shared/ (handler path under staged root).
     const awinOnboardingFolder = 'providers/local/awin/onboarding';
@@ -741,7 +1258,7 @@ class ASearchStack extends cdk.Stack {
       'AwinOnboardingLiveFunction',
       {
         functionName: stagedName('a-search-awin-onboarding-live'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -766,7 +1283,7 @@ class ASearchStack extends cdk.Stack {
       'AwinOnboardingSandboxFunction',
       {
         functionName: stagedName('a-search-awin-onboarding-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: awinOnboardingHandler,
         code: awinOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -799,7 +1316,7 @@ class ASearchStack extends cdk.Stack {
       'ImpactOnboardingSandboxFunction',
       {
         functionName: stagedName('a-search-impact-onboarding-sandbox'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -827,7 +1344,7 @@ class ASearchStack extends cdk.Stack {
       'ImpactOnboardingLiveFunction',
       {
         functionName: stagedName('a-search-impact-onboarding-live'),
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         handler: impactOnboardingHandler,
         code: impactOnboardingCode,
         timeout: cdk.Duration.minutes(5),
@@ -889,10 +1406,105 @@ class ASearchStack extends cdk.Stack {
       },
     );
 
+    // #1343 / FR-258: ComponentsPiece widget-agent FIFO + enqueue Lambda + EventBridge rules
+    const AGENT_JOB_TIMEOUT_S = 900;
+    const widgetAgentDlq = new sqs.Queue(this, 'WidgetAgentDeadLetterQueue', {
+      queueName: stagedFifoName('a-search-widget-agent-dlq.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const widgetAgentQueue = new sqs.Queue(this, 'WidgetAgentQueue', {
+      queueName: stagedFifoName('a-search-widget-agent.fifo'),
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(AGENT_JOB_TIMEOUT_S + 60),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: widgetAgentDlq,
+        maxReceiveCount: 5,
+      },
+    });
+    const widgetAgentEnqueue = new lambda.Function(this, 'WidgetAgentEnqueueFunction', {
+      functionName: stagedName('a-search-widget-agent-enqueue'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(
+        path.join(repoRoot, 'components-piece', 'dispatcher', 'enqueue'),
+      ),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: ENTRY_LAMBDA_MEMORY_MB,
+      environment: {
+        A_SEARCH_WIDGET_AGENT_QUEUE_URL: widgetAgentQueue.queueUrl,
+      },
+      logGroup: lambdaLogGroup(this, 'WidgetAgentEnqueueLogGroup'),
+    });
+    widgetAgentQueue.grantSendMessages(widgetAgentEnqueue);
+
+    const widgetAgentSuffixes = [
+      '_host.json',
+      'widget.json',
+      'feedback.json',
+    ];
+    for (const suffix of widgetAgentSuffixes) {
+      const idSuffix = suffix.replace(/[^a-zA-Z0-9]/g, '');
+      new events.Rule(this, `WidgetAgentS3_${idSuffix}`, {
+        ruleName: stagedName(`a-search-widget-agent-${idSuffix}`),
+        description: `#1343 S3 Object Created suffix ${suffix} -> widget-agent enqueue`,
+        eventPattern: {
+          source: ['aws.s3'],
+          detailType: ['Object Created'],
+          detail: {
+            bucket: { name: [resultsBucket.bucketName] },
+            object: { key: [{ suffix }] },
+          },
+        },
+        targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+      });
+    }
+    new events.Rule(this, 'WidgetAgentS3_INjson', {
+      ruleName: stagedName('a-search-widget-agent-INjson'),
+      description: '#3479 S3 Object Created IN/*.json -> widget-agent enqueue',
+      eventPattern: {
+        source: ['aws.s3'],
+        detailType: ['Object Created'],
+        detail: {
+          bucket: { name: [resultsBucket.bucketName] },
+          object: { key: [{ wildcard: '*/IN/*.json' }] },
+        },
+      },
+      targets: [new targets.LambdaFunction(widgetAgentEnqueue)],
+    });
+    new events.Rule(this, 'WidgetAgentSweepDaily', {
+      ruleName: stagedName('a-search-widget-agent-sweep'),
+      description: '#1343 daily sweep tick for widget-agent (expand per active widget)',
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
+      targets: [
+        new targets.LambdaFunction(widgetAgentEnqueue, {
+          event: events.RuleTargetInput.fromObject({
+            eventType: 'sweep',
+            widgets: [],
+            note: 'ops/expander fills widgets[] from a_search.dbo.Widgets',
+          }),
+        }),
+      ],
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentQueueUrl', {
+      value: widgetAgentQueue.queueUrl,
+      description: '#1343 SQS FIFO a-search-widget-agent.fifo',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentDlqUrl', {
+      value: widgetAgentDlq.queueUrl,
+      description: '#1343 widget-agent DLQ (maxReceiveCount 5)',
+    });
+    new cdk.CfnOutput(this, 'WidgetAgentEnqueueFunctionName', {
+      value: widgetAgentEnqueue.functionName,
+    });
     new cdk.CfnOutput(this, 'ResultsBucketName', {
       value: resultsBucket.bucketName,
       description:
-        'Dedicated a-search results bucket (FR-124 one-bucket; live/ + sandbox/ prefixes)',
+        'Dedicated a-search results bucket (FR-124 one-bucket; FR-192 region-local; live/ + sandbox/ prefixes)',
     });
     new cdk.CfnOutput(this, 'ResultsBucketArn', {
       value: resultsBucket.bucketArn,
@@ -963,6 +1575,7 @@ module.exports = {
   PROVIDER_PLAIN_DEFAULTS,
   MSSQL_LIVE_DATABASE,
   MSSQL_SANDBOX_DATABASE_DEFAULT,
+  MADEIRADB_DATABASE_DEFAULT,
   MSSQL_SECRET_ARN_PLACEHOLDER,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,

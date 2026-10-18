@@ -126,7 +126,7 @@ describe('FR-099 avantlink selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; enabled stays false', () => {
+  it('registry rateLimit present; enabled true (FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

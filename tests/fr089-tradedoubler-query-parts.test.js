@@ -113,7 +113,7 @@ describe('FR-089 tradedoubler MSSQL queryParts', () => {
       feedKey: 'prog1',
       stock: 'in_stock',
     });
-    assert.match(String(out.products[0].url), /tduid=td-aff-test/);
+    assert.match(String(out.products[0].url), /[?&]a=td-aff-test&epi=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -261,13 +261,13 @@ describe('FR-089 tradedoubler MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps tradedoubler enabled false both envs', () => {
+  it('registry keeps tradedoubler enabled true both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const wg = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(wg);
-    assert.equal(wg.enabled.live, false);
-    assert.equal(wg.enabled.sandbox, false);
+    assert.equal(wg.enabled.live, true);
+    assert.equal(wg.enabled.sandbox, true);
   });
 });

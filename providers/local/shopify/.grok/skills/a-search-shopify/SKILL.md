@@ -35,7 +35,7 @@ SELECT dbo.Parts WHERE Source='shopify' (maintainer owns store sync / feeds).
 ## Worker + queryParts (FR-103)
 
 `src/worker.js` + `src/queryParts.js`: injectable MSSQL `defaultQueryParts` -> normalize Parts -> `writeResults`.
-Relative product Urls resolve against `SHOPIFY_STORE_URL`; tracked links stamp `SHOPIFY_AFFILIATE_ID` as `sid`.
+Relative product Urls resolve against `SHOPIFY_STORE_URL`; merchant product URLs stay plain absolute (no affiliate `sid` stamp; FR-178).
 Stay-dark; no "not wired" stub on the happy path.
 Pin: `tests/fr103-shopify-worker.test.js`. Catalogue client (FR-101) and normalize/upsert (FR-102) are separate.
 
@@ -49,4 +49,4 @@ Pin: `tests/fr104-shopify-selftest-probe.test.js`.
 
 ## Env
 
-See `.env.example` (`MSSQL_*`, `SHOPIFY_STORE_URL`, `SHOPIFY_ACCESS_TOKEN`, `SHOPIFY_AFFILIATE_ID`, optional `SHOPIFY_API_VERSION`). Queue env: `SQS_SHOPIFY_URL`.
+See `.env.example` (`MSSQL_*`, `SHOPIFY_STORE_URL`, `SHOPIFY_ACCESS_TOKEN`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET_KEY`, optional `SHOPIFY_API_VERSION`). Queue env: `SQS_SHOPIFY_URL`. Merchant app secrets: `a-search/{env}/providers/shopify/app`.

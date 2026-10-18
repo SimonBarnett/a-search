@@ -1,0 +1,36 @@
+{
+  "products": [
+    {
+      "id": "sq-prod-1001",
+      "name": "Madeira Ceramic Mug",
+      "urlSlug": "madeira-ceramic-mug",
+      "description": "Glazed mug from Funchal.",
+      "pricing": { "basePrice": 12.5, "currency": "GBP" },
+      "images": [{ "url": "https://cdn.example.invalid/sq/mug.jpg" }],
+      "variants": [
+        {
+          "id": "sq-var-1001-a",
+          "sku": "MUG-S",
+          "pricing": { "basePrice": 12.5, "currency": "GBP" },
+          "stock": 8
+        },
+        {
+          "id": "sq-var-1001-b",
+          "sku": "MUG-L",
+          "pricing": { "basePrice": 14.0, "currency": "GBP" },
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "id": "sq-prod-1002",
+      "name": "Levada Map Print",
+      "urlSlug": "levada-map-print",
+      "description": "A3 print",
+      "pricing": { "basePrice": 18.0, "currency": "EUR" },
+      "images": [{ "url": "https://cdn.example.invalid/sq/map.jpg" }],
+      "stock": 25
+    }
+  ],
+  "pagination": { "nextPageCursor": null }
+}

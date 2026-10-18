@@ -113,7 +113,7 @@ describe('FR-098 avantlink MSSQL queryParts', () => {
       feedKey: 'prog1',
       stock: 'in_stock',
     });
-    assert.match(String(out.products[0].url), /avad=av-aff-test/);
+    assert.match(String(out.products[0].url), /pw=av-aff-test&ctc=/);
     assert.equal(typeof out.message, 'undefined');
     assert.ok(!/not wired/i.test(JSON.stringify(out)));
     const { assertProductSchema } = require('../worker/lib/normalizeProduct');
@@ -261,7 +261,7 @@ describe('FR-098 avantlink MSSQL queryParts', () => {
     assert.match(pool._inputs.like, /headphones/);
   });
 
-  it('registry keeps avantlink enabled false both envs', () => {
+  it('registry holds avantlink disabled both envs (GBP/UK market hold)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

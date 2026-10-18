@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-168 / #1015: enable skimlinks only; FR-138 secret wiring; others stay dark.
  */
@@ -13,17 +15,9 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-// Remaining stay-dark after FR-168 + already-enabled FR-169 aliexpress on main.
-const STILL_DARK = [
-  'webgains',
-  'tradedoubler',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+// Remaining stay-dark after FR-168; GBP/UK hold also keeps aliexpress/bol/avantlink dark.
+const STILL_DARK = ['admitad', 'flexoffers'];
+const GBP_HOLD_DARK = ['aliexpress', 'bol', 'avantlink'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -46,7 +40,7 @@ describe('FR-168 enable skimlinks', () => {
     assert.ok(sk, 'registry missing skimlinks');
     assert.equal(sk.enabled.live, true);
     assert.equal(sk.enabled.sandbox, true);
-    for (const id of STILL_DARK) {
+    for (const id of STILL_DARK.concat(GBP_HOLD_DARK)) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
       assert.equal(byId.get(id).enabled.sandbox, false, `${id}.sandbox`);
@@ -79,11 +73,7 @@ describe('FR-168 enable skimlinks', () => {
   it('synth: skimlinks live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr168');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -123,22 +113,15 @@ describe('FR-168 enable skimlinks', () => {
       assert.ok(qHit, `missing queue a-search-skimlinks-${env}`);
     }
 
-    // aliexpress is enabled on main (FR-169); assert remaining stay-dark have no workers.
-    for (const dark of ['webgains']) {
+    // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
+    for (const dark of ['admitad'].concat(GBP_HOLD_DARK)) {
       const hit = fns.find(
         (res) =>
           res.Properties &&
           typeof res.Properties.FunctionName === 'string' &&
           res.Properties.FunctionName.includes(`-${dark}-worker-`),
       );
-      assert.equal(hit, undefined, `stay-dark ${dark} must not have worker`);
+      assert.equal(hit, undefined, `stay-dark/hold ${dark} must not have worker`);
     }
-    const ae = fns.find(
-      (res) =>
-        res.Properties &&
-        typeof res.Properties.FunctionName === 'string' &&
-        res.Properties.FunctionName.includes('-aliexpress-worker-'),
-    );
-    assert.ok(ae, 'FR-169 aliexpress worker must remain after fold');
   });
 });

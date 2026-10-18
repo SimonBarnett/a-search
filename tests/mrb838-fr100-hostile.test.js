@@ -18,7 +18,7 @@ const {
 } = require('../providers/local/avantlink/src/parseFeed');
 
 describe('MRB-838 FR-100 hostile', () => {
-  it('registry avantlink stay-dark both envs (CAST IRON)', () => {
+  it('registry avantlink disabled both envs under GBP hold (FR-1426 supersedes FR-177)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );

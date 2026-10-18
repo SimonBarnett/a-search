@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "id": 101,
+      "sku": "MUG-MAD-01",
+      "name": "Madeira Ceramic Mug",
+      "price": 12.5,
+      "status": 1,
+      "visibility": 4,
+      "type_id": "simple",
+      "custom_attributes": [
+        { "attribute_code": "url_key", "value": "madeira-ceramic-mug" },
+        { "attribute_code": "description", "value": "Glazed mug" }
+      ],
+      "media_gallery_entries": [{ "file": "/m/u/mug.jpg" }],
+      "extension_attributes": {
+        "stock_item": { "qty": 8 }
+      }
+    },
+    {
+      "id": 102,
+      "sku": "CFG-HAT",
+      "name": "Sun Hat Configurable",
+      "price": 20.0,
+      "status": 1,
+      "visibility": 4,
+      "type_id": "configurable",
+      "custom_attributes": [
+        { "attribute_code": "url_key", "value": "sun-hat" }
+      ],
+      "media_gallery_entries": [{ "file": "/h/a/hat.jpg" }]
+    }
+  ],
+  "total_count": 2
+}

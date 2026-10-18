@@ -22,13 +22,26 @@ class ShopifyCredsError extends Error {
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{ shopDomain?: string, accessToken?: string, storeUrl?: string }} [overrides]
+ * FR-236: per-call shopDomain+accessToken; env remains selftest fallback.
  */
-function readShopifyCreds(env) {
+function readShopifyCreds(env, overrides) {
   const e = env || process.env;
+  const o = overrides || {};
   const storeUrl =
-    e.SHOPIFY_STORE_URL != null ? String(e.SHOPIFY_STORE_URL).trim() : '';
+    o.storeUrl != null && String(o.storeUrl).trim()
+      ? String(o.storeUrl).trim()
+      : o.shopDomain != null && String(o.shopDomain).trim()
+        ? String(o.shopDomain).trim()
+        : e.SHOPIFY_STORE_URL != null
+          ? String(e.SHOPIFY_STORE_URL).trim()
+          : '';
   const accessToken =
-    e.SHOPIFY_ACCESS_TOKEN != null ? String(e.SHOPIFY_ACCESS_TOKEN).trim() : '';
+    o.accessToken != null && String(o.accessToken).trim()
+      ? String(o.accessToken).trim()
+      : e.SHOPIFY_ACCESS_TOKEN != null
+        ? String(e.SHOPIFY_ACCESS_TOKEN).trim()
+        : '';
   const apiVersion =
     e.SHOPIFY_API_VERSION != null && String(e.SHOPIFY_API_VERSION).trim()
       ? String(e.SHOPIFY_API_VERSION).trim()
@@ -38,9 +51,10 @@ function readShopifyCreds(env) {
 
 /**
  * @param {Record<string, string|undefined>} [env]
+ * @param {{ shopDomain?: string, accessToken?: string, storeUrl?: string }} [overrides]
  */
-function assertShopifyCreds(env) {
-  const c = readShopifyCreds(env);
+function assertShopifyCreds(env, overrides) {
+  const c = readShopifyCreds(env, overrides);
   const missing = [];
   if (!c.storeUrl) missing.push('SHOPIFY_STORE_URL');
   if (!c.accessToken) missing.push('SHOPIFY_ACCESS_TOKEN');
@@ -232,7 +246,11 @@ function parseProductsResponse(body, meta) {
  */
 async function fetchCatalogPage(deps) {
   const envVars = (deps && deps.env) || process.env;
-  const creds = assertShopifyCreds(envVars);
+  const creds = assertShopifyCreds(envVars, {
+    shopDomain: deps && deps.shopDomain,
+    accessToken: deps && deps.accessToken,
+    storeUrl: deps && deps.storeUrl,
+  });
   const url = buildProductsUrl(creds.storeUrl, {
     apiVersion: creds.apiVersion,
     limit: deps && deps.limit,

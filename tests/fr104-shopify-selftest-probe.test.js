@@ -126,14 +126,14 @@ describe('FR-104 shopify selftestProbe + rateLimit', () => {
     assert.ok(fs.existsSync(p));
   });
 
-  it('registry rateLimit present; enabled stays false', () => {
+  it('registry rateLimit present; enabled true (FR-178)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'shopify');
     assert.ok(row);
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
     assert.ok(row.rateLimit);
     assert.equal(row.rateLimit.maxConcurrency, 1);
     assert.equal(row.rateLimit.minIntervalMs, 250);

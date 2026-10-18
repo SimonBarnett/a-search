@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "a-search Chrome Extension",
+  "version": "0.1.0",
+  "description": "Club TXT-gated top bar for login, commission, Stripe, upgrade, and widget create/edit (#1344).",
+  "permissions": ["storage", "identity", "clipboardWrite", "activeTab"],
+  "host_permissions": ["https://*.smartcatalogue.uk/*", "https://*.clubmadeira.uk/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "a-search"
+  }
+}

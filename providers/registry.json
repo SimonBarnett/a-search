@@ -12,7 +12,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "ebay",
@@ -25,7 +26,8 @@
       "queueEnv": "SQS_EBAY_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "rakuten",
@@ -39,7 +41,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 1000
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "cj",
@@ -52,7 +55,8 @@
       "queueEnv": "SQS_CJ_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "kelkoo",
@@ -66,7 +70,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "skimlinks",
@@ -80,21 +85,23 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "aliexpress",
       "kind": "live",
       "folder": "providers/live/aliexpress",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_ALIEXPRESS_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "etsy",
@@ -108,21 +115,23 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "bol",
       "kind": "live",
       "folder": "providers/live/bol",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_BOL_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "provider"
     },
     {
       "id": "awin",
@@ -135,7 +144,8 @@
       "queueEnv": "SQS_AWIN_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "impact",
@@ -148,7 +158,8 @@
       "queueEnv": "SQS_IMPACT_URL",
       "rateLimit": {
         "maxConcurrency": 2
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "partnerize",
@@ -162,35 +173,38 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "webgains",
       "kind": "local",
       "folder": "providers/local/webgains",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WEBGAINS_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "tradedoubler",
       "kind": "local",
       "folder": "providers/local/tradedoubler",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_TRADEDOUBLER_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "admitad",
@@ -204,7 +218,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "flexoffers",
@@ -218,7 +233,8 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "avantlink",
@@ -232,49 +248,120 @@
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "affiliate"
     },
     {
       "id": "shopify",
       "kind": "local",
       "folder": "providers/local/shopify",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_SHOPIFY_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "merchant",
+      "merchantConnect": true
     },
     {
       "id": "wix",
       "kind": "local",
       "folder": "providers/local/wix",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WIX_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "merchant",
+      "merchantConnect": true
     },
     {
       "id": "woocommerce",
       "kind": "local",
       "folder": "providers/local/woocommerce",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_WOOCOMMERCE_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
-      }
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "squarespace",
+      "kind": "local",
+      "folder": "providers/local/squarespace",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_SQUARESPACE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "magento",
+      "kind": "local",
+      "folder": "providers/local/magento",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_MAGENTO_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "ecwid",
+      "kind": "local",
+      "folder": "providers/local/ecwid",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_ECWID_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "bigcommerce",
+      "kind": "local",
+      "folder": "providers/local/bigcommerce",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_BIGCOMMERCE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
     }
   ]
 }

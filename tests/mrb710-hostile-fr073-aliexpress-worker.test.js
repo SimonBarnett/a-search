@@ -10,20 +10,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const workerPath = path.join(
-  root,
-  'providers',
-  'live',
-  'aliexpress',
-  'src',
+const workerPath = path.join(root, 'providers', 'live', 'aliexpress', 'src',
   'worker.js',
 );
-const skillPath = path.join(
-  root,
-  'providers',
-  'live',
-  'aliexpress',
-  '.grok',
+const skillPath = path.join(root, 'providers', 'live', 'aliexpress', '.grok',
   'skills',
   'a-search-aliexpress',
   'SKILL.md',
@@ -72,8 +62,8 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    assert.equal(ae.enabled.live, false);
+    assert.equal(ae.enabled.sandbox, false);
   });
 
   it('handler processes one SQS record via run', async () => {

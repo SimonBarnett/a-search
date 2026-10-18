@@ -17,7 +17,7 @@ const {
 } = require('../providers/local/avantlink/src/selftestProbe');
 
 describe('MRB-830 FR-099 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; disabled under GBP hold (FR-1426 supersedes FR-177)', () => {
     assert.deepEqual(rateLimit('avantlink'), {
       maxConcurrency: 1,
       minIntervalMs: 250,

@@ -168,8 +168,8 @@ describe('FR-102 shopify normalize + Parts upsert (stay dark)', () => {
     );
     const s = registry.sources.find((x) => x.id === 'shopify');
     assert.ok(s);
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('deliverables exist: normalize.js, upsert.js, fixture', () => {

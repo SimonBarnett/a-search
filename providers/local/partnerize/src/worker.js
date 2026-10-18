@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['PARTNERIZE_PUBLISHER_ID'],
-      accountQueryMap: { PARTNERIZE_PUBLISHER_ID: 'pubref' },
+      source: 'partnerize',
     });
   }
 

@@ -25,8 +25,9 @@ Lead a human through Amazon Associates / Product Advertising API (PA-API)
 credential setup so the live worker can call SearchItems in **sandbox** first,
 then **live**.
 
-Creators API is an alternate path only if Associates/PA-API is unavailable for
-the marketplace; prefer PA-API + partner tag for this product.
+FR-181 Decision (LOCKED): Creators is behind a feature flag (default off);
+PA-API SearchItems remains the live path (FR-182+ implements Creators flagged off).
+Prefer PA-API + partner tag for production onboarding.
 
 ## Obtain `.env` credentials
 

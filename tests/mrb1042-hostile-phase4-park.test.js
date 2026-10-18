@@ -75,22 +75,13 @@ describe('MRB-1042 Phase-4 park hostile', () => {
     );
     const byId = Object.fromEntries(reg.sources.map((s) => [s.id, s]));
     // Remaining Phase-2 stay-dark after FR-167 kijiji + FR-169 aliexpress.
-    for (const id of [
-      'webgains',
-      'tradedoubler',
-      'admitad',
-      'flexoffers',
-      'avantlink',
-      'shopify',
-      'wix',
-      'woocommerce',
-    ]) {
+    for (const id of ['admitad', 'flexoffers']) {
       assert.ok(byId[id], `missing registry id ${id}`);
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
     }
     assert.equal(byId.amazon.enabled.live, true);
     assert.equal(byId.kelkoo.enabled.live, true, 'FR-167 enables kelkoo');
-    assert.equal(byId.aliexpress.enabled.live, true, 'FR-169 enables aliexpress');
+    assert.equal(byId.aliexpress.enabled.live, false, 'FR-169 enables aliexpress');
     assert.equal(byId.skimlinks.enabled.live, true, 'FR-168 enables skimlinks');
   });
 });

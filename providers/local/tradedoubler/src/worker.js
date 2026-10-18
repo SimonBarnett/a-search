@@ -58,8 +58,7 @@ function normalizePart(row, track) {
       userId: track.userId,
       env: track.env,
       envVars: track.envVars || {},
-      requiredAccountKeys: ['TRADEDOUBLER_AFFILIATE_ID'],
-      accountQueryMap: { TRADEDOUBLER_AFFILIATE_ID: 'tduid' },
+      source: 'tradedoubler',
     });
   }
 

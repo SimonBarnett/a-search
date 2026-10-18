@@ -33,6 +33,11 @@ entry/
 maintainer/
   AGENTS.md
   .grok/skills/a-search-maintainer/SKILL.md
+
+components-piece/                         # Phase 5 widget + Parts/Click + agent tree (FR-210)
+  AGENTS.md
+  .grok/skills/a-search-components-piece/
+    SKILL.md                              # parts/go/widget/agent, widgetGuid, caps, dispatcher
 ```
 
 Live vs local skill focus:
@@ -40,9 +45,10 @@ Live vs local skill focus:
 | Kind | Skillbook must cover |
 |------|----------------------|
 | live | Auth, rate limits, search request/response normalize, SQS payload, S3 write, 401/429 playbook |
-| local | How parts land in MSSQL (points at maintainer + this source’s feed parser), search SQL/FTS, RejectedAsins-style filters if any, S3 write |
+| local | How parts land in MSSQL (points at maintainer + this source's feed parser), search SQL/FTS, RejectedAsins-style filters if any, S3 write |
 | entry | JWT, fan-out, registry, never hold provider secrets |
 | maintainer | Rolling keys, conditional download, staging MERGE, deletes |
+| components-piece | WidgetGuid identity, GET /parts /go /ext/status, S3 customer tree, agent site/context/ingest/prune, no affiliate URLs in widget HTML; honesty box stays repo-root harvest-agent-skills |
 
 ## Agent start rule
 
@@ -107,3 +113,16 @@ Never park a-search product lessons under bobiverse harvest/SKILL.md.
 
 Out of scope for FR-046a: rewriting every existing provider file — those
 land via per-provider / onboarding FRs. This doc is the layout checklist.
+
+
+## Customer-tree agent CWD (ComponentsPiece)
+
+ComponentsPiece agents operate on the rclone-mounted customer tree (not a provider folder CWD).
+
+- **Host pass:** CWD = `{mount}\{env}\x\{customerNumber}\` - reads/writes `site.md`, `top10.json`; may read host `stats.json` (read-only; **not an agent trigger**).
+- **Widget pass:** CWD = `{mount}\{env}\x\{customerNumber}\{widgetGuid}\` - reads `..\site.md`, owns `widget.json`, `feedback.json`, `live.json`, `context.md`, `searches.json`; may update `..\top10.json`; may read widget `stats.json`.
+- Generic skill text: `.grok/skills/a-search-components-piece/SKILL.md` (FR-210). Per-host / per-widget skill context: `site.md` / `context.md`.
+- Dispatch: S3 ObjectCreated -> EventBridge -> SQS FIFO -> dispatcher -> pool; **no tokens while idle**.
+- Caps: agent write respects `LIVE_PART_CAP_FREE` / `LIVE_PART_CAP_FULL` (FR-233 / #1345). Parts API always serves `live.json`.
+
+See `docs/feature-request-components-piece-2026-10-09.md` Amendment 2026-10-10 and `docs/fr/FR-233.md`.

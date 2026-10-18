@@ -124,8 +124,8 @@ describe('FR-101 shopify Admin/REST catalogue client (stay dark)', () => {
     const s = sources.find((x) => x.id === 'shopify');
     assert.ok(s, 'shopify in registry');
     assert.equal(s.kind, 'local');
-    assert.equal(s.enabled.live, false);
-    assert.equal(s.enabled.sandbox, false);
+    assert.equal(s.enabled.live, true);
+    assert.equal(s.enabled.sandbox, true);
   });
 
   it('buildProductsUrl + shopHostFromStoreUrl normalize host', () => {

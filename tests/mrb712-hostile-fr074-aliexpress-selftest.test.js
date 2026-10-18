@@ -10,20 +10,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const probePath = path.join(
-  root,
-  'providers',
-  'live',
-  'aliexpress',
-  'src',
+const probePath = path.join(root, 'providers', 'live', 'aliexpress', 'src',
   'selftestProbe.js',
 );
-const skillPath = path.join(
-  root,
-  'providers',
-  'live',
-  'aliexpress',
-  '.grok',
+const skillPath = path.join(root, 'providers', 'live', 'aliexpress', '.grok',
   'skills',
   'a-search-aliexpress',
   'SKILL.md',
@@ -48,8 +38,8 @@ describe('mrb712 hostile FR-074 aliexpress selftest', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const ae = registry.sources.find((s) => s.id === 'aliexpress');
-    assert.equal(ae.enabled.live, true);
-    assert.equal(ae.enabled.sandbox, true);
+    assert.equal(ae.enabled.live, false);
+    assert.equal(ae.enabled.sandbox, false);
     assert.equal(ae.rateLimit.maxConcurrency, 1);
     assert.equal(ae.rateLimit.minIntervalMs, 250);
   });

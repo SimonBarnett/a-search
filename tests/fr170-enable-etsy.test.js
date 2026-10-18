@@ -1,5 +1,7 @@
 'use strict';
 
+const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
+
 /**
  * FR-170 / #1017: enable etsy only; FR-138 secret wiring; others stay dark.
  */
@@ -13,16 +15,7 @@ const root = path.join(__dirname, '..');
 const registryPath = path.join(root, 'providers', 'registry.json');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 
-const STILL_DARK = [
-  'webgains',
-  'tradedoubler',
-  'admitad',
-  'flexoffers',
-  'avantlink',
-  'shopify',
-  'wix',
-  'woocommerce',
-];
+const STILL_DARK = ['admitad', 'flexoffers'];
 
 function utf8NoBom(rel) {
   const buf = fs.readFileSync(path.join(root, rel));
@@ -48,7 +41,7 @@ describe('FR-170 enable etsy', () => {
     const kk = byId.get('kelkoo');
     assert.equal(kk.enabled.live, true, 'FR-167');
     const ae = byId.get('aliexpress');
-    assert.equal(ae.enabled.live, true, 'FR-169');
+    assert.equal(ae.enabled.live, false, 'FR-169');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -64,7 +57,8 @@ describe('FR-170 enable etsy', () => {
     assert.ok(keysBlock);
     assert.match(keysBlock[0], /\betsy\s*:/);
     assert.match(keysBlock[0], /ETSY_API_KEY/);
-    assert.match(text, /ETSY_TRACKING_ID:\s*'a-search'/);
+    assert.match(keysBlock[0], /ETSY_SHARED_SECRET/);
+    assert.match(text, /ETSY_AFFILIATE_NETWORK:\s*'rakuten'/);
     const fr = utf8NoBom('docs/fr/FR-170.md');
     assert.match(fr, /Decision \(LOCKED\)/);
     assert.match(fr, /etsy/);
@@ -81,11 +75,7 @@ describe('FR-170 enable etsy', () => {
   it('synth: etsy live+sandbox workers+queues; secret refs; dark ids absent', () => {
     const cdk = require('aws-cdk-lib');
     const { ASearchStack } = require('../cdk/lib/a-search-stack');
-    const outdir = path.join(root, 'cdk.out-fr170');
-    fs.rmSync(outdir, { recursive: true, force: true });
-    const app = new cdk.App({ outdir });
-    new ASearchStack(app, 'ASearchStack');
-    app.synth();
+    const { outDir: outdir } = ensureDefaultStackSynth(root);
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
@@ -115,7 +105,11 @@ describe('FR-170 enable etsy', () => {
           typeof envVars.ETSY_API_KEY === 'object',
         `ETSY_API_KEY must be Secrets Manager ref (${env})`,
       );
-      assert.equal(envVars.ETSY_TRACKING_ID, 'a-search');
+      assert.equal(envVars.ETSY_AFFILIATE_NETWORK, 'rakuten');
+      assert.ok(
+        envVars.ETSY_SHARED_SECRET,
+        `missing ETSY_SHARED_SECRET ${env}`,
+      );
       const qHit = queues.find(
         (q) =>
           q.Properties &&
@@ -125,7 +119,7 @@ describe('FR-170 enable etsy', () => {
       assert.ok(qHit, `missing queue a-search-etsy-${env}`);
     }
 
-    for (const dark of ['webgains']) {
+    for (const dark of ['admitad']) {
       const hit = fns.find(
         (res) =>
           res.Properties &&

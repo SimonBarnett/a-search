@@ -30,14 +30,14 @@ const mssqlEnv = {
 };
 
 describe('MRB-763 FR-089 hostile', () => {
-  it('registry tradedoubler stay-dark both envs (CAST IRON)', () => {
+  it('registry tradedoubler enabled both envs (FR-174)', () => {
     const registry = JSON.parse(
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const td = registry.sources.find((s) => s.id === 'tradedoubler');
     assert.ok(td);
-    assert.equal(td.enabled.live, false);
-    assert.equal(td.enabled.sandbox, false);
+    assert.equal(td.enabled.live, true);
+    assert.equal(td.enabled.sandbox, true);
     assert.equal(td.kind, 'local');
     assert.equal(td.queueEnv, 'SQS_TRADEDOUBLER_URL');
   });
@@ -59,7 +59,7 @@ describe('MRB-763 FR-089 hostile', () => {
     );
   });
 
-  it('worker run: queryParts -> normalizePart -> writeResults with tduid track', async () => {
+  it('worker run: queryParts -> normalizePart -> writeResults with a+epi track', async () => {
     const puts = [];
     const row = {
       Source: 'tradedoubler',
@@ -95,7 +95,7 @@ describe('MRB-763 FR-089 hostile', () => {
     assert.equal(result.ok, true);
     assert.equal(result.source, 'tradedoubler');
     assert.equal(result.products.length, 1);
-    assert.match(String(result.products[0].url), /tduid=td-aff-hostile/);
+    assert.match(String(result.products[0].url), /[?&]a=td-aff-hostile&epi=/);
     assert.equal(puts.length, 1);
   });
 

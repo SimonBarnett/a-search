@@ -4,10 +4,8 @@ const {
   normalizeProduct,
   assertProductSchema,
 } = require('../../../../worker/lib/normalizeProduct');
-const {
-  buildTrackedUrl,
-  TrackedUrlError,
-} = require('../../../../shared/links/buildTrackedUrl');
+const { TrackedUrlError } = require('../../../../shared/links/buildTrackedUrl');
+const { stampAmazonTrackedUrl } = require('./stampAmazonTrackedUrl');
 
 /**
  * @param {object} [track]
@@ -65,12 +63,11 @@ function normalizeAmazonItem(item, track) {
   let url;
   if (item.DetailPageURL != null && String(item.DetailPageURL).trim() !== '') {
     const ctx = requireTrackContext(track);
-    url = buildTrackedUrl({
+    url = stampAmazonTrackedUrl({
       url: String(item.DetailPageURL),
       userId: ctx.userId,
       env: ctx.env,
       envVars: ctx.envVars || {},
-      requiredAccountKeys: ['AMAZON_PARTNER_TAG'],
     });
   }
 

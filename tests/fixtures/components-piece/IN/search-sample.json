@@ -1,0 +1,32 @@
+[
+  {
+    "id": "in-1",
+    "title": "Inbound 1",
+    "price": 6,
+    "currency": "GBP",
+    "merchant": "Inbound Merchant",
+    "image": "https://cdn.example/in/1.jpg",
+    "url": "https://shop.example/in/1",
+    "seenAt": "2026-10-14T11:00:00.000Z"
+  },
+  {
+    "id": "in-2",
+    "title": "Inbound 2",
+    "price": 7,
+    "currency": "GBP",
+    "merchant": "Inbound Merchant",
+    "image": "https://cdn.example/in/2.jpg",
+    "url": "https://shop.example/in/2",
+    "seenAt": "2026-10-14T11:00:00.000Z"
+  },
+  {
+    "id": "in-3",
+    "title": "Inbound 3",
+    "price": 8,
+    "currency": "GBP",
+    "merchant": "Inbound Merchant",
+    "image": "https://cdn.example/in/3.jpg",
+    "url": "https://shop.example/in/3",
+    "seenAt": "2026-10-14T11:00:00.000Z"
+  }
+]

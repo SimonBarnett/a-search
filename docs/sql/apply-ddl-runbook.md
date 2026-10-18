@@ -1,3 +1,5 @@
+**FR-251:** apply all a-search DDL with `-d a_search` / `a_search_sandbox`. Never `-d madeiradb`.
+
 # Ops runbook: create sandbox DB + apply a-search DDL
 
 **FR-146.** Operators create the separate sandbox database on the IONOS MSSQL
@@ -59,9 +61,9 @@ documented under maintainer SQL - apply only if ops runbooks for those
 objects require them; FR-120 migrate-once core is 001-003.
 
 ```text
-sqlcmd -S <mssql-host> -d madeiradb -E -i maintainer/sql/001_PartFeedKeys.sql
-sqlcmd -S <mssql-host> -d madeiradb -E -i maintainer/sql/002_Parts.sql
-sqlcmd -S <mssql-host> -d madeiradb -E -i maintainer/sql/003_PartsStaging.sql
+sqlcmd -S <mssql-host> -d a_search -E -i maintainer/sql/001_PartFeedKeys.sql
+sqlcmd -S <mssql-host> -d a_search -E -i maintainer/sql/002_Parts.sql
+sqlcmd -S <mssql-host> -d a_search -E -i maintainer/sql/003_PartsStaging.sql
 
 sqlcmd -S <mssql-host> -d a_search_sandbox -E -i maintainer/sql/001_PartFeedKeys.sql
 sqlcmd -S <mssql-host> -d a_search_sandbox -E -i maintainer/sql/002_Parts.sql
@@ -79,7 +81,7 @@ Scripts under `docs/sql/` are **not** the Parts pipeline. Example:
 Apply to `madeiradb` (and sandbox only if sandbox Impact drain is required):
 
 ```text
-sqlcmd -S <mssql-host> -d madeiradb -E -i docs/sql/001_ImpactPendingOnboard.sql
+sqlcmd -S <mssql-host> -d a_search -E -i docs/sql/001_ImpactPendingOnboard.sql
 ```
 
 See [docs/sql/README.md](README.md) and [impact-pending-onboard-queue.md](../impact-pending-onboard-queue.md).

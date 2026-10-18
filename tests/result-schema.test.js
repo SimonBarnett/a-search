@@ -107,7 +107,7 @@ describe('FR-042 result schema + normalizeProduct', () => {
     }
     assert.equal(products[0].id, 'B0TESTASIN1');
     assert.equal(products[0].title, 'Fixture Wireless Headphones');
-    assert.match(products[0].url, /userId=U-SCHEMA/);
+    assert.match(products[0].url, /tag=/); // FR-248: amazon tenant folded into tag, no userId param
     assert.match(products[0].url, /tag=tag-20/);
   });
 });
