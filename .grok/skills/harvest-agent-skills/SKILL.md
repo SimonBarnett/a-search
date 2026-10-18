@@ -428,3 +428,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After tip-fix supersedes enable-* synth pins with ensureDefaultStackSynth calls, verify every touched file also has const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth'); multi-arg it() patch scripts can omit the import (fr173/fr180).
 - When CI merges main into a behind tip, mrb1061 fails if environments.md heading gained / FR-3948 while the hostile pin still required exact LOCKED -- FR-124); fold main and supersede the pin to allow optional / FR-3948.
 - When a fix PR claims require-only on an open tip but base is main, retarget base onto the tip branch before PASS; after fold, dedupe duplicate imports; close Closes issues by hand when base is non-default.
+- Harvest tip CONFLICTING for mrb1061 exact LOCKED -- FR-124 vs docs heading / FR-3948: one keep-both fold, PASS, --auto --squash; supersede hostile pin to allow optional / FR-3948 suffix when CI merges main into behind tips.
