@@ -66,6 +66,14 @@ config for local search. **Superseded by `a-affiliates`**: publisher signup and
 affiliate folders live under `s3://a-affiliates/impact/`. Keep MSSQL Parts worker
 config only if still needed for search; do not use pending-onboard for new joins.
 
+
+## Legacy Parts env / sandbox selftest (FR-060h)
+
+If the Impact **Parts search worker** is still wired, fill .env from .env.example with
+MSSQL_SERVER, MSSQL_DATABASE, and IMPACT_CAMPAIGN_ID (never commit secrets). Sandbox
+isolation and endpoint **selftest** follow docs/endpoint-selftest.md / provider AGENTS.md.
+Publisher signup itself uses a-affiliates (above), not pending-onboard.
+
 ## Publisher account signup (from AGENT.md)
 
 ## Publisher account signup (step through with Simon)

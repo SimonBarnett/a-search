@@ -25,6 +25,10 @@ here; do not invent steps beyond AGENT.md / this skill.
 
 **Do not sign up** until Simon lifts the hold. Stay dark: no invites, no folders, no enable work.
 
+Registry stays **not enabled** (live + sandbox false) --- disabled stub path until the hold
+lifts. Defer .env fill, sandbox enable, and endpoint **selftest** until Simon lifts HOLD.
+
+
 ## Source
 
 Copied from `s3://a-affiliates/admitad/AGENT.md` (pasted on a-search#4155 unblock
