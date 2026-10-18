@@ -42,16 +42,16 @@ describe('MRB-1568 FR-173 hostile', () => {
     assert.doesNotMatch(matrix, /Stay-dark omitted[\s\S]*\bwebgains\b/i);
   });
 
-  it('fr142/fr143 floors expect 28 primaries after wix+webgains keep-both', () => {
+  it('fr142/fr143 floors expect FR-3949 marketplace 14; webgains is DB-backed', () => {
     const fr142 = fs.readFileSync(
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 30 primary queues/);
+    assert.match(fr142, /expected 14 marketplace primary queues/);
     const fr143 = fs.readFileSync(
       path.join(root, 'tests', 'fr143-cw-retention-dlq-alarm.test.js'),
       'utf8',
     );
-    assert.match(fr143, /expected 30 DLQ depth alarms/);
+    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
   });
 });
