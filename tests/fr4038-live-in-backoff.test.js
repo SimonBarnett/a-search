@@ -255,4 +255,14 @@ describe('FR #4038 live worker wiring pins', () => {
     );
     assert.ok(pkg.files.includes('search/'));
   });
+
+  it('stack wires live workers A_CLUBS_BUCKET + a-clubs read/write', () => {
+    const stack = fs.readFileSync(
+      path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
+      'utf8',
+    );
+    assert.match(stack, /function wireAclubsInAccess/);
+    assert.match(stack, /wireAclubsInAccess\(worker,\s*aClubsBucket\)/);
+    assert.match(stack, /A_CLUBS_BUCKET/);
+  });
 });
