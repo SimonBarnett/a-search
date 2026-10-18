@@ -462,3 +462,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FR #4038 live IN/ wire, supersede mrb710/718/722 hostile writeResults pins to writeLiveProviderInResult + update provider SKILL Worker sections before PASS rematch
 - FR #4078 parts-gateway stage: npm install --omit=dev client-s3+sqs into asset (never cherry-pick); pin @aws-sdk/checksums and/or @smithy after real install
 - Provider FIFO DLQ is a-search-provider-{id}-{env}-dlq.fifo not {queue}.fifo-dlq; fr142/fr162 must call queueDlqName and must not drop all .fifo names when counting marketplace queues
+- Twin open harvest tips with the same lesson title: close the later PR citing the earlier tip; do not merge both
