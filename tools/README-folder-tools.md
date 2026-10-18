@@ -65,6 +65,10 @@ download -All     # each affiliate child
 
 Env: `A_SEARCH_S3_MOUNT`, `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE` (default `a-search-redqueen-agents`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). Never prints feed URLs, passwords, or tokens.
 
+**AWS identity (FR #4167):** `Invoke-FolderDownload` resolves one profile (`-AwsProfile`, else `A_SEARCH_AGENTS_AWS_PROFILE`, else `AWS_PROFILE`, else `a-search-redqueen-agents`) and sets process `AWS_PROFILE` for the whole run so marker metadata reads (`aws s3api head-object` / tagging) and Node S3 writes use the same identity. Setting `A_SEARCH_AGENTS_AWS_PROFILE` alone is enough.
+
+**WinPS 5.1 (FR #4167):** JSON args (including `affiliateMeta` / `feedurl`) are passed to Node via process env `A_SEARCH_FOLDER_DOWNLOAD_ARGS` and `run-folder-download.js --args-env`, not on the process command line (avoids 5.1 quote mangling and keeps the feed key out of Task Manager / process audit). Shims `download.ps1` / `meta.ps1` / `search.ps1` end with `exit $LASTEXITCODE` so `powershell -File` preserves tool exit codes.
+
 Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate folder, `4` provider without `-All`, `5` bucket root, `1` download/missing_feedurl/partial `-All` failure, `0` success (including `parts_exists` skip).
 
 ## Tests
@@ -72,7 +76,9 @@ Exit codes: `2` outside mount, `3` not an `a-affiliates` provider/affiliate fold
 ```powershell
 Invoke-Pester .\tests\fr4043-folder-tools.Tests.ps1
 Invoke-Pester .\tests\fr4108-folder-download.Tests.ps1
+Invoke-Pester .\tests\fr4167-folder-download-winps.Tests.ps1
 node --test tests/fr4108-folder-download.test.js
+node --test tests/fr4167-folder-download-winps.test.js
 ```
 
-Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount exit 2, GUID/host search, download cwd/dry-run/secrets, and no credentials in output.
+Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount exit 2, GUID/host search, download cwd/dry-run/secrets, no credentials in output, WinPS args-env handoff, shim exit codes, and unified AWS profile.
