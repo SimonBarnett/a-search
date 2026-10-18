@@ -94,7 +94,9 @@ describe('FR #4265 searches.json from the page review', () => {
     });
     assert.equal(cap, 3);
     assert.equal(doc.queries.length, 3);
-    assert.equal(doc.queries[0].q, 'trainer kits UK GBP');
+    assert.equal(doc.queries[0].q, 'trainer kits');
+    assert.equal(doc.market, 'UK');
+    assert.equal(doc.currency, 'GBP');
     assert.equal(doc.queries[0].intent, 'shop');
     assert.equal(doc.queries[0].maxResults, 10);
     assert.equal(doc.exclude[0].partId, 'p1');
@@ -160,7 +162,9 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
     assert.equal(posts[0].hostkey, host);
     assert.equal(posts[0].guid, GUID);
     assert.equal(posts[0].queries.length, 3);
-    assert.match(posts[0].queries[0].q, /beginner trainer UK GBP/);
+    assert.equal(posts[0].queries[0].q, 'beginner trainer');
+    assert.equal(posts[0].market, 'UK');
+    assert.equal(posts[0].currency, 'GBP');
     assert.equal(posts[0].exclude[0].partId, 'keep-me');
     const saved = await s3.getObject({ Key: `${host}/${GUID}/searches.json` });
     const doc = JSON.parse(saved.Body.toString('utf8'));

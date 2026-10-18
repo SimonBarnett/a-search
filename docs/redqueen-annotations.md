@@ -60,10 +60,15 @@ After a GUID marker is saved with `annotated=1`, the agent writes
 
 Order: host review (`annotated=1`), GUID review (`annotated=1`), `searches.json`,
 then `/search`. No host review means no GUID review and no search. Queries come
-from the page review and `steering` (market and currency included). The free cap
+from the page review and `steering` include terms. `q` is product keywords
+only. `steering.market` and `steering.currency` are stored and sent to
+`/search` as their own fields, never appended to `q` (FR #4318). A UK postcode
+in a suggested query is stripped. The free cap
 is 3 queries; an upgraded fullscreen widget (`upgraded=1`, `layout=fullscreen`)
-uses 15. Existing `exclude[]` entries are kept. The shape is
-`{ queries: [{ q, intent, maxResults }], exclude: [...] }`.
+uses 15. Existing `exclude[]` entries are kept. Match terms shorter than 3
+characters are dropped. Exclude matching is whole-word, so `IC` does not drop
+"electric". The shape is
+`{ queries: [{ q, intent, maxResults }], exclude: [...], market, currency }`.
 
 `/search` records `search-fanout.json` for that GUID and returns the same
 `searchid` on a retry without sending again. If the write or the POST fails,

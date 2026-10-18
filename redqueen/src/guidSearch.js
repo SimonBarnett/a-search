@@ -79,7 +79,10 @@ function steeringExclude(steering, now) {
         at: item.at ? String(item.at) : now,
       };
       if (item.partId != null && String(item.partId).trim()) row.partId = String(item.partId).trim();
-      if (item.match != null && String(item.match).trim()) row.match = String(item.match).trim();
+      if (item.match != null && String(item.match).trim()) {
+        const match = String(item.match).trim();
+        if (match.length >= 3) row.match = match;
+      }
       if (item.otherText != null && String(item.otherText).trim()) {
         row.otherText = String(item.otherText).trim();
       }
@@ -87,7 +90,7 @@ function steeringExclude(steering, now) {
       continue;
     }
     const match = String(item || '').trim();
-    if (!match) continue;
+    if (!match || match.length < 3) continue;
     out.push({ match, reason: 'steering', at: now });
   }
   return out;
@@ -107,18 +110,29 @@ function mergeExclude(existing, extra) {
   return out;
 }
 
-function applyMarket(queries, steering) {
-  const market = steering && steering.market ? String(steering.market).trim() : '';
-  const currency = steering && steering.currency ? String(steering.currency).trim() : '';
-  if (!market && !currency) return queries;
-  return queries.map((q) => {
-    let text = String(q.q);
-    if (market && !text.toLowerCase().includes(market.toLowerCase())) text = `${text} ${market}`;
-    if (currency && !text.toLowerCase().includes(currency.toLowerCase())) {
-      text = `${text} ${currency}`;
-    }
-    return { ...q, q: text.trim() };
-  });
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * FR #4318: q is product keywords. Market, currency and postcodes are not keywords.
+ * @param {string} text
+ * @param {string} market
+ * @param {string} currency
+ */
+function keywordsOnly(text, market, currency) {
+  let q = String(text || '');
+  for (const phrase of [market, currency]) {
+    const p = String(phrase || '').trim();
+    if (p.length < 2) continue;
+    const escaped = escapeRegExp(p);
+    const re = /\s|[()]/.test(p) || p.length > 3
+      ? new RegExp(escaped, 'ig')
+      : new RegExp(`(?:^|[^A-Za-z0-9])${escaped}(?:[^A-Za-z0-9]|$)`, 'ig');
+    q = q.replace(re, ' ');
+  }
+  q = q.replace(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi, ' ');
+  return q.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -145,13 +159,22 @@ function buildSearchesDoc(input) {
     const seed = intent || (summary.split(/[.\n]/)[0] || '').trim();
     queries = boundQueries(asQueryRows(seed ? [seed] : []), cap);
   }
-  queries = applyMarket(queries, steering).slice(0, cap).map((q) => ({
-    q: q.q,
-    intent: q.intent || 'page',
-    maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
-  }));
-  const exclude = mergeExclude(existing.exclude, steeringExclude(steering, now));
+  const market = steering.market ? String(steering.market).trim() : '';
+  const currency = steering.currency ? String(steering.currency).trim() : '';
+  queries = queries
+    .map((q) => ({
+      q: keywordsOnly(q.q, market, currency),
+      intent: q.intent || 'page',
+      maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
+    }))
+    .filter((q) => q.q)
+    .slice(0, cap);
+  const exclude = mergeExclude(existing.exclude, steeringExclude(steering, now)).filter(
+    (row) => row && (row.partId || (row.match && String(row.match).trim().length >= 3)),
+  );
   const doc = { queries, exclude };
+  if (market) doc.market = market;
+  if (currency) doc.currency = currency;
   if (existing.searchid) doc.searchid = String(existing.searchid);
   return { doc, cap };
 }
@@ -199,6 +222,8 @@ async function publishGuidSearch(opts) {
       guid: opts.guid,
       queries,
       exclude,
+      market: existing.market,
+      currency: existing.currency,
     });
     const doc = { queries, exclude, searchid: posted.searchid };
     await writeSearches(opts, key, doc);
@@ -233,6 +258,8 @@ async function publishGuidSearch(opts) {
     guid: opts.guid,
     queries: doc.queries,
     exclude: doc.exclude,
+    market: doc.market,
+    currency: doc.currency,
   });
   doc.searchid = posted.searchid;
   await writeSearches(opts, key, doc);
@@ -329,6 +356,8 @@ function createHttpPostSearch(env = process.env) {
         guid: body.guid,
         queries: body.queries,
         exclude: body.exclude || [],
+        ...(body.market ? { market: body.market } : {}),
+        ...(body.currency ? { currency: body.currency } : {}),
       }),
     });
     let parsed = {};
@@ -350,6 +379,7 @@ function createHttpPostSearch(env = process.env) {
 module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
+  keywordsOnly,
   publishGuidSearch,
   guidSearchState,
   readJsonObject,
