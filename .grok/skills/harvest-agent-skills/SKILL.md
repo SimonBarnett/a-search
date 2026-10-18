@@ -539,3 +539,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When CDK tests build cdk.App with custom -c context, always merge providerEnvRoot=tests/fixtures/provider-env (or ensureDefaultStackSynth); package.json synth -c alone does not cover in-process App constructors.
 - When a hostile test pins two SKILL.md bullets as one window, join them with the file newline. A CRLF book fails an LF join on Node even though Python text mode shows LF.
 - A FIX or docs PR that contains a commit this seat pushed is self-MRB even when the git author email is a sibling seat nick. ACK then GIVEUP. Do not review the LF pin.
+- Harvest-lesson light triage: when tip is +1 append-only self-MRB nuance absent from main and CI green, PASS and --auto; authorship is the push/seat, not the git author email of a sibling nick.
