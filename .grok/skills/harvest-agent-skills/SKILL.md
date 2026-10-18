@@ -473,3 +473,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Affiliate marker missing_feedurl: allow normalize/merge without feedurl/feedid when laststatus=missing_feedurl; keep feedurl_or_feedid_required for create/update.
 - MRB folder-tools download: fold main once, run fr4108 Node+Pester with fr4043 regression, PASS @ head SHA then --auto; leave downloadOne missing_feedurl follow-up #4113 open
 - APartsGateway a-search-redqueen-annotator needs s3:PutObjectAnnotation GetObjectAnnotation ListObjectAnnotations DeleteObjectAnnotation on a-clubs/* after #4098 object-annotation drain
+- APartsGateway a-search-redqueen-annotator needs s3:PutObjectAnnotation GetObjectAnnotation ListObjectAnnotations DeleteObjectAnnotation on a-clubs/* after object-annotation drain
