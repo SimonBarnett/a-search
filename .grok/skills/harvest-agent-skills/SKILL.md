@@ -454,4 +454,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4038: live workers write a-clubs IN/ when hostkey+guid present via writeLiveProviderInResult; handlers use handleSqsWith429 (never 429-to-DLQ); legacy msgs without hostkey keep writeResults so unit fixtures stay green.
 - FR #4039 FIFO provider queues: MERGEABLE behind main needs no fold (FR #4649); pin fifo:true + -dlq.fifo + MessageDeduplicationId with contentBasedDeduplication false
 - MRB CONFLICTING live-IN tip after #4035: one fold keep tip IN_SOURCES; add wireAclubsInAccess so workers can PutObject a-clubs IN/ before PASS
+- When two open PRs wire live providers to a-clubs IN/+backoff429, keep the fuller tip (handleSqsWith429 CMV + CDK a-clubs IN grant + docs) and FAIL-close the subset; leave the Closes issue OPEN for the kept tip
 - FIX CI after provider FIFO rename: update env-isolation-runtime (-live.fifo$), fanout-enqueue, fanout, sqs-send to assert queueName() not hardcoded a-search-{source}-{env}
