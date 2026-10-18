@@ -1,14 +1,24 @@
-# rclone results mount (SQL host)
+# rclone results mount (SQL host / walrus)
 
-Ops find offline search results on the **MSSQL host** via an **rclone**
-mapped drive that mirrors the S3 results bucket. AWS workers still write
-with the S3 API; the SQL box reads the same tree through the mount.
+Ops find offline search results on **walrus** (the MSSQL host) via an **rclone**
+mapped drive that mirrors S3. **Direction (FR-3948):** walrus **writes**
+DB-backed results onto the mount; AWS serves from S3 and does **not** connect
+to MSSQL. Live marketplace providers that remain in AWS may still write with
+the S3 API into the dedicated results bucket.
 
-Canonical layout (LOCKED - matches `shared/resultsPath.js`):
+Canonical layout for the dedicated results bucket (LOCKED - matches
+`shared/resultsPath.js`):
 
 ```
 {env}/{source}/{userId}/{catalogId}/{searchId}.json
 ```
+
+**DB-backed landing path (FR-3948 LOCKED):** bucket **`a-clubs`**, key layout
+`a-clubs/{host}/{guid}/IN/` (host folders are **top-level**; **no** `HOSTS/`
+prefix). Simon 2026-10-18. Example mount root on walrus: `D:\s3\a-clubs`
+(ops may remap). One SQS queue (+ DLQ) carries merchant + affiliate DB-backed
+search work; onboarding output is S3 metadata / name-value pairs (not MSSQL
+signup rows) --- sibling FRs implement the runner.
 
 ## FR-124 LOCKED scheme (verified 2026-10-09)
 
