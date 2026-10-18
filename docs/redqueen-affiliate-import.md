@@ -19,12 +19,19 @@ import via SQS; failed import starts one self-closing fix agent). Related:
 
 ## FR #4196 SQS path
 
+**Drain host is walrus** (Simon #4196 / #3944): outbound long-poll only; writes
+the a-search DB on walrus; never madeiradb; no Lambda→MSSQL. Entry:
+`walrus/src/affiliateImportDrain.js` (reuses `redqueen/affiliate-import`
+parse/import modules until that tree is fully relocated).
+
 1. Daily / manual download finishes -> **one** SQS message on
    `a-search-affiliate-import` listing `[{provider, affiliateid, key}]` (no
    secrets / feed URLs) + optional wake POST to
-   `A_SEARCH_AFFILIATE_IMPORT_NOTIFY_URL`.
-2. Redqueen long-polls the queue (`drainImportOnce`); imports listed files;
-   records `dbo.AffiliateImportLog` (key + ETag) so replays are no-ops.
+   `A_SEARCH_AFFILIATE_IMPORT_NOTIFY_URL` (SendMessage is the wake; a missed
+   notify is fine — next poll picks it up).
+2. **Walrus** long-polls the queue (`drainImportOnce` /
+   `drainAffiliateImportOnce`); imports listed files; records
+   `dbo.AffiliateImportLog` (key + ETag) so replays are no-ops.
 3. Marker stamps: `lastimport`, `lastimportstatus` (`ok` | error | `needs_fix`),
    keeping `importstatus` for #4001 compatibility.
 4. On failure: exactly one fix agent per file key+ETag (lock); exits 0 after
