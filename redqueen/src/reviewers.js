@@ -2,10 +2,66 @@
 
 /**
  * FR #4098 / #4147: real reviewers --- Grok first, Cursor when Grok exhausted.
+ * FR #4223: grok 1.0.62 flags are -p / --prompt-file and --output-format plain.
+ * Spawn inherits USERPROFILE/HOME. The nssm installer sets those to the
+ * Administrator profile so LocalSystem sees the grok sign-in; -Credential is
+ * not required when those vars are set. Not re-checked live from a non-redqueen seat.
  * Reviewers require fetched pageText (FR #4147); stub/unavailable never annotate.
  */
 
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+
+/** FR #4223: grok 1.0.62 uses -p / --prompt-file, not --prompt. */
+const GROK_PROMPT_FILE_CHARS = 4000;
+
+/**
+ * Argv grok 1.0.62 accepts. Pass promptFile for long prompts (Windows cmdline limit).
+ * @param {string} prompt
+ * @param {string} [promptFile]
+ * @returns {string[]}
+ */
+function grokReviewArgv(prompt, promptFile) {
+  const tail = ['--output-format', 'plain', '--disable-web-search'];
+  if (promptFile) return ['--prompt-file', promptFile, ...tail];
+  return ['-p', prompt, ...tail];
+}
+
+/**
+ * First stderr line, secrets stripped, for grok_exit_N detail.
+ * @param {string} stderr
+ */
+function firstCliErrorLine(stderr) {
+  const line = String(stderr || '')
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .find(Boolean);
+  if (!line) return '';
+  return line
+    .replace(
+      /(api[_-]?key|token|password|secret|bearer)\s*[:=]\s*\S+/gi,
+      '$1=***',
+    )
+    .slice(0, 180);
+}
+
+/**
+ * redqueen ships agent.exe as the Grok Build binary under .grok\\bin.
+ * @param {string} bin
+ */
+function cursorBinLooksLikeGrok(bin) {
+  const norm = String(bin || '')
+    .replace(/\//g, '\\')
+    .toLowerCase();
+  if (/\.grok\\bin\\agent(\.exe)?$/.test(norm)) return true;
+  const grok = String(process.env.A_SEARCH_GROK_BIN || '')
+    .replace(/\//g, '\\')
+    .toLowerCase();
+  if (grok && norm === grok) return true;
+  return false;
+}
 
 /**
  * @param {unknown} review
@@ -27,17 +83,27 @@ function isUsableReview(review) {
 function tryGrokCli(opts) {
   const bin = process.env.A_SEARCH_GROK_BIN || 'grok';
   const timeoutMs = opts.timeoutMs == null ? 120000 : opts.timeoutMs;
-  try {
-    const r = spawnSync(
-      bin,
-      ['--prompt', opts.prompt, '--output', 'text'],
-      {
-        encoding: 'utf8',
-        timeout: timeoutMs,
-        env: { ...process.env, ...(opts.env || {}) },
-        windowsHide: true,
-      },
+  const prompt = String(opts.prompt || '');
+  let promptFile = null;
+  const useFile = prompt.length > GROK_PROMPT_FILE_CHARS;
+  if (useFile) {
+    promptFile = path.join(
+      os.tmpdir(),
+      `a-search-grok-prompt-${process.pid}-${Date.now()}.txt`,
     );
+    fs.writeFileSync(promptFile, prompt, 'utf8');
+  }
+  const argv = grokReviewArgv(prompt, promptFile);
+  const nodeScript = process.env.A_SEARCH_GROK_NODE_SCRIPT;
+  const exe = nodeScript ? process.execPath : bin;
+  const spawnArgv = nodeScript ? [nodeScript, ...argv] : argv;
+  try {
+    const r = spawnSync(exe, spawnArgv, {
+      encoding: 'utf8',
+      timeout: timeoutMs,
+      env: { ...process.env, ...(opts.env || {}) },
+      windowsHide: true,
+    });
     if (r.error) {
       const code = r.error.code || '';
       if (code === 'ENOENT') {
@@ -50,13 +116,25 @@ function tryGrokCli(opts) {
       if (/token|quota|exhausted|rate.?limit|402|429/.test(errText)) {
         return { ok: false, detail: 'grok_exhausted' };
       }
-      return { ok: false, detail: `grok_exit_${r.status}` };
+      const line = firstCliErrorLine(r.stderr);
+      return {
+        ok: false,
+        detail: line ? `grok_exit_${r.status}:${line}` : `grok_exit_${r.status}`,
+      };
     }
     const text = String(r.stdout || '').trim();
     if (!text) return { ok: false, detail: 'grok_empty' };
     return { ok: true, text };
   } catch (err) {
     return { ok: false, detail: `grok_throw:${(err && err.message) || err}` };
+  } finally {
+    if (promptFile) {
+      try {
+        fs.unlinkSync(promptFile);
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }
 
@@ -65,7 +143,24 @@ function tryGrokCli(opts) {
  * @returns {{ ok: boolean, text?: string, detail?: string }}
  */
 function tryCursorCli(opts) {
-  const bin = process.env.A_SEARCH_CURSOR_BIN || 'agent';
+  let bin = process.env.A_SEARCH_CURSOR_BIN || 'agent';
+  if (!/[\\/]/.test(bin) && process.platform === 'win32') {
+    const w = spawnSync('where.exe', [bin], {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 5000,
+    });
+    if (w.status === 0) {
+      const first = String(w.stdout || '')
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .find(Boolean);
+      if (first) bin = first;
+    }
+  }
+  if (cursorBinLooksLikeGrok(bin)) {
+    return { ok: false, detail: 'cursor_is_grok_bin' };
+  }
   const timeoutMs = opts.timeoutMs == null ? 180000 : opts.timeoutMs;
   try {
     const r = spawnSync(
@@ -86,7 +181,13 @@ function tryCursorCli(opts) {
       return { ok: false, detail: `cursor_error:${r.error.message}` };
     }
     if (r.status !== 0) {
-      return { ok: false, detail: `cursor_exit_${r.status}` };
+      const line = firstCliErrorLine(r.stderr);
+      return {
+        ok: false,
+        detail: line
+          ? `cursor_exit_${r.status}:${line}`
+          : `cursor_exit_${r.status}`,
+      };
     }
     const text = String(r.stdout || '').trim();
     if (!text) return { ok: false, detail: 'cursor_empty' };
@@ -218,6 +319,8 @@ module.exports = {
   isUsableReview,
   tryGrokCli,
   tryCursorCli,
+  grokReviewArgv,
+  cursorBinLooksLikeGrok,
   reviewWithGrokThenCursor,
   defaultReviewHost,
   defaultReviewGuid,
