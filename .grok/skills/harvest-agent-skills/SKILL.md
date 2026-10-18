@@ -517,3 +517,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When two open harvest tips in the same book state the same playbook, keep the earlier fuller bullet and close the later tip. Do not merge both.
 - Host annotation is an affiliate brief (club, audience, opportunities). GUID annotation describes only that page using the host brief plus title and meta, and must be rejected when it copies the host text. REDQUEEN_REANNOTATE=1 rewrites markers that are already annotated.
 - meta in an a-clubs GUID folder prints the full host object-annotation, then the page annotation, then steering. The 2048-character preview is not the review. Legacy annotations.json is only a fallback when the object annotation is absent.
+- AMerchants dual-bucket job: daily schedule, missing enabled=disabled, only refresh when lastdownload is 7+ days stale, and always call affiliates/src/downloadOne (never a merchants copy) so placeholders and flat keys stay current.
