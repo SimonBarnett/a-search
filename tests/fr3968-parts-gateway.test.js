@@ -873,6 +873,8 @@ describe('FR #3968 CDK stack isolation (source pins)', () => {
     assert.equal(/\bresolveCorsOrigins\s*\(/.test(stack), false);
     assert.match(stack, /allowOrigins:\s*\[\s*['"]\*['"]\s*\]/);
     assert.match(stack, /allowCredentials:\s*false/);
+    // FR #4177: embedded widget X-Parent-Origin must be on allowHeaders.
+    assert.match(stack, /allowHeaders\s*:\s*\[[^\]]*['"]x-parent-origin['"]/i);
     assert.match(stack, /a-clubs-new-folders\.fifo/);
     assert.match(stack, /a-clubs-new-folders-dlq\.fifo/);
     assert.match(stack, /a-search-redqueen-annotator/);
