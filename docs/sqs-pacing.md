@@ -34,7 +34,7 @@ provider APIs do not rate-block the account.
 
 - `docs/environments.md` — live/sandbox queue isolation
 - `docs/add-source.md` — new sources must wire queues without breaking pacing
-- CDK worker wiring: `cdk/lib/a-search-stack.js` (`batchSize: 1`; amazon/ebay/rakuten/cj/awin/impact `maxConcurrency` from registry)
+- CDK worker wiring: `cdk/lib/a-search-stack.js` (`batchSize: 1`; provider workers `reservedConcurrentExecutions: 1`; SQS `MaximumConcurrency` omitted, FR #4357)
 
 ## Out of scope here
 
