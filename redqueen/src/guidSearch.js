@@ -226,6 +226,8 @@ async function publishGuidSearch(opts) {
       currency: existing.currency,
     });
     const doc = { queries, exclude, searchid: posted.searchid };
+    if (existing.market) doc.market = String(existing.market);
+    if (existing.currency) doc.currency = String(existing.currency);
     await writeSearches(opts, key, doc);
     return {
       ok: true,
