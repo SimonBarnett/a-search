@@ -73,12 +73,10 @@ describe('FR-058g CDK rakuten SQS maxConcurrency', () => {
     );
     for (const m of rakutenMappings) {
       const scaling = m.Properties && m.Properties.ScalingConfig;
-      assert.ok(scaling, 'rakuten mapping must have ScalingConfig');
-      // Registry maxConcurrency 1; AWS ESM floor is 2.
       assert.equal(
-        scaling.MaximumConcurrency,
-        2,
-        'rakuten MaximumConcurrency must be 2 (registry 1 clamped to AWS ESM min)',
+        scaling && scaling.MaximumConcurrency,
+        undefined,
+        'FR #4357: omit MaximumConcurrency when reserved concurrency is 1',
       );
     }
   });

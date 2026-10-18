@@ -69,12 +69,11 @@ describe('FR-058e CDK amazon SQS maxConcurrency', () => {
     );
     for (const m of amazonMappings) {
       const scaling = m.Properties && m.Properties.ScalingConfig;
-      assert.ok(scaling, 'amazon mapping must have ScalingConfig');
-      // Registry amazon rateLimit.maxConcurrency is 1; AWS ESM floor is 2.
+      const max = scaling && scaling.MaximumConcurrency;
       assert.equal(
-        scaling.MaximumConcurrency,
-        2,
-        'amazon MaximumConcurrency must be 2 (registry 1 clamped to AWS ESM min)',
+        max,
+        undefined,
+        'FR #4357: omit MaximumConcurrency when reserved concurrency is 1',
       );
     }
   });
