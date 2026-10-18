@@ -449,3 +449,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #3968 successor MRB: run real npm ci + npm run synth:parts-gateway and paste APartsGateway resource list before PASS; unit pins alone are not enough when the PR body requires synth
 - FR #4030: reservedConcurrentExecutions 1 (not ESM maxConcurrency) for one-job-per-provider; SQL uses a-search-db-backed drained on redqueen reusing walrus poll helpers; agent /search is x-agent-api-key + hostkey/guid/queries -> 202
 - FR that only asks MRB to run ASearchStack synth for an already MERGED Closes tip: close as already covered citing the merged PR URL; DONE FR with that covering PR (no second implement PR)
+- Harvest tip that only restates FR #3317 may-PASS / CLOSED-not-useful over a product bullet already on main: close unmerged; DONE PASS.
