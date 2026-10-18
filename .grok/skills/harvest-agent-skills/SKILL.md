@@ -507,3 +507,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Harvest-lesson MRB: when the tip restates FIX CONFLICTING keep-both / re-arm --auto already on main, CLOSED-duplicate --- do not fold-to-merge a weaker twin.
 - FIX docs/mrb when FR #4195 rewrites docs/a-affiliates.md: restore contiguous awin-agent|FR #4123 section (fr4123 pin) and keep #4208 Download format; one main fold keep-both product tip over weekly alias.
 - MRB redqueen grok reviewers: LocalSystem cannot use Admin DPAPI auth even with USERPROFILE/HOME/GROK_HOME; require -Credential or service.password when -GrokCli; pin FAKE_ password tests and gitignore service.password; leave MERGEABLE behind tip without fold.
+- Redqueen grok reviews must spawn async (not spawnSync): visibility timeout greater than reviewer timeout plus a receipt heartbeat, and retry S3/SQS writes on ECONNABORTED after the review.
