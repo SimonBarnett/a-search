@@ -151,11 +151,22 @@ describe('FR #4246 drain one message at a time', () => {
       }
       return {
         model: 'test',
-        summary: 'Club',
+        summary: 'A model flying club with shop and training.',
+        club: 'Model flying club',
+        audience: 'RC pilots',
+        affiliateOpportunities: 'Aircraft kits and radio gear',
         intent: 'browse',
         suggestedQueries: ['club'],
       };
     };
+
+    const reviewGuid = async () => ({
+      model: 'test',
+      summary: 'Parts request form for club members',
+      steering: 'Use for spare parts requests',
+      intent: 'request',
+      suggestedQueries: ['parts'],
+    });
 
     // Default path: one message per drainOnce --- second call still has a live receipt.
     const out1 = await drainOnce({
@@ -177,12 +188,7 @@ describe('FR #4246 drain one message at a time', () => {
       listObjectAnnotations: s3.listObjectAnnotations,
       fetchImpl,
       reviewHost,
-      reviewGuid: async () => ({
-        model: 'test',
-        summary: 'GUID',
-        intent: 'request',
-        suggestedQueries: ['parts'],
-      }),
+      reviewGuid,
     });
     assert.equal(out1.processed, 1);
     assert.equal(out1.actions[0].action, 'host_processed');
@@ -206,12 +212,7 @@ describe('FR #4246 drain one message at a time', () => {
       listObjectAnnotations: s3.listObjectAnnotations,
       fetchImpl,
       reviewHost,
-      reviewGuid: async () => ({
-        model: 'test',
-        summary: 'GUID',
-        intent: 'request',
-        suggestedQueries: ['parts'],
-      }),
+      reviewGuid,
     });
     assert.equal(out2.processed, 1);
     assert.equal(out2.actions[0].action, 'host_processed');

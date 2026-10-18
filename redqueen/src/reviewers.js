@@ -421,6 +421,7 @@ function guidReviewPrompt(input) {
   const pageSlice = String(input.pageText || '').trim().slice(0, 12000);
   const hostJson = JSON.stringify(input.hostAnnotations || {}).slice(0, 4000);
   return [
+    'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
     'Describe ONLY this page. The host review is context. Do not repeat the host review.',
     'Use the page title, meta description, meta keywords, og tags, and H1/H2 to say how THIS page narrows search beyond the club.',
     'steering must list concrete narrowing signals from this page: title and meta terms, categories, price band, include terms, exclude terms, plus market, currency and locale.',
