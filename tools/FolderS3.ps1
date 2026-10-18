@@ -314,15 +314,20 @@ function Get-FolderS3TextObject {
             if (-not $fn) {
                 $fn = {
                     param($b, $k)
+                    # FR #4087 / #4167: WinPS 5.1 stderr under Stop becomes terminating; use Continue + LASTEXITCODE
                     $tmp = [System.IO.Path]::GetTempFileName()
+                    $prev = $ErrorActionPreference
+                    $ErrorActionPreference = 'Continue'
                     try {
-                        aws s3api get-object --bucket $b --key $k $tmp 2>$null | Out-Null
+                        aws s3api get-object --bucket $b --key $k $tmp 2>&1 | Out-Null
+                        if ($LASTEXITCODE -ne 0) { return $null }
                         if (Test-Path -LiteralPath $tmp) {
                             return [System.IO.File]::ReadAllText($tmp)
                         }
                         return $null
                     }
                     finally {
+                        $ErrorActionPreference = $prev
                         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
                     }
                 }
@@ -335,7 +340,14 @@ function Get-FolderS3TextObject {
                 $fn = {
                     param($b, $k)
                     $remote = if ($env:A_SEARCH_RCLONE_REMOTE) { $env:A_SEARCH_RCLONE_REMOTE } else { 's3' }
-                    rclone cat ("{0}:{1}/{2}" -f $remote, $b, $k) 2>$null
+                    $prev = $ErrorActionPreference
+                    $ErrorActionPreference = 'Continue'
+                    try {
+                        $raw = rclone cat ("{0}:{1}/{2}" -f $remote, $b, $k) 2>&1
+                        if ($LASTEXITCODE -ne 0) { return $null }
+                        return $raw
+                    }
+                    finally { $ErrorActionPreference = $prev }
                 }
             }
             return & $fn $Bucket $Key
@@ -382,15 +394,20 @@ function Get-FolderS3Annotations {
     if (-not $getFn) {
         $getFn = {
             param($b, $k, $name)
+            # FR #4087 / #4167: WinPS 5.1 stderr under Stop becomes terminating; use Continue + LASTEXITCODE
             $tmp = [System.IO.Path]::GetTempFileName()
+            $prev = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
             try {
-                aws s3api get-object-annotation --bucket $b --key $k --annotation-name $name $tmp 2>$null | Out-Null
+                aws s3api get-object-annotation --bucket $b --key $k --annotation-name $name $tmp 2>&1 | Out-Null
+                if ($LASTEXITCODE -ne 0) { return $null }
                 if (Test-Path -LiteralPath $tmp) {
                     return [System.IO.File]::ReadAllText($tmp)
                 }
                 return $null
             }
             finally {
+                $ErrorActionPreference = $prev
                 Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
             }
         }
