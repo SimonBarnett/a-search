@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR #4231: LocalSystem + USERPROFILE/HOME/GROK_HOME cannot use Admin grok
- * DPAPI sign-in. Installer must require -Credential or service.password, and
- * reviewers.js must not claim Credential is optional when those env vars are set.
+ * FR #4231 / #4240: Admin ~/.grok is not usable as LocalSystem (ACL Access
+ * denied). Prefer -GrokHome; -Credential / service.password remain alternatives.
+ * reviewers.js must not claim Credential is optional when only USERPROFILE is set.
  */
 
 const { describe, it } = require('node:test');
@@ -31,27 +31,28 @@ describe('FR #4231 reviewer service logon', () => {
       /Credential is\s+not required/i,
       'remove the FR #4224 misleading comment',
     );
-    assert.match(src, /DPAPI|signed in|LocalSystem/i);
+    assert.match(src, /GROK_HOME|Access is denied|LocalSystem|ACL/i);
   });
 
-  it('docs require Credential or service.password; USERPROFILE alone insufficient', () => {
+  it('docs require GrokHome or Credential; USERPROFILE alone insufficient', () => {
     const doc = fs.readFileSync(DOCS, 'utf8');
+    assert.match(doc, /GrokHome|GROK_HOME/i);
     assert.match(doc, /service\.password|Credential/i);
-    assert.match(doc, /DPAPI|Not signed in|cannot use/i);
+    assert.match(doc, /Access is denied|device-auth|LocalSystem/i);
     assert.doesNotMatch(
       doc,
       /UserProfile.*sufficient|USERPROFILE alone is enough/i,
     );
   });
 
-  it('Register script requires logon unless -AllowLocalSystem', () => {
+  it('Register script gates LocalSystem without GrokHome/Credential', () => {
     const src = fs.readFileSync(SCRIPT, 'utf8');
     assert.match(src, /AllowLocalSystem/);
+    assert.match(src, /GrokHome|ServiceHome/);
     assert.match(src, /ServicePasswordFile|service\.password/);
-    assert.match(src, /reviewer_logon_required|DPAPI/i);
+    assert.match(src, /reviewer_logon_required|Access is denied/i);
     assert.match(src, /ObjectName/);
   });
-
   it(
     'password file sets ObjectName without echoing the password',
     { skip: process.platform !== 'win32' ? 'Windows only' : false },

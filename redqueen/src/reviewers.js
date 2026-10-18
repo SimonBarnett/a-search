@@ -3,10 +3,10 @@
 /**
  * FR #4098 / #4147: real reviewers --- Grok first, Cursor when Grok exhausted.
  * FR #4223: grok 1.0.62 flags are -p / --prompt-file and --output-format plain.
- * FR #4231: grok sign-in is DPAPI-bound to the Windows user that ran `grok login`.
- * LocalSystem cannot use Administrator ~/.grok even with USERPROFILE/HOME/GROK_HOME
- * set --- the a-clubs queue service must log on as that admin (-Credential or
- * redqueen/config/service.password). Spawn inherits the service account profile.
+ * FR #4240 / #4231: LocalSystem can use grok when GROK_HOME is a dedicated folder
+ * ACL'd to SYSTEM (Admin ~/.grok returns Access is denied). Installer -GrokHome
+ * sets USERPROFILE/HOME/GROK_HOME; -Credential remains an alternative. Spawn
+ * inherits the service account profile / GROK_HOME.
  * Reviewers require fetched pageText (FR #4147); stub/unavailable never annotate.
  */
 
