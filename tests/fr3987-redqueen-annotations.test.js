@@ -152,7 +152,7 @@ describe('FR #3987 gateway publish host on create', () => {
     const r = await ensureAclubsWidget({
       host: 'pub-guid.example.com',
       widgetGuid: GUID,
-      customerNumber: userid,
+      userid,
       referer: 'https://pub-guid.example.com/products/brakes',
       headObject: s3.headObject,
       putObject: s3.putObject,
