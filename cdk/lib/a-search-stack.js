@@ -364,6 +364,19 @@ function providerSecretArnPlaceholder(sourceId) {
 }
 
 /**
+ * FR #4352: only a real Secrets Manager ARN may be wired. Empty context and the
+ * 000000000000 placeholder must not become a Lambda dynamic reference.
+ * @param {string} arn
+ * @returns {string}
+ */
+function deployableProviderSecretArn(arn) {
+  const s = String(arn || '').trim();
+  if (!s || s.includes('000000000000')) return '';
+  if (!s.startsWith('arn:aws:secretsmanager:')) return '';
+  return s;
+}
+
+/**
  * FR-138: wire provider credential keys from a per-source Secrets Manager JSON
  * onto the worker/onboarding Lambda. One grantRead per function.
  * @param {lambda.Function} fn
@@ -596,23 +609,27 @@ class ASearchStack extends cdk.Stack {
     // FR-3949: MSSQL secret / wireMssqlSecretEnv removed. DB-backed merchant and
     // affiliate search work uses one shared SQS queue; walrus (off-AWS) consumes it.
 
-    // FR-138: per-enabled-source provider credential secrets (context override
-    // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
-    // enabledSources, so they get no secret constructs or grants.
-    /** @type {Record<string, secretsmanager.ISecret>} */
+    // FR-138 / FR #4352: wire a provider secret only when -c <id>ProviderSecretArn
+    // is a real ARN. No context means no secret construct, no grant, and no
+    // placeholder account in the Lambda environment.
+    /** @type {Record<string, secretsmanager.ISecret|null>} */
     const providerSecrets = {};
     const resolveProviderSecret = (sourceId) => {
-      if (!providerSecrets[sourceId]) {
-        const arn =
-          this.node.tryGetContext(providerSecretContextKey(sourceId)) ||
-          providerSecretArnPlaceholder(sourceId);
-        providerSecrets[sourceId] =
-          secretsmanager.Secret.fromSecretCompleteArn(
-            this,
-            `${pascalSource(sourceId)}ProviderSecret`,
-            arn,
-          );
+      if (Object.prototype.hasOwnProperty.call(providerSecrets, sourceId)) {
+        return providerSecrets[sourceId];
       }
+      const arn = deployableProviderSecretArn(
+        this.node.tryGetContext(providerSecretContextKey(sourceId)),
+      );
+      if (!arn) {
+        providerSecrets[sourceId] = null;
+        return null;
+      }
+      providerSecrets[sourceId] = secretsmanager.Secret.fromSecretCompleteArn(
+        this,
+        `${pascalSource(sourceId)}ProviderSecret`,
+        arn,
+      );
       return providerSecrets[sourceId];
     };
 
@@ -742,7 +759,9 @@ class ASearchStack extends cdk.Stack {
             applyProviderPlainDefaults(worker, src.id, env, setKeys);
           } else {
             const providerSecret = resolveProviderSecret(src.id);
-            wireProviderSecretEnv(worker, providerSecret, providerKeys);
+            if (providerSecret) {
+              wireProviderSecretEnv(worker, providerSecret, providerKeys);
+            }
             applyProviderPlainDefaults(worker, src.id, env);
           }
         }
@@ -1407,11 +1426,14 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingLive, resultsBucket);
-    wireProviderSecretEnv(
-      awinOnboardingLive,
-      resolveProviderSecret('awin'),
-      PROVIDER_CREDENTIAL_KEYS.awin,
-    );
+    const awinProviderSecret = resolveProviderSecret('awin');
+    if (awinProviderSecret) {
+      wireProviderSecretEnv(
+        awinOnboardingLive,
+        awinProviderSecret,
+        PROVIDER_CREDENTIAL_KEYS.awin,
+      );
+    }
     const awinOnboardingSandbox = new lambda.Function(
       this,
       'AwinOnboardingSandboxFunction',
@@ -1429,11 +1451,13 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingSandbox, resultsBucket);
-    wireProviderSecretEnv(
-      awinOnboardingSandbox,
-      resolveProviderSecret('awin'),
-      PROVIDER_CREDENTIAL_KEYS.awin,
-    );
+    if (awinProviderSecret) {
+      wireProviderSecretEnv(
+        awinOnboardingSandbox,
+        awinProviderSecret,
+        PROVIDER_CREDENTIAL_KEYS.awin,
+      );
+    }
 
     // FR-056d: Impact onboarding sandbox Lambda (A_SEARCH_ENV fixed).
     // FR-132: staged asset includes shared/identity for relative requires.
@@ -1459,11 +1483,14 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingSandbox, resultsBucket);
-    wireProviderSecretEnv(
-      impactOnboardingSandbox,
-      resolveProviderSecret('impact'),
-      PROVIDER_CREDENTIAL_KEYS.impact,
-    );
+    const impactProviderSecret = resolveProviderSecret('impact');
+    if (impactProviderSecret) {
+      wireProviderSecretEnv(
+        impactOnboardingSandbox,
+        impactProviderSecret,
+        PROVIDER_CREDENTIAL_KEYS.impact,
+      );
+    }
 
     // FR-056c: Impact onboarding live Lambda (A_SEARCH_ENV fixed). Schedules -> FR-056e.
     // FR-132: same staged impact asset as sandbox.
@@ -1484,11 +1511,13 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingLive, resultsBucket);
-    wireProviderSecretEnv(
-      impactOnboardingLive,
-      resolveProviderSecret('impact'),
-      PROVIDER_CREDENTIAL_KEYS.impact,
-    );
+    if (impactProviderSecret) {
+      wireProviderSecretEnv(
+        impactOnboardingLive,
+        impactProviderSecret,
+        PROVIDER_CREDENTIAL_KEYS.impact,
+      );
+    }
 
     // FR-056e: daily EventBridge rules for each onboarding Lambda in this stack
     // (clubscan Awin-Onboarding daily intent). Lambda code is out of scope.
@@ -1654,6 +1683,7 @@ class ASearchStack extends cdk.Stack {
       value: impactOnboardingLive.functionName,
     });
     for (const sourceId of Object.keys(providerSecrets)) {
+      if (!providerSecrets[sourceId]) continue;
       new cdk.CfnOutput(this, `${pascalSource(sourceId)}ProviderSecretArn`, {
         value: providerSecrets[sourceId].secretArn,
         description: `FR-138 provider credentials for ${sourceId} (override with -c ${providerSecretContextKey(sourceId)})`,
@@ -1683,6 +1713,7 @@ module.exports = {
   applyProviderPlainDefaults,
   providerSecretContextKey,
   providerSecretArnPlaceholder,
+  deployableProviderSecretArn,
   isLocalProviderFolder,
   PROVIDER_CREDENTIAL_KEYS,
   PROVIDER_PLAIN_DEFAULTS,

@@ -100,13 +100,14 @@ local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138 / FR #4336)
 
-Amazon and eBay take credentials from `providers/live/amazon/.env` and
-`providers/live/ebay/.env` at synth (gitignored). Do not pass
-`amazonProviderSecretArn` or `ebayProviderSecretArn`. Other enabled ids
-(rakuten, cj, awin, impact) stay on per-source Secrets Manager JSON.
-Context pattern: `-c rakutenProviderSecretArn=...` (same for each remaining id).
-Stay-dark sources get no grants until an enable-provider FR. See
-[secrets-matrix.md](secrets-matrix.md).
+A first deploy needs the gitignored `providers/live/amazon/.env` and
+`providers/live/ebay/.env` files (FR #4336) and no provider secret context.
+Do not pass `amazonProviderSecretArn` or `ebayProviderSecretArn`. Other
+enabled ids (rakuten, cj, awin, impact) get a Secrets Manager grant only when
+`-c <id>ProviderSecretArn` is a real ARN in this account. With that context
+omitted, those Lambdas still deploy and have no credential env and no grant.
+Synth never writes an ARN in account `000000000000` into a Lambda environment
+(FR #4352). See [secrets-matrix.md](secrets-matrix.md).
 
 ## 5. cdk deploy
 
@@ -120,7 +121,8 @@ npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
 `FR-141: missing deploy account...`. Aliases: `deployAccount` / `deployRegion`.
 Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`.
 
-Or call CDK directly from repo root (after secrets ARNs are ready):
+Or call CDK directly from repo root. Provider secret ARNs are optional and
+must be real; omit them on a first deploy:
 
 ```bash
 npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \

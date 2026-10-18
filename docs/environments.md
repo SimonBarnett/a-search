@@ -169,8 +169,8 @@ omitted (no grant).
 
 | Deploy context | Meaning |
 |----------------|---------|
-| `-c rakutenProviderSecretArn=arn:...` | Override ARN for rakuten (same pattern for remaining secret providers, not amazon or ebay) |
-| (omit) | Synth uses `000000000000` placeholder `a-search/provider/<id>-AbCdEf` |
+| `-c rakutenProviderSecretArn=arn:...` | Real ARN for rakuten (same pattern for remaining secret providers, not amazon or ebay) |
+| (omit) | No secret construct and no credential env (FR #4352). Do not use account `000000000000`. |
 
 JSON keys match that provider's `.env.example` credential names (e.g.
 `AMAZON_ACCESS_KEY`, `EBAY_CLIENT_SECRET`, `AWIN_API_TOKEN`). See

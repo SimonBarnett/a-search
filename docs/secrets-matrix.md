@@ -80,9 +80,9 @@ from `.env.example`) and sets those values on the worker Lambdas. A missing
 required key fails synth. The error names the key, never the value. No provider
 env value is a stack output. `EBAY_ENV` still comes from the stack env
 (live means production). Other enabled sources stay on per-source Secrets
-Manager JSON. Override: `-c rakutenProviderSecretArn=arn:...` (same pattern per
-remaining id). Synth uses `000000000000` placeholder ARNs with a complete
-6-char suffix when that override is omitted.
+Manager JSON only when `-c <id>ProviderSecretArn` is a real ARN. With that
+context omitted, those Lambdas deploy with no credential env and no grant.
+Synth does not write account `000000000000` into a Lambda environment (FR #4352).
 
 | Source | Keys (become env names) | Lambdas |
 |--------|-------------------------|---------|
