@@ -484,3 +484,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Redqueen a-clubs: inject fetchImpl for host/GUID pages before review; failed fetch must retry without annotated=1; register Windows service with nssm (not sc.exe+node/1053) and AWS_PROFILE/GROK_CLI env; update fr4098 pins when replacing sc.exe.
 - FIX docs/mrb CI red on FR-221 widget JS ASCII: scan widget for U+2026/non-ASCII in comments from later FRs; replace with ASCII before --auto
 - When FR says paste Merc playbooks and later comments supply the bodies on a sibling issue, ACK and land the paste + Simon host rules (Windows in-process sign-in, provider message length, AGENTS.md load order); do not GIVEUP needs_human after the paste arrives
+- FR paste-from-a-affiliates-AGENT.md jobs: ACK then GIVEUP reason=needs_human when flamingo lacks S3/S: read; never invent publisher signup steps.
