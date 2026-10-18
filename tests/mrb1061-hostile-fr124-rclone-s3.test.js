@@ -41,7 +41,7 @@ describe('MRB #1061 hostile FR-124 rclone + S3', () => {
 
   it('environments.md Results storage rejects two-bucket as default', () => {
     const text = read('docs/environments.md');
-    assert.match(text, /## Results storage \+ rclone \(LOCKED -- FR-124\)/);
+    assert.match(text, /## Results storage \+ rclone \(LOCKED -- FR-124(?: \/ FR-3948)?\)/);
     assert.match(text, /\*\*`X:`\*\*/);
     assert.match(text, /Rejected as default/);
     assert.match(text, /Two buckets/);
