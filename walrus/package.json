@@ -1,0 +1,11 @@
+{
+  "name": "@a-search/walrus-drain",
+  "version": "0.0.1",
+  "private": true,
+  "description": "FR-3951: walrus outbound SQS long-poll drain; writes a-clubs/{host}/{guid}/IN/",
+  "main": "src/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}
