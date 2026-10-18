@@ -1,11 +1,12 @@
 'use strict';
 
 /**
- * In-memory S3 stand-in for FR #3968 unit tests (If-None-Match: * + copyObject).
+ * In-memory S3 stand-in for FR #3968 / #4098 unit tests
+ * (If-None-Match: * + copyObject + object annotations).
  */
 
 function createMemoryS3() {
-  /** @type {Map<string, { Body: Buffer, Metadata?: Record<string,string>, Tagging?: string, TagSet?: {Key:string,Value:string}[], ContentType?: string }>} */
+  /** @type {Map<string, { Body: Buffer, Metadata?: Record<string,string>, Tagging?: string, TagSet?: {Key:string,Value:string}[], ContentType?: string, Annotations?: Map<string, Buffer> }>} */
   const objects = new Map();
 
   function notFound(Key) {
@@ -42,6 +43,7 @@ function createMemoryS3() {
       Metadata: { ...(o.Metadata || {}) },
       ContentLength: o.Body.length,
       ContentType: o.ContentType,
+      ETag: '"mem"',
     };
   }
 
@@ -55,12 +57,16 @@ function createMemoryS3() {
       ? input.Body
       : Buffer.from(input.Body == null ? '' : String(input.Body), 'utf8');
     const prev = objects.get(Key);
+    // Preserve annotations across metadata-only rewrites (FR #4098).
     objects.set(Key, {
       Body,
       Metadata: input.Metadata ? { ...input.Metadata } : {},
       Tagging: input.Tagging,
       TagSet: prev && prev.TagSet,
       ContentType: input.ContentType || (prev && prev.ContentType),
+      Annotations: prev && prev.Annotations
+        ? new Map(prev.Annotations)
+        : new Map(),
     });
     return { ETag: '"mem"' };
   }
@@ -72,6 +78,7 @@ function createMemoryS3() {
       Body: Buffer.from(o.Body),
       Metadata: { ...(o.Metadata || {}) },
       ContentType: o.ContentType,
+      ETag: '"mem"',
     };
   }
 
@@ -113,14 +120,56 @@ function createMemoryS3() {
       : { ...(src.Metadata || {}) };
     const copyTags =
       String(input.TaggingDirective || 'COPY').toUpperCase() !== 'REPLACE';
+    // In-place metadata REPLACE keeps annotations (FR #4098 survival).
+    const keepAnn = destKey === srcKey;
     objects.set(destKey, {
       Body: Buffer.from(src.Body),
       Metadata: metadata,
       Tagging: src.Tagging,
       TagSet: copyTags && src.TagSet ? src.TagSet.map((t) => ({ ...t })) : src.TagSet,
       ContentType: input.ContentType || src.ContentType,
+      Annotations: keepAnn && src.Annotations
+        ? new Map(src.Annotations)
+        : new Map(),
     });
     return { CopyObjectResult: { ETag: '"mem-copy"' } };
+  }
+
+  async function putObjectAnnotation({ Key, AnnotationName, AnnotationPayload }) {
+    const o = objects.get(Key);
+    if (!o) throw notFound(Key);
+    if (!o.Annotations) o.Annotations = new Map();
+    const buf = Buffer.isBuffer(AnnotationPayload)
+      ? AnnotationPayload
+      : Buffer.from(String(AnnotationPayload ?? ''), 'utf8');
+    o.Annotations.set(String(AnnotationName), buf);
+    return { ETag: '"mem-ann"' };
+  }
+
+  async function getObjectAnnotation({ Key, AnnotationName }) {
+    const o = objects.get(Key);
+    if (!o) throw notFound(Key);
+    const buf = o.Annotations && o.Annotations.get(String(AnnotationName));
+    if (!buf) {
+      const err = new Error(`NoSuchAnnotation: ${AnnotationName}`);
+      err.name = 'NoSuchAnnotation';
+      err.code = 'NoSuchAnnotation';
+      err.$metadata = { httpStatusCode: 404 };
+      throw err;
+    }
+    return { AnnotationPayload: Buffer.from(buf), AnnotationName: String(AnnotationName) };
+  }
+
+  async function listObjectAnnotations({ Key }) {
+    const o = objects.get(Key);
+    if (!o) throw notFound(Key);
+    const Annotations = [];
+    if (o.Annotations) {
+      for (const [AnnotationName, buf] of o.Annotations.entries()) {
+        Annotations.push({ AnnotationName, Size: buf.length });
+      }
+    }
+    return { Annotations };
   }
 
   return {
@@ -132,6 +181,9 @@ function createMemoryS3() {
     putObjectTagging,
     getObjectTagging,
     copyObject,
+    putObjectAnnotation,
+    getObjectAnnotation,
+    listObjectAnnotations,
   };
 }
 
