@@ -1,14 +1,15 @@
 'use strict';
 
 /**
- * FR #4008: standalone AMerchants stack.
- * Private S3 bucket a-merchants + onCreated Lambda + weekly dual-bucket Lambda
- * (EventBridge rate 7 days). Weekly covers a-merchants and optional a-affiliates
- * via A_AFFILIATES_BUCKET. Isolated from the main search stack and
- * parts-gateway.
+ * FR #4008 / #4269: standalone AMerchants stack.
+ * Private S3 bucket a-merchants + onCreated Lambda + daily dual-bucket Lambda
+ * (EventBridge rate 1 day). Daily covers a-merchants and optional a-affiliates
+ * via A_AFFILIATES_BUCKET; only enabled=1 folders with lastdownload >= 7 days
+ * stale. Affiliates reuse affiliates/src/downloadOne. Isolated from the main
+ * search stack and parts-gateway.
  *
- * Choice: ONE weekly Lambda in this stack covers both buckets (affiliates bucket
- * optional if unset). Documented in docs/a-merchants.md.
+ * Choice: ONE scheduled Lambda in this stack covers both buckets (affiliates
+ * bucket optional if unset). Documented in docs/a-merchants.md.
  */
 
 const path = require('node:path');
@@ -83,7 +84,7 @@ class MerchantsStack extends cdk.Stack {
 
     const weeklyFn = new lambda.Function(this, 'MerchantsWeeklyFunction', {
       functionName: 'a-search-merchants-weekly',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: 'merchants/src/handler.handler',
       code: lambda.Code.fromAsset(assetDir),
       timeout: cdk.Duration.minutes(15),
@@ -94,7 +95,7 @@ class MerchantsStack extends cdk.Stack {
 
     const onCreatedFn = new lambda.Function(this, 'MerchantsOnCreatedFunction', {
       functionName: 'a-search-merchants-oncreated',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       handler: 'merchants/src/handler.onCreatedHandler',
       code: lambda.Code.fromAsset(assetDir),
       timeout: cdk.Duration.minutes(5),
@@ -144,8 +145,8 @@ class MerchantsStack extends cdk.Stack {
     const rule = new events.Rule(this, 'MerchantsWeeklyRule', {
       ruleName: 'a-search-merchants-weekly',
       description:
-        'FR #4008 weekly merchants (+ affiliates) parts download — ONE weekly Lambda both buckets',
-      schedule: events.Schedule.rate(cdk.Duration.days(7)),
+        'FR #4269 daily merchants (+ affiliates) download --- enabled=1 and lastdownload >= 7d stale; ONE Lambda both buckets',
+      schedule: events.Schedule.rate(cdk.Duration.days(1)),
     });
     rule.addTarget(new targets.LambdaFunction(weeklyFn));
 
@@ -168,7 +169,7 @@ class MerchantsStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'MerchantsWeeklyRuleName', {
       value: rule.ruleName,
-      description: 'EventBridge rule rate(7 days) for merchants weekly job',
+      description: 'EventBridge rule rate(1 day) for merchants daily job (FR #4269)',
     });
   }
 }

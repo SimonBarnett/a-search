@@ -85,6 +85,8 @@ Production reviewers call Grok first, then Cursor only when Grok is exhausted
 or unavailable (Simon's standing rule). Host review receives fetched text from `https://{host}/`; GUID review receives
 fetched text from `https://{host}{uri}` (FR #4147).
 
+Host and page prompts tell the model to answer in one shot from the supplied text only and not to browse, fetch URLs, or use tools (FR #4279). The grok argv also passes `--disable-web-search`. The reviewer timeout stays 120s; receive visibility stays strictly above it (180s) with the visibility heartbeat (FR #4236 / #4246). A GUID `retry` (including reviewer timeout) changes visibility and does not delete the host message, and that GUID's `annotated` stays unset.
+
 A **stub** or unavailable reviewer **must never** set `annotated=1`. The message
 returns to the queue (`ChangeMessageVisibility`) until a real reviewer succeeds.
 
