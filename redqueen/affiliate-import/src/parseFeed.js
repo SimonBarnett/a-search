@@ -1,7 +1,9 @@
 'use strict';
 
 /**
- * FR #4001: parse affiliate parts files (csv|json|xml) with optional gzip/zip.
+ * FR #4001 / #4195: parse affiliate feed files (csv|json|xml|tsv).
+ * Flat keys from #4195 are already decompressed; marker compression describes
+ * the *source* feed. Legacy .../parts/ keys may still be gzip/zip on disk.
  */
 
 const zlib = require('node:zlib');

@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147).
+  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164).
 
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-aclubs-queue" with nssm wrapping
@@ -10,6 +10,10 @@
   optional GROK_CLI / AGENT_CLI paths. Logs to InstallRoot\redqueen\logs\ (stdout/stderr).
   Bare `sc.exe` + node.exe is rejected (error 1053) --- nssm is required.
   Compatible with Windows PowerShell 5.1.
+
+  LocalSystem does not see the installing admin's USERPROFILE/.aws/.grok. Prefer
+  -Credential of that admin, or pass -UserProfile / -HomePath so AppEnvironmentExtra
+  sets USERPROFILE and HOME for the reviewers.
 
 .PARAMETER InstallRoot
   Stable install folder containing redqueen\src\run.js.
@@ -32,10 +36,16 @@
 .PARAMETER AgentCli
   Optional absolute path to Cursor agent.cmd/exe (sets AGENT_CLI / A_SEARCH_CURSOR_BIN).
 
+.PARAMETER UserProfile
+  Optional path injected as USERPROFILE in AppEnvironmentExtra (LocalSystem otherwise
+  cannot see the admin profile that owns AWS / grok sign-in).
+
+.PARAMETER HomePath
+  Optional path injected as HOME in AppEnvironmentExtra (same LocalSystem risk).
+
 .PARAMETER Credential
-  Optional PSCredential for the service logon account. Default: leave as LocalSystem
-  but inject AWS_PROFILE + AWS_SHARED_CREDENTIALS_FILE for the annotator profile under
-  the installing user's .aws (documented). Prefer running as the admin that owns the profile.
+  Optional PSCredential for the service logon account. Preferred install mode when
+  reviewers need the admin profile. Default without -Credential: LocalSystem.
 
 .PARAMETER WhatIf
   Alias DryRun: print nssm commands only; do not change the machine.
@@ -52,6 +62,8 @@ param(
   [string]$NssmExe,
   [string]$GrokCli,
   [string]$AgentCli,
+  [string]$UserProfile,
+  [string]$HomePath,
   [System.Management.Automation.PSCredential]$Credential,
   [Alias('DryRun')][switch]$WhatIf,
   [switch]$Unregister
@@ -83,14 +95,16 @@ function Resolve-NodePath {
 }
 
 function Invoke-Nssm {
-  param([string]$Nssm, [string[]]$Args)
-  $line = 'nssm ' + ($Args -join ' ')
+  # FR #4164: never name the arg array $Args (PowerShell automatic; always empty).
+  # Send nssm stdout/stderr to the host; return only the exit code (scalar).
+  param([string]$Nssm, [string[]]$NssmArgs)
+  $line = 'nssm ' + ($NssmArgs -join ' ')
   if ($DryRun) {
     Write-Host "[DryRun] $line"
     return 0
   }
-  & $Nssm @Args
-  return $LASTEXITCODE
+  & $Nssm @NssmArgs | Out-Host
+  return [int]$LASTEXITCODE
 }
 
 $runJs = Join-Path $InstallRoot 'redqueen\src\run.js'
@@ -111,8 +125,8 @@ if (-not $DryRun) {
 }
 
 if ($Unregister) {
-  $null = Invoke-Nssm -Nssm $nssm -Args @('stop', $ServiceName)
-  $code = Invoke-Nssm -Nssm $nssm -Args @('remove', $ServiceName, 'confirm')
+  $null = Invoke-Nssm -Nssm $nssm -NssmArgs @('stop', $ServiceName)
+  $code = Invoke-Nssm -Nssm $nssm -NssmArgs @('remove', $ServiceName, 'confirm')
   if (-not $DryRun -and $code -ne 0) {
     # Fall back: service may already be gone
     Write-Host "nssm remove exit $code (ok if already absent)"
@@ -126,19 +140,19 @@ if ($Unregister) {
 # Install or update application
 $existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $existing) {
-  $code = Invoke-Nssm -Nssm $nssm -Args @('install', $ServiceName, $nodePath)
+  $code = Invoke-Nssm -Nssm $nssm -NssmArgs @('install', $ServiceName, $nodePath)
   if (-not $DryRun -and $code -ne 0) { throw "nssm install failed: $code" }
 }
 else {
   if (-not $DryRun -and $existing.Status -eq 'Running') {
-    $null = Invoke-Nssm -Nssm $nssm -Args @('stop', $ServiceName)
+    $null = Invoke-Nssm -Nssm $nssm -NssmArgs @('stop', $ServiceName)
     Start-Sleep -Seconds 1
   }
 }
 
 $set = {
   param([string[]]$a)
-  $c = Invoke-Nssm -Nssm $nssm -Args $a
+  $c = Invoke-Nssm -Nssm $nssm -NssmArgs $a
   if (-not $DryRun -and $c -ne 0) { throw ("nssm set failed ({0}): {1}" -f $c, ($a -join ' ')) }
 }
 
@@ -166,13 +180,18 @@ if ($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL) {
   $envPairs += "A_CLUBS_FOLDER_EVENTS_QUEUE_URL=$($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL)"
 }
 # Point AWS SDK at the installing user's shared credentials when running as LocalSystem
-# is avoided — prefer -Credential. Still set PROFILE name; operators may also set
-# AWS_SHARED_CREDENTIALS_FILE / AWS_CONFIG_FILE at machine scope.
+# is avoided --- prefer -Credential and/or -UserProfile/-HomePath.
 if ($env:AWS_SHARED_CREDENTIALS_FILE) {
   $envPairs += "AWS_SHARED_CREDENTIALS_FILE=$($env:AWS_SHARED_CREDENTIALS_FILE)"
 }
 if ($env:AWS_CONFIG_FILE) {
   $envPairs += "AWS_CONFIG_FILE=$($env:AWS_CONFIG_FILE)"
+}
+if ($UserProfile) {
+  $envPairs += "USERPROFILE=$UserProfile"
+}
+if ($HomePath) {
+  $envPairs += "HOME=$HomePath"
 }
 if ($GrokCli) {
   $envPairs += "GROK_CLI=$GrokCli"
@@ -195,7 +214,9 @@ if ($Credential) {
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Credential.Password)
     try {
       $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-      $code = & $nssm set $ServiceName ObjectName $user $plain
+      # FR #4164: discard nssm output (must never echo the password); return only exit code.
+      $null = & $nssm set $ServiceName ObjectName $user $plain 2>&1 | Out-Null
+      $code = [int]$LASTEXITCODE
       if ($code -ne 0) { throw "nssm ObjectName failed: $code" }
     }
     finally {
@@ -204,12 +225,26 @@ if ($Credential) {
   }
 }
 
+$logonMode = if ($Credential) { "Credential ($($Credential.UserName))" } else { 'LocalSystem' }
 Write-Host "Service: $ServiceName"
 Write-Host "InstallRoot: $InstallRoot"
 Write-Host "Node: $nodePath"
 Write-Host "Nssm: $nssm"
 Write-Host "AWS_PROFILE: $AwsProfile"
 Write-Host "Logs: $logDir"
+Write-Host "Logon: $logonMode"
+if ($UserProfile) {
+  Write-Host "USERPROFILE: $UserProfile"
+}
+else {
+  Write-Host 'USERPROFILE: (not set --- LocalSystem may not see Admin .aws / .grok; prefer -Credential or -UserProfile)'
+}
+if ($HomePath) {
+  Write-Host "HOME: $HomePath"
+}
+else {
+  Write-Host 'HOME: (not set)'
+}
 Write-Host "Start: Start-Service $ServiceName  (or: nssm start $ServiceName)"
 if ($DryRun) {
   Write-Host "DryRun complete --- no service changes applied"

@@ -2,7 +2,9 @@
 
 /**
  * FR #3999: a-affiliates S3 key helpers.
- * Layout: {provider}/ , {provider}/{affiliateid}/ , .../parts/{yyyy-mm-dd}.{ext}
+ * Layout: {provider}/ , {provider}/{affiliateid}/ ,
+ * affiliates feeds (FR #4195): {provider}/{affiliateid}/{yyyy-mm-dd}.{ext}
+ * merchants still use .../parts/ (FR #4008).
  */
 
 const SLUG_RE = /^[a-z0-9._-]+$/;
@@ -139,7 +141,7 @@ function extFromMeta(meta) {
   const compression = String((meta && meta.compression) || 'none')
     .trim()
     .toLowerCase();
-  if (!['csv', 'xml', 'json'].includes(format)) {
+  if (!['csv', 'tsv', 'xml', 'json'].includes(format)) {
     const err = new Error('invalid_format');
     err.code = 'invalid_format';
     throw err;

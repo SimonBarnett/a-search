@@ -1,18 +1,15 @@
 'use strict';
 
 /**
- * FR #3999 / FR #4176: download one affiliate feed, write dated + latest, bump
- * meta, retain N. Substitute {feedapikey}/{darwinhash}/{feedid} for the fetch
- * only; affiliate marker feedurl keeps placeholders.
+ * FR #3999 / #4176 / #4195: download one affiliate feed into
+ * {provider}/{affiliateid}/{yyyy-mm-dd}.{ext} (decompressed). No parts/, no
+ * latest, no retention. Substitute {feedapikey}/{darwinhash}/{feedid} for the
+ * fetch only; affiliate marker feedurl keeps placeholders.
  */
 
 const {
   affiliateMarkerKey,
   providerMarkerKey,
-  partsDatedKey,
-  partsLatestKey,
-  partsPrefix,
-  extFromMeta,
   assertSlug,
 } = require('../../shared/affiliates/keys');
 const {
@@ -20,13 +17,14 @@ const {
   coerceStringMap,
 } = require('../../shared/affiliates/metadata');
 const {
-  pickDatedPartsKeysToDelete,
-  DEFAULT_KEEP,
-} = require('../../shared/affiliates/retention');
+  resolveFeedFormat,
+  feedDatedKey,
+} = require('../../shared/affiliates/feedFormat');
 const {
   listFeedUrlPlaceholders,
   resolveFeedUrlForFetch,
 } = require('./resolveFeedUrl');
+const { decompressFeedBody } = require('./decompressFeed');
 
 /**
  * @param {Response| { ok: boolean, status: number, arrayBuffer?: Function, buffer?: Function, body?: Buffer }} res
@@ -45,6 +43,21 @@ async function readBody(res) {
 }
 
 /**
+ * @param {object} s3
+ * @param {string} bucket
+ * @param {string} key
+ * @param {Record<string, string>} meta
+ */
+async function stampMarker(s3, bucket, key, meta) {
+  await s3.putObject({
+    Bucket: bucket,
+    Key: key,
+    Body: Buffer.alloc(0),
+    Metadata: meta,
+  });
+}
+
+/**
  * @param {{
  *   s3: object,
  *   bucket: string,
@@ -54,9 +67,8 @@ async function readBody(res) {
  *   providerMeta?: Record<string,string>,
  *   fetchImpl?: Function,
  *   now?: Date,
- *   keep?: number,
+ *   force?: boolean,
  * }} opts
- * @returns {Promise<{ ok: boolean, affiliateId: string, size?: number, status?: string, error?: string, placeholdersResolved?: boolean }>}
  */
 async function downloadOne(opts) {
   const provider = assertSlug(opts.provider, 'provider');
@@ -64,14 +76,15 @@ async function downloadOne(opts) {
   const bucket = opts.bucket;
   const s3 = opts.s3;
   const now = opts.now || new Date();
-  const keep = opts.keep != null ? opts.keep : DEFAULT_KEEP;
+  const force = Boolean(opts.force);
   const fetchImpl = opts.fetchImpl || globalThis.fetch;
+  const markerKey = affiliateMarkerKey(provider, affiliateId);
 
   let meta = coerceStringMap(opts.affiliateMeta);
   if (!Object.keys(meta).length) {
     const head = await s3.headObject({
       Bucket: bucket,
-      Key: affiliateMarkerKey(provider, affiliateId),
+      Key: markerKey,
     });
     meta = coerceStringMap(head.Metadata);
   }
@@ -87,12 +100,7 @@ async function downloadOne(opts) {
       },
       { now },
     );
-    await s3.putObject({
-      Bucket: bucket,
-      Key: affiliateMarkerKey(provider, affiliateId),
-      Body: Buffer.alloc(0),
-      Metadata: patch,
-    });
+    await stampMarker(s3, bucket, markerKey, patch);
     return {
       ok: false,
       affiliateId,
@@ -102,11 +110,8 @@ async function downloadOne(opts) {
   }
 
   let providerMeta = coerceStringMap(opts.providerMeta);
-  const needsProvider =
-    listFeedUrlPlaceholders(feedurl).some((n) =>
-      n === 'feedapikey' || n === 'darwinhash',
-    );
-  if (needsProvider && !Object.keys(providerMeta).length) {
+  // Load provider marker for format/compression fallbacks + feed secrets.
+  if (!Object.keys(providerMeta).length) {
     try {
       const head = await s3.headObject({
         Bucket: bucket,
@@ -115,6 +120,58 @@ async function downloadOne(opts) {
       providerMeta = coerceStringMap(head.Metadata);
     } catch {
       providerMeta = Object.create(null);
+    }
+  }
+
+  const fmt = resolveFeedFormat(meta, providerMeta);
+  if (!fmt.ok) {
+    // Do not run normalizeAffiliateMeta --- invalid format/compression would throw.
+    const patch = Object.assign({}, meta, {
+      affiliateid: affiliateId,
+      laststatus: fmt.status,
+      lastdownload: now.toISOString(),
+      lastmod: now.toISOString(),
+    });
+    await stampMarker(s3, bucket, markerKey, patch);
+    return {
+      ok: false,
+      affiliateId,
+      status: fmt.status,
+      error: fmt.status,
+    };
+  }
+
+  const yyyyMmDd = now.toISOString().slice(0, 10);
+  const datedKey = feedDatedKey(provider, affiliateId, yyyyMmDd, fmt.ext);
+
+  if (!force) {
+    try {
+      await s3.headObject({ Bucket: bucket, Key: datedKey });
+      const patch = mergeAffiliateMeta(
+        meta,
+        {
+          affiliateid: affiliateId,
+          laststatus: 'exists',
+          lastdownload: now.toISOString(),
+        },
+        { now },
+      );
+      await stampMarker(s3, bucket, markerKey, patch);
+      return {
+        ok: true,
+        affiliateId,
+        status: 'exists',
+        skipped: true,
+        key: datedKey,
+        datedKey,
+        size: null,
+      };
+    } catch (err) {
+      const code = err && (err.name || err.code || '');
+      const status = err && err.$metadata && err.$metadata.httpStatusCode;
+      if (code !== 'NotFound' && code !== 'NoSuchKey' && status !== 404) {
+        throw err;
+      }
     }
   }
 
@@ -133,13 +190,7 @@ async function downloadOne(opts) {
       },
       { now },
     );
-    // Keep placeholder feedurl; never stamp secrets onto affiliate marker.
-    await s3.putObject({
-      Bucket: bucket,
-      Key: affiliateMarkerKey(provider, affiliateId),
-      Body: Buffer.alloc(0),
-      Metadata: patch,
-    });
+    await stampMarker(s3, bucket, markerKey, patch);
     return {
       ok: false,
       affiliateId,
@@ -150,8 +201,6 @@ async function downloadOne(opts) {
   }
 
   const fetchUrl = resolved.fetchUrl;
-  const ext = extFromMeta(meta);
-  const yyyyMmDd = now.toISOString().slice(0, 10);
 
   try {
     const res = await fetchImpl(fetchUrl, {
@@ -169,12 +218,7 @@ async function downloadOne(opts) {
         },
         { now },
       );
-      await s3.putObject({
-        Bucket: bucket,
-        Key: affiliateMarkerKey(provider, affiliateId),
-        Body: Buffer.alloc(0),
-        Metadata: patch,
-      });
+      await stampMarker(s3, bucket, markerKey, patch);
       return {
         ok: false,
         affiliateId,
@@ -184,59 +228,63 @@ async function downloadOne(opts) {
       };
     }
 
-    const body = await readBody(res);
-    const datedKey = partsDatedKey(provider, affiliateId, yyyyMmDd, ext);
-    const latestKey = partsLatestKey(provider, affiliateId, ext);
+    const compressed = await readBody(res);
+    const dec = await decompressFeedBody(compressed, {
+      compression: fmt.compression,
+      format: fmt.format,
+    });
+    if (!dec.ok) {
+      const patch = mergeAffiliateMeta(
+        meta,
+        {
+          affiliateid: affiliateId,
+          laststatus: dec.status,
+          lastdownload: now.toISOString(),
+        },
+        { now },
+      );
+      await stampMarker(s3, bucket, markerKey, patch);
+      return {
+        ok: false,
+        affiliateId,
+        status: dec.status,
+        error: dec.status,
+        placeholdersResolved: resolved.placeholdersResolved,
+      };
+    }
 
+    const body = dec.buffer;
     await s3.putObject({
       Bucket: bucket,
       Key: datedKey,
       Body: body,
-      ContentType: 'application/octet-stream',
-    });
-    await s3.putObject({
-      Bucket: bucket,
-      Key: latestKey,
-      Body: body,
-      ContentType: 'application/octet-stream',
+      ContentType: fmt.contentType,
+      ContentLength: body.length,
     });
 
-    const listed = await s3.listObjectsV2({
-      Bucket: bucket,
-      Prefix: partsPrefix(provider, affiliateId),
-    });
-    const keys = (listed.Contents || []).map((c) => c.Key).filter(Boolean);
-    const toDelete = pickDatedPartsKeysToDelete(keys, { keep });
-    for (const Key of toDelete) {
-      await s3.deleteObject({ Bucket: bucket, Key });
-    }
-
+    const iso = now.toISOString();
     const patch = mergeAffiliateMeta(
       meta,
       {
         affiliateid: affiliateId,
         laststatus: 'ok',
-        lastdownload: now.toISOString(),
+        lastdownload: iso,
+        lastok: iso,
         lastsize: String(body.length),
+        format: fmt.format,
+        compression: fmt.compression,
       },
       { now },
     );
-    // feedurl in meta still has placeholders (merge keeps existing keys).
-    await s3.putObject({
-      Bucket: bucket,
-      Key: affiliateMarkerKey(provider, affiliateId),
-      Body: Buffer.alloc(0),
-      Metadata: patch,
-    });
+    await stampMarker(s3, bucket, markerKey, patch);
 
     return {
       ok: true,
       affiliateId,
       size: body.length,
       status: 'ok',
-      datedKey,
-      latestKey,
       key: datedKey,
+      datedKey,
       placeholdersResolved: resolved.placeholdersResolved,
     };
   } catch (err) {
@@ -251,12 +299,7 @@ async function downloadOne(opts) {
         },
         { now },
       );
-      await s3.putObject({
-        Bucket: bucket,
-        Key: affiliateMarkerKey(provider, affiliateId),
-        Body: Buffer.alloc(0),
-        Metadata: patch,
-      });
+      await stampMarker(s3, bucket, markerKey, patch);
     } catch {
       // best-effort meta update
     }
