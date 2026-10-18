@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * MRB #880 hostile pins for FR-112 woocommerce selftestProbe + rateLimit (stay-dark).
+ * MRB #880 hostile pins for FR-112 woocommerce selftestProbe + rateLimit (FR-180 enabled).
  */
 
 const { describe, it } = require('node:test');
@@ -17,7 +17,7 @@ const {
 } = require('../providers/local/woocommerce/src/selftestProbe');
 
 describe('MRB-880 FR-112 hostile', () => {
-  it('rateLimit maxConcurrency=1 minIntervalMs=250; stay-dark', () => {
+  it('rateLimit maxConcurrency=1 minIntervalMs=250; enabled FR-180', () => {
     assert.deepEqual(rateLimit('woocommerce'), {
       maxConcurrency: 1,
       minIntervalMs: 250,
@@ -26,8 +26,8 @@ describe('MRB-880 FR-112 hostile', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const row = registry.sources.find((s) => s.id === 'woocommerce');
-    assert.equal(row.enabled.live, false);
-    assert.equal(row.enabled.sandbox, false);
+    assert.equal(row.enabled.live, true);
+    assert.equal(row.enabled.sandbox, true);
   });
 
   it('probe contract { ok, source, latencyMs, error? }', async () => {

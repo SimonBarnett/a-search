@@ -99,6 +99,9 @@ const {
 } = require('./ecwidWebhooks');
 const {
   matchStripeWebhookRoute,
+  handleStripeWidgetUpgradeWebhook,
+} = require('./stripeWidgetUpgradeWebhook');
+const {
   handleStripeWebhook,
 } = require('./stripeWebhook');
 const {
@@ -368,6 +371,18 @@ async function handler(event, _context, deps = {}) {
     if (upgradeRoute) {
       return await handleAccountUpgrade(event, deps);
     }
+    // #1345 widget_upgrade wins; other Stripe events fall through to FR-239
+    if (stripeWebhookRoute) {
+      const upgrade = await handleStripeWidgetUpgradeWebhook(event, deps);
+      let skipped = false;
+      try {
+        skipped = JSON.parse(upgrade.body || '{}').skipped === 'not_widget_upgrade';
+      } catch (err) {
+        skipped = false;
+      }
+      if (!skipped) return upgrade;
+      return await handleStripeWebhook(event, deps);
+    }
     // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
     if (clubRevenueShareRoute) {
       return await handleClubRevenueShare(event, deps);
@@ -385,10 +400,6 @@ async function handler(event, _context, deps = {}) {
     // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
     if (widgetsRoute === 'POST /widgets') {
       return await handleWidgetsCreate(event, deps);
-    }
-    // FR-239: shared Stripe webhook wins over FR-208 ComponentsPiece 501 stub
-    if (stripeWebhookRoute) {
-      return await handleStripeWebhook(event, deps);
     }
     if (oauthRoute) {
       return await handleOAuthCallback(event, oauthRoute, deps);
