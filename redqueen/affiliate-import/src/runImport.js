@@ -23,8 +23,24 @@ function logLine(line, log) {
 }
 
 /**
+ * Stamp affiliate marker import fields (never secrets).
+ * @param {object} opts
+ * @param {object} file
+ * @param {Record<string, string>} patch
+ */
+async function stampImportMeta(opts, file, patch) {
+  if (typeof opts.updateAffiliateMeta !== 'function') return;
+  await opts.updateAffiliateMeta({
+    provider: file.provider,
+    affiliateid: file.affiliateid,
+    patch,
+  });
+}
+
+/**
  * Process one pending file. Idempotent: failure keeps the file.
- * @returns {Promise<{ ok: boolean, code?: string, importcount?: number, removedcount?: number }>}
+ * FR #4196: key+ETag import log makes replay a no-op; flat keys skip gunzip.
+ * @returns {Promise<{ ok: boolean, code?: string, importcount?: number, removedcount?: number, etag?: string }>}
  */
 async function processOneFile(file, opts) {
   const meta = await loadAffiliateMeta({
@@ -37,19 +53,36 @@ async function processOneFile(file, opts) {
     return { ok: true, code: 'skipped_disabled' };
   }
 
+  if (
+    opts.importLog &&
+    file.etag &&
+    typeof opts.importLog.has === 'function' &&
+    opts.importLog.has(file.key, file.etag)
+  ) {
+    return { ok: true, code: 'already_imported', etag: file.etag };
+  }
+
   let raw;
+  let etag = file.etag || '';
   try {
     const obj = await opts.getAffiliatesObject({
       Bucket: opts.affiliatesBucket || 'a-affiliates',
       Key: file.key,
     });
     raw = obj.Body != null ? obj.Body : obj.body;
+    if (!etag) {
+      etag = String(obj.ETag || obj.etag || '').replace(/"/g, '');
+    }
     if (raw && typeof raw.transformToByteArray === 'function') {
       raw = Buffer.from(await raw.transformToByteArray());
     } else if (typeof raw === 'string') {
       raw = Buffer.from(raw, 'utf8');
     }
   } catch (err) {
+    const name = err && (err.name || err.code);
+    if (name === 'NoSuchKey' || name === 'NotFound') {
+      return { ok: true, code: 'already_gone', etag };
+    }
     return { ok: false, code: 'get_failed', reason: String(err && err.message) };
   }
 
@@ -60,12 +93,20 @@ async function processOneFile(file, opts) {
       affiliateid: file.affiliateid,
       format: meta.format,
       compression: meta.compression,
+      key: file.key,
     });
   } catch (err) {
+    const nowIso = (opts.now instanceof Date ? opts.now : new Date()).toISOString();
+    await stampImportMeta(opts, file, {
+      lastimport: nowIso,
+      lastimportstatus: err.code || 'parse_failed',
+      importstatus: err.code || 'parse_failed',
+    });
     return {
       ok: false,
       code: err.code || 'parse_failed',
       reason: String(err && err.message),
+      etag,
     };
   }
 
@@ -82,10 +123,17 @@ async function processOneFile(file, opts) {
     });
     opts.parts.splice(0, opts.parts.length, ...result.parts);
   } catch (err) {
+    const nowIso = (opts.now instanceof Date ? opts.now : new Date()).toISOString();
+    await stampImportMeta(opts, file, {
+      lastimport: nowIso,
+      lastimportstatus: err.code || 'import_failed',
+      importstatus: err.code || 'import_failed',
+    });
     return {
       ok: false,
       code: err.code || 'import_failed',
       reason: String(err && err.message),
+      etag,
     };
   }
 
@@ -98,42 +146,63 @@ async function processOneFile(file, opts) {
       touchLastmod: opts.touchLastmod,
     });
   } catch (err) {
+    const nowIso = (opts.now instanceof Date ? opts.now : new Date()).toISOString();
+    await stampImportMeta(opts, file, {
+      lastimport: nowIso,
+      lastimportstatus: 'prune_failed',
+      importstatus: 'prune_failed',
+    });
     return {
       ok: false,
       code: 'prune_failed',
       reason: String(err && err.message),
+      etag,
     };
   }
 
-  // Success: delete file then update affiliate metadata
+  // Success: delete file then update affiliate metadata (FR #4196: delete only after commit)
   try {
     await opts.deleteAffiliatesObject({
       Bucket: opts.affiliatesBucket || 'a-affiliates',
       Key: file.key,
     });
   } catch (err) {
+    const nowIso = (opts.now instanceof Date ? opts.now : new Date()).toISOString();
+    await stampImportMeta(opts, file, {
+      lastimport: nowIso,
+      lastimportstatus: 'delete_failed',
+      importstatus: 'delete_failed',
+    });
     return {
       ok: false,
       code: 'delete_failed',
       reason: String(err && err.message),
+      etag,
     };
   }
 
-  if (typeof opts.updateAffiliateMeta === 'function') {
-    const nowIso = (opts.now instanceof Date
-      ? opts.now
-      : new Date()
-    ).toISOString();
-    await opts.updateAffiliateMeta({
+  const nowIso = (opts.now instanceof Date ? opts.now : new Date()).toISOString();
+  await stampImportMeta(opts, file, {
+    lastimport: nowIso,
+    lastimportstatus: 'ok',
+    importstatus: 'ok',
+    importcount: String(result.inserted + result.updated),
+    removedcount: String(result.removed),
+    lastmod: nowIso,
+  });
+
+  if (
+    opts.importLog &&
+    typeof opts.importLog.record === 'function' &&
+    (etag || file.key)
+  ) {
+    opts.importLog.record({
+      key: file.key,
+      etag: etag || 'ok',
       provider: file.provider,
       affiliateid: file.affiliateid,
-      patch: {
-        lastimport: nowIso,
-        importstatus: 'ok',
-        importcount: String(result.inserted + result.updated),
-        removedcount: String(result.removed),
-        lastmod: nowIso,
-      },
+      status: 'ok',
+      at: nowIso,
     });
   }
 
@@ -141,6 +210,7 @@ async function processOneFile(file, opts) {
     ok: true,
     importcount: result.inserted + result.updated,
     removedcount: result.removed,
+    etag,
   };
 }
 

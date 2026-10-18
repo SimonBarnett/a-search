@@ -120,5 +120,55 @@ npm run synth:affiliates
 npm run deploy:affiliates
 ```
 
-See `docs/deploy.md` and stack outputs `AffiliatesBucketName`,
-`AffiliatesWeeklyFunctionName`, `AffiliatesWeeklyRuleName`.
+Or: `npm run synth:affiliates` / `npm run deploy:affiliates`.
+
+`cdk diff` for this app should show **only** new `AAffiliates` resources.
+
+## Code map
+
+| Path | Role |
+|------|------|
+| `shared/affiliates/keys.js` | Slug + key path helpers |
+| `shared/affiliates/metadata.js` | Normalize/validate; `redactForLog` |
+| `shared/affiliates/retention.js` | Pick dated keys beyond N |
+| `affiliates/src/downloadOne.js` | One affiliate download + meta + retain |
+| `affiliates/src/runWeekly.js` | Orchestration |
+| `affiliates/src/handler.js` | Lambda entry |
+| `affiliates/src/memoryS3.js` | In-memory S3 for tests |
+| `cdk/lib/affiliates-stack.js` | Stack |
+| `cdk/bin/affiliates.js` | App entry (`resolveDeployEnv`) |
+| `scripts/stage-affiliates-lambda-asset.js` | Stage Lambda asset |
+
+## Daily Awin onboarding agent (FR #4123)
+
+On **redqueen**, `redqueen/awin-agent/` recreates Merc's Awin publisher
+onboarding: invite/join, approvals, feed links, and merge-writes to
+`a-affiliates/awin/{advertiserid}/` only. See `redqueen/awin-agent/README.md`
+(schedule, Grok-then-Cursor runtime, `-DryRun`, credentials file contract,
+report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
+
+## Provider AGENT.md --- Download format (FR #4208 / #4195)
+
+Live playbooks live in S3 (not the git tree): `s3://a-affiliates/{provider}/AGENT.md`
+plus root `s3://a-affiliates/AGENTS.md`. Repo has no AGENT.md copies.
+
+Each provider `AGENT.md` must include a contiguous markdown heading
+`## Download format` that states what the network delivers when known
+(e.g. Awin: CSV + gzip), otherwise tells the agent to set `format` /
+`compression` on the marker. Shared bullets under that heading cover:
+
+- Marker values: `format` = `csv` | `tsv` | `xml` | `json`; `compression` =
+  `gzip` | `zip` | `none` (affiliate marker wins, else provider marker).
+- Download writes one decompressed object
+  `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` (no `parts/`, no `latest`).
+- Unknown format/compression -> `unsupported_*` status and zero writes.
+
+Verified on live bucket 2026-10-18 for: awin, impact, partnerize, webgains,
+tradedoubler, admitad, flexoffers, avantlink. Root `AGENTS.md` points at the
+per-provider "Download format" section for the `format` metadata key.
+
+## Out of scope
+
+- Parsing feeds into search candidates (walrus / SQS; parent #3944).
+- Adding `a-affiliates` to the walrus-rclone IAM user (raise with ops after deploy
+  if the bucket is not named `a-search-affiliates`).

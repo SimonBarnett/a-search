@@ -10,17 +10,27 @@ const zlib = require('node:zlib');
 const { normalizePartKey } = require('./partKey');
 
 /**
+ * FR #4196: flat `{provider}/{id}/{yyyy-mm-dd}.{ext}` objects are already
+ * decompressed by the download path; marker `compression` describes the source
+ * feed only. Legacy `parts/*.gz` (and other parts/ objects) still honour compression.
+ * @param {string} [key]
+ * @param {{ alreadyDecompressed?: boolean, compression?: string }} meta
+ */
+function isAlreadyDecompressed(key, meta) {
+  if (meta && meta.alreadyDecompressed === true) return true;
+  const k = String(key || (meta && meta.key) || '');
+  if (/\/parts\//i.test(k)) return false;
+  return /^[a-z0-9_-]+\/[^/]+\/\d{4}-\d{2}-\d{2}\.[a-z0-9]+$/i.test(k);
+}
+
+/**
  * @param {Buffer|string} raw
- * @param {{ compression?: string, key?: string }} meta
+ * @param {{ compression?: string, alreadyDecompressed?: boolean, key?: string }} meta
  * @returns {Buffer}
  */
 function decompress(raw, meta) {
   const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(String(raw), 'utf8');
-  const key = meta && meta.key != null ? String(meta.key) : '';
-  // FR #4195 flat dated feeds are stored decompressed.
-  if (key && !/\/parts\//i.test(key)) {
-    return buf;
-  }
+  if (isAlreadyDecompressed(meta && meta.key, meta || {})) return buf;
   const c = String((meta && meta.compression) || 'none').toLowerCase();
   if (c === 'none' || c === '' || c === 'identity') return buf;
   if (c === 'gzip' || c === 'gz') return zlib.gunzipSync(buf);
@@ -165,6 +175,7 @@ function parseXml(text, ctx) {
  *   affiliateid: string,
  *   format?: string,
  *   compression?: string,
+ *   alreadyDecompressed?: boolean,
  *   key?: string,
  * }} meta
  */
@@ -186,6 +197,7 @@ function parseAffiliateFeed(raw, meta) {
 
 module.exports = {
   decompress,
+  isAlreadyDecompressed,
   parseAffiliateFeed,
   parseCsv,
   parseJson,

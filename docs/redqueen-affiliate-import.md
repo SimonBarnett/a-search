@@ -1,14 +1,36 @@
-# Redqueen daily affiliate import (FR #4001)
+# Redqueen affiliate import (FR #4001 / FR #4196)
 
-Deterministic Windows Scheduled Task on **redqueen** that imports
-`a-affiliates/{provider}/{affiliateid}/parts/{yyyy-mm-dd}.*` into the
+Deterministic import on **redqueen** that loads affiliate feed files into the
 **asearch** database on walrus, prunes removed parts from
-`a-clubs/{host}/{guid}/live.json`, then deletes the processed file.
+`a-clubs/{host}/{guid}/live.json`, then deletes each S3 file **only after**
+its import commits.
+
+Layouts (oldest first):
+
+- **FR #4195 flat:** `a-affiliates/{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}`
+  (already decompressed; marker `compression` describes the source feed only)
+- **Legacy #3999:** `.../parts/{yyyy-mm-dd}.{ext}` (`.gz` still gunzipped)
 
 Part of [#3944](https://github.com/SimonBarnett/a-search/issues/3944). Follows
-[#3999](https://github.com/SimonBarnett/a-search/issues/3999) (bucket + weekly
-download). Related: [#3987](https://github.com/SimonBarnett/a-search/issues/3987)
-(annotation agent).
+[#3999](https://github.com/SimonBarnett/a-search/issues/3999) and
+[#4196](https://github.com/SimonBarnett/a-search/issues/4196) (download fires
+import via SQS; failed import starts one self-closing fix agent). Related:
+[#3987](https://github.com/SimonBarnett/a-search/issues/3987) (annotation agent).
+
+## FR #4196 SQS path
+
+1. Daily / manual download finishes -> **one** SQS message on
+   `a-search-affiliate-import` listing `[{provider, affiliateid, key}]` (no
+   secrets / feed URLs) + optional wake POST to
+   `A_SEARCH_AFFILIATE_IMPORT_NOTIFY_URL`.
+2. Redqueen long-polls the queue (`drainImportOnce`); imports listed files;
+   records `dbo.AffiliateImportLog` (key + ETag) so replays are no-ops.
+3. Marker stamps: `lastimport`, `lastimportstatus` (`ok` | error | `needs_fix`),
+   keeping `importstatus` for #4001 compatibility.
+4. On failure: exactly one fix agent per file key+ETag (lock); exits 0 after
+   successful re-import (harvests `SKILLS.md`, stamps `lastfix` /
+   `lastfixnote`); after 3 attempts or 30 min -> `needs_fix`, one deduped
+   bug, notify Simon, exit non-zero.
 
 ## Schedule
 
