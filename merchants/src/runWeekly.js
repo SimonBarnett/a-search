@@ -1,16 +1,41 @@
 'use strict';
 
 /**
- * FR #4008: weekly orchestration across a-merchants (+ optional a-affiliates).
- * One entity failure must not stop others. Log ids only (no secrets).
+ * FR #4008 / #4269: daily orchestration across a-merchants (+ optional a-affiliates).
+ * Only enabled=1 folders whose lastdownload is >= 7 days old. Affiliates reuse
+ * affiliates/src/downloadOne (placeholders + flat dated keys). One entity failure
+ * must not stop others. Log ids only (no secrets).
  */
 
 const { downloadOne } = require('./downloadOne');
-const { downloadAffiliateOne } = require('./downloadAffiliateOne');
+const {
+  downloadOne: downloadAffiliateFeed,
+} = require('../../affiliates/src/downloadOne');
 const { coerceStringMap } = require('../../shared/merchants/metadata');
+
+/** FR #4269: refresh cadence --- skip when lastdownload is newer than this. */
+const STALE_DAYS = 7;
+const STALE_DAYS_MS = STALE_DAYS * 24 * 60 * 60 * 1000;
 
 function escapeRe(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Missing enabled is disabled (FR #4008 / #4269). */
+function isEnabledOne(meta) {
+  return String((meta && meta.enabled) || '') === '1';
+}
+
+/**
+ * @param {Record<string, string>} meta
+ * @param {Date} now
+ */
+function isLastdownloadStale(meta, now) {
+  const raw = meta && (meta.lastdownload || meta.lastok);
+  if (!raw) return true;
+  const t = Date.parse(String(raw));
+  if (Number.isNaN(t)) return true;
+  return now.getTime() - t >= STALE_DAYS_MS;
 }
 
 async function listProviderSlugs(s3, bucket) {
@@ -92,7 +117,7 @@ async function runBucket(opts) {
         continue;
       }
 
-      if (String(meta.enabled || '1') === '0') {
+      if (!isEnabledOne(meta)) {
         log(`${label} ${id} skip: disabled`);
         results.push({
           provider,
@@ -104,10 +129,22 @@ async function runBucket(opts) {
         continue;
       }
 
+      if (!isLastdownloadStale(meta, now)) {
+        log(`${label} ${id} skip: not_stale`);
+        results.push({
+          provider,
+          [kind === 'affiliate' ? 'affiliateId' : 'merchantId']: id,
+          ok: false,
+          status: 'not_stale',
+          skipped: true,
+        });
+        continue;
+      }
+
       try {
         let r;
         if (kind === 'affiliate') {
-          r = await downloadAffiliateOne({
+          r = await downloadAffiliateFeed({
             s3,
             bucket,
             provider,
@@ -217,4 +254,8 @@ module.exports = {
   runBucket,
   listProviderSlugs,
   listChildIds,
+  STALE_DAYS,
+  STALE_DAYS_MS,
+  isEnabledOne,
+  isLastdownloadStale,
 };

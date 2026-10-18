@@ -9,20 +9,20 @@ resources.
 Mirrors [a-affiliates.md](a-affiliates.md) (FR #3999). Daily import of parts is
 FR #4001.
 
-## Runtime choice: ONE weekly Lambda for both buckets
+## Runtime choice: ONE daily Lambda for both buckets (FR #4269)
 
-This stack owns a **single** weekly Node 20 Lambda (`a-search-merchants-weekly`)
-scheduled with EventBridge `rate(7 days)`. Env:
+This stack owns a **single** daily Node 24 Lambda (`a-search-merchants-weekly`)
+scheduled with EventBridge `rate(1 day)`. Env:
 
 | Env | Role |
 |-----|------|
-| `A_MERCHANTS_BUCKET` | Required; downloads `enabled=1` merchants |
-| `A_AFFILIATES_BUCKET` | Optional; when set, same run also downloads `enabled=1` affiliates |
+| `A_MERCHANTS_BUCKET` | Required; downloads `enabled=1` merchants with `lastdownload` >= 7 days old |
+| `A_AFFILIATES_BUCKET` | Optional; when set, same run also downloads `enabled=1` affiliates with stale `lastdownload` |
 
-Affiliate feed download logic is adapted into `merchants/src/downloadAffiliateOne.js`
-so this stack does not depend on the AAffiliates code tree being merged. If
-AAffiliates also ships its own weekly Lambda, operators may disable one schedule
-to avoid double downloads; the documented dual-bucket owner is **AMerchants**.
+Missing `enabled` is treated as disabled. Affiliate feeds reuse
+`affiliates/src/downloadOne` (placeholders + flat dated keys; FR #4178 / #4195).
+If AAffiliates also ships its own schedule, operators may disable one to avoid
+double downloads; the documented dual-bucket owner is **AMerchants**.
 
 Immediate download: S3 `ObjectCreated` on merchant markers invokes
 `a-search-merchants-oncreated` (same handler pattern can accept affiliate markers
@@ -164,14 +164,15 @@ The downloader pages `GET /admin/api/{version}/products.json` with header
 
 1. **On creation**: ObjectCreated on `{provider}/{merchantid}/` -> immediate
    one-merchant download.
-2. **Weekly**: EventBridge `rate(7 days)` -> ONE Lambda covers merchants +
-   optional affiliates (`enabled=1` only).
-3. Writes `parts/{yyyy-mm-dd}.{ext}`. **Never overwrites** an existing
-   unprocessed file for that day (`laststatus=parts_exists`).
+2. **Daily** (FR #4269): EventBridge `rate(1 day)` -> ONE Lambda covers
+   merchants + optional affiliates (`enabled=1` and `lastdownload` >= 7 days
+   stale only).
+3. Merchants write `parts/{yyyy-mm-dd}.{ext}` (never overwrite that day).
+   Affiliates write flat `{yyyy-mm-dd}.{ext}` via `affiliates/src/downloadOne`.
 4. One failure does not stop others. Logs include **ids only**.
 5. Retention: delete dated parts beyond last N=4; lifecycle is backup.
 
-IAM: Get/Put/List/DeleteObject on `a-merchants` (+ `a-affiliates` for the weekly
+IAM: Get/Put/List/DeleteObject on `a-merchants` (+ `a-affiliates` for the daily
 role). No a-clubs, no madeira.
 
 ## Synth / deploy
