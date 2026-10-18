@@ -33,20 +33,21 @@ describe('FR-165 Lambda memorySize floors', () => {
     const text = fs.readFileSync(stackPath, 'utf8');
     assert.match(text, /FR-165/);
     assert.match(text, /memorySize:\s*ENTRY_LAMBDA_MEMORY_MB/);
-    assert.match(text, /memorySize:\s*workerMemoryMb/);
+    assert.match(text, /memorySize:\s*(workerMemoryMb|WORKER_LAMBDA_MEMORY_MB)/);
     assert.match(text, /memorySize:\s*HEAVY_LAMBDA_MEMORY_MB/);
   });
 
-  it('synth: entry/workers/maintainer/onboarding MemorySize match floors', () => {
+  it('synth: entry/marketplace workers/onboarding MemorySize match floors', () => {
     const cdk = require('aws-cdk-lib');
     const {
       ASearchStack,
       ENTRY_LAMBDA_MEMORY_MB,
       WORKER_LAMBDA_MEMORY_MB,
-      WORKER_MSSQL_LAMBDA_MEMORY_MB,
       HEAVY_LAMBDA_MEMORY_MB,
       isLocalProviderFolder,
     } = require('../cdk/lib/a-search-stack');
+    void cdk;
+    void ASearchStack;
     const { outDir: outdir } = ensureDefaultStackSynth(root);
 
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
@@ -70,31 +71,28 @@ describe('FR-165 Lambda memorySize floors', () => {
     assert.equal(memoryOf('a-search-entry'), ENTRY_LAMBDA_MEMORY_MB);
 
     const registry = loadRegistry();
+    // FR-3949: only marketplace (non-local) workers exist in CDK.
     const enabled = (registry.sources || []).filter(
-      (s) => s && (s.enabled?.live || s.enabled?.sandbox),
+      (s) =>
+        s &&
+        (s.enabled?.live || s.enabled?.sandbox) &&
+        !isLocalProviderFolder(s.folder),
     );
-    assert.ok(enabled.length >= 6, 'expected enabled shortlist sources');
+    assert.ok(enabled.length >= 6, 'expected enabled marketplace sources');
 
     for (const src of enabled) {
-      const want = isLocalProviderFolder(src.folder)
-        ? WORKER_MSSQL_LAMBDA_MEMORY_MB
-        : WORKER_LAMBDA_MEMORY_MB;
       for (const env of ['live', 'sandbox']) {
         if (!src.enabled?.[env]) continue;
         const name = `a-search-${src.id}-worker-${env}`;
         assert.equal(
           memoryOf(name),
-          want,
-          `${name} MemorySize (local=${isLocalProviderFolder(src.folder)})`,
+          WORKER_LAMBDA_MEMORY_MB,
+          `${name} MemorySize`,
         );
       }
     }
 
-    assert.equal(memoryOf('a-search-maintainer-live'), HEAVY_LAMBDA_MEMORY_MB);
-    assert.equal(
-      memoryOf('a-search-maintainer-sandbox'),
-      HEAVY_LAMBDA_MEMORY_MB,
-    );
+    // Local workers / maintainers removed (FR-3949); onboarding stays HEAVY.
     assert.equal(
       memoryOf('a-search-awin-onboarding-live'),
       HEAVY_LAMBDA_MEMORY_MB,

@@ -5,6 +5,7 @@ const cdk = require('aws-cdk-lib');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const s3 = require('aws-cdk-lib/aws-s3');
+const iam = require('aws-cdk-lib/aws-iam');
 const secretsmanager = require('aws-cdk-lib/aws-secretsmanager');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
@@ -35,8 +36,8 @@ const WORKER_LAMBDA_TIMEOUT_SEC = 60;
 const WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC = WORKER_LAMBDA_TIMEOUT_SEC * 6;
 
 /**
- * FR-2139 / FR-240: shop-sync FIFO consumer. Catalogue pages can run long;
- * visibility must be strictly greater than Lambda timeout (6x buffer).
+ * FR-2139 / FR-240: shop-sync FIFO queue (+ DLQ). Visibility sized for a future
+ * consumer (6x of a 300s catalogue-sync timeout). Worker Lambda removed in FR-3949.
  */
 const SHOP_SYNC_LAMBDA_TIMEOUT_SEC = 300;
 const SHOP_SYNC_QUEUE_VISIBILITY_TIMEOUT_SEC = SHOP_SYNC_LAMBDA_TIMEOUT_SEC * 6;
@@ -45,8 +46,9 @@ const SHOP_SYNC_MAX_RECEIVE_COUNT = 5;
 
 /**
  * FR-165: explicit memorySize floors (default 128MB OOMs on cold JWKS/SDK).
- * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Local/MSSQL workers,
- * maintainer, onboarding: 512MB.
+ * Entry JWT + fan-out: 256MB. Marketplace workers: 256MB. Onboarding: 512MB.
+ * WORKER_MSSQL_LAMBDA_MEMORY_MB kept as a named floor constant (FR-3949 removed
+ * local/MSSQL worker Lambdas; walrus consumes the shared db-backed queue).
  */
 const ENTRY_LAMBDA_MEMORY_MB = 256;
 const WORKER_LAMBDA_MEMORY_MB = 256;
@@ -78,10 +80,6 @@ const {
   stageOnboardingLambdaAsset,
   onboardingHandlerPath,
 } = require('../../scripts/stage-onboarding-lambda-asset');
-const {
-  stageMaintainerLambdaAsset,
-  maintainerHandlerPath,
-} = require('../../scripts/stage-maintainer-lambda-asset');
 
 /**
  * Title-case construct id fragment from source id (amazon ------------------- Amazon).
@@ -183,14 +181,6 @@ function wireResultsBucketAccess(fn, bucket) {
   bucket.grantReadWrite(fn);
 }
 
-/** FR-251: a-search owns a_search / a_search_sandbox; madeiradb is read-only. */
-const MSSQL_LIVE_DATABASE = 'a_search';
-const MSSQL_SANDBOX_DATABASE_DEFAULT = 'a_search_sandbox';
-const MADEIRADB_DATABASE_DEFAULT = 'madeiradb';
-/** Synth/deploy placeholder when -c mssqlAppSecretArn / mssqlSecretArn is omitted. */
-const MSSQL_SECRET_ARN_PLACEHOLDER =
-  'arn:aws:secretsmanager:eu-west-2:000000000000:secret:a-search/mssql-app-AbCdEf';
-
 /**
  * @param {string} [folder] registry src.folder
  * @returns {boolean}
@@ -199,48 +189,6 @@ function isLocalProviderFolder(folder) {
   return String(folder || '')
     .replace(/\\/g, '/')
     .startsWith('providers/local/');
-}
-
-/**
- * FR-137 / FR-251: wire MSSQL_* from Secrets Manager JSON onto Lambdas that touch SQL.
- * Secret string JSON keys: SERVER, USER, PASSWORD (optional TRUSTED_CONNECTION / DOMAIN).
- * DATABASE is env-specific plain text (live a_search / sandbox a_search_sandbox).
- * Synth fails closed if database is madeiradb.
- * @param {lambda.Function} fn
- * @param {secretsmanager.ISecret} secret
- * @param {{ database: string, madeiradbDatabase?: string }} opts
- */
-function wireMssqlSecretEnv(fn, secret, opts) {
-  const database = opts && opts.database;
-  if (!database) {
-    throw new Error('wireMssqlSecretEnv: opts.database required');
-  }
-  if (String(database).toLowerCase() === 'madeiradb') {
-    throw new Error(
-      'wireMssqlSecretEnv: MSSQL_DATABASE=madeiradb forbidden (FR-251); use a_search / a_search_sandbox',
-    );
-  }
-  fn.addEnvironment(
-    'MSSQL_SERVER',
-    secret.secretValueFromJson('SERVER').unsafeUnwrap(),
-  );
-  fn.addEnvironment(
-    'MSSQL_USER',
-    secret.secretValueFromJson('USER').unsafeUnwrap(),
-  );
-  fn.addEnvironment(
-    'MSSQL_PASSWORD',
-    secret.secretValueFromJson('PASSWORD').unsafeUnwrap(),
-  );
-  fn.addEnvironment('MSSQL_DATABASE', database);
-  fn.addEnvironment('MSSQL_ENCRYPT', 'true');
-  fn.addEnvironment('MSSQL_TRUST_SERVER_CERTIFICATE', 'true');
-  fn.addEnvironment(
-    'MADEIRADB_DATABASE',
-    (opts && opts.madeiradbDatabase) || MADEIRADB_DATABASE_DEFAULT,
-  );
-  fn.addEnvironment('A_SEARCH_DB_ALLOWLIST', 'a_search,a_search_sandbox');
-  secret.grantRead(fn);
 }
 
 /**
@@ -510,34 +458,8 @@ class ASearchStack extends cdk.Stack {
     });
 
 
-    // FR-137: MSSQL_* from Secrets Manager (ARN via -c mssqlAppSecretArn / mssqlSecretArn=...).
-    // JSON keys SERVER/USER/PASSWORD; DATABASE plain per env (FR-251 live a_search / sandbox a_search_sandbox).
-    const mssqlSecretArn =
-      this.node.tryGetContext('mssqlAppSecretArn') ||
-      this.node.tryGetContext('mssqlSecretArn') ||
-      MSSQL_SECRET_ARN_PLACEHOLDER;
-    const mssqlSecret = secretsmanager.Secret.fromSecretCompleteArn(
-      this,
-      'MssqlConnSecret',
-      mssqlSecretArn,
-    );
-    const mssqlLiveDatabase =
-      this.node.tryGetContext('mssqlLiveDatabase') || MSSQL_LIVE_DATABASE;
-    const mssqlSandboxDatabase =
-      this.node.tryGetContext('mssqlSandboxDatabase') ||
-      MSSQL_SANDBOX_DATABASE_DEFAULT;
-    const madeiradbDatabase =
-      this.node.tryGetContext('madeiradbDatabase') || MADEIRADB_DATABASE_DEFAULT;
-    if (String(mssqlLiveDatabase).toLowerCase() === 'madeiradb') {
-      throw new Error(
-        'FR-251: mssqlLiveDatabase must not be madeiradb (use a_search)',
-      );
-    }
-    if (String(mssqlSandboxDatabase).toLowerCase() === 'madeiradb') {
-      throw new Error(
-        'FR-251: mssqlSandboxDatabase must not be madeiradb (use a_search_sandbox)',
-      );
-    }
+    // FR-3949: MSSQL secret / wireMssqlSecretEnv removed. DB-backed merchant and
+    // affiliate search work uses one shared SQS queue; walrus (off-AWS) consumes it.
 
     // FR-138: per-enabled-source provider credential secrets (context override
     // -c amazonProviderSecretArn=... etc.). Stay-dark sources never enter
@@ -591,8 +513,13 @@ class ASearchStack extends cdk.Stack {
       description: 'FR-143 placeholder SNS topic for DLQ depth alarms',
     });
 
-    // FR-036: queues + workers for every enabled shortlist source x env
+    // FR-036 / FR-3949: marketplace (non-local) queues + workers only.
+    // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
+    // they share the single a-search-db-backed queue created below.
     for (const src of enabledSources) {
+      if (isLocalProviderFolder(src.folder)) {
+        continue;
+      }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src);
       const pascal = pascalSource(src.id);
@@ -627,9 +554,6 @@ class ASearchStack extends cdk.Stack {
         entry.addEnvironment(urlKey, queue.queueUrl);
         queue.grantSendMessages(entry);
 
-        const workerMemoryMb = isLocalProviderFolder(src.folder)
-          ? WORKER_MSSQL_LAMBDA_MEMORY_MB
-          : WORKER_LAMBDA_MEMORY_MB;
         const worker = new lambda.Function(
           this,
           `${pascal}${envPascal}WorkerFunction`,
@@ -639,7 +563,7 @@ class ASearchStack extends cdk.Stack {
             handler: workerHandlerPath(src),
             code: lambda.Code.fromAsset(workerAssetDir),
             timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
-            memorySize: workerMemoryMb,
+            memorySize: WORKER_LAMBDA_MEMORY_MB,
             environment: {
               A_SEARCH_ENV: env,
             },
@@ -650,12 +574,6 @@ class ASearchStack extends cdk.Stack {
           },
         );
         wireResultsBucketAccess(worker, resultsBucket);
-        if (isLocalProviderFolder(src.folder)) {
-          wireMssqlSecretEnv(worker, mssqlSecret, {
-            database:
-              env === 'live' ? mssqlLiveDatabase : mssqlSandboxDatabase,
-          });
-        }
         // FR-138: provider credentials from per-source Secrets Manager JSON
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
         if (providerKeys) {
@@ -700,6 +618,83 @@ class ASearchStack extends cdk.Stack {
         dlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
       }
     }
+
+    // FR-3949: one standard SQS + DLQ for all DB-backed merchant/affiliate search.
+    // FR-142 redrive (maxReceiveCount 3); FR-162 SQS_MANAGED; visibility like workers.
+    const dbBackedDlq = new sqs.Queue(this, 'DbBackedDeadLetterQueue', {
+      queueName: stagedName('a-search-db-backed-dlq'),
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const dbBackedQueue = new sqs.Queue(this, 'DbBackedQueue', {
+      queueName: stagedName('a-search-db-backed'),
+      visibilityTimeout: cdk.Duration.seconds(
+        WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
+      ),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      deadLetterQueue: {
+        queue: dbBackedDlq,
+        maxReceiveCount: 3,
+      },
+    });
+    entry.addEnvironment('SQS_DB_BACKED_URL', dbBackedQueue.queueUrl);
+    dbBackedQueue.grantSendMessages(entry);
+    new cdk.CfnOutput(this, 'DbBackedQueueUrl', {
+      value: dbBackedQueue.queueUrl,
+      description: 'FR-3949 shared SQS for DB-backed merchant/affiliate search',
+    });
+    new cdk.CfnOutput(this, 'DbBackedDeadLetterQueueUrl', {
+      value: dbBackedDlq.queueUrl,
+      description: 'FR-3949 DLQ for a-search-db-backed (maxReceiveCount 3)',
+    });
+
+    // FR-3949 / walrus: least-privilege IAM user (no access keys in template).
+    // SQS consume on db-backed queue+DLQ; S3 live/ + sandbox/ on ResultsBucket.
+    const walrusConsumerUser = new iam.User(this, 'WalrusConsumerUser', {
+      userName: stagedName('a-search-walrus-consumer'),
+    });
+    walrusConsumerUser.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'WalrusDbBackedSqs',
+        actions: [
+          'sqs:ReceiveMessage',
+          'sqs:DeleteMessage',
+          'sqs:ChangeMessageVisibility',
+          'sqs:GetQueueAttributes',
+        ],
+        resources: [dbBackedQueue.queueArn, dbBackedDlq.queueArn],
+      }),
+    );
+    walrusConsumerUser.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'WalrusResultsList',
+        actions: ['s3:ListBucket'],
+        resources: [resultsBucket.bucketArn],
+        conditions: {
+          StringLike: {
+            's3:prefix': ['live/*', 'sandbox/*'],
+          },
+        },
+      }),
+    );
+    walrusConsumerUser.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'WalrusResultsObjects',
+        actions: ['s3:GetObject', 's3:PutObject'],
+        resources: [
+          resultsBucket.arnForObjects('live/*'),
+          resultsBucket.arnForObjects('sandbox/*'),
+        ],
+      }),
+    );
+    new cdk.CfnOutput(this, 'WalrusConsumerUserName', {
+      value: walrusConsumerUser.userName,
+      description: 'FR-3949 walrus IAM user name (mint access keys out-of-band)',
+    });
+    new cdk.CfnOutput(this, 'WalrusConsumerUserArn', {
+      value: walrusConsumerUser.userArn,
+      description: 'FR-3949 walrus IAM user ARN',
+    });
 
     // FR-035: HTTP API POST /search -> entry (JWT still verified in Lambda)
     // FR-153: CORS allowlist from -c corsOrigins (default localhost-only; never *)
@@ -1025,67 +1020,12 @@ class ASearchStack extends cdk.Stack {
       },
     });
 
-    // FR-024: separate maintainer Lambdas so A_SEARCH_ENV is fixed per target
-    // FR-131: stage maintainer/src + shared/ so ../../shared/intake/reportException resolves
-    const maintainerAssetDir = stageMaintainerLambdaAsset(repoRoot);
-    const maintainerCode = lambda.Code.fromAsset(maintainerAssetDir);
-    const maintainerLive = new lambda.Function(this, 'MaintainerLiveFunction', {
-      functionName: stagedName('a-search-maintainer-live'),
-      runtime: lambda.Runtime.NODEJS_24_X,
-      handler: maintainerHandlerPath(),
-      code: maintainerCode,
-      timeout: cdk.Duration.minutes(5),
-      memorySize: HEAVY_LAMBDA_MEMORY_MB,
-      environment: {
-        A_SEARCH_ENV: 'live',
-        MAINTAINER_TOP: '10',
-      },
-      logGroup: lambdaLogGroup(this, 'MaintainerLiveLogGroup'),
-    });
-    wireResultsBucketAccess(maintainerLive, resultsBucket);
-    wireMssqlSecretEnv(maintainerLive, mssqlSecret, {
-      database: mssqlLiveDatabase,
-    });
-    const maintainerSandbox = new lambda.Function(
-      this,
-      'MaintainerSandboxFunction',
-      {
-        functionName: stagedName('a-search-maintainer-sandbox'),
-        runtime: lambda.Runtime.NODEJS_24_X,
-        handler: maintainerHandlerPath(),
-        code: maintainerCode,
-        timeout: cdk.Duration.minutes(5),
-        memorySize: HEAVY_LAMBDA_MEMORY_MB,
-        environment: {
-          A_SEARCH_ENV: 'sandbox',
-          MAINTAINER_TOP: '10',
-        },
-        logGroup: lambdaLogGroup(this, 'MaintainerSandboxLogGroup'),
-      },
-    );
-    wireResultsBucketAccess(maintainerSandbox, resultsBucket);
-    wireMssqlSecretEnv(maintainerSandbox, mssqlSecret, {
-      database: mssqlSandboxDatabase,
-    });
+    // FR-3949: maintainer live/sandbox Lambdas + EventBridge schedules removed
+    // (SQL work moves to walrus). Shop-sync FIFO queue+DLQ kept for entry enqueue.
 
-    // Default proposal: every 15 minutes (MAINTAINER_INTERVAL_MINUTES)
-    const schedule = events.Schedule.rate(cdk.Duration.minutes(15));
-    new events.Rule(this, 'MaintainerLiveSchedule', {
-      ruleName: stagedName('a-search-maintainer-live'),
-      description: 'Roll Parts feeds for A_SEARCH_ENV=live',
-      schedule,
-      targets: [new targets.LambdaFunction(maintainerLive)],
-    });
-    new events.Rule(this, 'MaintainerSandboxSchedule', {
-      ruleName: stagedName('a-search-maintainer-sandbox'),
-      description: 'Roll Parts feeds for A_SEARCH_ENV=sandbox',
-      schedule,
-      targets: [new targets.LambdaFunction(maintainerSandbox)],
-    });
-
-    // FR-2139 / FR-240 follow-up: SQS FIFO a-search-shop-sync.fifo + DLQ + consumer.
-    // MessageGroupId=shopId; maxReceiveCount 5; visibility > Lambda timeout.
-    // FR-239 live transition will call onShopLive (enqueue); grant send to entry + maintainers now.
+    // FR-2139 / FR-240: SQS FIFO a-search-shop-sync.fifo + DLQ (no consumer Lambda).
+    // MessageGroupId=shopId; maxReceiveCount 5; visibility sized for future consumer.
+    // FR-239 live transition will call onShopLive (enqueue); grant send to entry only.
     /** @param {string} fifoBase e.g. a-search-shop-sync.fifo */
     const stagedFifoName = (fifoBase) => {
       const raw = String(fifoBase || '');
@@ -1115,36 +1055,7 @@ class ASearchStack extends cdk.Stack {
       },
     });
     entry.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
-    maintainerLive.addEnvironment('SQS_SHOP_SYNC_URL', shopSyncQueue.queueUrl);
-    maintainerSandbox.addEnvironment(
-      'SQS_SHOP_SYNC_URL',
-      shopSyncQueue.queueUrl,
-    );
     shopSyncQueue.grantSendMessages(entry);
-    shopSyncQueue.grantSendMessages(maintainerLive);
-    shopSyncQueue.grantSendMessages(maintainerSandbox);
-
-    const shopSyncWorker = new lambda.Function(this, 'ShopSyncWorkerFunction', {
-      functionName: stagedName('a-search-shop-sync-worker'),
-      runtime: lambda.Runtime.NODEJS_24_X,
-      handler: 'maintainer/src/shopSyncWorker.handler',
-      code: maintainerCode,
-      timeout: cdk.Duration.seconds(SHOP_SYNC_LAMBDA_TIMEOUT_SEC),
-      memorySize: HEAVY_LAMBDA_MEMORY_MB,
-      environment: {
-        A_SEARCH_ENV: 'live',
-        SQS_SHOP_SYNC_URL: shopSyncQueue.queueUrl,
-      },
-      logGroup: lambdaLogGroup(this, 'ShopSyncWorkerLogGroup'),
-    });
-    wireResultsBucketAccess(shopSyncWorker, resultsBucket);
-    wireMssqlSecretEnv(shopSyncWorker, mssqlSecret, {
-      database: mssqlLiveDatabase,
-    });
-    shopSyncQueue.grantConsumeMessages(shopSyncWorker);
-    shopSyncWorker.addEventSource(
-      new SqsEventSource(shopSyncQueue, { batchSize: 1 }),
-    );
 
     new cdk.CfnOutput(this, 'ShopSyncFifoQueueUrl', {
       value: shopSyncQueue.queueUrl,
@@ -1153,9 +1064,6 @@ class ASearchStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ShopSyncDeadLetterQueueUrl', {
       value: shopSyncDlq.queueUrl,
       description: 'FR-2139 DLQ for shop-sync FIFO (maxReceiveCount 5)',
-    });
-    new cdk.CfnOutput(this, 'ShopSyncWorkerFunctionName', {
-      value: shopSyncWorker.functionName,
     });
 
     // FR-234: SQS standard a-search-widget-events + DLQ + aggregator + hourly rollup.
@@ -1270,9 +1178,6 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingLive, resultsBucket);
-    wireMssqlSecretEnv(awinOnboardingLive, mssqlSecret, {
-      database: mssqlLiveDatabase,
-    });
     wireProviderSecretEnv(
       awinOnboardingLive,
       resolveProviderSecret('awin'),
@@ -1295,9 +1200,6 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(awinOnboardingSandbox, resultsBucket);
-    wireMssqlSecretEnv(awinOnboardingSandbox, mssqlSecret, {
-      database: mssqlSandboxDatabase,
-    });
     wireProviderSecretEnv(
       awinOnboardingSandbox,
       resolveProviderSecret('awin'),
@@ -1328,9 +1230,6 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingSandbox, resultsBucket);
-    wireMssqlSecretEnv(impactOnboardingSandbox, mssqlSecret, {
-      database: mssqlSandboxDatabase,
-    });
     wireProviderSecretEnv(
       impactOnboardingSandbox,
       resolveProviderSecret('impact'),
@@ -1356,9 +1255,6 @@ class ASearchStack extends cdk.Stack {
       },
     );
     wireResultsBucketAccess(impactOnboardingLive, resultsBucket);
-    wireMssqlSecretEnv(impactOnboardingLive, mssqlSecret, {
-      database: mssqlLiveDatabase,
-    });
     wireProviderSecretEnv(
       impactOnboardingLive,
       resolveProviderSecret('impact'),
@@ -1516,12 +1412,6 @@ class ASearchStack extends cdk.Stack {
       value: httpApi.apiEndpoint,
       description: 'HTTP API base URL (POST {url}/search; GET|POST {url}/selftest)',
     });
-    new cdk.CfnOutput(this, 'MaintainerLiveFunctionName', {
-      value: maintainerLive.functionName,
-    });
-    new cdk.CfnOutput(this, 'MaintainerSandboxFunctionName', {
-      value: maintainerSandbox.functionName,
-    });
     new cdk.CfnOutput(this, 'AwinOnboardingLiveFunctionName', {
       value: awinOnboardingLive.functionName,
     });
@@ -1533,11 +1423,6 @@ class ASearchStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, 'ImpactOnboardingLiveFunctionName', {
       value: impactOnboardingLive.functionName,
-    });
-    new cdk.CfnOutput(this, 'MssqlSecretArn', {
-      value: mssqlSecret.secretArn,
-      description:
-        'FR-137 Secrets Manager ARN used for MSSQL_* (override with -c mssqlSecretArn)',
     });
     for (const sourceId of Object.keys(providerSecrets)) {
       new cdk.CfnOutput(this, `${pascalSource(sourceId)}ProviderSecretArn`, {
@@ -1565,7 +1450,6 @@ module.exports = {
   queueUrlEnvKey,
   pascalSource,
   wireResultsBucketAccess,
-  wireMssqlSecretEnv,
   wireProviderSecretEnv,
   applyProviderPlainDefaults,
   providerSecretContextKey,
@@ -1573,10 +1457,6 @@ module.exports = {
   isLocalProviderFolder,
   PROVIDER_CREDENTIAL_KEYS,
   PROVIDER_PLAIN_DEFAULTS,
-  MSSQL_LIVE_DATABASE,
-  MSSQL_SANDBOX_DATABASE_DEFAULT,
-  MADEIRADB_DATABASE_DEFAULT,
-  MSSQL_SECRET_ARN_PLACEHOLDER,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
   ENTRY_LAMBDA_MEMORY_MB,
