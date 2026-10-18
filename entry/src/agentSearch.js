@@ -280,6 +280,8 @@ async function handleAgentSearch(opts) {
       widgetGuid: guid,
       queries,
       exclude,
+      ...(body.market ? { market: String(body.market) } : {}),
+      ...(body.currency ? { currency: String(body.currency) } : {}),
       env: jobEnv,
       sandbox: jobEnv === 'sandbox',
       // FIFO single-flight group per provider (FR #4030).

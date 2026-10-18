@@ -120,7 +120,14 @@ function isExcluded(part, exclude) {
     if (rule.partId != null && String(rule.partId) === partId) return true;
     if (rule.match != null && String(rule.match).trim()) {
       const m = String(rule.match).trim().toLowerCase();
-      if (m && title.includes(m)) return true;
+      // FR #4318: whole words only. A 1-2 character token such as "ic" must not
+      // exclude "electric" or "classic".
+      if (m.length < 3) continue;
+      const re = new RegExp(
+        `(?:^|[^a-z0-9])${m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z0-9]|$)`,
+        'i',
+      );
+      if (re.test(title)) return true;
     }
   }
   return false;
