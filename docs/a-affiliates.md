@@ -138,9 +138,16 @@ Or: `npm run synth:affiliates` / `npm run deploy:affiliates`.
 | `cdk/bin/affiliates.js` | App entry (`resolveDeployEnv`) |
 | `scripts/stage-affiliates-lambda-asset.js` | Stage Lambda asset |
 
+## Daily Awin onboarding agent (FR #4123)
+
+On **redqueen**, `redqueen/awin-agent/` recreates Merc's Awin publisher
+onboarding: invite/join, approvals, feed links, and merge-writes to
+`a-affiliates/awin/{advertiserid}/` only. See `redqueen/awin-agent/README.md`
+(schedule, Grok-then-Cursor runtime, `-DryRun`, credentials file contract,
+report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
+
 ## Out of scope
 
 - Parsing feeds into search candidates (walrus / SQS; parent #3944).
-- Onboarding UI (seed markers by hand or a small script).
 - Adding `a-affiliates` to the walrus-rclone IAM user (raise with ops after deploy
   if the bucket is not named `a-search-affiliates`).

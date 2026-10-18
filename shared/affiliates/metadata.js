@@ -22,12 +22,14 @@ const PROVIDER_KEYS = Object.freeze([
 const AFFILIATE_KEYS = Object.freeze([
   'affiliateid',
   'name',
+  'awinmid',
   'feedurl',
   'feedid',
   'format',
   'compression',
   'schedule',
   'enabled',
+  'disabledreason',
   'lastdownload',
   'laststatus',
   'lastsize',
@@ -177,10 +179,26 @@ function normalizeAffiliateMeta(raw, opts) {
     out.enabled = e;
   }
 
+  // FR #4113 / #4123: allow marker updates without feed when:
+  // - laststatus=missing_feedurl (downloadOne stamp), or
+  // - enabled=0 and disabledreason=nofeed (Awin agent follow-up).
+  // enabled=1 still requires feedurl or feedid.
   if (!out.feedurl && !out.feedid) {
-    const err = new Error('feedurl_or_feedid_required');
-    err.code = 'feedurl_or_feedid_required';
-    throw err;
+    const status = String(out.laststatus || '')
+      .trim()
+      .toLowerCase();
+    const enabled = String(out.enabled || '').trim();
+    const reason = String(out.disabledreason || '')
+      .trim()
+      .toLowerCase();
+    const allowEmpty =
+      status === 'missing_feedurl' ||
+      (enabled === '0' && reason === 'nofeed');
+    if (!allowEmpty) {
+      const err = new Error('feedurl_or_feedid_required');
+      err.code = 'feedurl_or_feedid_required';
+      throw err;
+    }
   }
 
   if (!out.lastmod) {
