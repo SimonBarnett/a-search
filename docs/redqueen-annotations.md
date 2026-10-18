@@ -57,6 +57,20 @@ fetched text from `https://{host}{uri}` (FR #4147).
 A **stub** or unavailable reviewer **must never** set `annotated=1`. The message
 returns to the queue (`ChangeMessageVisibility`) until a real reviewer succeeds.
 
+## Drain receive + visibility heartbeat (FR #4236 / #4246)
+
+`drainOnce` receives **one** SQS message at a time (`MaxNumberOfMessages=1`).
+The queue is FIFO with one group per host, so batching does not help throughput
+and leaves idle receipts on a fixed visibility window while only the current
+message is heartbeated. A host+GUID review can exceed 180s; batched receipts
+then expire (`ReceiptHandle is invalid ... expired`) before the loop reaches
+them (FR #4246).
+
+Receive `VisibilityTimeout` is 180s (strictly greater than the 120s grok
+reviewer timeout, FR #4236). While a message is processed, a
+`ChangeMessageVisibility` heartbeat keeps extending that same receipt for the
+whole host+GUID work.
+
 ## Hook point
 
 Optional `REDQUEEN_ON_NEW_FOLDER` env points at a CommonJS module exporting
