@@ -1,6 +1,6 @@
 'use strict';
 /**
- * FR #4043: folder tools (Get-FolderMeta + Invoke-FolderSearch) exist under tools/.
+ * FR #4043 / #4087: folder tools (Get-FolderMeta + Invoke-FolderSearch) exist under tools/.
  */
 const fs = require('fs');
 const path = require('path');
@@ -26,8 +26,13 @@ test('FR-4043 folder tools scripts and README exist', () => {
   assert.match(readme, /Get-FolderMeta/);
   assert.match(readme, /Invoke-FolderSearch/);
   assert.match(readme, /list-object-annotations|object annotations/i);
+  assert.match(readme, /bucket_root|FR #4087/);
   const meta = fs.readFileSync(path.join(tools, 'Get-FolderMeta.ps1'), 'utf8');
+  const folderS3 = fs.readFileSync(path.join(tools, 'FolderS3.ps1'), 'utf8');
   assert.match(meta, /Get-FolderS3Annotations/);
+  assert.match(meta, /bucket_root/);
+  assert.match(folderS3, /ConvertFrom-FolderS3Json/);
+  assert.match(folderS3, /AllowEmptyString/);
   assert.doesNotMatch(meta, /annotations\.json/);
   const pester = fs.readFileSync(
     path.join(root, 'tests', 'fr4043-folder-tools.Tests.ps1'),
@@ -35,4 +40,6 @@ test('FR-4043 folder tools scripts and README exist', () => {
   );
   assert.match(pester, /path_outside_mount/);
   assert.match(pester, /secret masking/i);
+  assert.match(pester, /FR #4087/);
+  assert.match(pester, /ConvertFrom-FolderS3Json/);
 });

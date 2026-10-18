@@ -90,6 +90,10 @@ function Write-HumanMeta {
 try {
     $target = if ($Path) { $Path } else { (Get-Location).Path }
     $loc = ConvertTo-FolderS3Location -Path $target -MountRoot $MountRoot
+    # FR #4087: empty Key is bucket root (S:\a-clubs) — clear message, exit 5
+    if ([string]::IsNullOrEmpty($loc.Key)) {
+        throw ("bucket_root: s3://{0}/ is the bucket root; cd into a host/GUID/provider folder" -f $loc.Bucket)
+    }
     $marker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key -Backend $Backend `
         -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
         -RcloneLsJson $RcloneLsJson
@@ -167,6 +171,9 @@ catch {
     [Console]::Error.WriteLine($msg)
     if ($msg -match '^path_outside_mount') {
         exit 2
+    }
+    if ($msg -match '^bucket_root') {
+        exit 5
     }
     exit 1
 }

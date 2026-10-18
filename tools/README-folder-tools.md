@@ -21,7 +21,7 @@ cd D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111
 .\tools\Get-FolderMeta.ps1 -Path 'D:\s3\a-affiliates\awin\partner-1' -Full
 ```
 
-Outside the mount root exits `2` with `path_outside_mount: ...`.
+Outside the mount root exits `2` with `path_outside_mount: ...`. Bucket root (e.g. `S:\a-clubs`) exits `5` with `bucket_root: ...` (FR #4087). Drive-letter mounts `S:\` / `S:` stay `S:\` (do not trim to `S:`).
 
 Backends: `aws` (redqueen: `head-object` + `get-object-tagging` + annotation APIs) or `rclone` (walrus metadata). Annotations need the AWS CLI annotation APIs (rclone / File Gateway do not support them).
 
@@ -46,7 +46,7 @@ or `%ProgramData%\a-search\folder-tools.config.json`, or set:
 - `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
 
-Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`.
+Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`. `Get-FolderMeta` also uses `5` for bucket root (FR #4087).
 
 ## Tests
 
