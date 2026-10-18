@@ -11,7 +11,7 @@ Read-only view of the cwd (or `-Path`) folder marker:
 2. **Tags** on the marker.
 3. **Annotations** via S3 object annotations (`list-object-annotations` / `get-object-annotation`) --- names such as `annotation` and `steering`. Long payloads truncate unless you pass `-Full`.
 4. Folder **kind** (host, guid, provider, affiliate, merchant) from bucket + depth.
-5. For a GUID folder, also the parent host's `annotation`.
+5. For a GUID folder, three labelled sections in order: `Host review ({host})`, `Page review ({guid})`, `Steering`. Each is the full object-annotation text (never the 2048-character preview). `-Json` adds `hostReview`, `pageReview` and `steering`, each with that marker's `annotated` and `lastupdate`. A missing review is null and the text view says `Host not reviewed yet` or `Page not reviewed yet` (exit 0). Legacy `annotations.json` / `steering.json` are read only when the object annotation is absent and the file is on the mount. A host folder stays the metadata / tags / annotations view.
 
 ```powershell
 cd D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111
