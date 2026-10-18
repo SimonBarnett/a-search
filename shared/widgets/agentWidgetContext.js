@@ -6,7 +6,7 @@
  * Folds feedback.json type:context into context.md and type:removal into
  * searches.json exclude[]. Never deletes feedback.json entries.
  * Query cap: free=3, fullTier (upgraded+fullscreen)=15 (#1345).
- * Out of scope: in.json ingest (FR-206).
+ * Out of scope: IN/ folder ingest (FR-206 / FR-3344).
  */
 
 const fs = require('node:fs');

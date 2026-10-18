@@ -11,6 +11,7 @@ const {
   runIngestPass,
   LIVE_PART_CAP_FREE,
   LIVE_PART_CAP_FULL,
+  writeInSearchFile,
 } = require('../shared/widgets/agentIngest');
 const { isFullTier } = require('../shared/widgets/agentWidgetContext');
 const {
@@ -43,11 +44,14 @@ describe('FR-1345 live.json / searches caps + widget_upgrade Stripe', () => {
   }
 
   function writeIn(parts) {
-    fs.writeFileSync(
-      path.join(widgetDir(), 'in.json'),
-      `${JSON.stringify(parts, null, 2)}\n`,
-      'utf8',
-    );
+    writeInSearchFile({
+      root,
+      env,
+      customerNumber,
+      widgetGuid,
+      searchId: 'cap-search',
+      parts,
+    });
   }
 
   it('pins LIVE_PART_CAP constants and fullTier rule', () => {
