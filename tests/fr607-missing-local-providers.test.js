@@ -19,7 +19,7 @@ describe('FR-607 missing local providers (shopify/wix/woocommerce)', () => {
   it('registry lists each as local with queueEnv; dark stubs stay disabled', () => {
     const { loadRegistry } = require('../providers/loadRegistry');
     const { sources } = loadRegistry();
-    assert.equal(sources.length, 23);
+    assert.equal(sources.length, 24);
     for (const id of IDS) {
       const s = sources.find((x) => x.id === id);
       assert.ok(s, `missing ${id}`);
