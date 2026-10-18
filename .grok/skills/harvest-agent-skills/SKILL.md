@@ -532,3 +532,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When searches.json already has a searchid, REDQUEEN_REANNOTATE must not review the host or GUID and must not POST again. A failed POST of a queries-only file is a guid retry and drainOnce must not delete the FIFO message.
 - Search q is product keywords only. Pass steering market and currency as their own fields. Match excludes as whole words and drop tokens shorter than 3 characters.
 - When a GUID search retry posts an existing searches.json, the success write must keep market and currency on the file. Do not replace the doc with queries, exclude and searchid only.
+- When a merged Closes PR is followed by a reopen, read the reopen comment. If it states a remaining change, implement that in a new PR that Closes the same issue. Do not DONE the already-merged PR.
