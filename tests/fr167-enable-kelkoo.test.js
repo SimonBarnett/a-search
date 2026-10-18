@@ -7,6 +7,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { queueName } = require('../providers/queueName');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
@@ -111,9 +112,9 @@ describe('FR-167 enable provider kijiji', () => {
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-kelkoo-${env}`,
+          q.Properties.QueueName === queueName('kelkoo', env),
       );
-      assert.ok(qHit, `missing queue a-search-kelkoo-${env}`);
+      assert.ok(qHit, `missing queue ${queueName('kelkoo', env)}`);
     }
 
     // Sibling stay-dark: no worker
