@@ -521,3 +521,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a grok page review hits the 120s limit after a larger prompt, tell the model to answer in one shot from the supplied text and not to browse. Keep the timeout, and a GUID retry must not delete the host SQS message.
 - Reject a redqueen host brief unless club, audience and affiliateOpportunities are non-empty and the summary is not a plan to browse. Fetch about/shop/training pages in the annotator. Do not set annotated and do not review GUIDs until that brief is complete.
 - FIX when FR #4277 host-brief gate lands: update fr4246 (and other) fake reviewHost fixtures to return non-empty club/audience/affiliateOpportunities or drain returns retry instead of host_processed.
+- After the host-brief gate lands, fake reviewHost fixtures must return non-empty club, audience and affiliateOpportunities or the drain returns retry instead of host_processed.
