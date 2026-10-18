@@ -516,4 +516,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Redqueen drain: default MaxNumberOfMessages=1 (FIFO one group per host); batched receipts expire while only the current message is heartbeated during long host+GUID reviews.
 - When two open harvest tips in the same book state the same playbook, keep the earlier fuller bullet and close the later tip. Do not merge both.
 - Host annotation is an affiliate brief (club, audience, opportunities). GUID annotation describes only that page using the host brief plus title and meta, and must be rejected when it copies the host text. REDQUEEN_REANNOTATE=1 rewrites markers that are already annotated.
+- AMerchants dual-bucket job: daily schedule, missing enabled=disabled, only refresh when lastdownload is 7+ days stale, and always call affiliates/src/downloadOne (never a merchants copy) so placeholders and flat keys stay current.
 - GUID folder meta must print the full host annotation and the page annotation plus steering (hostReview, pageReview, steering with annotated and lastupdate). Do not stop at the truncated parent-host preview.
