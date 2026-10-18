@@ -1,10 +1,13 @@
 'use strict';
 
 /**
- * FR #4108: Node entry for tools/download --- calls folderDownloadOne (downloadOne).
- * Usage: node tools/run-folder-download.js <json-args>
+ * FR #4108 / #4167: Node entry for tools/download --- calls folderDownloadOne (downloadOne).
+ * Usage:
+ *   node tools/run-folder-download.js <json-args>
+ *   node tools/run-folder-download.js --args-env   (FR #4167: JSON in A_SEARCH_FOLDER_DOWNLOAD_ARGS)
  * JSON: { provider, affiliateId, bucket, force?, dryRun?, affiliateMeta?, awsProfile?, region? }
  * Prints one JSON line to stdout (no secrets / no feedurl value).
+ * Prefer --args-env so WinPS 5.1 cannot mangle quotes and feedurl never appears on the process command line.
  */
 
 const {
@@ -12,16 +15,59 @@ const {
   redactResult,
 } = require('../affiliates/src/folderDownloadOne');
 
-async function main(argv) {
-  const raw = argv[2] || '';
-  if (!raw) {
-    process.stderr.write('usage: run-folder-download.js <json-args>\n');
-    process.exit(2);
+const ARGS_ENV = 'A_SEARCH_FOLDER_DOWNLOAD_ARGS';
+
+/**
+ * @param {string[]} argv
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {object}
+ */
+function loadArgs(argv, env) {
+  const e = env || process.env;
+  const mode = argv[2] || '';
+  let raw = '';
+  if (mode === '--args-env') {
+    raw = e[ARGS_ENV] || '';
+    try {
+      delete e[ARGS_ENV];
+    } catch {
+      /* ignore */
+    }
+    if (typeof process !== 'undefined' && process.env && e === process.env) {
+      try {
+        delete process.env[ARGS_ENV];
+      } catch {
+        /* ignore */
+      }
+    }
+  } else {
+    raw = mode;
   }
+  if (!raw) {
+    const err = new Error('usage');
+    err.code = 'usage';
+    throw err;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const err = new Error('invalid_json_args');
+    err.code = 'invalid_json_args';
+    throw err;
+  }
+}
+
+async function main(argv) {
   let args;
   try {
-    args = JSON.parse(raw);
-  } catch {
+    args = loadArgs(argv, process.env);
+  } catch (err) {
+    if (err && err.code === 'usage') {
+      process.stderr.write(
+        'usage: run-folder-download.js <json-args|--args-env>\n',
+      );
+      process.exit(2);
+    }
     process.stderr.write('invalid_json_args\n');
     process.exit(2);
   }
@@ -97,4 +143,6 @@ if (require.main === module) {
 module.exports = {
   redactResult,
   main,
+  loadArgs,
+  ARGS_ENV,
 };

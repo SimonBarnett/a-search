@@ -146,14 +146,24 @@ function Invoke-FolderDownloadOneAffiliate {
         awsProfile    = $AwsProfile
     }
     $jsonArgs = ($argsObj | ConvertTo-Json -Compress -Depth 8)
+    # FR #4167: never put JSON (feedurl / secrets) on the native argv — WinPS 5.1 also mangles quotes.
+    $argsEnvName = 'A_SEARCH_FOLDER_DOWNLOAD_ARGS'
+    $prevArgsEnv = [Environment]::GetEnvironmentVariable($argsEnvName, 'Process')
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $out = & $node $runner $jsonArgs 2>&1
+        [Environment]::SetEnvironmentVariable($argsEnvName, $jsonArgs, 'Process')
+        $out = & $node $runner '--args-env' 2>&1
         $code = $LASTEXITCODE
     }
     finally {
         $ErrorActionPreference = $prevEap
+        if ($null -eq $prevArgsEnv) {
+            [Environment]::SetEnvironmentVariable($argsEnvName, $null, 'Process')
+        }
+        else {
+            [Environment]::SetEnvironmentVariable($argsEnvName, $prevArgsEnv, 'Process')
+        }
     }
     $text = ($out | ForEach-Object { "$_" }) -join "`n"
     # Never echo secret-bearing lines from native stderr
@@ -233,89 +243,102 @@ try {
     }
 
     $profile = Resolve-FolderDownloadAwsProfile -AwsProfile $AwsProfile
-    $failures = 0
-    $results = @()
+    # FR #4167: one AWS identity for marker reads (aws CLI) and Node S3 writes
+    $prevAwsProfile = [Environment]::GetEnvironmentVariable('AWS_PROFILE', 'Process')
+    [Environment]::SetEnvironmentVariable('AWS_PROFILE', $profile, 'Process')
+    try {
+        $failures = 0
+        $results = @()
 
-    if ($loc.Kind -eq 'affiliate') {
-        $r = Invoke-FolderDownloadOneAffiliate -Location $loc -Force:$Force -DryRun:$DryRun `
-            -Backend $Backend -AwsProfile $profile -NodeExe $NodeExe `
-            -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-            -RcloneLsJson $RcloneLsJson -InvokeDownload $InvokeDownload
-        $results += $r
-        $parts = @($loc.Key.TrimEnd('/').Split('/'))
-        Write-FolderDownloadSummary -Result $r -Provider $parts[0] -AffiliateId $parts[1]
-        $ok = Get-FolderDownloadResultProp $r 'ok'
-        $st = [string](Get-FolderDownloadResultProp $r 'status')
-        if (-not $ok -and $st -ne 'parts_exists') { $failures += 1 }
-        $feedSet = Get-FolderDownloadResultProp $r 'feedurlSet'
-        if ($DryRun -and -not $feedSet) {
-            [Console]::Error.WriteLine('missing_feedurl: affiliate marker has no feedurl')
-            exit 1
-        }
-        if ($failures -gt 0) { exit 1 }
-        exit 0
-    }
-
-    # provider folder
-    if (-not $All) {
-        [Console]::Error.WriteLine('provider_folder_needs_all: cwd is a provider folder; pass -All to download each affiliate child')
-        exit 4
-    }
-
-    $children = @()
-    if ($ListAffiliateChildren) {
-        $children = @(& $ListAffiliateChildren $loc)
-    }
-    else {
-        $dirs = Get-ChildItem -LiteralPath $loc.Path -Directory -ErrorAction SilentlyContinue
-        foreach ($d in @($dirs)) {
-            $childLoc = ConvertTo-FolderS3Location -Path $d.FullName -MountRoot $loc.MountRoot
-            if ($childLoc.Kind -eq 'affiliate') { $children += $childLoc }
-        }
-    }
-
-    if (-not @($children).Count) {
-        Write-Output 'no_affiliate_children'
-        exit 0
-    }
-
-    $failedIds = @()
-    foreach ($c in $children) {
-        try {
-            $r = Invoke-FolderDownloadOneAffiliate -Location $c -Force:$Force -DryRun:$DryRun `
+        if ($loc.Kind -eq 'affiliate') {
+            $r = Invoke-FolderDownloadOneAffiliate -Location $loc -Force:$Force -DryRun:$DryRun `
                 -Backend $Backend -AwsProfile $profile -NodeExe $NodeExe `
                 -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
                 -RcloneLsJson $RcloneLsJson -InvokeDownload $InvokeDownload
             $results += $r
-            $parts = @($c.Key.TrimEnd('/').Split('/'))
+            $parts = @($loc.Key.TrimEnd('/').Split('/'))
             Write-FolderDownloadSummary -Result $r -Provider $parts[0] -AffiliateId $parts[1]
             $ok = Get-FolderDownloadResultProp $r 'ok'
             $st = [string](Get-FolderDownloadResultProp $r 'status')
+            if (-not $ok -and $st -ne 'parts_exists') { $failures += 1 }
             $feedSet = Get-FolderDownloadResultProp $r 'feedurlSet'
-            if (-not $ok -and $st -ne 'parts_exists') {
-                $failures += 1
-                $failedIds += $parts[1]
+            if ($DryRun -and -not $feedSet) {
+                [Console]::Error.WriteLine('missing_feedurl: affiliate marker has no feedurl')
+                exit 1
             }
-            elseif ($DryRun -and -not $feedSet) {
-                $failures += 1
-                $failedIds += $parts[1]
-            }
+            if ($failures -gt 0) { exit 1 }
+            exit 0
         }
-        catch {
-            $failures += 1
-            $parts = @($c.Key.TrimEnd('/').Split('/'))
-            $failedIds += $parts[1]
-            $safe = $_.Exception.Message -replace '(?i)(api[_-]?key|token|password|secret|feedurl)\s*[:=]\s*\S+', '$1=***'
-            Write-Output ("provider={0} affiliateid={1} status=error error={2}" -f $parts[0], $parts[1], $safe)
-        }
-    }
 
-    Write-Output ("summary ok={0} failed={1}" -f (@($results).Count - $failures), $failures)
-    if ($failedIds.Count) {
-        Write-Output ("failed_affiliateids={0}" -f ($failedIds -join ','))
+        # provider folder
+        if (-not $All) {
+            [Console]::Error.WriteLine('provider_folder_needs_all: cwd is a provider folder; pass -All to download each affiliate child')
+            exit 4
+        }
+
+        $children = @()
+        if ($ListAffiliateChildren) {
+            $children = @(& $ListAffiliateChildren $loc)
+        }
+        else {
+            $dirs = Get-ChildItem -LiteralPath $loc.Path -Directory -ErrorAction SilentlyContinue
+            foreach ($d in @($dirs)) {
+                $childLoc = ConvertTo-FolderS3Location -Path $d.FullName -MountRoot $loc.MountRoot
+                if ($childLoc.Kind -eq 'affiliate') { $children += $childLoc }
+            }
+        }
+
+        if (-not @($children).Count) {
+            Write-Output 'no_affiliate_children'
+            exit 0
+        }
+
+        $failedIds = @()
+        foreach ($c in $children) {
+            try {
+                $r = Invoke-FolderDownloadOneAffiliate -Location $c -Force:$Force -DryRun:$DryRun `
+                    -Backend $Backend -AwsProfile $profile -NodeExe $NodeExe `
+                    -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
+                    -RcloneLsJson $RcloneLsJson -InvokeDownload $InvokeDownload
+                $results += $r
+                $parts = @($c.Key.TrimEnd('/').Split('/'))
+                Write-FolderDownloadSummary -Result $r -Provider $parts[0] -AffiliateId $parts[1]
+                $ok = Get-FolderDownloadResultProp $r 'ok'
+                $st = [string](Get-FolderDownloadResultProp $r 'status')
+                $feedSet = Get-FolderDownloadResultProp $r 'feedurlSet'
+                if (-not $ok -and $st -ne 'parts_exists') {
+                    $failures += 1
+                    $failedIds += $parts[1]
+                }
+                elseif ($DryRun -and -not $feedSet) {
+                    $failures += 1
+                    $failedIds += $parts[1]
+                }
+            }
+            catch {
+                $failures += 1
+                $parts = @($c.Key.TrimEnd('/').Split('/'))
+                $failedIds += $parts[1]
+                $safe = $_.Exception.Message -replace '(?i)(api[_-]?key|token|password|secret|feedurl)\s*[:=]\s*\S+', '$1=***'
+                Write-Output ("provider={0} affiliateid={1} status=error error={2}" -f $parts[0], $parts[1], $safe)
+            }
+        }
+
+        Write-Output ("summary ok={0} failed={1}" -f (@($results).Count - $failures), $failures)
+        if ($failedIds.Count) {
+            Write-Output ("failed_affiliateids={0}" -f ($failedIds -join ','))
+        }
+        if ($failures -gt 0) { exit 1 }
+        exit 0
     }
-    if ($failures -gt 0) { exit 1 }
-    exit 0
+    finally {
+        if ($null -eq $prevAwsProfile) {
+            [Environment]::SetEnvironmentVariable('AWS_PROFILE', $null, 'Process')
+        }
+        else {
+            [Environment]::SetEnvironmentVariable('AWS_PROFILE', $prevAwsProfile, 'Process')
+        }
+    }
 }
 catch {
     $msg = $_.Exception.Message
