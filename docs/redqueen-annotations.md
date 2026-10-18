@@ -85,18 +85,16 @@ npm ci --omit=dev
 $env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/.../a-clubs-new-folders.fifo'
 # Dry-run first (prints nssm commands only):
 .\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search -WhatIf
-# FR #4231: grok sign-in is DPAPI-bound. LocalSystem + USERPROFILE/HOME/GROK_HOME
-# still fails with "Not signed in". Run the service as the admin that owns grok:
-$cred = Get-Credential   # admin that owns a-search-redqueen-annotator + .grok
+# FR #4240: preferred --- LocalSystem + dedicated GROK_HOME (SYSTEM ACL).
+# Pointing at Administrator ~/.grok fails with Access is denied on auth.json.
 .\install\Register-AClubsQueueService.ps1 -InstallRoot C:\ai\a-search `
     -AwsProfile a-search-redqueen-annotator `
-    -Credential $cred `
-    -UserProfile $env:USERPROFILE -HomePath $env:USERPROFILE `
+    -GrokHome 'C:\ProgramData\a-search\grok-system-home' `
     -GrokCli 'C:\Users\Administrator\.grok\bin\grok.exe' `
     -AgentCli 'C:\Users\Administrator\AppData\Local\cursor-agent\agent.cmd'
-# Or write the admin password once (never commit / never log) to:
-#   C:\ai\a-search\redqueen\config\service.password
-# then omit -Credential (ObjectName defaults to .\Administrator).
+# First time: follow the printed one-shot SYSTEM `grok login --device-auth`
+# instructions so GROK_HOME\auth.json exists.
+# Alternative: -Credential / redqueen\config\service.password for admin ObjectName.
 # -AllowLocalSystem only for tests / AWS-only drains without grok reviewers.
 Start-Service a-search-aclubs-queue
 ```
@@ -104,11 +102,11 @@ Start-Service a-search-aclubs-queue
 The script is idempotent (`nssm install` / `nssm set`), auto-start, restart on
 failure, AppDirectory = InstallRoot, Application = node, AppParameters =
 `redqueen\src\run.js`. Environment includes `AWS_PROFILE` (never root keys),
-optional `GROK_CLI` / `AGENT_CLI`, and optional `USERPROFILE` / `HOME` from
-`-UserProfile` / `-HomePath` (helpful for AWS files; **cannot** unlock grok DPAPI
-auth under LocalSystem). With `-GrokCli`, install refuses LocalSystem unless
-`-Credential`, `redqueen\config\service.password`, or `-AllowLocalSystem`. The
-install summary prints **Logon:** `LocalSystem` or `Credential (user)`.
+optional `GROK_CLI` / `AGENT_CLI`, and with `-GrokHome` also `USERPROFILE` /
+`HOME` / `GROK_HOME` under a SYSTEM+Administrators ACL (FR #4240). With
+`-GrokCli`, install refuses bare LocalSystem unless `-GrokHome`, `-Credential` /
+`service.password`, or `-AllowLocalSystem`. The install summary prints
+**Logon:** `LocalSystem` or `Credential (user)`.
 Stdout/stderr rotate under `C:\ai\a-search\redqueen\logs\` with no secrets.
 Compatible with Windows PowerShell 5.1 (FR #4164: nssm args must not use `$Args`).
 There is no reliable Cursor fallback when `A_SEARCH_CURSOR_BIN` points at
