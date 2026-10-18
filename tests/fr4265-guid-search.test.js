@@ -286,6 +286,8 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
     const saved = await s3.getObject({ Key: `${host}/${GUID}/searches.json` });
     const doc = JSON.parse(saved.Body.toString('utf8'));
     assert.equal(doc.searchid, 'srch_once');
+    assert.equal(doc.market, 'UK');
+    assert.equal(doc.currency, 'GBP');
   });
 });
 
