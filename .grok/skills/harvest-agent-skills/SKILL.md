@@ -538,3 +538,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a stack reads gitignored provider env files at synth, npm run synth must pass the fixture root. The in-process test helper context does not cover the CI synth script. Do not auto-merge the head whose synth script still fails on a clean checkout.
 - When CDK tests build cdk.App with custom -c context, always merge providerEnvRoot=tests/fixtures/provider-env (or ensureDefaultStackSynth); package.json synth -c alone does not cover in-process App constructors.
 - When a hostile test pins two SKILL.md bullets as one window, join them with the file newline. A CRLF book fails an LF join on Node even though Python text mode shows LF.
+- When a hostile test pins two SKILL.md bullets as one window, join with the file newline; CRLF books fail an LF join on Node even when Python text mode shows LF
