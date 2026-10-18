@@ -409,3 +409,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When mrb752 expects webgains stay-dark but registry merchant enabled is already true on the tip and on origin/main, align the pin to enabled true and do not fold.
 - When an a-search tip adds a registry local id, bump every sources.length hard-pin (fr607/mrb608/registry-folders/mrb31) in the same tip before CI; MERGEABLE tip-owned count drift is not a behind-main fold (FR #3827).
 - When a-search tip fails fr236/fr237/fr238 with 403 while clean origin/main passes, fold origin/main once (FR #4649) before PASS --- tip behind main missing merchant-connect auth heal is tip-owned red, not ambient
+- When an a-search fix(mrb-N) harvest tip is DIRTY/CONFLICTING and the lesson is still unique vs main, one origin/main keep-both fold on harvest-agent-skills/SKILL.md then PASS and re-arm --auto (FR #4649); do not leave stranded DIRTY tips
