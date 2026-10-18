@@ -446,3 +446,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - AMerchants MRB: synth:merchants + fr4008 17 pins enough for PASS; AGENT.md in docs satisfies FR when templates folder is missing; do not fold merely-behind MERGEABLE (FR #4649)
 - a-search MRB re-offer with CI red after enable-floor FIX: check remaining tip-owned hostiles (mrb2227 still pinned SqsEventSource); supersede on tip to match fr2139 FR-3949 no-consumer-Lambda, PASS @ new SHA without fold (FR #4649), leave --auto.
 - Harvest tip that re-appends an exact main Harvested-lessons bullet (period-only delta): CLOSED-duplicate, do not merge
+- Harvest tip that re-appends an exact main Harvested-lessons bullet (period-only delta): CLOSED-duplicate, do not merge.
