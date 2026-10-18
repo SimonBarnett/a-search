@@ -18,6 +18,13 @@ otherwise), entry mints a `searchid` and enqueues:
 Response: **`202 { searchid, queued: [providers..., "sql"] }`**. Nothing is
 written to MSSQL from AWS.
 
+A second POST for the same GUID (FR #4265) reads
+`a-clubs/{hostkey}/{guid}/search-fanout.json` and returns
+`202 { searchid, queued, idempotent: true }` without sending again. The first
+successful fan-out writes that marker. `MessageDeduplicationId` is
+`{searchid}-{source}` so a lost response inside the FIFO dedupe window also
+does not double-enqueue.
+
 Payloads carry `messageGroupId=<provider|sql>` so FIFO queues serialise per
 provider. SQL messages use group `sql`.
 

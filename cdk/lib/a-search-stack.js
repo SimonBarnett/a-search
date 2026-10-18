@@ -699,6 +699,14 @@ class ASearchStack extends cdk.Stack {
     }
     entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
     aClubsBucket.grantRead(entry);
+    // FR #4265: remember one searchid per GUID so a retry does not fan out twice.
+    entry.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AgentSearchFanoutMarker',
+        actions: ['s3:GetObject', 's3:PutObject'],
+        resources: ['arn:aws:s3:::a-clubs/*/*/search-fanout.json'],
+      }),
+    );
 
     new cdk.CfnOutput(this, 'DbBackedQueueUrl', {
       value: dbBackedQueue.queueUrl,
