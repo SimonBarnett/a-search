@@ -1,79 +1,40 @@
 'use strict';
 
 /**
- * FR #3987: redqueen annotation agent --- host review first, then GUID pages.
- * Host-only queue messages; GUID folders discovered via S3 list.
- * Injectable S3 / reviewers / now for tests. No inbound ports.
+ * FR #4098 / #3987: redqueen annotation agent --- host review first, then GUID pages.
+ * Writes S3 object annotations (annotation / steering) on folder markers --- never
+ * annotations.json or steering.json. GUID marker is zero-byte `{hostkey}/{guid}/`.
+ * Stub / unavailable reviewers never set annotated=1.
  */
 
 const { parseFolderEvent } = require('../../shared/aClubs/folderEvents');
+const {
+  isUsableReview,
+  defaultReviewHost,
+  defaultReviewGuid,
+} = require('./reviewers');
 
-/**
- * @param {string} hostkey
- * @returns {string}
- */
+/** @deprecated FR #4098 --- sidecars removed; kept for test migration grep */
 function hostAnnotationsKey(hostkey) {
   return `${String(hostkey).replace(/\/+$/, '')}/annotations.json`;
 }
 
-/**
- * @param {string} hostkey
- * @param {string} guid
- * @returns {string}
- */
+/** @deprecated */
 function guidAnnotationsKey(hostkey, guid) {
   return `${String(hostkey).replace(/\/+$/, '')}/${guid}/annotations.json`;
 }
 
-/**
- * @param {string} hostkey
- * @param {string} guid
- * @returns {string}
- */
+/** @deprecated */
 function guidSteeringKey(hostkey, guid) {
   return `${String(hostkey).replace(/\/+$/, '')}/${guid}/steering.json`;
 }
 
-/**
- * @param {string} hostkey
- * @returns {string}
- */
 function hostMarkerKeyFromHostkey(hostkey) {
   return `${String(hostkey).replace(/\/+$/, '')}/`;
 }
 
-/**
- * @param {string} hostkey
- * @param {string} guid
- * @returns {string}
- */
-function guidWidgetKey(hostkey, guid) {
-  return `${String(hostkey).replace(/\/+$/, '')}/${guid}/widget.json`;
-}
-
-/**
- * Default stub reviewer (wire a real Grok/Cursor CLI later --- docs).
- * @param {{ host: string, hostkey: string }} input
- */
-async function defaultReviewHost(input) {
-  return {
-    summary: `Stub review for ${input.host}`,
-    categories: ['parts'],
-    notes: 'Inject reviewHost for production models.',
-    model: 'stub',
-  };
-}
-
-/**
- * @param {{ host: string, hostkey: string, guid: string, uri?: string, hostAnnotations: object, steering?: object }} input
- */
-async function defaultReviewGuid(input) {
-  return {
-    summary: `Stub page review for ${input.uri || input.guid}`,
-    intent: 'browse',
-    suggestedQueries: [],
-    model: 'stub',
-  };
+function guidMarkerKeyFromHostkey(hostkey, guid) {
+  return `${String(hostkey).replace(/\/+$/, '')}/${String(guid).toLowerCase()}/`;
 }
 
 /**
@@ -95,6 +56,84 @@ function annotationNeed(md) {
 }
 
 /**
+ * @param {object} opts
+ * @param {string} Key
+ * @param {string} name
+ * @param {string|object} payload
+ */
+async function putNamedAnnotation(opts, Key, name, payload) {
+  if (typeof opts.putObjectAnnotation !== 'function') {
+    throw new Error('putObjectAnnotation_required');
+  }
+  const text =
+    typeof payload === 'string' ? payload : `${JSON.stringify(payload, null, 2)}\n`;
+  await opts.putObjectAnnotation({
+    Key,
+    AnnotationName: name,
+    AnnotationPayload: text,
+  });
+}
+
+/**
+ * @param {object} opts
+ * @param {string} Key
+ * @param {string} name
+ */
+async function getNamedAnnotationJson(opts, Key, name) {
+  if (typeof opts.getObjectAnnotation !== 'function') return null;
+  try {
+    const resp = await opts.getObjectAnnotation({ Key, AnnotationName: name });
+    let text = '';
+    const body = resp && (resp.AnnotationPayload != null ? resp.AnnotationPayload : resp.Body);
+    if (Buffer.isBuffer(body)) text = body.toString('utf8');
+    else if (typeof body === 'string') text = body;
+    else if (body && typeof body.transformToString === 'function') {
+      text = await body.transformToString();
+    } else if (body != null) text = String(body);
+    return JSON.parse(text);
+  } catch (err) {
+    const status = err && err.$metadata && err.$metadata.httpStatusCode;
+    const code = err && (err.name || err.code);
+    if (
+      status === 404 ||
+      code === 'NotFound' ||
+      code === 'NoSuchKey' ||
+      code === 'NoSuchAnnotation'
+    ) {
+      return null;
+    }
+    if (err instanceof SyntaxError) return null;
+    throw err;
+  }
+}
+
+/**
+ * After metadata rewrite, ensure named annotations still exist; re-apply if missing.
+ * @param {object} opts
+ * @param {string} Key
+ * @param {Array<{ name: string, payload: object|string }>} wanted
+ */
+async function ensureAnnotationsSurvived(opts, Key, wanted) {
+  for (const w of wanted) {
+    let present = false;
+    if (typeof opts.listObjectAnnotations === 'function') {
+      try {
+        const listed = await opts.listObjectAnnotations({ Key });
+        const names = ((listed && listed.Annotations) || []).map(
+          (a) => a && a.AnnotationName,
+        );
+        present = names.includes(w.name);
+      } catch {
+        present = false;
+      }
+    }
+    if (!present) {
+      await putNamedAnnotation(opts, Key, w.name, w.payload);
+    }
+  }
+}
+
+/**
  * @param {{
  *   body?: string,
  *   event?: object,
@@ -103,11 +142,14 @@ function annotationNeed(md) {
  *   putObject: Function,
  *   listObjectsV2?: Function,
  *   copyObject?: Function,
+ *   putObjectAnnotation: Function,
+ *   getObjectAnnotation?: Function,
+ *   listObjectAnnotations?: Function,
  *   reviewHost?: Function,
  *   reviewGuid?: Function,
  *   now?: () => Date,
+ *   onNewFolder?: Function,
  * }} opts
- * @returns {Promise<{ action: string, detail?: string, host?: string, guids?: object[] }>}
  */
 async function processFolderEvent(opts) {
   if (!opts || typeof opts !== 'object') {
@@ -115,6 +157,9 @@ async function processFolderEvent(opts) {
   }
   if (typeof opts.headObject !== 'function' || typeof opts.putObject !== 'function') {
     throw new Error('s3_client_required');
+  }
+  if (typeof opts.putObjectAnnotation !== 'function') {
+    throw new Error('putObjectAnnotation_required');
   }
   const event = opts.event
     ? parseFolderEvent(opts.event)
@@ -124,7 +169,6 @@ async function processFolderEvent(opts) {
   const reviewGuid = opts.reviewGuid || defaultReviewGuid;
 
   const markerKey = hostMarkerKeyFromHostkey(event.hostkey);
-  const annKey = hostAnnotationsKey(event.hostkey);
   const head = await headOrNull(opts, markerKey);
   if (!head) {
     return { action: 'retry', detail: 'host_marker_missing' };
@@ -132,40 +176,55 @@ async function processFolderEvent(opts) {
   const hostMd = (head.Metadata || head.metadata) || {};
   const hostNeed = annotationNeed(hostMd);
 
+  let hostAnnDoc = null;
+
   if (hostNeed !== 'skip') {
+    let review;
     try {
-      const review = await reviewHost({
+      review = await reviewHost({
         host: event.host,
         hostkey: event.hostkey,
-      });
-      const doc = {
-        host: event.host,
-        reviewedAt: now,
-        model: review.model || 'stub',
-        summary: review.summary || '',
-        categories: Array.isArray(review.categories) ? review.categories : [],
-        notes: review.notes || '',
-      };
-      await opts.putObject({
-        Key: annKey,
-        Body: `${JSON.stringify(doc, null, 2)}\n`,
-        ContentType: 'application/json; charset=utf-8',
-      });
-      // Same timestamp for lastupdate and lastmod so agent write does not loop.
-      await putMarkerMetadata(opts, markerKey, hostMd, {
-        annotated: '1',
-        lastupdate: now,
-        lastmod: now,
       });
     } catch (err) {
       const detail = (err && err.message) || 'host_review_failed';
       return { action: 'retry', detail: `host_review_failed:${detail}` };
     }
-  }
-
-  const hostAnn = await getJsonOrNull(opts, annKey);
-  if (!hostAnn) {
-    return { action: 'retry', detail: 'host_annotations_missing' };
+    if (!isUsableReview(review)) {
+      return {
+        action: 'retry',
+        detail: `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+      };
+    }
+    hostAnnDoc = {
+      host: event.host,
+      reviewedAt: now,
+      model: review.model,
+      summary: review.summary || '',
+      categories: Array.isArray(review.categories) ? review.categories : [],
+      notes: review.notes || '',
+    };
+    await putNamedAnnotation(opts, markerKey, 'annotation', hostAnnDoc);
+    await putMarkerMetadata(opts, markerKey, hostMd, {
+      annotated: '1',
+      lastupdate: now,
+      lastmod: now,
+    });
+    await ensureAnnotationsSurvived(opts, markerKey, [
+      { name: 'annotation', payload: hostAnnDoc },
+    ]);
+    if (typeof opts.onNewFolder === 'function') {
+      await opts.onNewFolder({
+        kind: 'host',
+        hostkey: event.hostkey,
+        host: event.host,
+        key: markerKey,
+      });
+    }
+  } else {
+    hostAnnDoc = await getNamedAnnotationJson(opts, markerKey, 'annotation');
+    if (!hostAnnDoc) {
+      return { action: 'retry', detail: 'host_annotations_missing' };
+    }
   }
 
   const guids = await listGuidIds(opts, event.hostkey);
@@ -175,7 +234,7 @@ async function processFolderEvent(opts) {
       opts,
       event,
       guid,
-      hostAnn,
+      hostAnn: hostAnnDoc,
       reviewGuid,
       now,
     });
@@ -189,79 +248,85 @@ async function processFolderEvent(opts) {
   };
 }
 
-/**
- * @param {{
- *   opts: object,
- *   event: { hostkey: string, host: string },
- *   guid: string,
- *   hostAnn: object,
- *   reviewGuid: Function,
- *   now: string,
- * }} args
- */
 async function annotateOneGuid(args) {
   const { opts, event, guid, hostAnn, reviewGuid, now } = args;
-  const widgetKey = guidWidgetKey(event.hostkey, guid);
-  const widgetHead = await headOrNull(opts, widgetKey);
-  if (!widgetHead) {
-    return { action: 'skip', detail: 'widget_missing' };
+  const markerKey = guidMarkerKeyFromHostkey(event.hostkey, guid);
+  const markerHead = await headOrNull(opts, markerKey);
+  if (!markerHead) {
+    return { action: 'skip', detail: 'guid_marker_missing' };
   }
-  const widgetMd =
-    (widgetHead.Metadata || widgetHead.metadata) || {};
-  const need = annotationNeed(widgetMd);
+  const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
+  const need = annotationNeed(guidMd);
   if (need === 'skip') {
     return { action: 'noop', detail: 'guid_unchanged' };
   }
 
-  const steering = await getJsonOrNull(
-    opts,
-    guidSteeringKey(event.hostkey, guid),
-  );
-  const existingAnn = await getJsonOrNull(
-    opts,
-    guidAnnotationsKey(event.hostkey, guid),
-  );
-  const uri =
-    String(widgetMd.uri || (existingAnn && existingAnn.uri) || '').trim() ||
-    '';
+  const uri = String(guidMd.uri || '').trim();
 
-  const review = await reviewGuid({
-    host: event.host,
-    hostkey: event.hostkey,
-    guid,
-    uri,
-    hostAnnotations: hostAnn,
-    steering: steering || undefined,
-  });
-  const doc = {
+  let review;
+  try {
+    review = await reviewGuid({
+      host: event.host,
+      hostkey: event.hostkey,
+      guid,
+      uri,
+      hostAnnotations: hostAnn,
+    });
+  } catch (err) {
+    return {
+      action: 'retry',
+      detail: `guid_review_failed:${(err && err.message) || err}`,
+    };
+  }
+  if (!isUsableReview(review)) {
+    return {
+      action: 'retry',
+      detail: `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+    };
+  }
+
+  const annDoc = {
     uri,
     annotatedAt: now,
-    model: review.model || 'stub',
+    model: review.model,
     summary: review.summary || '',
     intent: review.intent || '',
     suggestedQueries: Array.isArray(review.suggestedQueries)
       ? review.suggestedQueries
       : [],
-    steering: steering || null,
   };
-  const annKey = guidAnnotationsKey(event.hostkey, guid);
-  await opts.putObject({
-    Key: annKey,
-    Body: `${JSON.stringify(doc, null, 2)}\n`,
-    ContentType: 'application/json; charset=utf-8',
-  });
-  await putMarkerMetadata(opts, widgetKey, widgetMd, {
+  const wanted = [{ name: 'annotation', payload: annDoc }];
+  await putNamedAnnotation(opts, markerKey, 'annotation', annDoc);
+  if (review.steering != null) {
+    await putNamedAnnotation(opts, markerKey, 'steering', review.steering);
+    wanted.push({ name: 'steering', payload: review.steering });
+  }
+
+  await putMarkerMetadata(opts, markerKey, guidMd, {
     annotated: '1',
     lastupdate: now,
     lastmod: now,
     ...(uri ? { uri } : {}),
   });
+  await ensureAnnotationsSurvived(opts, markerKey, wanted);
+
+  if (typeof opts.onNewFolder === 'function') {
+    await opts.onNewFolder({
+      kind: 'guid',
+      hostkey: event.hostkey,
+      host: event.host,
+      guid,
+      key: markerKey,
+      uri,
+    });
+  }
+
   return { action: need === 'create' ? 'guid_annotated' : 'guid_updated' };
 }
 
 /**
  * Discover GUID folders under hostkey via listObjectsV2.
- * Looks for `{hostkey}/{guid}/widget.json` keys.
+ * Looks for zero-byte `{hostkey}/{guid}/` marker keys (FR #3968 / #4098).
  * @param {object} opts
  * @param {string} hostkey
  * @returns {Promise<string[]>}
@@ -281,7 +346,7 @@ async function listGuidIds(opts, hostkey) {
       const Key = item && item.Key;
       if (!Key) continue;
       const rest = Key.slice(prefix.length);
-      const m = /^([0-9a-fA-F-]{36})\/widget\.json$/.exec(rest);
+      const m = /^([0-9a-fA-F-]{36})\/$/.exec(rest);
       if (m) ids.add(m[1].toLowerCase());
     }
     ContinuationToken = resp && resp.IsTruncated
@@ -304,32 +369,9 @@ async function headOrNull(opts, Key) {
   }
 }
 
-async function getJsonOrNull(opts, Key) {
-  if (typeof opts.getObject !== 'function') return null;
-  try {
-    const obj = await opts.getObject({ Key });
-    let text = '';
-    if (obj && obj.Body != null) {
-      if (Buffer.isBuffer(obj.Body)) text = obj.Body.toString('utf8');
-      else if (typeof obj.Body === 'string') text = obj.Body;
-      else if (typeof obj.Body.transformToString === 'function') {
-        text = await obj.Body.transformToString();
-      } else text = String(obj.Body);
-    }
-    return JSON.parse(text);
-  } catch (err) {
-    const status = err && err.$metadata && err.$metadata.httpStatusCode;
-    const code = err && (err.name || err.code);
-    if (status === 404 || code === 'NotFound' || code === 'NoSuchKey') {
-      return null;
-    }
-    if (err instanceof SyntaxError) return null;
-    throw err;
-  }
-}
-
 /**
- * Rewrite object metadata via get+put when copyObject absent (tests/memory).
+ * Rewrite object metadata via copyObject REPLACE when available; else get+put.
+ * Re-applies annotations afterward via ensureAnnotationsSurvived (caller).
  */
 async function putMarkerMetadata(opts, Key, prevMd, patch) {
   const Metadata = { ...(prevMd || {}), ...patch };
@@ -337,8 +379,10 @@ async function putMarkerMetadata(opts, Key, prevMd, patch) {
     Metadata[k] = String(Metadata[k]);
   }
   if (typeof opts.copyObject === 'function') {
+    const bucket = opts.bucket || process.env.A_CLUBS_BUCKET || 'a-clubs';
     await opts.copyObject({
       Key,
+      CopySource: `${bucket}/${Key}`,
       Metadata,
       MetadataDirective: 'REPLACE',
     });
@@ -375,7 +419,13 @@ module.exports = {
   hostAnnotationsKey,
   guidAnnotationsKey,
   guidSteeringKey,
+  hostMarkerKeyFromHostkey,
+  guidMarkerKeyFromHostkey,
   listGuidIds,
   defaultReviewHost,
   defaultReviewGuid,
+  isUsableReview,
+  putNamedAnnotation,
+  getNamedAnnotationJson,
+  ensureAnnotationsSurvived,
 };
