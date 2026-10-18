@@ -2,7 +2,7 @@
 
 /**
  * Amazon live provider worker (FR-030 / FR-183).
- * Default: PA-API SearchItems -> normalize -> writeResults.
+ * Default: PA-API SearchItems -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
  * When AMAZON_SEARCH_API=creators (or AMAZON_CREATORS_ENABLED), use Creators
  * client instead (FR-181/182). Fail-closed if Creators creds missing while flag on.
  */
@@ -12,7 +12,8 @@ const {
   assertWorkerEnv,
   EnvIsolationError,
 } = require('../../../../shared/assertEnv');
-const { writeResults } = require('../../../../shared/writeResults');
+const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
+const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
 const {
   searchAmazon,
   assertAmazonCreds,
@@ -64,15 +65,21 @@ async function run(msg, deps) {
     httpRequest: deps && deps.httpRequest,
   });
 
-  const written = await writeResults({
-    env: msg.env,
+  const written = await writeLiveProviderInResult({
+    msg,
     source: 'amazon',
-    userId: msg.userId,
-    catalogId: msg.catalogId,
-    searchId: msg.searchId,
     products,
+    queries: msg.queries,
+    exclude: msg.exclude,
     envVars,
     putObject: deps && deps.putObject,
+    touchLastmod: deps && deps.touchLastmod,
+    headObject: deps && deps.headObject,
+    getObject: deps && deps.getObject,
+    copyObject: deps && deps.copyObject,
+    getObjectTagging: deps && deps.getObjectTagging,
+    putObjectTagging: deps && deps.putObjectTagging,
+    now: deps && deps.now,
   });
 
   return {
