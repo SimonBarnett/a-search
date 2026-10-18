@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const cdk = require('aws-cdk-lib');
 const lambda = require('aws-cdk-lib/aws-lambda');
@@ -384,16 +385,121 @@ function wireProviderSecretEnv(fn, secret, keys) {
  * @param {string} sourceId
  * @param {'live'|'sandbox'} [env]
  */
-function applyProviderPlainDefaults(fn, sourceId, env) {
+function applyProviderPlainDefaults(fn, sourceId, env, skipKeys) {
   const defaults = PROVIDER_PLAIN_DEFAULTS[sourceId];
+  const skip = skipKeys || new Set();
   if (defaults) {
     for (const [k, v] of Object.entries(defaults)) {
+      if (skip.has(k)) continue;
       fn.addEnvironment(k, v);
     }
   }
-  if (sourceId === 'ebay' && env) {
+  if (sourceId === 'ebay' && env && !skip.has('EBAY_ENV')) {
     fn.addEnvironment('EBAY_ENV', env === 'live' ? 'production' : 'sandbox');
   }
+}
+
+/**
+ * FR #4336: amazon and ebay credentials are read from a gitignored env file
+ * at synth time. Other providers stay on Secrets Manager (FR-138).
+ * EBAY_ENV is not copied from the file; the stack env sets it.
+ */
+const PROVIDER_ENV_FILE = {
+  amazon: {
+    required: [
+      'AMAZON_ACCESS_KEY',
+      'AMAZON_SECRET_KEY',
+      'AMAZON_PARTNER_TAG',
+      'AMAZON_HOST',
+      'AMAZON_REGION',
+    ],
+    optional: ['AMAZON_CREATORS_CREDENTIAL'],
+  },
+  ebay: {
+    required: [
+      'EBAY_CLIENT_ID',
+      'EBAY_CLIENT_SECRET',
+      'EBAY_CAMPAIGN_ID',
+      'EBAY_MARKETPLACE_ID',
+    ],
+    optional: ['EBAY_REFRESH_TOKEN'],
+  },
+};
+
+function parseDotEnv(text) {
+  const out = {};
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) {
+      throw new Error('provider env: invalid line');
+    }
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
+      (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+    ) {
+      value = value.slice(1, -1);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+function providerEnvFilePath(repoRoot, sourceId, envRoot) {
+  if (envRoot) return path.join(envRoot, `${sourceId}.env`);
+  return path.join(repoRoot, 'providers', 'live', sourceId, '.env');
+}
+
+/**
+ * Read one provider env file. Errors name the missing key and path, never a value.
+ * @param {string} repoRoot
+ * @param {string} sourceId
+ * @param {string} [envRoot] test fixture directory (files named `{id}.env`)
+ * @returns {Record<string, string>}
+ */
+function readProviderEnvFile(repoRoot, sourceId, envRoot) {
+  const spec = PROVIDER_ENV_FILE[sourceId];
+  if (!spec) {
+    throw new Error(`provider env: ${sourceId} is not an env-file provider`);
+  }
+  const filePath = providerEnvFilePath(repoRoot, sourceId, envRoot);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `provider env ${sourceId}: missing file ${filePath}. Fill providers/live/${sourceId}/.env from .env.example. Required: ${spec.required.join(', ')}`,
+    );
+  }
+  let parsed;
+  try {
+    parsed = parseDotEnv(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    throw new Error(`provider env ${sourceId}: invalid line in ${filePath}`);
+  }
+  const missing = spec.required.filter((key) => !String(parsed[key] || '').trim());
+  if (missing.length) {
+    throw new Error(
+      `provider env ${sourceId}: missing required ${missing.join(', ')} in ${filePath}`,
+    );
+  }
+  const values = {};
+  for (const key of spec.required) values[key] = String(parsed[key]).trim();
+  for (const key of spec.optional) {
+    const value = parsed[key] != null ? String(parsed[key]).trim() : '';
+    if (value) values[key] = value;
+  }
+  return values;
+}
+
+function wireProviderEnvFromFile(fn, sourceId, envRoot, repoRoot) {
+  const values = readProviderEnvFile(repoRoot, sourceId, envRoot);
+  const setKeys = new Set();
+  for (const [key, value] of Object.entries(values)) {
+    fn.addEnvironment(key, value);
+    setKeys.add(key);
+  }
+  return setKeys;
 }
 
 /**
@@ -622,12 +728,23 @@ class ASearchStack extends cdk.Stack {
         wireResultsBucketAccess(worker, resultsBucket);
         // FR #4038: workers write a-clubs IN/ (shared schema); need Put/Get + bucket env.
         wireAclubsInAccess(worker, aClubsBucket);
-        // FR-138: provider credentials from per-source Secrets Manager JSON
+        // FR #4336: amazon and ebay read a gitignored env file. Other enabled
+        // sources stay on per-source Secrets Manager JSON (FR-138).
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
         if (providerKeys) {
-          const providerSecret = resolveProviderSecret(src.id);
-          wireProviderSecretEnv(worker, providerSecret, providerKeys);
-          applyProviderPlainDefaults(worker, src.id, env);
+          if (PROVIDER_ENV_FILE[src.id]) {
+            const setKeys = wireProviderEnvFromFile(
+              worker,
+              src.id,
+              this.node.tryGetContext('providerEnvRoot') || '',
+              repoRoot,
+            );
+            applyProviderPlainDefaults(worker, src.id, env, setKeys);
+          } else {
+            const providerSecret = resolveProviderSecret(src.id);
+            wireProviderSecretEnv(worker, providerSecret, providerKeys);
+            applyProviderPlainDefaults(worker, src.id, env);
+          }
         }
         const sqsOpts = { batchSize: 1 };
         const maxConcurrency = sqsMaxConcurrencyForSource(src);
@@ -1569,6 +1686,9 @@ module.exports = {
   isLocalProviderFolder,
   PROVIDER_CREDENTIAL_KEYS,
   PROVIDER_PLAIN_DEFAULTS,
+  PROVIDER_ENV_FILE,
+  parseDotEnv,
+  readProviderEnvFile,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
   ENTRY_LAMBDA_MEMORY_MB,

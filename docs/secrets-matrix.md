@@ -74,14 +74,20 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 ## Provider credentials (FR-138) - enabled sources only
 
-Per-source Secrets Manager JSON. Override:
-`-c amazonProviderSecretArn=arn:...` (same pattern per id). Synth uses
-`000000000000` placeholder ARNs with a complete 6-char suffix when omitted.
+Amazon and eBay (FR #4336) do not use Secrets Manager. Synth reads
+`providers/live/amazon/.env` and `providers/live/ebay/.env` (gitignored; copy
+from `.env.example`) and sets those values on the worker Lambdas. A missing
+required key fails synth. The error names the key, never the value. No provider
+env value is a stack output. `EBAY_ENV` still comes from the stack env
+(live means production). Other enabled sources stay on per-source Secrets
+Manager JSON. Override: `-c rakutenProviderSecretArn=arn:...` (same pattern per
+remaining id). Synth uses `000000000000` placeholder ARNs with a complete
+6-char suffix when that override is omitted.
 
-| Source | Secret JSON keys (become env names) | Lambdas granted |
-|--------|-------------------------------------|-----------------|
-| amazon | `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG` | `a-search-amazon-worker-{live,sandbox}` |
-| ebay | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_REFRESH_TOKEN`, `EBAY_CAMPAIGN_ID` | `a-search-ebay-worker-{live,sandbox}` |
+| Source | Keys (become env names) | Lambdas |
+|--------|-------------------------|---------|
+| amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` | `a-search-amazon-worker-{live,sandbox}` |
+| ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
 | rakuten | `RAKUTEN_APPLICATION_KEY`, `RAKUTEN_AFFILIATE_ID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
@@ -102,8 +108,8 @@ Per-source Secrets Manager JSON. Override:
 **Stay-dark omitted** (no secret construct / IAM grant until enable-provider FR):
 admitad, flexoffers.
 
-Public non-secret defaults (`AMAZON_HOST`, `EBAY_MARKETPLACE_ID`, endpoints)
-are plain CDK env - not Secrets Manager.
+`AMAZON_HOST`, `AMAZON_REGION` and `EBAY_MARKETPLACE_ID` come from the amazon
+and ebay env files. Other public defaults (endpoints) stay plain CDK env.
 
 ## Anti-patterns
 

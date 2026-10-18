@@ -101,15 +101,15 @@ See `docs/environments.md` (FR-137).
 
 ## Provider credentials Secrets Manager (FR-138)
 
-Each **enabled** provider worker (amazon, ebay, rakuten, cj, awin, impact, kijiji)
-reads credential keys from a **per-source** Secrets Manager JSON secret.
-Awin/impact onboarding share the same source secret. Stay-dark providers
-get no secret construct and no IAM grant.
+Amazon and eBay (FR #4336) read `providers/live/amazon/.env` and
+`providers/live/ebay/.env` at synth. Do not pass `amazonProviderSecretArn` or
+`ebayProviderSecretArn`. Each other **enabled** provider worker (rakuten, cj,
+awin, impact, kelkoo) reads credential keys from a **per-source** Secrets Manager
+JSON secret. Awin/impact onboarding share the same source secret. Stay-dark
+providers get no secret construct and no IAM grant.
 
 ```bash
 npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
-  -c amazonProviderSecretArn=arn:aws:secretsmanager:eu-west-2:ACCOUNT:secret:NAME \
-  -c ebayProviderSecretArn=arn:aws:secretsmanager:eu-west-2:ACCOUNT:secret:NAME \
   -c rakutenProviderSecretArn=arn:... \
   -c cjProviderSecretArn=arn:... \
   -c awinProviderSecretArn=arn:... \
