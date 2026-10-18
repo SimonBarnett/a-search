@@ -495,3 +495,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX product tip CI red on harvest SKILL.md BOM while tip is behind: one fold of origin/main picks up the clean book; re-arm --auto; do not poll CI
 - When fr055h reports missing LOCKED after Architecture on Windows, check core.autocrlf CRLF working copies against an LF blob; pin docs/vision.md text eol=lf and make the fence pin CRLF-tolerant
 - When PowerShell writes skill markdown, never use \a (BEL) or backtick escapes that inject C0 controls; write a-affiliates literally or via Python Path.write_text. FR-4155 signup rewrites must keep FR-060h/i Legacy Parts and disabled-stub needles.
+- Harvest SKILL.md lessons must stay pure ASCII: never PowerShell-write Unicode arrows (they double-encode and fail mrb1172 whole-file em/en-dash gate); write hyphen->dot via Python bytes/Path.write_text ASCII.
