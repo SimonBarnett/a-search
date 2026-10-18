@@ -510,3 +510,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Redqueen grok review must be async spawn: spawnSync blocks the event loop so the next S3/SQS write fails ECONNABORTED, and receive VisibilityTimeout must exceed the reviewer timeout with a ChangeMessageVisibility heartbeat plus a retry on ECONNABORTED/ECONNRESET/EPIPE/ETIMEDOUT.
 - Redqueen grok under LocalSystem: use dedicated -GrokHome with SYSTEM+Administrators ACL (not Admin profile USERPROFILE); grok honours GROK_HOME; Access is denied on auth.json was ACL not DPAPI.
 - A live Set-Acl that grants a SYSTEM ACE must skip unless the process is Administrator; keep the WhatIf and source pins running so a non-elevated MRB seat is not a false red.
+- MRB harvest tip for redqueen GrokHome: keep Set-Acl elevated-skip clause even when ACL/Access-is-denied core already on main; hostile NEEDLE on tip; --auto when 0 behind.
