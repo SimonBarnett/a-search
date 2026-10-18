@@ -123,15 +123,15 @@ describe('FR #4236 async reviewer and visibility', () => {
         return {
           model: 'test',
           summary: 'A flying club',
-          intent: 'browse',
-          suggestedQueries: ['club'],
+          club: 'flying club',
+          audience: 'sunday members',
+          affiliateOpportunities: 'trainers',
         };
       },
       reviewGuid: async () => ({
         model: 'test',
         summary: 'Parts form',
-        intent: 'request',
-        suggestedQueries: ['parts'],
+        steering: { include: ['parts'] },
       }),
     });
     assert.equal(aborted, 1);
