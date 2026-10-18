@@ -2,7 +2,7 @@
 
 /**
  * FR #3968: ensure a-clubs/{hostkey}/ marker with Madeira userid metadata.
- * customerNumber metadata === userid (documented choice; no sequential counter).
+ * FR #4287: userid only. The legacy duplicate metadata key is not written.
  * Sets lastmod on create; publishes folder event when newly created.
  */
 
@@ -21,6 +21,7 @@ const { hostMarkerKey, useridClaimKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent, isPreconditionFailed } = require('./s3Store');
 const { publishFolderEvent } = require('./publishFolderEvent');
 const { isEmbedFrameHost } = require('./embedHostPatterns');
+const { metaUserid } = require('./migrateHostUserid');
 
 /**
  * @param {{
@@ -37,7 +38,6 @@ const { isEmbedFrameHost } = require('./embedHostPatterns');
  *   created: boolean,
  *   hostkey: string,
  *   userid: string,
- *   customerNumber: string,
  *   metadata: Record<string, string>,
  *   tags: object,
  * }>}
@@ -66,20 +66,15 @@ async function ensureAclubsHost(opts) {
   });
   if (existing) {
     const md = existing.Metadata || existing.metadata || {};
-    const userid = String(md.userid || md.userId || '').trim().toUpperCase();
-    const customerNumber = String(
-      md.customerNumber || md.customernumber || userid,
-    ).trim();
+    const userid = metaUserid(md);
     return {
       created: false,
       hostkey,
       userid,
-      customerNumber: customerNumber || userid,
       metadata: {
         userid,
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
-        customerNumber: customerNumber || userid,
         email: md.email == null ? '' : String(md.email),
         passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
         stripeaccountid:
@@ -119,7 +114,6 @@ async function ensureAclubsHost(opts) {
     userid,
     host,
     hostkey,
-    customerNumber: userid,
     lastmod: createdAtForMeta,
     annotated: '0',
     // Claim/onboarding fills these later (setHostCredentials / setHostStripe).
@@ -154,17 +148,15 @@ async function ensureAclubsHost(opts) {
       Key: markerKey,
     });
     const md = (again && (again.Metadata || again.metadata)) || metadata;
-    const uid = String(md.userid || userid).trim().toUpperCase();
+    const uid = metaUserid(md) || userid;
     return {
       created: false,
       hostkey,
       userid: uid,
-      customerNumber: String(md.customerNumber || uid),
       metadata: {
         userid: uid,
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
-        customerNumber: String(md.customerNumber || uid),
         email: md.email == null ? '' : String(md.email),
         passwordhash: md.passwordhash == null ? '' : String(md.passwordhash),
         stripeaccountid:
@@ -199,7 +191,6 @@ async function ensureAclubsHost(opts) {
     created: true,
     hostkey,
     userid,
-    customerNumber: userid,
     metadata,
     tags: parseHostTagSet(tagSet),
   };
