@@ -164,6 +164,10 @@ describe('FR #3987 gateway publish host on create', () => {
       referer: 'https://pub-guid.example.com/products/brakes',
       headObject: s3.headObject,
       putObject: s3.putObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+      getObjectTagging: s3.getObjectTagging,
+      putObjectTagging: s3.putObjectTagging,
       sendMessage,
       folderEventsQueueUrl: queueUrl,
     });
@@ -171,6 +175,7 @@ describe('FR #3987 gateway publish host on create', () => {
     assert.equal(r.uri, '/products/brakes');
     assert.equal(r.metadata.seen, '0');
     assert.equal(r.metadata.clicks, '0');
+    assert.equal(r.metadata.init, '0');
     assert.ok(r.metadata.since);
     assert.ok(r.metadata.lastmod);
     assert.equal(sent.length, 1);
