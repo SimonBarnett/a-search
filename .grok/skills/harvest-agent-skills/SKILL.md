@@ -437,3 +437,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When FR-3949 drops maintainer Lambdas, supersede mrb1096 to assert stack has stageOnboarding but not stage-maintainer-lambda-asset; fold main when CI failed (FR #4649).
 - a-affiliates v1 = Lambda not Fargate; lifecycle objectSizeGreaterThan:0 keeps zero-byte markers while expiring parts; CDK source-pin tests must avoid forbidden strings even in comments
 - New affiliate S3 product surfaces ship as an isolated CDK app/stack (like APartsGateway): never touch ASearchStack/a-clubs; forbid Stripe fields on affiliate markers; never log provider login secrets (FAKE_ test placeholders only).
+- Isolated AAffiliates CDK stack may PASS without multipart upload when docs mark Lambda v1 + Fargate follow-up for large feeds; keep #4001 redqueen import open as sibling OOS
