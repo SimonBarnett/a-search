@@ -533,3 +533,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Search q is product keywords only. Pass steering market and currency as their own fields. Match excludes as whole words and drop tokens shorter than 3 characters.
 - When a GUID search retry posts an existing searches.json, the success write must keep market and currency on the file. Do not replace the doc with queries, exclude and searchid only.
 - searches.json queries-only repost: copy existing.market and existing.currency onto the POST body and the written doc when searchid lands; q stays product keywords only.
+- Harvest tip that adds POST-body copy of existing.market/currency on queries-only repost may PASS beside main success-write keep-market bullet; product tip is not a twin
