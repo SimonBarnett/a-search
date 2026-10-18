@@ -24,5 +24,7 @@ cdk/worker-lambda-asset/
 cdk/onboarding-lambda-asset/
 # FR-131 staged maintainer Lambda asset (regenerated during synth / stage script)
 cdk/maintainer-lambda-asset/
+# FR #3968 staged parts-gateway Lambda asset (npm run stage-parts-gateway)
+cdk/parts-gateway-lambda-asset/
 
 .bobiverse-seat
