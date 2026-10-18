@@ -2,13 +2,20 @@
 
 /**
  * FR #3968 / #3987: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
- * GUID marker metadata on widget.json: uri, seen, clicks, since, lastmod, annotated.
+ * GUID marker metadata on widget.json: uri, seen, clicks, since, lastmod,
+ * annotated, init. Prefer Referer path for uri (see pageUri.js).
+ * Seed writes bump GUID + host lastmod; publish host folder event on new GUID
+ * so redqueen can annotate GUIDs under already-annotated hosts.
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
 const { normalizeHost } = require('../../shared/components/customers');
-const { safeHostFolderName } = require('../../shared/widgets/hostFolderMeta');
-const { widgetFileKey } = require('./aClubsKeys');
+const {
+  safeHostFolderName,
+  touchLastmod,
+  isoLastmod,
+} = require('../../shared/widgets/hostFolderMeta');
+const { widgetFileKey, hostMarkerKey } = require('./aClubsKeys');
 const { headOrNull, putIfAbsent } = require('./s3Store');
 const { publishFolderEvent } = require('./publishFolderEvent');
 const { resolvePageUri } = require('./pageUri');
@@ -25,8 +32,13 @@ const { resolvePageUri } = require('./pageUri');
  *   uri?: string,
  *   headObject: Function,
  *   putObject: Function,
+ *   getObject?: Function,
+ *   copyObject?: Function,
+ *   getObjectTagging?: Function,
+ *   putObjectTagging?: Function,
  *   sendMessage?: Function,
  *   folderEventsQueueUrl?: string,
+ *   now?: Date|string|number,
  * }} opts
  * @returns {Promise<{ created: boolean, layout: string, uri: string, metadata: object }>}
  */
@@ -66,7 +78,7 @@ async function ensureAclubsWidget(opts) {
     };
   }
 
-  const createdAt = new Date().toISOString();
+  const createdAt = isoLastmod(opts.now);
   const uri = resolvePageUri(opts);
   const metadata = {
     uri: uri || '',
@@ -75,6 +87,7 @@ async function ensureAclubsWidget(opts) {
     since: createdAt,
     lastmod: createdAt,
     annotated: '0',
+    init: '0',
   };
 
   const widgetDoc = {
@@ -109,17 +122,38 @@ async function ensureAclubsWidget(opts) {
     ContentType: 'application/json; charset=utf-8',
   });
 
-  // FR #3987: resend host message for every new GUID so redqueen annotates it
-  // (host-only event schema; agent lists GUID folders itself).
-  if (w.created && typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
-    await publishFolderEvent({
-      sendMessage: opts.sendMessage,
-      queueUrl: opts.folderEventsQueueUrl,
-      hostkey: safeHostFolderName(host),
-      host,
-      createdAt,
-      reason: `guid:${guid}`,
-    });
+  if (w.created) {
+    // Seed writes bump GUID lastmod and host lastmod when S3 touch helpers exist.
+    if (
+      typeof opts.getObject === 'function' ||
+      typeof opts.copyObject === 'function'
+    ) {
+      const s3Touch = {
+        headObject: opts.headObject,
+        getObject: opts.getObject,
+        copyObject: opts.copyObject,
+        putObject: opts.putObject,
+        getObjectTagging: opts.getObjectTagging,
+        putObjectTagging: opts.putObjectTagging,
+        now: opts.now,
+      };
+      const bumped = await touchLastmod({ Key: widgetKey, ...s3Touch });
+      Object.assign(metadata, bumped.metadata);
+      await touchLastmod({ Key: hostMarkerKey(host), ...s3Touch });
+    }
+
+    // FR #3987: resend host message for every new GUID so redqueen annotates it
+    // (host-only event schema; agent lists GUID folders itself).
+    if (typeof opts.sendMessage === 'function' && opts.folderEventsQueueUrl) {
+      await publishFolderEvent({
+        sendMessage: opts.sendMessage,
+        queueUrl: opts.folderEventsQueueUrl,
+        hostkey: safeHostFolderName(host),
+        host,
+        createdAt,
+        reason: `guid:${guid}`,
+      });
+    }
   }
 
   return { created: w.created, layout, uri, metadata };

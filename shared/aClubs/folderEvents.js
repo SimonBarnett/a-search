@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * FR #3987: a-clubs new-folder host event schema (gateway -> redqueen via SQS FIFO).
+ * FR #3968 / #3987: a-clubs new-folder host event schema (gateway -> redqueen via SQS FIFO).
  * Simon scope: host messages only `{hostkey, host, createdAt}` for every new host
  * and every new GUID. Redqueen finds GUID folders itself under the host.
+ * MessageGroupId = hostkey.
  */
 
 /**
@@ -56,6 +57,7 @@ function messageGroupId(ev) {
 
 /**
  * Dedup id: hostkey + createdAt (+ optional reason tag for host vs guid create).
+ * Dedup id per created folder (hostkey or hostkey/guid) so retries do not double-send.
  * @param {{ hostkey: string, createdAt: string, reason?: string }} ev
  */
 function messageDeduplicationId(ev) {

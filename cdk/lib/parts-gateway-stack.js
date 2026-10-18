@@ -3,6 +3,7 @@
 /**
  * FR #3968: standalone APartsGateway stack.
  * HTTP API GET /parts -> one Node Lambda with S3 Get/Put/List/Head on a-clubs only.
+ * CORS allowOrigins hardcoded ['*'] (do not call the main-stack CORS allowlist helper; FR-153 keeps * rejected there).
  * Isolated from the main search stack: no VPC, no Secrets Manager, no database drivers.
  */
 
@@ -14,7 +15,6 @@ const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const iam = require('aws-cdk-lib/aws-iam');
 const logs = require('aws-cdk-lib/aws-logs');
 const sqs = require('aws-cdk-lib/aws-sqs');
-const { resolveCorsOrigins } = require('./resolve-cors-origins');
 const {
   stagePartsGatewayLambdaAsset,
 } = require('../../scripts/stage-parts-gateway-lambda-asset');
@@ -33,10 +33,6 @@ class PartsGatewayStack extends cdk.Stack {
    */
   constructor(scope, id, props) {
     super(scope, id, props);
-
-    const corsOrigins = resolveCorsOrigins({
-      corsOrigins: this.node.tryGetContext('corsOrigins'),
-    });
 
     const repoRoot = path.join(__dirname, '..', '..');
     const assetDir = stagePartsGatewayLambdaAsset(repoRoot);
@@ -102,13 +98,13 @@ class PartsGatewayStack extends cdk.Stack {
       logGroup,
     });
 
-    // Existing bucket a-clubs --- grant Get/Put/List/Head only (no Delete*, no other buckets)
     fn.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'AClubsReadWriteList',
         actions: [
           's3:GetObject',
           's3:PutObject',
+          's3:CopyObject',
           's3:ListBucket',
           's3:GetObjectTagging',
           's3:PutObjectTagging',
@@ -127,15 +123,13 @@ class PartsGatewayStack extends cdk.Stack {
       apiName: 'a-search-parts-gateway',
       description:
         'FR #3968 standalone GET /parts for parts widget (a-clubs S3, auto-create host+GUID)',
-      corsPreflight:
-        corsOrigins.length > 0
-          ? {
-              allowHeaders: ['content-type'],
-              allowMethods: [apigwv2.CorsHttpMethod.GET, apigwv2.CorsHttpMethod.OPTIONS],
-              allowOrigins: corsOrigins,
-              maxAge: cdk.Duration.days(1),
-            }
-          : undefined,
+      corsPreflight: {
+        allowHeaders: ['content-type'],
+        allowMethods: [apigwv2.CorsHttpMethod.GET, apigwv2.CorsHttpMethod.OPTIONS],
+        allowOrigins: ['*'],
+        allowCredentials: false,
+        maxAge: cdk.Duration.days(1),
+      },
     });
 
     const integration = new integrations.HttpLambdaIntegration(

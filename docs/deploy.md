@@ -372,7 +372,12 @@ DNS / custom-domain failover is FR-193 ([multi-region-dns.md](multi-region-dns.m
 Separate CDK app (`cdk/bin/parts-gateway.js`, stack id `APartsGateway`). Does **not**
 modify or depend on `ASearchStack`. No MSSQL, no VPC, no Secrets Manager. Lambda
 IAM is limited to Get/Put/List + object tagging on `arn:aws:s3:::a-clubs` and
-`a-clubs/*`.
+`a-clubs/*`. CORS is hardcoded `allowOrigins: ['*']` (GET+OPTIONS; credentials
+false) --- do not pass `-c corsOrigins=` (and do not use `resolveCorsOrigins` here).
+
+Also creates SQS FIFO `a-clubs-new-folders.fifo` (+ DLQ), env
+`A_CLUBS_FOLDER_EVENTS_QUEUE_URL`, and IAM user `a-search-redqueen-annotator`
+(consume + S3 R/W). Host for `/parts` comes from the `Origin` header only.
 
 Full notes: [cdk/README-parts-gateway.md](../cdk/README-parts-gateway.md).
 
@@ -384,11 +389,33 @@ npx cdk synth --app "node cdk/bin/parts-gateway.js" APartsGateway \
 
 npx cdk deploy --app "node cdk/bin/parts-gateway.js" APartsGateway \
   -c requireDeployEnv=true \
-  -c account=620257466932 -c region=eu-west-2 \
-  -c corsOrigins=https://your-club-host.example
+  -c account=620257466932 -c region=eu-west-2
 ```
 
 `customerNumber` in host-folder metadata is the Madeira checksum **userid** (not a
 sequential counter). First request for a new host or GUID auto-creates the
 `a-clubs/{hostkey}/` marker and `{hostkey}/{guid}/` seed files; repeats are
 idempotent. Bob deploys after MRB PASS and merge.
+
+## AAffiliates (FR #3999) --- standalone affiliates bucket + weekly download
+
+Separate CDK app (`cdk/bin/affiliates.js`, stack id `AAffiliates`). Does **not**
+modify or depend on `ASearchStack` or `APartsGateway`. Creates private bucket
+`a-affiliates` (fallback name `a-search-affiliates` if taken), Node 20 Lambda,
+and EventBridge `rate(7 days)`. IAM is limited to Get/Put/List/DeleteObject on
+this bucket only. v1 uses Lambda; Fargate is a follow-up if size/time limits hit.
+
+Full notes: [a-affiliates.md](a-affiliates.md) and
+[cdk/README-affiliates.md](../cdk/README-affiliates.md).
+
+```bash
+npm ci
+npm run stage-affiliates
+npx cdk synth --app "node cdk/bin/affiliates.js" AAffiliates \
+  -c account=620257466932 -c region=eu-west-2
+
+npx cdk deploy --app "node cdk/bin/affiliates.js" AAffiliates \
+  -c requireDeployEnv=true \
+  -c account=620257466932 -c region=eu-west-2
+```
+

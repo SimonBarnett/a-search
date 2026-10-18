@@ -3,6 +3,7 @@
 /**
  * FR #3968: ensure a-clubs/{hostkey}/ marker with Madeira userid metadata.
  * customerNumber metadata === userid (documented choice; no sequential counter).
+ * Sets lastmod on create; publishes folder event when newly created.
  */
 
 const { normalizeHost } = require('../../shared/components/customers');
@@ -10,6 +11,7 @@ const {
   safeHostFolderName,
   buildHostTagSet,
   parseHostTagSet,
+  isoLastmod,
 } = require('../../shared/widgets/hostFolderMeta');
 const {
   mintUniqueUserId,
@@ -28,6 +30,7 @@ const { publishFolderEvent } = require('./publishFolderEvent');
  *   mint?: () => string,
  *   sendMessage?: Function,
  *   folderEventsQueueUrl?: string,
+ *   now?: Date|string|number,
  * }} opts
  * @returns {Promise<{
  *   created: boolean,
@@ -67,9 +70,11 @@ async function ensureAclubsHost(opts) {
       customerNumber: customerNumber || userid,
       metadata: {
         userid,
-        host,
-        hostkey,
+        host: md.host || host,
+        hostkey: md.hostkey || hostkey,
         customerNumber: customerNumber || userid,
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
+        ...(md.annotated != null ? { annotated: String(md.annotated) } : {}),
       },
       tags: { hasdns: false, partnerid: '', hasupg: false },
     };
@@ -97,7 +102,7 @@ async function ensureAclubsHost(opts) {
   }
 
   // customerNumber === userid (FR #3968: no sequential in-memory counter)
-  const createdAtForMeta = new Date().toISOString();
+  const createdAtForMeta = isoLastmod(opts.now);
   const metadata = {
     userid,
     host,
@@ -143,6 +148,7 @@ async function ensureAclubsHost(opts) {
         host: md.host || host,
         hostkey: md.hostkey || hostkey,
         customerNumber: String(md.customerNumber || uid),
+        ...(md.lastmod ? { lastmod: String(md.lastmod) } : {}),
       },
       tags: parseHostTagSet(tagSet),
     };
