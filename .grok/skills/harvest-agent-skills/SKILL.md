@@ -504,3 +504,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB harvest-lesson tips that append to SKILL.md: keep-both every racing main bullet on fold; land contiguous hostile pin on the tip under FR #3948 rather than a red-until-merge docs/mrb; --auto immediately after PASS.
 - FR redqueen reviewer: grok 1.0.62 rejects --prompt and --output text; use -p or --prompt-file plus --output-format plain; treat .grok\bin\agent.exe as grok not Cursor
 - Harvest-lesson MRB: when the tip restates FIX CONFLICTING keep-both / re-arm --auto already on main, CLOSED-duplicate --- do not fold-to-merge a weaker twin.
+- FIX docs/mrb when FR #4195 rewrites docs/a-affiliates.md: restore contiguous awin-agent|FR #4123 section (fr4123 pin) and keep #4208 Download format; one main fold keep-both product tip over weekly alias.
