@@ -468,10 +468,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When FIFO rewires DLQ names, hostile contiguous pins must allow queueName: dlqName|queueDlqName and use a window long enough for maxReceiveCount after the fifo props.
 - WinPS 5.1 folder tools: join aws/rclone string[] stdout before ConvertFrom-Json; native calls Continue+LASTEXITCODE for head_failed; bare S:\ mount must not TrimEnd to S:; bucket root empty Key exits 5 bucket_root
 - Redqueen a-clubs drain: PutObjectAnnotation on folder markers (never annotations.json); GUID markers are trailing-slash keys; stub reviewer must never set annotated=1; install via sc.exe service under a-search-redqueen-annotator profile
-- Wix HTML embeds Origin as {dots-as-hyphens}.filesusr.com — decode by hyphen→dot for hosts without literal hyphens; require consistent X-Parent-Origin when the club domain has hyphens; never create a-clubs/{filesusr}/ folders
+- Wix HTML embeds Origin as {dots-as-hyphens}.filesusr.com --- decode by hyphen→dot for hosts without literal hyphens; require consistent X-Parent-Origin when the club domain has hyphens; never create a-clubs/{filesusr}/ folders
 - MRB parts-gateway Wix embed: fold origin/main once when behind, run fr4107+fr3968 together, PASS @ head SHA then gh pr merge --auto without waiting for live redeploy
 - Affiliate marker missing_feedurl: allow normalize/merge without feedurl/feedid when laststatus=missing_feedurl; keep feedurl_or_feedid_required for create/update.
 - MRB folder-tools download: fold main once, run fr4108 Node+Pester with fr4043 regression, PASS @ head SHA then --auto; leave downloadOne missing_feedurl follow-up #4113 open
 - APartsGateway a-search-redqueen-annotator needs s3:PutObjectAnnotation GetObjectAnnotation ListObjectAnnotations DeleteObjectAnnotation on a-clubs/* after #4098 object-annotation drain
-- Awin daily agent: merge a-affiliates folders never recreate; secrets never in reports; OTP stops for Simon; skill UI steps PENDING from Merc — do not invent ids.
-- FR that says Merc/Simon paste playbook and do not invent UI ids: ACK, comment blocked, GIVEUP — do not fabricate Awin operator steps
+- Awin daily agent: merge a-affiliates folders never recreate; secrets never in reports; OTP stops for Simon; skill UI steps PENDING from Merc --- do not invent ids.
+- MRB Awin agent: fr4123+fr3999 local green; pin #4113 missing_feedurl/nofeed on separate tip-based fix PR; close thinner twin PR; fold main once then --auto without live Awin OTP
+- FR paste-Merc-playbook jobs: ACK then GIVEUP reason=needs_human when skill shells are PENDING and no FR-061 body exists in-repo; never invent Awin UI element ids
