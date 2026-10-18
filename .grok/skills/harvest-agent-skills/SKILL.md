@@ -465,3 +465,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX harvest tip DIRTY when main merges a sibling SKILL bullet: rebase onto newest main, keep-both Harvested lessons, force-push owned tip; shallow fetch can hide the new main tip
 - After FR #4039 FIFO rename, supersede enable-provider synth pins to queueName(id,env) and FR-156 staged DLQ to {base}-dlq-{stage}.fifo (stagedFifoName on queueDlqName); one fix PR into tip then PASS.
 - MRB assign of already-merged fix PR into feature tip: board PASS already MERGED @ head/merge SHA; leave parent --auto; DONE PASS without re-merge
+- When FIFO rewires DLQ names, hostile contiguous pins must allow queueName: dlqName|queueDlqName and use a window long enough for maxReceiveCount after the fifo props.
