@@ -107,6 +107,7 @@ describe('FR-191 second-region stack via context', () => {
         stage: c.stage,
         region: c.region,
         includeRegionInNames: true,
+        providerEnvRoot: path.join(root, 'tests', 'fixtures', 'provider-env'),
       };
       const app = new cdk.App({ outdir: c.outdir, context: ctx });
       const stackId = resolveStackId(ctx);
