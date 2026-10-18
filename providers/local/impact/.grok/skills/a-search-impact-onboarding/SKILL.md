@@ -82,7 +82,7 @@ The repo covers **campaign/MSSQL config and link params, not the network signup 
 
 > 3. Fill `.env` from `.env.example`; keep secrets out of IRC/chat/logs.
 
-> 6. Feed **ingest** stays with maintainer ÔÇö this CWD does not download Impact CSV feeds.
+> 6. Feed **ingest** stays with maintainer --- this CWD does not download Impact CSV feeds.
 
 
 
