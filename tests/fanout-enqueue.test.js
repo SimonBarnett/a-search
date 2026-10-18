@@ -8,6 +8,7 @@ const {
   EnqueueError,
   resolveEnqueueTargets,
 } = require('../entry/src/enqueue');
+const { queueName } = require('../providers/queueName');
 
 const DEFAULT_ON = ['amazon', 'ebay', 'awin', 'rakuten', 'cj', 'impact'];
 
@@ -41,7 +42,7 @@ describe('FR-006 fan-out enqueue', () => {
       assert.equal(p.q, 'headphones');
       assert.ok(DEFAULT_ON.includes(p.source));
       assert.equal(p.sandbox, false);
-      assert.equal(p.queueName, `a-search-${p.source}-live`);
+      assert.equal(p.queueName, queueName(p.source, 'live'));
     }
   });
 

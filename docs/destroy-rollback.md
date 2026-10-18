@@ -15,7 +15,7 @@ resources the stack owns, including:
 
 | Resource class | Examples | Notes |
 |----------------|----------|--------|
-| SQS queues + DLQs | `a-search-{source}-{live\|sandbox}`, `*-dlq` | Emptied/deleted with the stack (FR-142 / FR-162) |
+| SQS queues + DLQs | `a-search-provider-{source}-{live\|sandbox}.fifo`, `*-dlq.fifo` (FR #4039); SQL `a-search-db-backed` stays standard | Emptied/deleted with the stack (FR-142 / FR-162) |
 | Lambda functions + event sources | entry, workers, maintainer, onboarding | Code assets go with the functions |
 | HTTP API | SearchApiUrl routes (`/search`, `/selftest`, `/account/performance`) | Base URL stops resolving after destroy |
 | CloudWatch Log groups | Lambda log groups | Stack uses `RemovalPolicy.RETAIN` on log groups - **groups may remain** after destroy (orphans; delete manually if required) |

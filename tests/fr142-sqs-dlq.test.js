@@ -11,7 +11,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { queueName } = require('../providers/queueName');
+const { queueName, queueDlqName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -72,7 +72,8 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {
         const qName = queueName(id, env);
-        const dlqName = `${qName}-dlq`;
+        // FR #4039: sibling DLQ is {base}-dlq.fifo, never {name}.fifo-dlq
+        const dlqName = queueDlqName(id, env);
         const primary = findQueueByName(qName);
         const dlq = findQueueByName(dlqName);
 
@@ -102,18 +103,16 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-3949: 7 marketplace x live+sandbox = 14. Exclude shop-sync FIFO,
-    // widget-events, and the shared db-backed pair (asserted below).
+    // FR-3949: 7 marketplace x live+sandbox = 14. Provider queues are FIFO
+    // (FR #4039: a-search-provider-*-dlq.fifo). Count only those names so
+    // shop-sync / widget-agent FIFO are not mixed in.
     const named = queues
       .map(([, res]) => res.Properties && res.Properties.QueueName)
       .filter(Boolean)
-      // #2139 shop-sync FIFO (+DLQ) and #1343 widget-agent FIFO are not provider worker queues
-      .filter((n) => !String(n).includes('.fifo'))
-      .filter((n) => !/^a-search-shop-sync/.test(String(n)))
-      .filter((n) => !/^a-search-widget-events/.test(String(n)))
-      .filter((n) => !/^a-search-db-backed/.test(String(n)));
-    const primaries = named.filter((n) => !String(n).endsWith('-dlq'));
-    const dlqs = named.filter((n) => String(n).endsWith('-dlq'));
+      .filter((n) => String(n).startsWith('a-search-provider-'));
+    const isProviderDlq = (n) => /-dlq\.fifo$/.test(String(n));
+    const primaries = named.filter((n) => !isProviderDlq(n));
+    const dlqs = named.filter((n) => isProviderDlq(n));
     assert.equal(
       primaries.length,
       14,

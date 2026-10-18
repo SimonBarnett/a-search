@@ -9,8 +9,8 @@ const { assertWorkerEnv, EnvIsolationError } = require('../shared/assertEnv');
 describe('MRB #40 hostile: FR-007 env isolation', () => {
   it('amazon live queue name !== amazon sandbox', () => {
     assert.notEqual(queueName('amazon', 'live'), queueName('amazon', 'sandbox'));
-    assert.equal(queueName('amazon', 'live'), 'a-search-amazon-live');
-    assert.equal(queueName('amazon', 'sandbox'), 'a-search-amazon-sandbox');
+    assert.equal(queueName('amazon', 'live'), 'a-search-provider-amazon-live.fifo');
+    assert.equal(queueName('amazon', 'sandbox'), 'a-search-provider-amazon-sandbox.fifo');
   });
 
   it('sandbox worker + live message â†’ env_mismatch', () => {

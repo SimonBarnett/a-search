@@ -70,7 +70,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     }
 
     // FR-3949: no per-source local queues/workers; shared db-backed instead
-    assert.doesNotMatch(tpl, /a-search-awin-live/);
+    assert.doesNotMatch(tpl, /a-search-provider-awin-live\.fifo/);
     assert.doesNotMatch(tpl, /a-search-awin-sandbox/);
     assert.doesNotMatch(tpl, /a-search-awin-worker-/);
     assert.doesNotMatch(tpl, /a-search-impact-worker-/);
@@ -78,7 +78,7 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     assert.match(tpl, /SQS_DB_BACKED_URL/);
 
     // Fail-when: only amazon queues exist
-    assert.match(tpl, /a-search-ebay-live/);
+    assert.match(tpl, /a-search-provider-ebay-live\.fifo/);
 
     assert.match(tpl, /AWS::Lambda::EventSourceMapping/);
     assert.match(tpl, /SQS_EBAY_LIVE_URL|SQS_EBAY_SANDBOX_URL/);

@@ -134,11 +134,11 @@ function Read-SearchesQueries {
     if (-not $raw) {
         return @{ queries = @(); exclude = @() }
     }
-    $doc = $raw | ConvertFrom-Json
+    $doc = ConvertFrom-FolderS3Json $raw
     $queries = @()
-    if ($doc.queries) { $queries = @($doc.queries) }
+    if ($doc -and $doc.queries) { $queries = @($doc.queries) }
     $exclude = @()
-    if ($doc.exclude) { $exclude = @($doc.exclude) }
+    if ($doc -and $doc.exclude) { $exclude = @($doc.exclude) }
     return @{ queries = $queries; exclude = $exclude }
 }
 
@@ -176,7 +176,7 @@ function Invoke-OneGuidSearch {
         -AgentApiKey $AgentApiKey -AwsProfile $AwsProfile -InvokeSearch $InvokeSearch
 
     $parsed = $null
-    try { $parsed = if ($raw -is [string]) { $raw | ConvertFrom-Json } else { $raw } } catch { $parsed = $raw }
+    try { $parsed = ConvertFrom-FolderS3Json $raw } catch { $parsed = $raw }
 
     [pscustomobject]@{
         hostkey  = $hostkey

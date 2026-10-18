@@ -301,3 +301,70 @@ Describe 'Invoke-FolderSearch.ps1' {
         $LASTEXITCODE | Should Be 3
     }
 }
+Describe "FR #4087 WinPS 5.1 folder-tools fixes" {
+    It "parses multi-line CLI JSON arrays (ConvertFrom-FolderS3Json)" {
+        $lines = @("{", "  ""Metadata"": { ""host"": ""Example.COM"" },", "  ""ContentLength"": 0", "}")
+        $doc = ConvertFrom-FolderS3Json $lines
+        $doc.Metadata.host | Should Be "Example.COM"
+    }
+
+    It "preserves bare drive-letter mount roots" {
+        Get-FolderS3MountRoot -MountRoot "S:\" | Should Be "S:\"
+        Get-FolderS3MountRoot -MountRoot "S:" | Should Be "S:\"
+        Get-FolderS3MountRoot -MountRoot "S:\." | Should Be "S:\"
+        Get-FolderS3MountRoot -MountRoot "D:\s3" | Should Be "D:\s3"
+        Get-FolderS3MountRoot -MountRoot "D:\s3\" | Should Be "D:\s3"
+    }
+
+    It "head_failed when head returns empty" {
+        $mount = Join-Path $env:TEMP "fr4087-head-mount"
+        if (Test-Path $mount) { Remove-Item -LiteralPath $mount -Recurse -Force -ErrorAction SilentlyContinue }
+        New-Item -ItemType Directory -Force -Path (Join-Path $mount "a-clubs\host1") | Out-Null
+        $scriptPath = Join-Path $tools "Get-FolderMeta.ps1"
+        $head = { param($b, $k) return $null }
+        $tags = { param($b, $k) return $null }
+        $listAnn = { param($b, $k) return $null }
+        $getAnn = { param($b, $k, $n) return $null }
+        # [Console]::Error.WriteLine bypasses 2>&1; assert exit code (message is head_failed:)
+        $null = & $scriptPath -Path (Join-Path $mount "a-clubs\host1") -MountRoot $mount -Backend aws `
+            -AwsHeadObject $head -AwsGetObjectTagging $tags `
+            -AwsListAnnotations $listAnn -AwsGetAnnotation $getAnn 2>&1
+        $LASTEXITCODE | Should Be 1
+        (Get-Content -LiteralPath (Join-Path $tools "FolderS3.ps1") -Raw) | Should Match "head_failed"
+        $threw = $false
+        try {
+            Get-FolderS3ObjectMeta -Bucket "a-clubs" -Key "host1/" -Backend aws `
+                -AwsHeadObject $head -AwsGetObjectTagging $tags | Out-Null
+        } catch {
+            $threw = $true
+            $_.Exception.Message | Should Match "head_failed"
+        }
+        $threw | Should Be $true
+    }
+
+    It "bucket root exits 5 with bucket_root message" {
+        $mount = Join-Path $env:TEMP "fr4087-bucket-mount"
+        if (Test-Path $mount) { Remove-Item -LiteralPath $mount -Recurse -Force -ErrorAction SilentlyContinue }
+        New-Item -ItemType Directory -Force -Path (Join-Path $mount "a-clubs") | Out-Null
+        $scriptPath = Join-Path $tools "Get-FolderMeta.ps1"
+        $head = { param($b, $k) "{}" }
+        $null = & $scriptPath -Path (Join-Path $mount "a-clubs") -MountRoot $mount -Backend aws `
+            -AwsHeadObject $head -AwsGetObjectTagging $head `
+            -AwsListAnnotations $head -AwsGetAnnotation $head 2>&1
+        $LASTEXITCODE | Should Be 5
+        (Get-Content -LiteralPath $scriptPath -Raw) | Should Match "bucket_root"
+    }
+
+    It "Get-FolderS3ObjectMeta parses string[] head JSON without Metadata bind error" {
+        $head = {
+            param($b, $k)
+            @("{", "  ""Metadata"": { ""host"": ""H"", ""hostkey"": ""h"" },", "  ""ContentLength"": 0", "}")
+        }
+        $tags = { param($b, $k) @("{", "  ""TagSet"": []", "}") }
+        $m = Get-FolderS3ObjectMeta -Bucket "a-clubs" -Key "host1/" -Backend aws `
+            -AwsHeadObject $head -AwsGetObjectTagging $tags
+        $m.Metadata["host"] | Should Be "H"
+        $m.Metadata["hostkey"] | Should Be "h"
+    }
+}
+

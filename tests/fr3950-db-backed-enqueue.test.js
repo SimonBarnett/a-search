@@ -98,7 +98,7 @@ describe('FR-3950 DB-backed single-queue enqueue', () => {
       assert.equal(p.source, id);
       assert.equal(p.sandbox, false);
       // Walrus drain routes on source; queueName stays per-source logical id.
-      assert.equal(p.queueName, `a-search-${id}-live`);
+      assert.equal(p.queueName, `a-search-provider-${id}-live.fifo`);
     }
   });
 
@@ -161,7 +161,7 @@ describe('FR-3950 DB-backed single-queue enqueue', () => {
     assert.equal(p.env, 'live');
     assert.equal(p.catalogId, 2);
     assert.equal(p.q, 'q');
-    assert.equal(p.queueName, 'a-search-wix-live');
+    assert.equal(p.queueName, 'a-search-provider-wix-live.fifo');
   });
 
   it('search enqueue modules do not open MSSQL', () => {

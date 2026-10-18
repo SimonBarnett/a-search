@@ -12,6 +12,7 @@ const crypto = require('node:crypto');
 const { handler } = require('../entry/src/index');
 const { fanOutEnqueue } = require('../entry/src/enqueue');
 const { enabled: registryEnabled } = require('../providers/loadRegistry');
+const { queueName } = require('../providers/queueName');
 
 const FIXTURE_HS256_KEY = Buffer.alloc(32, 0x42).toString('hex');
 const ISSUER = 'https://login.test.invalid/';
@@ -96,7 +97,7 @@ describe('FR-026 fan-out integration (vision S1)', () => {
       assert.equal(p.userId, 'ABC12345');
       assert.equal(p.env, 'live');
       assert.ok(enabledLive.includes(p.source));
-      assert.equal(p.queueName, `a-search-${p.source}-live`);
+      assert.equal(p.queueName, queueName(p.source, 'live'));
     }
   });
 
@@ -131,7 +132,7 @@ describe('FR-026 fan-out integration (vision S1)', () => {
     for (const p of sent) {
       assert.equal(p.env, 'sandbox');
       assert.equal(p.sandbox, true);
-      assert.equal(p.queueName, `a-search-${p.source}-sandbox`);
+      assert.equal(p.queueName, queueName(p.source, 'sandbox'));
     }
   });
 

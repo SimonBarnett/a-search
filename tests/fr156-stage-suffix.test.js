@@ -77,8 +77,8 @@ describe('FR-156 stack stage suffix', () => {
     const queues = resourcesOfType(tpl, 'AWS::SQS::Queue').map(
       (r) => r.Properties && r.Properties.QueueName,
     );
-    assert.ok(queues.includes('a-search-amazon-live'));
-    assert.ok(queues.includes('a-search-amazon-live-dlq'));
+    assert.ok(queues.includes('a-search-provider-amazon-live.fifo'));
+    assert.ok(queues.includes('a-search-provider-amazon-live-dlq.fifo'));
     assert.ok(!queues.some((n) => typeof n === 'string' && n.endsWith('-dev')));
   });
 
@@ -105,7 +105,7 @@ describe('FR-156 stack stage suffix', () => {
     const queues = resourcesOfType(tpl, 'AWS::SQS::Queue').map(
       (r) => r.Properties && r.Properties.QueueName,
     );
-    assert.ok(queues.includes('a-search-amazon-live-dev'));
-    assert.ok(queues.includes('a-search-amazon-live-dev-dlq'));
+    assert.ok(queues.includes('a-search-provider-amazon-live-dev.fifo'));
+    assert.ok(queues.includes('a-search-provider-amazon-live-dlq-dev.fifo'));
   });
 });

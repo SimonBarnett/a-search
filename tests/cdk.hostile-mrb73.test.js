@@ -18,8 +18,8 @@ describe('MRB #73 hostile: FR-023 CDK skeleton', () => {
     assert.match(text, /a-search-entry|EntryFunction/);
     assert.match(text, /SqsEventSource|worker\.handler/);
     const { queueName } = require('../providers/queueName');
-    assert.equal(queueName('amazon', 'live'), 'a-search-amazon-live');
-    assert.equal(queueName('amazon', 'sandbox'), 'a-search-amazon-sandbox');
+    assert.equal(queueName('amazon', 'live'), 'a-search-provider-amazon-live.fifo');
+    assert.equal(queueName('amazon', 'sandbox'), 'a-search-provider-amazon-sandbox.fifo');
   });
 
   it('package.json synth uses npx --no-install cdk; npm run synth exits 0', () => {

@@ -20,8 +20,9 @@ describe('FR-027 / S6 env-isolation-runtime', () => {
       const live = queueName(id, 'live');
       const sandbox = queueName(id, 'sandbox');
       assert.notEqual(live, sandbox);
-      assert.match(live, /-live$/);
-      assert.match(sandbox, /-sandbox$/);
+      // FR #4039: FIFO suffix a-search-provider-{id}-{env}.fifo
+      assert.match(live, /-live\.fifo$/);
+      assert.match(sandbox, /-sandbox\.fifo$/);
     }
   });
 

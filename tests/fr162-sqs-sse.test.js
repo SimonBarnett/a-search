@@ -11,7 +11,7 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { queueName } = require('../providers/queueName');
+const { queueName, queueDlqName } = require('../providers/queueName');
 
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
@@ -74,7 +74,7 @@ describe('FR-162 SQS-managed SSE on worker queues + DLQs', () => {
     for (const id of ENABLED_IDS) {
       for (const env of ['live', 'sandbox']) {
         const qName = queueName(id, env);
-        const dlqName = `${qName}-dlq`;
+        const dlqName = queueDlqName(id, env);
         const primary = findQueueByName(qName);
         const dlq = findQueueByName(dlqName);
         assert.ok(

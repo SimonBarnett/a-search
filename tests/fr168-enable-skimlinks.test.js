@@ -8,6 +8,7 @@ const { ensureDefaultStackSynth } = require('./helpers/runCdkSynth');
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { queueName } = require('../providers/queueName');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -108,9 +109,9 @@ describe('FR-168 enable skimlinks', () => {
         (q) =>
           q.Properties &&
           typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === `a-search-skimlinks-${env}`,
+          q.Properties.QueueName === queueName('skimlinks', env),
       );
-      assert.ok(qHit, `missing queue a-search-skimlinks-${env}`);
+      assert.ok(qHit, `missing queue ${queueName('skimlinks', env)}`);
     }
 
     // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
