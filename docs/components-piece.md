@@ -61,7 +61,7 @@ CAST IRON (FR-251 / #1365): all SQL tables ComponentsPiece creates or writes liv
 
 - No Lambda handlers
 - No CDK routes
-- No Chrome extension / agent dispatch implementation (see #1343 / #1344)
+- No Chrome extension implementation (see #1344). Agent dispatch: #1343 / FR-258 / docs/components-piece-agent-dispatch.md
 - FR-233 amendment text inside the feature-request file
 
 ## Related
