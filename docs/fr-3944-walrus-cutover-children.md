@@ -1,13 +1,13 @@
-# FR-3944 walrus / no-MSSQL cutover — child FR matrix
+# FR-3944 walrus / no-MSSQL cutover --- child FR matrix
 
 Living umbrella: [#3944](https://github.com/SimonBarnett/a-search/issues/3944).
 Plan issue closed by this tip: [#3946](https://github.com/SimonBarnett/a-search/issues/3946).
 
 ## Simon scope (2026-10-18)
 
-- Live-search **providers** (eBay, Amazon, …) stay in AWS with **no** MSSQL access.
+- Live-search **providers** (eBay, Amazon, ...) stay in AWS with **no** MSSQL access.
 - Merchants and affiliates whose data is in the DB share **one** SQS queue, drained on walrus.
-- Results land at -clubs/{host}/{guid}/IN/ (no HOSTS/ prefix).
+- Results land at a-clubs/{host}/{guid}/IN/ (no HOSTS/ prefix).
 - Onboarding writes S3 metadata and name/value pairs (not MSSQL rows).
 - Maintainer / Parts work runs on the DB side.
 - FR-122 option **C** locked; no inbound ports to walrus.
