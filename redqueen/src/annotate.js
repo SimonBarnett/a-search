@@ -14,6 +14,8 @@ const {
   defaultReviewGuid,
   annotationsTooSimilar,
   hostBriefText,
+  isCompleteHostBrief,
+  isCompleteGuidReview,
 } = require('./reviewers');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
 
@@ -196,6 +198,21 @@ async function processFolderEvent(opts) {
         detail: `host_fetch_failed:${hostPage.detail || 'unknown'}`,
       };
     }
+    const extraPages = [];
+    for (const extraUrl of hostPage.contextLinks || []) {
+      const extra = await fetchPageText({
+        url: extraUrl,
+        fetchImpl: opts.fetchImpl,
+        timeoutMs: opts.fetchTimeoutMs,
+        maxBytes: opts.fetchMaxBytes,
+      });
+      if (!extra.ok) continue;
+      extraPages.push({
+        url: extraUrl,
+        title: extra.head && extra.head.title,
+        text: String(extra.text || '').slice(0, 4000),
+      });
+    }
     let review;
     try {
       review = await reviewHost({
@@ -204,15 +221,18 @@ async function processFolderEvent(opts) {
         pageText: hostPage.text,
         pageHead: hostPage.head,
         pageUrl: hostUrl,
+        extraPages,
       });
     } catch (err) {
       const detail = (err && err.message) || 'host_review_failed';
       return { action: 'retry', detail: `host_review_failed:${detail}` };
     }
-    if (!isUsableReview(review)) {
+    if (!isUsableReview(review) || !isCompleteHostBrief(review)) {
       return {
         action: 'retry',
-        detail: `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+        detail: !isUsableReview(review)
+          ? `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`
+          : 'host_brief_incomplete',
       };
     }
     hostAnnDoc = {
@@ -317,10 +337,12 @@ async function annotateOneGuid(args) {
       detail: `guid_review_failed:${(err && err.message) || err}`,
     };
   }
-  if (!isUsableReview(review)) {
+  if (!isUsableReview(review) || !isCompleteGuidReview(review)) {
     return {
       action: 'retry',
-      detail: `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`,
+      detail: !isUsableReview(review)
+        ? `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`
+        : 'guid_review_incomplete',
     };
   }
   if (annotationsTooSimilar(review.summary, hostBriefText(hostAnn))) {

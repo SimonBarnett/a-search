@@ -36,9 +36,14 @@ poll loop does not rewrite the same markers on every tick. The host marker
 must still be on the folder-events queue (replay the host message).
 
 Host `annotation` is an affiliate brief: club specifics, audience, and
-affiliate opportunities. GUID `annotation` describes only that page (title,
+affiliate opportunities. Those three fields must be non-empty, and `summary`
+must be the brief rather than a plan to browse more pages. An incomplete
+brief writes nothing, leaves `annotated` unset, and does not review GUIDs.
+The annotator fetches a few same-host about/shop/training links and passes
+that text in; the model is told not to browse.
+GUID `annotation` describes only that page (title,
 meta, purpose) using the host brief as context and must not copy it.
-`steering` lists the page's narrowing terms plus market, currency and locale.
+`steering` is required and lists the page's narrowing terms plus market, currency and locale.
 
 The agent writes `lastupdate` and `lastmod` together so its own annotation write
 does not look like a content change and loop.

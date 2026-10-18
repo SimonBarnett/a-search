@@ -208,8 +208,7 @@ describe('FR #4251 page review must not copy the host', () => {
         reviewGuid: async () => ({
           model: 'test-guid',
           summary: HOST_COPY,
-          intent: 'copy',
-          suggestedQueries: ['club'],
+          steering: { include: ['club'] },
         }),
       }),
     );

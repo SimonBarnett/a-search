@@ -69,6 +69,39 @@ function extractHeadMetadata(html) {
   };
 }
 
+function extractContextLinks(html, pageUrl) {
+  let base;
+  try {
+    base = new URL(pageUrl);
+  } catch {
+    return [];
+  }
+  const interesting = /about|shop|store|rules|training|join|membership|members/i;
+  const out = [];
+  const seen = new Set();
+  const re = /<a\b[^>]*href\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'=<>`]+))[^>]*>/gi;
+  let m;
+  while ((m = re.exec(String(html || ''))) && out.length < 3) {
+    const href = m[2] || m[3] || m[4] || '';
+    if (!href || /^(#|mailto:|javascript:)/i.test(href)) continue;
+    let abs;
+    try {
+      abs = new URL(href, base);
+    } catch {
+      continue;
+    }
+    if (abs.host !== base.host) continue;
+    if (abs.pathname === '/' || abs.pathname === base.pathname) continue;
+    const blob = `${href} ${abs.pathname}`;
+    if (!interesting.test(blob)) continue;
+    const key = abs.href.split('#')[0];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
 function extractReadableText(html) {
   let s = String(html || '');
   s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
@@ -149,6 +182,7 @@ async function fetchPageText(opts) {
       ok: true,
       text,
       head,
+      contextLinks: extractContextLinks(raw, url),
       bytes: buf.length,
       truncated: Boolean(truncated),
     };
@@ -190,6 +224,7 @@ module.exports = {
   fetchPageText,
   extractReadableText,
   extractHeadMetadata,
+  extractContextLinks,
   clubPageUrl,
   DEFAULT_TIMEOUT_MS,
   DEFAULT_MAX_BYTES,
