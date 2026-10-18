@@ -38,16 +38,17 @@ const fixturePath = path.join(
 );
 
 describe('mrb718 hostile FR-077 etsy worker', () => {
-  it('worker wires search -> normalize -> writeResults; no stub; ASCII header', () => {
+  it('worker wires search -> normalize -> writeLiveProviderInResult; no stub; ASCII header', () => {
     const src = fs.readFileSync(workerPath, 'utf8');
     assert.ok(!src.includes('\ufffd'));
     assert.ok(!src.includes('<<<<<<'));
     assert.doesNotMatch(src, /not wired yet/i);
     assert.match(src, /searchEtsy/);
     assert.match(src, /normalizeSearchResponse/);
-    assert.match(src, /writeResults/);
+    // FR #4038: live path uses writeLiveProviderInResult (legacy writeResults inside helper).
+    assert.match(src, /writeLiveProviderInResult/);
     assert.match(src, /assertWorkerEnv/);
-    assert.match(src, /search -> normalize -> writeResults/);
+    assert.match(src, /search -> normalize -> a-clubs IN\/ \(writeLiveProviderInResult\)/);
   });
 
   it('skill documents FR-077; stay-dark registry; no conflict markers', () => {
@@ -56,7 +57,7 @@ describe('mrb718 hostile FR-077 etsy worker', () => {
     assert.ok(!skill.includes('<<<<<<'));
     assert.ok(!/\u00c3|\u00e2\u20ac/.test(skill));
     assert.match(skill, /## Worker \(FR-077\)/);
-    assert.match(skill, /writeResults/);
+    assert.match(skill, /writeLiveProviderInResult/);
     assert.doesNotMatch(skill, /Worker wiring \(FR-077\) is separate/);
 
     const registry = JSON.parse(

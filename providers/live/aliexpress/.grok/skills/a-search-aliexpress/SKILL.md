@@ -34,7 +34,8 @@ and common response wrappers. Partial rows without id+title are skipped (no thro
 ## Worker (FR-073)
 
 `src/worker.js` -- `run(msg, deps)` wires `searchAliexpress` -> `normalizeSearchResponse` ->
-`writeResults` with injectable `httpRequest` / `putObject`. `assertWorkerEnv` before HTTP.
+`writeLiveProviderInResult` (a-clubs IN/; legacy `writeResults` fallback) with injectable
+`httpRequest` / `putObject`. `assertWorkerEnv` before HTTP.
 SQS `handler` parses Records. Stay-dark: do not flip registry enabled.
 
 ## Selftest + pacing (FR-074)

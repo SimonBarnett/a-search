@@ -195,6 +195,16 @@ function wireResultsBucketAccess(fn, bucket) {
 }
 
 /**
+ * FR #4038 / #4030: live provider workers write a-clubs/{host}/{guid}/IN/*.
+ * @param {lambda.Function} fn
+ * @param {s3.IBucket} bucket
+ */
+function wireAclubsInAccess(fn, bucket) {
+  fn.addEnvironment('A_CLUBS_BUCKET', bucket.bucketName);
+  bucket.grantReadWrite(fn);
+}
+
+/**
  * @param {string} [folder] registry src.folder
  * @returns {boolean}
  */
@@ -526,6 +536,13 @@ class ASearchStack extends cdk.Stack {
       description: 'FR-143 placeholder SNS topic for DLQ depth alarms',
     });
 
+    // FR #4030 / #4038: shared a-clubs bucket ref (entry HeadObject + worker IN/ writes).
+    const aClubsBucket = s3.Bucket.fromBucketName(
+      this,
+      'AClubsBucketRef',
+      'a-clubs',
+    );
+
     // FR-036 / FR-3949: marketplace (non-local) queues + workers only.
     // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
     // they share the single a-search-db-backed queue created below.
@@ -590,6 +607,8 @@ class ASearchStack extends cdk.Stack {
           },
         );
         wireResultsBucketAccess(worker, resultsBucket);
+        // FR #4038: workers write a-clubs IN/ (shared schema); need Put/Get + bucket env.
+        wireAclubsInAccess(worker, aClubsBucket);
         // FR-138: provider credentials from per-source Secrets Manager JSON
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
         if (providerKeys) {
@@ -665,11 +684,6 @@ class ASearchStack extends cdk.Stack {
     if (typeof agentApiKeyCtx === 'string' && agentApiKeyCtx.trim()) {
       entry.addEnvironment('A_SEARCH_AGENT_API_KEY', agentApiKeyCtx.trim());
     }
-    const aClubsBucket = s3.Bucket.fromBucketName(
-      this,
-      'AClubsBucketRef',
-      'a-clubs',
-    );
     entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
     aClubsBucket.grantRead(entry);
 

@@ -2,7 +2,7 @@
 
 /**
  * CJ live provider worker (FR-041).
- * GraphQL Product Search -> normalize -> writeResults (injectable HTTP + putObject).
+ * GraphQL Product Search -> normalize -> a-clubs IN/ (writeLiveProviderInResult) (injectable HTTP + putObject).
  */
 
 const path = require('node:path');
@@ -10,7 +10,8 @@ const {
   assertWorkerEnv,
   EnvIsolationError,
 } = require('../../../../shared/assertEnv');
-const { writeResults } = require('../../../../shared/writeResults');
+const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
+const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
 const {
   searchCj,
   assertCjCreds,
@@ -41,15 +42,21 @@ async function run(msg, deps) {
     httpRequest: deps && deps.httpRequest,
   });
 
-  const written = await writeResults({
-    env: msg.env,
+  const written = await writeLiveProviderInResult({
+    msg,
     source: 'cj',
-    userId: msg.userId,
-    catalogId: msg.catalogId,
-    searchId: msg.searchId,
     products,
+    queries: msg.queries,
+    exclude: msg.exclude,
     envVars,
     putObject: deps && deps.putObject,
+    touchLastmod: deps && deps.touchLastmod,
+    headObject: deps && deps.headObject,
+    getObject: deps && deps.getObject,
+    copyObject: deps && deps.copyObject,
+    getObjectTagging: deps && deps.getObjectTagging,
+    putObjectTagging: deps && deps.putObjectTagging,
+    now: deps && deps.now,
   });
 
   return {
@@ -67,15 +74,17 @@ async function run(msg, deps) {
  * SQS Lambda entry (FR-036).
  * @param {{ Records?: Array<{ body: string }> }} event
  */
-async function handler(event) {
-  const records = (event && event.Records) || [];
-  const results = [];
-  for (const record of records) {
-    const body = record && record.body;
-    const msg = typeof body === 'string' ? JSON.parse(body) : body;
-    results.push(await run(msg));
-  }
-  return { ok: true, results };
+async function handler(event, deps) {
+  const d = deps || {};
+  return handleSqsWith429({
+    event,
+    run: d.run || run,
+    deps: d,
+    changeMessageVisibility: d.changeMessageVisibility,
+    reportException: d.reportException,
+    route: 'providers/live/cj/handler',
+    source: 'cj',
+  });
 }
 
 module.exports = {

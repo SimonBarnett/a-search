@@ -40,22 +40,23 @@ describe('mrb710 hostile FR-073 aliexpress worker', () => {
     );
   });
 
-  it('worker wires search -> normalize -> writeResults; no stub; ASCII header', () => {
+  it('worker wires search -> normalize -> writeLiveProviderInResult; no stub; ASCII header', () => {
     const src = fs.readFileSync(workerPath, 'utf8');
     assert.ok(!src.includes('\ufffd'));
     assert.doesNotMatch(src, /not wired yet/i);
     assert.match(src, /searchAliexpress/);
     assert.match(src, /normalizeSearchResponse/);
-    assert.match(src, /writeResults/);
+    // FR #4038: live path uses writeLiveProviderInResult (legacy writeResults inside helper).
+    assert.match(src, /writeLiveProviderInResult/);
     assert.match(src, /assertWorkerEnv/);
-    assert.match(src, /search -> normalize -> writeResults/);
+    assert.match(src, /search -> normalize -> a-clubs IN\/ \(writeLiveProviderInResult\)/);
   });
 
   it('skill documents FR-073 worker path; registry enabled (FR-169)', () => {
     const skill = fs.readFileSync(skillPath, 'utf8');
     assert.ok(!skill.includes('\ufffd'));
     assert.match(skill, /## Worker \(FR-073\)/);
-    assert.match(skill, /writeResults/);
+    assert.match(skill, /writeLiveProviderInResult/);
     assert.doesNotMatch(skill, /Worker wiring \(FR-073\) is separate/);
 
     const registry = JSON.parse(

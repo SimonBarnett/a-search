@@ -5,7 +5,7 @@
  * File key: {hostkey}/{guid}/IN/{searchid}-{source}.json
  */
 
-const IN_SOURCES = Object.freeze(['sql', 'ebay', 'amazon', 'etsy', 'rakuten', 'cj', 'awin', 'impact']);
+const IN_SOURCES = Object.freeze(['sql', 'ebay', 'amazon', 'etsy', 'rakuten', 'cj', 'awin', 'impact', 'aliexpress', 'bol', 'kelkoo', 'skimlinks']);
 
 /**
  * @param {unknown} value
