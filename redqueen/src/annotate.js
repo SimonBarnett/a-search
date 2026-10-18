@@ -200,7 +200,6 @@ async function processFolderEvent(opts) {
     }
     if (state === 'repost') anyRepost = true;
   }
-  if (!anyRepost) searchRepostOnly = false;
   const hostNeed = searchRepostOnly
     ? 'skip'
     : annotationNeed(hostMd, { reannotate: Boolean(opts.reannotate) });
@@ -336,7 +335,7 @@ async function annotateOneGuid(args) {
       if (published.reposted) {
         return { action: 'guid_searched', detail: 'search_reposted' };
       }
-      if (published.idempotent && !published.wrote && !opts.reannotate) {
+      if (published.idempotent && !published.wrote) {
         return { action: 'noop', detail: 'guid_unchanged' };
       }
     } catch (err) {
