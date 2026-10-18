@@ -86,6 +86,8 @@ describe('FR #4164 Register-AClubsQueueService nssm args', () => {
           homePath,
           '-GrokCli',
           grokCli,
+          // FR #4231: LocalSystem + GrokCli is refused unless tests opt in.
+          '-AllowLocalSystem',
         ],
         { encoding: 'utf8', timeout: 60_000 },
       );

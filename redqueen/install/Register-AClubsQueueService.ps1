@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164).
+  Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164 / #4231).
 
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-aclubs-queue" with nssm wrapping
@@ -11,9 +11,11 @@
   Bare `sc.exe` + node.exe is rejected (error 1053) --- nssm is required.
   Compatible with Windows PowerShell 5.1.
 
-  LocalSystem does not see the installing admin's USERPROFILE/.aws/.grok. Prefer
-  -Credential of that admin, or pass -UserProfile / -HomePath so AppEnvironmentExtra
-  sets USERPROFILE and HOME for the reviewers.
+  FR #4231: grok's stored sign-in (~/.grok/auth.json) is tied to the Windows user
+  that created it (DPAPI). LocalSystem with USERPROFILE/HOME/GROK_HOME pointing at
+  the Administrator profile still fails with "Not signed in". For reviewer installs
+  that set -GrokCli, pass -Credential or a service.password file so ObjectName runs
+  as that admin. -AllowLocalSystem opts out (tests / AWS-only drains without grok).
 
 .PARAMETER InstallRoot
   Stable install folder containing redqueen\src\run.js.
@@ -35,17 +37,30 @@
 
 .PARAMETER AgentCli
   Optional absolute path to Cursor agent.cmd/exe (sets AGENT_CLI / A_SEARCH_CURSOR_BIN).
+  Prefer the real cursor-agent CLI (e.g. ...\cursor-agent\agent.cmd), not .grok\bin\agent.exe.
 
 .PARAMETER UserProfile
-  Optional path injected as USERPROFILE in AppEnvironmentExtra (LocalSystem otherwise
-  cannot see the admin profile that owns AWS / grok sign-in).
+  Optional path injected as USERPROFILE in AppEnvironmentExtra (AWS shared files, etc.).
+  Not sufficient alone for grok reviewer auth under LocalSystem (FR #4231).
 
 .PARAMETER HomePath
-  Optional path injected as HOME in AppEnvironmentExtra (same LocalSystem risk).
+  Optional path injected as HOME in AppEnvironmentExtra.
 
 .PARAMETER Credential
-  Optional PSCredential for the service logon account. Preferred install mode when
-  reviewers need the admin profile. Default without -Credential: LocalSystem.
+  PSCredential for the service logon account (nssm ObjectName). Required for grok
+  reviewers unless -ServicePasswordFile / default service.password is present, or
+  -AllowLocalSystem is set.
+
+.PARAMETER ServiceUser
+  Account for ObjectName when loading a password file (default .\Administrator).
+
+.PARAMETER ServicePasswordFile
+  UTF-8 file containing only the service account password (never commit). Also
+  searched at InstallRoot\redqueen\config\service.password and
+  InstallRoot\config\service.password, or env A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE.
+
+.PARAMETER AllowLocalSystem
+  Permit LocalSystem when -GrokCli is set (tests / non-reviewer drains). Default: off.
 
 .PARAMETER WhatIf
   Alias DryRun: print nssm commands only; do not change the machine.
@@ -65,6 +80,9 @@ param(
   [string]$UserProfile,
   [string]$HomePath,
   [System.Management.Automation.PSCredential]$Credential,
+  [string]$ServiceUser = '.\Administrator',
+  [string]$ServicePasswordFile,
+  [switch]$AllowLocalSystem,
   [Alias('DryRun')][switch]$WhatIf,
   [switch]$Unregister
 )
@@ -107,6 +125,37 @@ function Invoke-Nssm {
   return [int]$LASTEXITCODE
 }
 
+function Resolve-ReviewerServiceCredential {
+  param(
+    [System.Management.Automation.PSCredential]$Credential,
+    [string]$ServiceUser,
+    [string]$ServicePasswordFile,
+    [string]$InstallRoot
+  )
+  if ($Credential) { return $Credential }
+
+  $candidates = New-Object System.Collections.Generic.List[string]
+  if ($ServicePasswordFile) { [void]$candidates.Add($ServicePasswordFile) }
+  if ($env:A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE) {
+    [void]$candidates.Add($env:A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE)
+  }
+  [void]$candidates.Add((Join-Path $InstallRoot 'redqueen\config\service.password'))
+  [void]$candidates.Add((Join-Path $InstallRoot 'config\service.password'))
+
+  foreach ($f in $candidates) {
+    if (-not $f) { continue }
+    if (-not (Test-Path -LiteralPath $f)) { continue }
+    # Never Write-Host the password or path contents.
+    $raw = [System.IO.File]::ReadAllText($f).Trim()
+    if (-not $raw) { continue }
+    $sec = ConvertTo-SecureString -String $raw -AsPlainText -Force
+    $raw = $null
+    $user = if ($ServiceUser) { $ServiceUser } else { '.\Administrator' }
+    return New-Object System.Management.Automation.PSCredential ($user, $sec)
+  }
+  return $null
+}
+
 $runJs = Join-Path $InstallRoot 'redqueen\src\run.js'
 $logDir = Join-Path $InstallRoot 'redqueen\logs'
 $stdoutLog = Join-Path $logDir 'aclubs-queue.out.log'
@@ -119,6 +168,24 @@ if (-not $Unregister -and -not $DryRun -and -not (Test-Path -LiteralPath $runJs)
 $nssm = Resolve-NssmPath -NssmExe $NssmExe
 $nodePath = Resolve-NodePath -NodeExe $NodeExe
 $appParams = '"{0}"' -f $runJs
+
+$resolvedCred = Resolve-ReviewerServiceCredential `
+  -Credential $Credential `
+  -ServiceUser $ServiceUser `
+  -ServicePasswordFile $ServicePasswordFile `
+  -InstallRoot $InstallRoot
+
+# FR #4231: refuse LocalSystem + GrokCli unless explicitly allowed.
+if ($GrokCli -and -not $resolvedCred -and -not $AllowLocalSystem -and -not $Unregister) {
+  throw @'
+reviewer_logon_required: grok sign-in is DPAPI-bound to the Windows user that ran grok login.
+LocalSystem cannot use Administrator ~/.grok even when USERPROFILE/HOME/GROK_HOME point there
+(FR #4231: "Not signed in"). Pass -Credential, or write the admin password to
+InstallRoot\redqueen\config\service.password (never commit; never log), or set
+A_SEARCH_ACLUBS_SERVICE_PASSWORD_FILE. For tests / AWS-only drains without reviewers, pass
+-AllowLocalSystem.
+'@
+}
 
 if (-not $DryRun) {
   New-Item -ItemType Directory -Force -Path $logDir | Out-Null
@@ -179,8 +246,6 @@ $envPairs = @(
 if ($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL) {
   $envPairs += "A_CLUBS_FOLDER_EVENTS_QUEUE_URL=$($env:A_CLUBS_FOLDER_EVENTS_QUEUE_URL)"
 }
-# Point AWS SDK at the installing user's shared credentials when running as LocalSystem
-# is avoided --- prefer -Credential and/or -UserProfile/-HomePath.
 if ($env:AWS_SHARED_CREDENTIALS_FILE) {
   $envPairs += "AWS_SHARED_CREDENTIALS_FILE=$($env:AWS_SHARED_CREDENTIALS_FILE)"
 }
@@ -205,13 +270,13 @@ if ($AgentCli) {
 $envArgs = @('set', $ServiceName, 'AppEnvironmentExtra') + $envPairs
 & $set $envArgs
 
-if ($Credential) {
-  $user = $Credential.UserName
+if ($resolvedCred) {
+  $user = $resolvedCred.UserName
   if ($DryRun) {
     Write-Host "[DryRun] nssm set $ServiceName ObjectName $user ***"
   }
   else {
-    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Credential.Password)
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($resolvedCred.Password)
     try {
       $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
       # FR #4164: discard nssm output (must never echo the password); return only exit code.
@@ -221,11 +286,12 @@ if ($Credential) {
     }
     finally {
       [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+      $plain = $null
     }
   }
 }
 
-$logonMode = if ($Credential) { "Credential ($($Credential.UserName))" } else { 'LocalSystem' }
+$logonMode = if ($resolvedCred) { "Credential ($($resolvedCred.UserName))" } else { 'LocalSystem' }
 Write-Host "Service: $ServiceName"
 Write-Host "InstallRoot: $InstallRoot"
 Write-Host "Node: $nodePath"
@@ -237,13 +303,16 @@ if ($UserProfile) {
   Write-Host "USERPROFILE: $UserProfile"
 }
 else {
-  Write-Host 'USERPROFILE: (not set --- LocalSystem may not see Admin .aws / .grok; prefer -Credential or -UserProfile)'
+  Write-Host 'USERPROFILE: (not set)'
 }
 if ($HomePath) {
   Write-Host "HOME: $HomePath"
 }
 else {
   Write-Host 'HOME: (not set)'
+}
+if (-not $resolvedCred) {
+  Write-Host 'WARN: LocalSystem --- grok reviewer auth will fail (DPAPI); use -Credential or redqueen\config\service.password (FR #4231)'
 }
 Write-Host "Start: Start-Service $ServiceName  (or: nssm start $ServiceName)"
 if ($DryRun) {

@@ -3,9 +3,10 @@
 /**
  * FR #4098 / #4147: real reviewers --- Grok first, Cursor when Grok exhausted.
  * FR #4223: grok 1.0.62 flags are -p / --prompt-file and --output-format plain.
- * Spawn inherits USERPROFILE/HOME. The nssm installer sets those to the
- * Administrator profile so LocalSystem sees the grok sign-in; -Credential is
- * not required when those vars are set. Not re-checked live from a non-redqueen seat.
+ * FR #4231: grok sign-in is DPAPI-bound to the Windows user that ran `grok login`.
+ * LocalSystem cannot use Administrator ~/.grok even with USERPROFILE/HOME/GROK_HOME
+ * set --- the a-clubs queue service must log on as that admin (-Credential or
+ * redqueen/config/service.password). Spawn inherits the service account profile.
  * Reviewers require fetched pageText (FR #4147); stub/unavailable never annotate.
  */
 
@@ -162,6 +163,8 @@ function tryCursorCli(opts) {
     return { ok: false, detail: 'cursor_is_grok_bin' };
   }
   const timeoutMs = opts.timeoutMs == null ? 180000 : opts.timeoutMs;
+  // Real Cursor agent on Windows is often agent.cmd (needs a shell); .exe does not.
+  const useShell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(bin);
   try {
     const r = spawnSync(
       bin,
@@ -171,6 +174,7 @@ function tryCursorCli(opts) {
         timeout: timeoutMs,
         env: { ...process.env, ...(opts.env || {}) },
         windowsHide: true,
+        shell: useShell,
       },
     );
     if (r.error) {

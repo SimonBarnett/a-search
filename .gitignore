@@ -28,3 +28,8 @@ cdk/maintainer-lambda-asset/
 cdk/parts-gateway-lambda-asset/
 
 .bobiverse-seat
+
+# FR #4231: a-clubs queue service ObjectName password (never commit)
+redqueen/config/service.password
+config/service.password
+**/service.password
