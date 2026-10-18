@@ -98,19 +98,14 @@ describe('FR-170 enable etsy', () => {
 
     for (const env of ['live', 'sandbox']) {
       const envVars = envOf(`a-search-etsy-worker-${env}`);
-      assert.ok(envVars.ETSY_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.ETSY_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.ETSY_API_KEY === 'object',
-        `ETSY_API_KEY must be Secrets Manager ref (${env})`,
+      // FR #4352: no provider secret context means no credential env.
+      assert.equal(envVars.ETSY_API_KEY, undefined, `etsy ${env} must not set ETSY_API_KEY`);
+      assert.equal(
+        envVars.ETSY_SHARED_SECRET,
+        undefined,
+        `etsy ${env} must not set ETSY_SHARED_SECRET`,
       );
       assert.equal(envVars.ETSY_AFFILIATE_NETWORK, 'rakuten');
-      assert.ok(
-        envVars.ETSY_SHARED_SECRET,
-        `missing ETSY_SHARED_SECRET ${env}`,
-      );
       const qHit = queues.find(
         (q) =>
           q.Properties &&

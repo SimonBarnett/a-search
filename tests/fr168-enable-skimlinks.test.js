@@ -96,13 +96,11 @@ describe('FR-168 enable skimlinks', () => {
 
     for (const env of ['live', 'sandbox']) {
       const envVars = envOf(`a-search-skimlinks-worker-${env}`);
-      assert.ok(envVars.SKIMLINKS_API_KEY, `missing API key ${env}`);
-      const keyVal = String(envVars.SKIMLINKS_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.SKIMLINKS_API_KEY === 'object',
-        `SKIMLINKS_API_KEY must be Secrets Manager ref (${env})`,
+      // FR #4352: no provider secret context means no credential env.
+      assert.equal(
+        envVars.SKIMLINKS_API_KEY,
+        undefined,
+        `skimlinks ${env} must not set SKIMLINKS_API_KEY`,
       );
       assert.equal(envVars.SKIMLINKS_COUNTRY, 'uk');
       const qHit = queues.find(

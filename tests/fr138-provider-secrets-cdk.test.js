@@ -84,14 +84,11 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       return fn.Properties.Environment.Variables || {};
     }
 
-    function assertSecretRef(env, key, fnName) {
-      assert.ok(env[key], `${fnName} missing ${key}`);
-      const val = String(env[key]);
-      assert.ok(
-        val.includes('resolve:secretsmanager') ||
-          val.includes('Secret') ||
-          typeof env[key] === 'object',
-        `${fnName} ${key} must be a Secrets Manager ref, got ${val.slice(0, 80)}`,
+    function assertNoCredential(env, key, fnName) {
+      assert.equal(
+        env[key],
+        undefined,
+        `${fnName} must not set ${key} without a real provider secret ARN`,
       );
     }
 
@@ -109,39 +106,39 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.equal(ebaySandbox.EBAY_MARKETPLACE_ID, 'EBAY_GB');
     assert.equal(ebaySandbox.EBAY_ENV, 'sandbox');
 
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-rakuten-worker-live'),
       'RAKUTEN_APPLICATION_KEY',
       'rakuten-live',
     );
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-cj-worker-live'),
       'CJ_API_TOKEN',
       'cj-live',
     );
-    // FR-3949: local awin/impact workers removed; credentials still on onboarding.
-    assertSecretRef(
+    // FR #4352: no placeholder secret. Plain defaults still apply.
+    assertNoCredential(
       envOf('a-search-kelkoo-worker-live'),
       'KELKOO_API_KEY',
       'kelkoo-live',
     );
     assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
       'awin-onboarding-live',
     );
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-impact-onboarding-sandbox'),
       'IMPACT_CAMPAIGN_ID',
       'impact-onboarding-sandbox',
     );
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-skimlinks-worker-live'),
       'SKIMLINKS_API_KEY',
       'skimlinks-live',
     );
-    assertSecretRef(
+    assertNoCredential(
       envOf('a-search-skimlinks-worker-sandbox'),
       'SKIMLINKS_PUBLISHER_ID',
       'skimlinks-sandbox',
@@ -196,9 +193,10 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
         }
       }
     }
-    assert.ok(
+    assert.equal(
       sawProviderGet,
-      'expected scoped secretsmanager:GetSecretValue for provider secrets',
+      false,
+      'no provider secret grant when no real ARN is supplied',
     );
 
     const raw = fs.readFileSync(templatePath, 'utf8');

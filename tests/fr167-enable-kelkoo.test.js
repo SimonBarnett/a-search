@@ -99,14 +99,8 @@ describe('FR-167 enable provider kijiji', () => {
     for (const env of ['live', 'sandbox']) {
       const workerName = `a-search-kelkoo-worker-${env}`;
       const envVars = envOf(workerName);
-      assert.ok(envVars.KELKOO_API_KEY, `${workerName} missing KELKOO_API_KEY`);
-      const keyVal = String(envVars.KELKOO_API_KEY);
-      assert.ok(
-        keyVal.includes('resolve:secretsmanager') ||
-          keyVal.includes('Secret') ||
-          typeof envVars.KELKOO_API_KEY === 'object',
-        `${workerName} KELKOO_API_KEY must be Secrets Manager ref`,
-      );
+      // FR #4352: no provider secret context means no credential env.
+      assert.equal(envVars.KELKOO_API_KEY, undefined, `${workerName} must not set KELKOO_API_KEY`);
       assert.equal(envVars.KELKOO_COUNTRY, 'uk');
       const qHit = queues.find(
         (q) =>
