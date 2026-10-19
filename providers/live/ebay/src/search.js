@@ -55,16 +55,15 @@ function assertEbayCreds(env) {
   return c;
 }
 
+const {
+  keywordsFromAgentMsg,
+} = require('../../../../shared/search/keywordsFromAgentMsg');
+
 function keywordsFromMsg(msg) {
-  if (msg && typeof msg.q === 'string' && msg.q.trim()) return msg.q.trim();
-  if (msg && Array.isArray(msg.searchterms)) {
-    const parts = msg.searchterms
-      .filter((t) => typeof t === 'string' && t.trim())
-      .map((t) => t.trim());
-    if (parts.length) return parts.join(' ');
-  }
-  return '';
+  // FR #4450 / #4446: agent fan-out uses queries/exclude (legacy q/searchterms kept).
+  return keywordsFromAgentMsg(msg);
 }
+
 
 function apiHost(ebayEnv) {
   return ebayEnv === 'production' || ebayEnv === 'live'
@@ -170,6 +169,7 @@ async function fetchAccessToken(creds, httpRequest) {
  * @returns {Promise<object[]>}
  */
 async function searchEbay(msg, deps) {
+  if (!keywordsFromMsg(msg)) return [];
   const envVars = (deps && deps.env) || process.env;
   const creds = assertEbayCreds(envVars);
   const httpRequest =
@@ -182,7 +182,7 @@ async function searchEbay(msg, deps) {
       ? deps.accessToken
       : await fetchAccessToken(creds, httpRequest);
 
-  const q = keywordsFromMsg(msg) || ' ';
+  const q = keywordsFromMsg(msg);
   const host = apiHost(creds.ebayEnv);
   const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=10`;
   const browseJson = await httpRequest({
