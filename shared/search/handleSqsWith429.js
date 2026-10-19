@@ -21,6 +21,17 @@ function isEnvIsolation(err) {
 }
 
 /**
+ * FR #4438: a live provider with no API key is configuration, not a code fatal.
+ * Code ends with `_missing_credentials` (skimlinks, amazon, and the same class).
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isMissingProviderCreds(err) {
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  return /_missing_credentials$/.test(code);
+}
+
+/**
  * @param {{
  *   event: { Records?: Array<{ body?: string, receiptHandle?: string }> },
  *   run: (msg: object, deps?: object) => Promise<unknown>,
@@ -81,6 +92,17 @@ async function handleSqsWith429(opts) {
       // FR #4427: transient vendor HTTP (429/502/503/504) retries via SQS;
       // do not file intake fatals on every attempt.
       const transient = backoffFor429({ err }).is429;
+      // FR #4438: missing provider creds must not file an intake fatal or
+      // fail the SQS batch (that retries and files the same issue again).
+      if (isMissingProviderCreds(err)) {
+        results.push({
+          ok: false,
+          skipped: 'missing_credentials',
+          code: err.code,
+          source: opts.source || '',
+        });
+        continue;
+      }
       if (
         !transient &&
         !isEnvIsolation(err) &&
@@ -107,4 +129,5 @@ async function handleSqsWith429(opts) {
 module.exports = {
   handleSqsWith429,
   isEnvIsolation,
+  isMissingProviderCreds,
 };
