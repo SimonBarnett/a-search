@@ -25,12 +25,16 @@ written to MSSQL from AWS.
 A second POST for the same GUID (FR #4265) reads
 `a-clubs/{hostkey}/{guid}/search-fanout.json` and returns
 `202 { searchid, queued, idempotent: true }` without sending again. The first
-successful fan-out writes that marker. `MessageDeduplicationId` is
-`{searchid}-{source}` so a lost response inside the FIFO dedupe window also
-does not double-enqueue.
+successful fan-out writes that marker. On **FIFO** provider queues,
+`MessageDeduplicationId` is `{searchid}-{source}` so a lost response inside
+the FIFO dedupe window also does not double-enqueue. The SQL queue is
+**standard** (FR #4411): entry must **not** send `MessageGroupId` /
+`MessageDeduplicationId` there (AWS `InvalidParameterValue`); SQL idempotency
+is the fan-out marker only.
 
-Payloads carry `messageGroupId=<provider|sql>` so FIFO queues serialise per
-provider. SQL messages use group `sql`.
+Payloads may carry `messageGroupId=<provider|sql>` for app-level intent;
+`entry/src/sqsSend.js` attaches SQS FIFO attrs only when `QueueUrl` ends in
+`.fifo`.
 
 ## Provider queues (FR #4039)
 
@@ -40,8 +44,9 @@ Each live marketplace provider queue is FIFO:
 
 with sibling DLQ `a-search-provider-{name}-{live|sandbox}-dlq.fifo`. CDK sets
 `fifo: true` and `contentBasedDeduplication: false`; senders set
-`MessageGroupId=<provider>` and a `MessageDeduplicationId`. The SQL queue
-(`a-search-db-backed`) stays standard. Deploy replaces existing standard
+`MessageGroupId=<provider>` and a `MessageDeduplicationId` on those FIFO
+URLs only. The SQL queue (`a-search-db-backed`) stays standard --- never send
+FIFO-only params to it (FR #4411). Deploy replaces existing standard
 provider queue names (SQS cannot convert standard → FIFO in place).
 
 ## One job at a time (no 429 storms)
