@@ -1,0 +1,2 @@
+﻿{"id":"100","title":"Blue Shirt","body_html":"<p>Cotton</p>","vendor":"ShopCo","product_type":"Apparel","currency":"GBP","handle":"blue-shirt","status":"active","variants":[{"price":"19.00","barcode":"GTIN1","sku":"SKU1"}],"images":[{"src":"https://cdn.example/shirt.jpg"}]}
+{"id":"101","title":"Red Hat","body_html":"Wool","vendor":"ShopCo","product_type":"Apparel","currency":"GBP","handle":"red-hat","status":"active","variants":[{"price":"11.00","barcode":"GTIN2","sku":"SKU2"}],"images":[{"src":"https://cdn.example/hat.jpg"}]}

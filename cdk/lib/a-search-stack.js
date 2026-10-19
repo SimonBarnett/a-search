@@ -230,8 +230,7 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'EBAY_CAMPAIGN_ID',
   ],
   rakuten: [
-    'RAKUTEN_APPLICATION_KEY',
-    'RAKUTEN_AFFILIATE_ID',
+    'RAKUTEN_PRODUCT_SEARCH_TOKEN',
     'RAKUTEN_SITE_ID',
   ],
   cj: ['CJ_API_TOKEN', 'CJ_COMPANY_ID', 'CJ_WEBSITE_ID'],
@@ -314,7 +313,7 @@ const PROVIDER_PLAIN_DEFAULTS = {
     EBAY_MARKETPLACE_ID: 'EBAY_GB',
   },
   rakuten: {
-    RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+    RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
   },
   cj: {
     CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',

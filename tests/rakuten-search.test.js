@@ -32,10 +32,9 @@ const baseMsg = {
 
 const credEnv = {
   A_SEARCH_ENV: 'sandbox',
-  RAKUTEN_APPLICATION_KEY: 'app-key-test',
-  RAKUTEN_AFFILIATE_ID: 'aff-1',
+  RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
   RAKUTEN_SITE_ID: 'site-test',
-  RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+  RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
   S3_RESULTS_BUCKET: 'test-results',
 };
 
@@ -49,9 +48,12 @@ describe('FR-040 rakuten Product Search client', () => {
       env: credEnv,
       httpRequest: async (req) => {
         httpCalls.push(req);
-        assert.match(req.url, /productsearch/i);
-        assert.match(req.url, /applicationkey=/);
-        assert.match(req.url, /keyword=/);
+        const u = new URL(req.url);
+        assert.equal(u.hostname, 'api.linksynergy.com');
+        assert.equal(u.pathname, '/productsearch/1.0');
+        assert.match(u.searchParams.get('keyword') || '', /shoes/);
+        assert.equal(req.headers.Authorization, 'Bearer FAKE_rakuten_product_search_token');
+        assert.doesNotMatch(req.url, /FAKE_rakuten_product_search_token/);
         assert.equal(req.method, 'GET');
         return { statusCode: 200, headers: {}, body: fixture };
       },
@@ -103,7 +105,7 @@ describe('FR-040 rakuten Product Search client', () => {
         );
         assert.match(
           String(err.message),
-          /RAKUTEN_APPLICATION_KEY|credentials missing/i,
+          /RAKUTEN_PRODUCT_SEARCH_TOKEN|rakuten_missing_credentials/i,
         );
         return true;
       },

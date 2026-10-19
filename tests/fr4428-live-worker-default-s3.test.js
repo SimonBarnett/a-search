@@ -57,7 +57,7 @@ const PROVIDERS = [
   {
     id: 'rakuten',
     worker: 'providers/live/rakuten/src/worker.js',
-    env: { RAKUTEN_APPLICATION_KEY: 'EXAMPLE_KEY' },
+    env: { RAKUTEN_PRODUCT_SEARCH_TOKEN: 'EXAMPLE_TOKEN' },
   },
   {
     id: 'skimlinks',
@@ -160,7 +160,7 @@ describe('FR #4428 live workers default S3 from Lambda context', () => {
       'EBAY_CLIENT_SECRET',
       'ETSY_API_KEY',
       'KELKOO_API_KEY',
-      'RAKUTEN_APPLICATION_KEY',
+      'RAKUTEN_PRODUCT_SEARCH_TOKEN',
       'SKIMLINKS_API_KEY',
     ]) {
       saved[key] = process.env[key];
