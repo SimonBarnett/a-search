@@ -547,3 +547,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - entry agent path: never inject a throwing headObject stub - typeof function blocks defaultAclubsIo(); omit S3 deps so production falls back to a-clubs client.
 - a-search entry sqsSend: MessageGroupId/MessageDeduplicationId are FIFO-only --- attach only when QueueUrl ends in .fifo; standard a-search-db-backed (sql) rejects them with InvalidParameterValue (FR #4411)
 - a-search provider worker staging: copy worker/lib (normalizeProduct) into the Lambda asset root fail-closed; amazon src requires ../../../../worker/lib --- same packaging class as shared/ (FR-444) and @aws/lambda-invoke-store (FR-4409)
+- a-search harvest-agent-skills new bullets must be pure ASCII (--- not em dash) or fr4197 fails.
