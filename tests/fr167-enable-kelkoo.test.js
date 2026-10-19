@@ -121,13 +121,18 @@ describe('FR-167 enable provider kijiji', () => {
       );
       assert.equal(hit, undefined, `${dark} must stay without worker`);
     }
+    // FR #4451: skimlinks is a local SQL affiliate — no AWS worker after the move.
     const skim = fns.find(
       (res) =>
         res.Properties &&
         typeof res.Properties.FunctionName === 'string' &&
         res.Properties.FunctionName.includes('-skimlinks-worker-'),
     );
-    assert.ok(skim, 'skimlinks worker must remain after concurrent enable fold');
+    assert.equal(
+      skim,
+      undefined,
+      'skimlinks must not keep an AWS worker after concurrent enable fold (SQL affiliate)',
+    );
     // GBP/UK hold: aliexpress workers must be absent (folder retained).
     for (const hold of ['aliexpress', 'bol', 'avantlink']) {
       const hit = fns.find(
