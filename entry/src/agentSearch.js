@@ -121,7 +121,23 @@ async function readStoredFanout(getObject, Key) {
 }
 
 let defaultS3;
+/** @type {null | (() => { headObject: Function, getObject: Function, putObject: Function })} */
+let aClubsIoFactoryForTests = null;
+
+/**
+ * FR #4404 tests: inject a-clubs IO without wiring a throwing headObject stub in index.
+ * Pass null to restore the real AWS SDK client.
+ * @param {null | (() => object)} factory
+ */
+function setAclubsIoFactoryForTests(factory) {
+  aClubsIoFactoryForTests = typeof factory === 'function' ? factory : null;
+  defaultS3 = null;
+}
+
 function defaultAclubsIo() {
+  if (typeof aClubsIoFactoryForTests === 'function') {
+    return aClubsIoFactoryForTests();
+  }
   if (defaultS3) return defaultS3;
   const {
     S3Client,
@@ -317,4 +333,5 @@ module.exports = {
   searchFanoutKey,
   headerGet,
   parseJsonBody,
+  setAclubsIoFactoryForTests,
 };

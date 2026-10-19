@@ -776,19 +776,22 @@ async function handleSearch(event, deps = {}) {
   // FR #4030: agent fan-out when body carries hostkey+guid+queries.
   if (parsedEarly && isAgentSearchBody(parsedEarly)) {
     try {
-      const headObject =
-        deps.headObject ||
-        (() => {
-          throw new AgentSearchError('s3_required', 500);
-        });
+      // FR #4404: only pass S3 deps when injected. A throwing headObject stub
+      // is still typeof function, so agentSearch never reaches defaultAclubsIo().
       const result = await handleAgentSearch({
         event: {
           ...event,
           body: parsedEarly,
         },
-        headObject,
-        getObject: deps.getObject,
-        putObject: deps.putObject,
+        ...(typeof deps.headObject === 'function'
+          ? { headObject: deps.headObject }
+          : {}),
+        ...(typeof deps.getObject === 'function'
+          ? { getObject: deps.getObject }
+          : {}),
+        ...(typeof deps.putObject === 'function'
+          ? { putObject: deps.putObject }
+          : {}),
         sendMessage: deps.sendMessage,
         env,
         newSearchId: deps.newSearchId || makeId,
