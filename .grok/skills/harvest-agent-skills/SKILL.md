@@ -545,3 +545,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - On WinPS StrictMode, optional searches.json fields such as market must be read via PSObject.Properties. A missing property throws, so an older queries-only file looks like a product failure.
 - Entry Lambda staging: merchantConnect provider src must be copied into the asset even when the source is disabled for selftest; shop adapters eager-require those modules at init.
 - FR #4376: /search entry must not stage or load merchant shop adapters; strip shared/shops from the staged asset and lazy-require shop routes — never fix ImportModuleError by staging magento oauth1 into the entry zip.
+- Harvest tips that only restate keep-correct-lesson / close-twins / remove-contradicting-bullet are not useful when the product lesson is already on the book and the delete is a separate open issue
