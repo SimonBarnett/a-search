@@ -546,3 +546,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4376: /search entry must not stage or load merchant shop adapters; strip shared/shops from the staged asset and lazy-require shop routes --- never fix ImportModuleError by staging magento oauth1 into the entry zip.
 - entry agent path: never inject a throwing headObject stub - typeof function blocks defaultAclubsIo(); omit S3 deps so production falls back to a-clubs client.
 - a-search entry sqsSend: MessageGroupId/MessageDeduplicationId are FIFO-only — attach only when QueueUrl ends in .fifo; standard a-search-db-backed (sql) rejects them with InvalidParameterValue (FR #4411)
+- a-search entry sql fan-out: MessageGroupId and MessageDeduplicationId only when QueueUrl ends .fifo; standard a-search-db-backed rejects them (InvalidParameterValue).
