@@ -18,8 +18,8 @@
  *   providers/<kind>/<id>/src/**   enabled selftest probes (FR-152)
  *   shared/**              intake/reportException + selftest/ + rest
  *
- * No .env / secrets. Optional: copies @aws-sdk/client-sqs from repo
- * node_modules when present (enqueue dep).
+ * No .env / secrets. Optional: copies @aws-sdk/* (+ @smithy + @aws/lambda-invoke-store)
+ * from repo node_modules when present (enqueue / S3 deps; FR-4409).
  * FR-151: copies node_modules/jose for JWT_JWKS_URL (createRemoteJWKSet).
  * Local MSSQL driver is NOT staged here (keeps synth under the 180s
  * runCdkSynth pin); local probes fail closed if mssql is missing at runtime.
@@ -136,6 +136,26 @@ function stageEntryLambdaAsset(repoRoot, opts) {
       recursive: true,
     });
   }
+
+  // FR-4409: @aws-sdk/core requires @aws/lambda-invoke-store (scoped @aws, not @aws-sdk).
+  const invokeStoreSrc = path.join(
+    root,
+    'node_modules',
+    '@aws',
+    'lambda-invoke-store',
+  );
+  if (!fs.existsSync(invokeStoreSrc)) {
+    throw new Error(
+      'stage-entry-lambda-asset: missing node_modules/@aws/lambda-invoke-store (npm install; FR-4409)',
+    );
+  }
+  fs.mkdirSync(path.join(outDir, 'node_modules', '@aws'), { recursive: true });
+  fs.cpSync(
+    invokeStoreSrc,
+    path.join(outDir, 'node_modules', '@aws', 'lambda-invoke-store'),
+    { recursive: true },
+  );
+
   // Common transitive packages used by client-sqs (best-effort; synth tests do not require network).
   for (const pkg of ['tslib', 'bowser', 'fast-xml-parser', 'strnum']) {
     const p = path.join(root, 'node_modules', pkg);
@@ -167,6 +187,7 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         shared: true,
         fr415: 'shared/intake/reportException',
         fr151: 'node_modules/jose',
+        fr4409: 'node_modules/@aws/lambda-invoke-store',
         selftestProbes: stagedProbeIds,
       },
       null,
@@ -184,6 +205,7 @@ function stageEntryLambdaAsset(repoRoot, opts) {
  */
 function requiredEntryAssetPaths() {
   return [
+    'node_modules/@aws/lambda-invoke-store/package.json',
     'entry/src/index.js',
     'entry/src/enqueue.js',
     'entry/src/dbBackedQueue.js',

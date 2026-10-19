@@ -50,8 +50,10 @@ function stageAffiliatesLambdaAsset(repoRoot, opts) {
       }
     }
     const nm = path.join(root, 'node_modules');
+    // FR-4409: also stage @aws/lambda-invoke-store (scoped @aws).
     for (const name of [
       '@smithy',
+      '@aws',
       'tslib',
       'bowser',
       'fast-xml-parser',

@@ -13,7 +13,7 @@
  * Layout (asset root), preserving monorepo-relative requires from src/*.js:
  *   <src.folder>/src/**     e.g. providers/live/amazon/src/worker.js
  *   shared/**               including shared/intake/reportException.js
- *   node_modules/@aws-sdk/** (+ @smithy + small transitives when present)
+ *   node_modules/@aws-sdk/** (+ @smithy + @aws/lambda-invoke-store + small transitives when present)
  *   node_modules/mssql/**   (providers/local/* only)
  *
  * Handler string: <src.folder>/src/worker.handler (posix).
@@ -88,6 +88,26 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
       recursive: true,
     });
   }
+
+  // FR-4409: @aws-sdk/core requires @aws/lambda-invoke-store (scoped @aws, not @aws-sdk).
+  const invokeStoreSrc = path.join(
+    root,
+    'node_modules',
+    '@aws',
+    'lambda-invoke-store',
+  );
+  if (!fs.existsSync(invokeStoreSrc)) {
+    throw new Error(
+      'stage-provider-worker-lambda-asset: missing node_modules/@aws/lambda-invoke-store (npm install; FR-4409)',
+    );
+  }
+  fs.mkdirSync(path.join(outDir, 'node_modules', '@aws'), { recursive: true });
+  fs.cpSync(
+    invokeStoreSrc,
+    path.join(outDir, 'node_modules', '@aws', 'lambda-invoke-store'),
+    { recursive: true },
+  );
+
   // Common transitive packages used by client-s3 (best-effort; synth tests do not require network).
   for (const pkg of ['tslib', 'bowser', 'fast-xml-parser', 'strnum']) {
     const p = path.join(root, 'node_modules', pkg);
@@ -133,6 +153,7 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
 function requiredWorkerAssetPaths(src) {
   const folder = String(src.folder).replace(/\\/g, '/');
   return [
+    'node_modules/@aws/lambda-invoke-store/package.json',
     `${folder}/src/worker.js`,
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
