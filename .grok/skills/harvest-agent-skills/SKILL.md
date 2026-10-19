@@ -551,4 +551,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX on a CLOSED harvest tip: ACK, point at the covering ASCII PR, DONE FIX with the assigned URL; do not reopen.
 - When a harvest-tip fold push is rejected because origin already has the same keep-both tree, review that origin head SHA and do not force-push a second fold.
 - Amazon PA-API/Creators non-JSON responses must set err.status (+ code); treat 502/503/504 as transient like 429 in backoffFor429 and skip reportException so SQS retries do not spam intake fatals
+- Live provider search must build Browse/search keywords from fan-out queries (string or {q}) and exclude match terms; never fall back to a blank or space q.
 - Walrus SQL drain: npm start must long-poll SQS via createDrainRunner; ship providers/local/sql/src/worker.js (SELECT-only Parts) plus nssm Register-WalrusSqlDrainService; IN key is {searchid}-sql.json per inResultSchema; docs redqueen wording is a separate FR (#4448).
