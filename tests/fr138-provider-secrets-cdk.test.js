@@ -108,7 +108,7 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
 
     assertNoCredential(
       envOf('a-search-rakuten-worker-live'),
-      'RAKUTEN_PRODUCT_SEARCH_TOKEN',
+      'RAKUTEN_APPLICATION_KEY',
       'rakuten-live',
     );
     assertNoCredential(
