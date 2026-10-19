@@ -1,0 +1,394 @@
+'use strict';
+
+/**
+ * FR #4463: daily deterministic parts import (affiliates + merchants).
+ * Exit codes: 0 ok, 1 feed failure(s), 2 lock/precheck.
+ */
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { acquireImportLock } = require('./lock');
+const { loadAllProviderConfigs } = require('./providerConfig');
+const { parseAndMapFeed } = require('./parseMapped');
+const { validateBeforeMerge } = require('./validateFeed');
+const { redactSecrets } = require('./mapRow');
+
+const WRITE_DBS = new Set(['a_search', 'a_search_sandbox']);
+
+/**
+ * @param {object} opts
+ */
+function precheck(opts) {
+  const db = String(opts.database || '').trim().toLowerCase();
+  if (!WRITE_DBS.has(db)) {
+    return { ok: false, code: 'precheck_db', detail: db || 'empty' };
+  }
+  if (opts.ftsInstalled === false) {
+    return { ok: false, code: 'precheck_fts', detail: 'IsFullTextInstalled=0' };
+  }
+  for (const root of opts.mountRoots || []) {
+    if (!fs.existsSync(root)) {
+      return { ok: false, code: 'precheck_mount', detail: root };
+    }
+  }
+  const cfg = loadAllProviderConfigs(opts.repoRoot);
+  if (!cfg.ok) {
+    return { ok: false, code: 'precheck_provider_json', detail: cfg.errors.join(';') };
+  }
+  return { ok: true, configs: cfg.configs };
+}
+
+/**
+ * Scan mount for dated feed files matching provider glob pattern (simplified).
+ * @param {object} providerJson
+ * @param {string} mountRoot e.g. D:\s3\a-affiliates
+ */
+function listFeedFiles(providerJson, mountRoot, fsApi = fs) {
+  const bucket = providerJson.source.bucket;
+  const provider = providerJson.provider;
+  const out = [];
+  const providerDir = path.join(mountRoot, provider);
+  if (!fsApi.existsSync(providerDir)) return out;
+
+  const isMerchant = bucket === 'a-merchants';
+  for (const feedKey of fsApi.readdirSync(providerDir)) {
+    const feedDir = path.join(providerDir, feedKey);
+    if (!fsApi.statSync(feedDir).isDirectory()) continue;
+    if (['AGENT.md', 'SKILLS.md', '_invites'].includes(feedKey)) continue;
+
+    const scanDir = isMerchant ? path.join(feedDir, 'parts') : feedDir;
+    if (!fsApi.existsSync(scanDir)) continue;
+
+    for (const name of fsApi.readdirSync(scanDir)) {
+      if (!/^\d{4}-\d{2}-\d{2}\./.test(name)) continue;
+      const full = path.join(scanDir, name);
+      if (!fsApi.statSync(full).isFile()) continue;
+      const st = fsApi.statSync(full);
+      const rel = isMerchant
+        ? `${provider}/${feedKey}/parts/${name}`
+        : `${provider}/${feedKey}/${name}`;
+      const version = `${st.size}-${Math.floor(st.mtimeMs)}`;
+      out.push({
+        provider,
+        feedKey,
+        fileKey: rel,
+        path: full,
+        version,
+        date: name.slice(0, 10),
+      });
+    }
+  }
+  out.sort((a, b) => a.date.localeCompare(b.date) || a.fileKey.localeCompare(b.fileKey));
+  return out;
+}
+
+/**
+ * @param {object} opts
+ * @returns {Promise<{ exitCode: number, runId?: number, results?: object[] }>}
+ */
+async function runDailyImport(opts) {
+  const dryRun = !!opts.dryRun;
+  const log = typeof opts.log === 'function' ? opts.log : (s) => console.log(s);
+  const store = opts.store;
+  if (!store) throw new Error('store_required');
+
+  const lock = acquireImportLock(opts.lockPath, { now: opts.now });
+  if (!lock.ok) {
+    log('lock_held file');
+    return { exitCode: 2, code: 'lock_held' };
+  }
+
+  if (!store.tryAppLock()) {
+    lock.release();
+    log('lock_held applock');
+    return { exitCode: 2, code: 'lock_held' };
+  }
+
+  try {
+    const pc = precheck(opts);
+    if (!pc.ok) {
+      log(`precheck_failed ${pc.code} ${pc.detail || ''}`);
+      return { exitCode: 2, code: pc.code, detail: pc.detail };
+    }
+
+    const run = store.beginRun(dryRun ? 'dry-run' : 'run');
+    const results = [];
+    let anyFail = false;
+
+    // Purge requests first
+    for (const pr of store.purgeRequests.splice(0, store.purgeRequests.length)) {
+      if (!dryRun) {
+        store.hardPurge(pr.ProviderId, pr.FeedKey);
+        pr.ProcessedRunId = run.runId;
+      }
+      results.push({ kind: 'purge', ...pr });
+    }
+
+    const configs = (pc.configs || []).filter((c) => c.enabled);
+    const filterProvider = opts.provider || null;
+    const filterFeed = opts.feed || null;
+
+    for (const cfg of configs) {
+      if (filterProvider && cfg.provider !== filterProvider) continue;
+      const mount =
+        cfg.source.bucket === 'a-merchants'
+          ? opts.merchantsRoot
+          : opts.affiliatesRoot;
+      const files = listFeedFiles(cfg, mount, opts.fs || fs);
+      const byFeed = new Map();
+      for (const f of files) {
+        if (filterFeed && f.feedKey !== filterFeed) continue;
+        if (!byFeed.has(f.feedKey)) byFeed.set(f.feedKey, []);
+        byFeed.get(f.feedKey).push(f);
+      }
+
+      for (const [feedKey, feedFiles] of byFeed) {
+        // newest is snapshot; older superseded unless incremental
+        const sorted = [...feedFiles].sort((a, b) => a.date.localeCompare(b.date));
+        const newest = sorted[sorted.length - 1];
+        for (const f of sorted) {
+          if (cfg.mode === 'full' && f !== newest) {
+            results.push({
+              provider: cfg.provider,
+              feedKey,
+              fileKey: f.fileKey,
+              status: 'superseded',
+            });
+            continue;
+          }
+          if (store.isFileOk(f.fileKey, f.version) && !opts.force) {
+            results.push({
+              provider: cfg.provider,
+              feedKey,
+              fileKey: f.fileKey,
+              status: 'already_ok',
+            });
+            continue;
+          }
+
+          const started = Date.now();
+          try {
+            const marker = opts.markers && opts.markers[`${cfg.provider}/${feedKey}`];
+            if (cfg.class === 'merchant' && marker) {
+              const st = String(marker.status || marker.shopStatus || '').toLowerCase();
+              if (st === 'unpaid' || st === 'suspended') {
+                results.push({
+                  provider: cfg.provider,
+                  feedKey,
+                  status: 'skipped_unpaid',
+                });
+                continue;
+              }
+            }
+
+            const raw = (opts.fs || fs).readFileSync(f.path);
+            const parsed = parseAndMapFeed(raw, cfg, {
+              feedKey,
+              shopdomain: marker && marker.shopdomain,
+            });
+
+            const active = store.listActive(cfg.provider, feedKey);
+            const stagedKeys = new Set(parsed.staged.map((r) => String(r.MerchantProductId)));
+            let wouldDelete = 0;
+            if (cfg.deleteMissing === 'soft' || cfg.deleteMissing === 'hard') {
+              wouldDelete = active.filter((a) => !stagedKeys.has(a.MerchantProductId)).length;
+            }
+
+            const prevGood =
+              opts.previousGoodCounts &&
+              opts.previousGoodCounts[`${cfg.provider}/${feedKey}`];
+
+            const gate = validateBeforeMerge({
+              staged: parsed.staged,
+              rejects: parsed.rejects,
+              rowsRead: parsed.rowsRead,
+              validation: cfg.validation,
+              previousGoodCount: prevGood,
+              wouldDelete,
+              activeCount: active.length,
+            });
+
+            if (!gate.ok) {
+              anyFail = true;
+              const sampleDir = path.join(
+                opts.failureRoot || path.join(process.cwd(), 'import-failures'),
+                String(run.runId),
+                cfg.provider,
+                feedKey,
+              );
+              fs.mkdirSync(sampleDir, { recursive: true });
+              const samplePath = path.join(sampleDir, `sample.${cfg.format}`);
+              const sample = [
+                ...parsed.rejects.slice(0, 50).map((r) => r.rawRow),
+              ].join('\n');
+              fs.writeFileSync(samplePath, redactSecrets(sample), 'utf8');
+              store.addFailure({
+                RunId: run.runId,
+                ProviderId: cfg.provider,
+                FeedKey: feedKey,
+                FileKey: f.fileKey,
+                ErrorCode: gate.code,
+                ErrorDetail: redactSecrets(gate.detail || ''),
+                SampleBadRowsPath: samplePath,
+                ProviderJsonSha: cfg._sha256,
+                AgentStatus: null,
+              });
+              if (typeof opts.launchAgent === 'function') {
+                const launched = await opts.launchAgent({
+                  provider: cfg.provider,
+                  feedKey,
+                  fileKey: f.fileKey,
+                  version: f.version,
+                  errorCode: gate.code,
+                });
+                if (launched && launched.started) {
+                  store.failures[store.failures.length - 1].AgentStatus = 'started';
+                }
+              }
+              results.push({
+                provider: cfg.provider,
+                feedKey,
+                fileKey: f.fileKey,
+                status: 'failed',
+                code: gate.code,
+                detail: gate.detail,
+              });
+              continue;
+            }
+
+            const merge = store.mergeFeed({
+              runId: run.runId,
+              providerId: cfg.provider,
+              feedKey,
+              className: cfg.class,
+              staged: parsed.staged,
+              deleteMissing: cfg.deleteMissing,
+              dryRun,
+              largeFeedRows: opts.largeFeedRows != null ? opts.largeFeedRows : cfg.largeFeedRows,
+              failAfterBatch: opts.failAfterBatch,
+            });
+
+            if (!dryRun) {
+              store.markFileOk(f.fileKey, f.version, cfg.provider, feedKey);
+              if (typeof opts.deleteFile === 'function') {
+                await opts.deleteFile(f.path);
+              } else if (opts.deleteOnSuccess) {
+                try {
+                  fs.unlinkSync(f.path);
+                } catch {
+                  // keep
+                }
+              }
+              if (typeof opts.stampMarker === 'function') {
+                await opts.stampMarker({
+                  provider: cfg.provider,
+                  feedKey,
+                  patch: {
+                    lastimport: new Date().toISOString(),
+                    lastimportstatus: 'ok',
+                    importcount: merge.inserted + merge.updated,
+                    removedcount: merge.deleted,
+                  },
+                });
+              }
+            }
+
+            results.push({
+              provider: cfg.provider,
+              feedKey,
+              fileKey: f.fileKey,
+              status: dryRun ? 'dry-run-ok' : 'ok',
+              ...merge,
+              rowsRead: parsed.rowsRead,
+              rowsRejected: parsed.rejects.length,
+              durationMs: Date.now() - started,
+            });
+          } catch (err) {
+            anyFail = true;
+            const code = (err && err.code) || 'sql_error';
+            store.addFailure({
+              RunId: run.runId,
+              ProviderId: cfg.provider,
+              FeedKey: feedKey,
+              FileKey: f.fileKey,
+              ErrorCode: code,
+              ErrorDetail: redactSecrets(String(err && err.message)),
+              ProviderJsonSha: cfg._sha256,
+            });
+            if (typeof opts.launchAgent === 'function') {
+              await opts.launchAgent({
+                provider: cfg.provider,
+                feedKey,
+                fileKey: f.fileKey,
+                version: f.version,
+                errorCode: code,
+              });
+            }
+            results.push({
+              provider: cfg.provider,
+              feedKey,
+              fileKey: f.fileKey,
+              status: 'failed',
+              code,
+              detail: String(err && err.message),
+            });
+          }
+        }
+      }
+    }
+
+    try {
+      store.endOfRunHealth();
+      for (const r of results) {
+        if (r.status === 'ok' && r.provider && r.feedKey) {
+          const title = (store.listActive(r.provider, r.feedKey)[0] || {}).Title || '';
+          const token = String(title).split(/\s+/).find((w) => w.length >= 3);
+          if (token && !store.containstableProbe(r.provider, r.feedKey, token)) {
+            anyFail = true;
+            store.addFailure({
+              RunId: run.runId,
+              ProviderId: r.provider,
+              FeedKey: r.feedKey,
+              ErrorCode: 'fts_failed',
+              ErrorDetail: 'containstable_probe_miss',
+            });
+          }
+        }
+      }
+    } catch (err) {
+      anyFail = true;
+      store.addFailure({
+        RunId: run.runId,
+        ProviderId: '_run',
+        FeedKey: '_fts',
+        ErrorCode: (err && err.code) || 'fts_failed',
+        ErrorDetail: String(err && err.message),
+      });
+      if (typeof opts.launchAgent === 'function') {
+        await opts.launchAgent({
+          provider: '_run',
+          feedKey: '_fts',
+          fileKey: '',
+          version: String(run.runId),
+          errorCode: 'fts_failed',
+        });
+      }
+    }
+
+    return {
+      exitCode: anyFail ? 1 : 0,
+      runId: run.runId,
+      results,
+    };
+  } finally {
+    store.releaseAppLock();
+    lock.release();
+  }
+}
+
+module.exports = {
+  precheck,
+  listFeedFiles,
+  runDailyImport,
+  WRITE_DBS,
+};

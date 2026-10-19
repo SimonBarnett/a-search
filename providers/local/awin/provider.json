@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "provider": "awin",
+  "class": "affiliate",
+  "enabled": true,
+  "source": {
+    "bucket": "a-affiliates",
+    "glob": "awin/*/????-??-??.csv"
+  },
+  "format": "csv",
+  "encoding": "utf-8",
+  "csv": {
+    "delimiter": ",",
+    "quote": "\"",
+    "header": true
+  },
+  "mapping": {
+    "sku": {
+      "from": "aw_product_id"
+    },
+    "title": {
+      "from": "product_name",
+      "transform": [
+        "trim"
+      ]
+    },
+    "description": {
+      "from": "description",
+      "transform": [
+        "stripHtml",
+        "trim"
+      ]
+    },
+    "brand": {
+      "from": "brand_name"
+    },
+    "category": {
+      "from": [
+        "category_name",
+        "merchant_category"
+      ],
+      "transform": [
+        "firstNonEmpty"
+      ]
+    },
+    "price": {
+      "from": "search_price",
+      "transform": [
+        "decimal"
+      ]
+    },
+    "currency": {
+      "from": "currency",
+      "default": "GBP",
+      "transform": [
+        "upper"
+      ]
+    },
+    "url": {
+      "from": "merchant_deep_link"
+    },
+    "image_url": {
+      "from": [
+        "merchant_image_url",
+        "aw_image_url"
+      ],
+      "transform": [
+        "firstNonEmpty"
+      ]
+    },
+    "ean": {
+      "from": "ean"
+    },
+    "mpn": {
+      "from": "mpn"
+    },
+    "availability": {
+      "from": "in_stock",
+      "default": "unknown"
+    }
+  },
+  "link": {
+    "builder": "awin",
+    "store": [
+      "merchant_id"
+    ]
+  },
+  "dedupeKey": [
+    "sku"
+  ],
+  "requiredFields": [
+    "sku",
+    "title",
+    "url",
+    "price"
+  ],
+  "validation": {
+    "maxRejectPct": 5,
+    "minRows": 1,
+    "minRowsVsPreviousPct": 50,
+    "maxRemovePct": 50,
+    "expectedColumns": [
+      "aw_deep_link",
+      "product_name",
+      "aw_product_id",
+      "merchant_deep_link",
+      "search_price",
+      "currency"
+    ]
+  },
+  "mode": "full",
+  "deleteMissing": "soft",
+  "feedOverrides": {}
+}

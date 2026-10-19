@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "provider": "webgains",
+  "class": "affiliate",
+  "enabled": false,
+  "source": {
+    "bucket": "a-affiliates",
+    "glob": "webgains/*/????-??-??.csv"
+  },
+  "format": "csv",
+  "encoding": "utf-8",
+  "mapping": {
+    "sku": {
+      "from": "id"
+    },
+    "title": {
+      "from": "title"
+    },
+    "url": {
+      "from": "url"
+    },
+    "price": {
+      "from": "price",
+      "transform": [
+        "decimal"
+      ]
+    }
+  },
+  "link": {
+    "builder": "webgains",
+    "store": []
+  },
+  "dedupeKey": [
+    "sku"
+  ],
+  "requiredFields": [
+    "sku",
+    "title",
+    "url"
+  ],
+  "validation": {
+    "maxRejectPct": 5,
+    "minRows": 1,
+    "minRowsVsPreviousPct": 50,
+    "maxRemovePct": 50,
+    "expectedColumns": [
+      "id",
+      "title"
+    ]
+  },
+  "mode": "full",
+  "deleteMissing": "soft",
+  "feedOverrides": {},
+  "csv": {
+    "delimiter": ",",
+    "quote": "\"",
+    "header": true
+  }
+}
