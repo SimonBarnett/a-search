@@ -76,8 +76,8 @@ describe('MRB #680 hostile FR-064 kelkoo normalize', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
   });
 
   it('skill documents FR-064 field map needles', () => {

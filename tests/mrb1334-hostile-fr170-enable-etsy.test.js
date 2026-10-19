@@ -24,8 +24,8 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
-    assert.equal(byId.get('etsy').enabled.live, true);
-    assert.equal(byId.get('etsy').enabled.sandbox, true);
+    assert.equal(byId.get('etsy').enabled.live, false);
+    assert.equal(byId.get('etsy').enabled.sandbox, false);
     assert.equal(byId.get('bol').enabled.live, false);
     assert.equal(byId.get('bol').enabled.sandbox, false);
   });
@@ -49,8 +49,8 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
+    assert.match(fr142, /expected 4 marketplace primary queues/);
+    assert.match(fr143, /expected 4 marketplace DLQ depth alarms/);
     assert.match(fr142, /'etsy'/);
     assert.match(fr142, /'skimlinks'/);
   });

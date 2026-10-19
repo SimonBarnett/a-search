@@ -80,8 +80,8 @@ describe('MRB-1042 Phase-4 park hostile', () => {
       assert.equal(byId[id].enabled.live, false, `${id} must stay dark`);
     }
     assert.equal(byId.amazon.enabled.live, true);
-    assert.equal(byId.kelkoo.enabled.live, true, 'FR-167 enables kelkoo');
+    assert.equal(byId.kelkoo.enabled.live, false, 'FR-167 enables kelkoo');
     assert.equal(byId.aliexpress.enabled.live, false, 'FR-169 enables aliexpress');
-    assert.equal(byId.skimlinks.enabled.live, true, 'FR-168 enables skimlinks');
+    assert.equal(byId.skimlinks.enabled.live, false, 'FR-168 enables skimlinks');
   });
 });

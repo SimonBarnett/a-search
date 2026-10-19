@@ -37,7 +37,7 @@ describe('MRB #682 hostile FR-065 kelkoo worker', () => {
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
   });
 });

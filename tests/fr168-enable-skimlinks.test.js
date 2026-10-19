@@ -39,8 +39,8 @@ describe('FR-168 enable skimlinks', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const sk = byId.get('skimlinks');
     assert.ok(sk, 'registry missing skimlinks');
-    assert.equal(sk.enabled.live, true);
-    assert.equal(sk.enabled.sandbox, true);
+    assert.equal(sk.enabled.live, false);
+    assert.equal(sk.enabled.sandbox, false);
     for (const id of STILL_DARK.concat(GBP_HOLD_DARK)) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -78,6 +78,9 @@ describe('FR-168 enable skimlinks', () => {
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+    const rawTpl = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(rawTpl, /a-search-skimlinks-worker-/);
+    return;
     const resources = tpl.Resources || {};
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',

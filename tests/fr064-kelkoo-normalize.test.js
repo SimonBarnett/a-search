@@ -90,7 +90,7 @@ describe('FR-064 kelkoo normalize', () => {
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk);
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
   });
 });

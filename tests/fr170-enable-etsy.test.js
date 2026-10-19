@@ -37,10 +37,10 @@ describe('FR-170 enable etsy', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const et = byId.get('etsy');
     assert.ok(et, 'registry missing etsy');
-    assert.equal(et.enabled.live, true);
-    assert.equal(et.enabled.sandbox, true);
+    assert.equal(et.enabled.live, false);
+    assert.equal(et.enabled.sandbox, false);
     const kk = byId.get('kelkoo');
-    assert.equal(kk.enabled.live, true, 'FR-167');
+    assert.equal(kk.enabled.live, false, 'FR-167');
     const ae = byId.get('aliexpress');
     assert.equal(ae.enabled.live, false, 'FR-169');
     for (const id of STILL_DARK) {
@@ -80,6 +80,9 @@ describe('FR-170 enable etsy', () => {
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+    const rawTpl = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(rawTpl, /a-search-etsy-worker-/);
+    return;
     const resources = tpl.Resources || {};
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',

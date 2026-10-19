@@ -59,3 +59,5 @@ See `.env.example`. Queue: `SQS_ETSY_URL`. Creds: `ETSY_API_KEY` (+ optional
 - Phase-2 etsy stay-dark stack (search -> normalize -> worker -> selftest): CAST IRON
   in this skill + `docs/phase2-providers.md`. Relocated sources: bobiverse#3366+.
 - FR-244: x-api-key keystring:secret; Rakuten deeplink u1=tenantId; Awin fallback only.
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

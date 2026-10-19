@@ -32,8 +32,8 @@ describe('MRB #684 hostile FR-066 kelkoo selftest', () => {
       fs.readFileSync(path.join(root, 'providers', 'registry.json'), 'utf8'),
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
     assert.equal(kk.rateLimit.maxConcurrency, 1);
     assert.equal(kk.rateLimit.minIntervalMs, 250);
   });

@@ -42,7 +42,7 @@ describe('FR-179 enable wix', () => {
     assert.equal(wx.enabled.sandbox, true);
     assert.equal(wx.class, 'merchant');
     assert.equal(wx.merchantConnect, true);
-    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
+    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
     assert.equal(byId.get('shopify').enabled.live, true, 'FR-178');
     assert.equal(byId.get('tradedoubler').enabled.live, true, 'FR-174');
     for (const id of STILL_DARK) {

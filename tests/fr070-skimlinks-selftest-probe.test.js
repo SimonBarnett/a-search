@@ -84,8 +84,8 @@ describe('FR-070 skimlinks selftestProbe + rateLimit', () => {
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk);
-    assert.equal(sk.enabled.live, true);
-    assert.equal(sk.enabled.sandbox, true);
+    assert.equal(sk.enabled.live, false);
+    assert.equal(sk.enabled.sandbox, false);
     assert.ok(sk.rateLimit);
     assert.equal(typeof sk.rateLimit.maxConcurrency, 'number');
     assert.ok(sk.rateLimit.maxConcurrency > 0);

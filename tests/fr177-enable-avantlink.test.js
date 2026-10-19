@@ -41,10 +41,10 @@ describe('FR-177 enable avantlink', () => {
     assert.equal(al.enabled.sandbox, false);
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
-    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
+    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
     assert.equal(byId.get('aliexpress').enabled.live, false, 'FR-169');
-    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
-    assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
+    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
+    assert.equal(byId.get('skimlinks').enabled.live, false, 'FR-168');
     assert.equal(byId.get('admitad').enabled.live, false, 'FR-175 not on main');
     assert.equal(byId.get('flexoffers').enabled.live, false, 'FR-176 not on main');
     for (const id of STILL_DARK) {

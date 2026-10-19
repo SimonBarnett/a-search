@@ -122,7 +122,7 @@ describe('FR-067 skimlinks search client', () => {
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk, 'registry missing skimlinks');
-    assert.equal(sk.enabled.live, true);
-    assert.equal(sk.enabled.sandbox, true);
+    assert.equal(sk.enabled.live, false);
+    assert.equal(sk.enabled.sandbox, false);
   });
 });

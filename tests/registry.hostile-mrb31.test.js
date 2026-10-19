@@ -9,13 +9,8 @@ const { enabled, loadRegistry } = require('../providers/loadRegistry');
 const DEFAULT_ON = [
   'amazon',
   'ebay',
-  'rakuten',
-  'cj',
   'awin',
   'impact',
-  'kelkoo',
-  'etsy',
-  'skimlinks',
   'shopify',
   'partnerize',
   'tradedoubler',

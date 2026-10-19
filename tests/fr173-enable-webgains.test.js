@@ -40,8 +40,8 @@ describe('FR-173 enable webgains', () => {
     assert.ok(wg, 'registry missing webgains');
     assert.equal(wg.enabled.live, true);
     assert.equal(wg.enabled.sandbox, true);
-    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
-    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
+    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
+    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
     assert.equal(
       byId.get('tradedoubler').enabled.live,

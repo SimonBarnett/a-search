@@ -96,3 +96,5 @@ Read `.grok/skills/a-search-rakuten/SKILL.md` for runtime worker, XML parse,
 rate-limit backoff, and S3 results path.
 
 Contract: `docs/provider-onboarding-skills.md` (FR-060a).
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

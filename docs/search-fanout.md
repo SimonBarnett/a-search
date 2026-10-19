@@ -12,13 +12,22 @@ on the FR-153 allowlist (never `*`).
 
 ## Fan-out
 
+An affiliate is a source we download parts from and are paid in commission. A
+merchant is a source we download parts from and charge a monthly fee. A search
+provider returns search results from an API. **Only search providers run on
+AWS.** Today that is **Amazon** and **eBay**. Affiliates and merchants
+(including rakuten, cj, kelkoo, skimlinks and etsy) are downloaded into the SQL
+database and searched with full-text search. `/search` enqueues only to the
+search-provider queues plus the SQL queue.
+
 After validating that `a-clubs/{hostkey}/{guid}/` exists (404 `guid_not_found`
 otherwise), entry reads `userid` from the host marker `a-clubs/{hostkey}/`
 Metadata (FR #4415 / #4287). Missing userid is **400 `userid_required`** ---
 never enqueue jobs that would crash workers with `TrackedUrlError`. Then entry
 mints a `searchid` and enqueues:
 
-1. one message to **each enabled live** provider queue (registry `kind:live`)
+1. one message to **each AWS search provider** queue (registry `awsSearch: true`;
+   currently amazon and ebay)
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env
    `SQS_DB_BACKED_URL` / `SQS_SQL_URL`)
 
@@ -75,20 +84,19 @@ Providers and the SQL drain write:
 Schema: `shared/search/inResultSchema.js` (`searchid`, `source`, `hostkey`,
 `guid`, `products[]`). Affiliate links keep the existing tenant + affiliate id
 rules. Writers bump GUID and host `lastmod` (#3968) via
-`shared/search/writeInResultS3.js`. SQL/redqueen path uses the schema now;
+`shared/search/writeInResultS3.js`. The SQL path uses the same schema.
 **provider workers wire `writeInResultToS3` in #4040**.
 
-## SQL SQS: drained on redqueen
+## SQL SQS: drained on walrus
 
-`redqueen/sql-search-drain` long-polls the SQL queue over outbound HTTPS (no
-inbound ports), runs the database search against the a-search DB on **walrus**
-over the LAN (**never madeiradb**), writes the same IN/ format, and deletes the
-message only after a successful write.
+Walrus drains the SQL queue. No AWS Lambda connects to MSSQL (walrus does not
+open inbound ports). The drain long-polls the SQL queue over outbound HTTPS,
+runs the full-text search against the a-search database on **walrus**
+(**never madeiradb**), writes the same IN/ format, and deletes the message
+only after a successful write.
 
-**Reuse:** the drain loop / SQS poll helpers live in `walrus/src/*` and are
-required from redqueen (ownership moves to redqueen; walrus code is the shared
-library during transition). IAM user `a-search-redqueen-sql-drain` has consume on
-the SQL queue + Put/Get/List on `a-clubs`.
+Affiliate and merchant catalogues are downloaded into that database and are
+searched here, not by an AWS provider Lambda.
 
 ## Access
 
@@ -96,6 +104,6 @@ the SQL queue + Put/Get/List on `a-clubs`.
 |-----------|-----|
 | Entry `/search` | Send to provider queues + SQL queue; Head/Get on `a-clubs` markers |
 | Provider worker | Receive own queue; write `a-clubs/*/*/IN/*` |
-| Redqueen SQL drain | Receive/delete SQL queue; write `a-clubs` IN/ |
+| Walrus SQL drain | Receive/delete SQL queue; write `a-clubs` IN/ |
 
 No secrets (agent key, provider API keys, emails) in logs.

@@ -7,7 +7,11 @@
  */
 
 const crypto = require('node:crypto');
-const { loadRegistry, enabled: registryEnabled } = require('../../providers/loadRegistry');
+const {
+  loadRegistry,
+  enabled: registryEnabled,
+  isAwsSearchProvider,
+} = require('../../providers/loadRegistry');
 const { isDbBackedSource } = require('./dbBackedQueue');
 const { createSqsSendMessage } = require('./sqsSend');
 const {
@@ -214,6 +218,8 @@ function resolveFanOutTargets(envName, deps = {}) {
   for (const id of enabledFn(envName)) {
     const ent = byId.get(id);
     if (isDbBackedSource(ent)) continue;
+    // FR #4451: affiliates/merchants are SQL, not AWS search queues.
+    if (!isAwsSearchProvider(ent)) continue;
     live.push(id);
   }
   return [...live, 'sql'];

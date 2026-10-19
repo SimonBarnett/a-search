@@ -38,7 +38,7 @@ describe('MRB #695 hostile FR-069 skimlinks worker', () => {
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const sl = registry.sources.find((s) => s.id === 'skimlinks');
-    assert.equal(sl.enabled.live, true);
-    assert.equal(sl.enabled.sandbox, true);
+    assert.equal(sl.enabled.live, false);
+    assert.equal(sl.enabled.sandbox, false);
   });
 });

@@ -68,7 +68,7 @@ function lambdaLogGroup(scope, id) {
     removalPolicy: cdk.RemovalPolicy.RETAIN,
   });
 }
-const { loadRegistry } = require('../../providers/loadRegistry');
+const { loadRegistry, isAwsSearchProvider } = require('../../providers/loadRegistry');
 const { queueName, queueDlqName } = require('../../providers/queueName');
 const {
   stageEntryLambdaAsset,
@@ -676,7 +676,9 @@ class ASearchStack extends cdk.Stack {
     // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
     // they share the single a-search-db-backed queue created below.
     for (const src of enabledSources) {
-      if (isLocalProviderFolder(src.folder)) {
+      // FR #4451: AWS queues/Lambdas only for class "search" (amazon, ebay).
+      // Affiliates and merchants stay in SQL; do not synth their workers.
+      if (isLocalProviderFolder(src.folder) || !isAwsSearchProvider(src)) {
         continue;
       }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda

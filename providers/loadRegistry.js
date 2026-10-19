@@ -63,4 +63,14 @@ function rateLimit(id) {
   return src.rateLimit;
 }
 
-module.exports = { loadRegistry, enabled, rateLimit };
+/**
+ * FR #4451: only live search providers run on AWS (class "search").
+ * Affiliates and merchants are downloaded into SQL and searched by the walrus drain.
+ * @param {{ kind?: string, class?: string } | null | undefined} entry
+ * @returns {boolean}
+ */
+function isAwsSearchProvider(entry) {
+  return !!(entry && entry.awsSearch === true && entry.kind === 'live');
+}
+
+module.exports = { loadRegistry, enabled, rateLimit, isAwsSearchProvider };

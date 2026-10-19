@@ -13,7 +13,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "ebay",
@@ -27,15 +28,16 @@
       "rateLimit": {
         "maxConcurrency": 2
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "rakuten",
       "kind": "live",
       "folder": "providers/live/rakuten",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_RAKUTEN_URL",
       "rateLimit": {
@@ -49,8 +51,8 @@
       "kind": "live",
       "folder": "providers/live/cj",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_CJ_URL",
       "rateLimit": {
@@ -63,8 +65,8 @@
       "kind": "live",
       "folder": "providers/live/kelkoo",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_KELKOO_URL",
       "rateLimit": {
@@ -78,8 +80,8 @@
       "kind": "live",
       "folder": "providers/live/skimlinks",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_SKIMLINKS_URL",
       "rateLimit": {
@@ -108,8 +110,8 @@
       "kind": "live",
       "folder": "providers/live/etsy",
       "enabled": {
-        "live": true,
-        "sandbox": true
+        "live": false,
+        "sandbox": false
       },
       "queueEnv": "SQS_ETSY_URL",
       "rateLimit": {

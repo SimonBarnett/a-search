@@ -116,7 +116,7 @@ describe('FR-063 kelkoo search client', () => {
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk, 'registry missing kelkoo');
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
   });
 });

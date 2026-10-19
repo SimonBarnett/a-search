@@ -16,15 +16,7 @@ const { queueName, queueDlqName } = require('../providers/queueName');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 // FR-3949: marketplace only (local/DB-backed providers share a-search-db-backed).
-const ENABLED_IDS = [
-  'amazon',
-  'ebay',
-  'rakuten',
-  'cj',
-  'kelkoo',
-  'etsy',
-  'skimlinks',
-];
+const ENABLED_IDS = ['amazon', 'ebay'];
 const MAX_RECEIVE_COUNT = 3;
 
 describe('FR-142 SQS DLQs for enabled worker queues', () => {
@@ -115,10 +107,10 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
     const dlqs = named.filter((n) => isProviderDlq(n));
     assert.equal(
       primaries.length,
-      14,
-      `expected 14 marketplace primary queues, got ${primaries.length}`,
+      4,
+      `expected 4 marketplace primary queues, got ${primaries.length}`,
     );
-    assert.equal(dlqs.length, 14, `expected 14 DLQs, got ${dlqs.length}`);
+    assert.equal(dlqs.length, 4, `expected 4 DLQs, got ${dlqs.length}`);
 
     // FR-3949: one shared DB-backed queue + DLQ with FR-142 redrive.
     const dbPrimary = findQueueByName('a-search-db-backed');

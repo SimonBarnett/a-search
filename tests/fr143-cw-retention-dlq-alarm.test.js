@@ -16,15 +16,7 @@ const { queueName, queueDlqName } = require('../providers/queueName');
 const root = path.join(__dirname, '..');
 const stackPath = path.join(root, 'cdk', 'lib', 'a-search-stack.js');
 // FR-3949: marketplace only (local/DB-backed share a-search-db-backed; no per-source alarms).
-const ENABLED_IDS = [
-  'amazon',
-  'ebay',
-  'rakuten',
-  'cj',
-  'kelkoo',
-  'etsy',
-  'skimlinks',
-];
+const ENABLED_IDS = ['amazon', 'ebay'];
 const RETENTION_DAYS = 30;
 
 describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
@@ -105,9 +97,8 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
       );
     });
     assert.equal(
-      workerDlqAlarms.length,
-      14,
-      `expected 14 marketplace DLQ depth alarms, got ${workerDlqAlarms.length}`,
+      workerDlqAlarms.length, 4,
+      `expected 4 marketplace DLQ depth alarms, got ${workerDlqAlarms.length}`,
     );
 
     for (const id of ENABLED_IDS) {

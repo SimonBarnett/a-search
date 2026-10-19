@@ -35,7 +35,7 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
     const both = registry.sources.filter(
       (s) => s.enabled && s.enabled.live && s.enabled.sandbox,
     );
-    assert.equal(both.length, 15);
+    assert.equal(both.length, 10);
     const stack = fs.readFileSync(
       path.join(root, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
@@ -67,7 +67,7 @@ describe('MRB-2200 FR-180 woocommerce enable hostile', () => {
       path.join(root, 'tests', 'fr142-sqs-dlq.test.js'),
       'utf8',
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
+    assert.match(fr142, /expected 4 marketplace primary queues/);
     const fr112 = fs.readFileSync(
       path.join(root, 'tests', 'fr112-woocommerce-selftest-probe.test.js'),
       'utf8',

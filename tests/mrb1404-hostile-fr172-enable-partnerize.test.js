@@ -28,8 +28,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     assert.equal(byId.get('partnerize').enabled.sandbox, true);
     assert.equal(byId.get('bol').enabled.live, false, 'GBP/UK hold bol');
     assert.equal(byId.get('bol').enabled.sandbox, false, 'GBP/UK hold bol');
-    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
-    assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
+    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
+    assert.equal(byId.get('skimlinks').enabled.live, false, 'FR-168');
   });
 
   it('stack wires PROVIDER_CREDENTIAL_KEYS.partnerize', () => {
@@ -46,8 +46,8 @@ describe('MRB #1404 hostile FR-172 enable partnerize', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
+    assert.match(fr142, /expected 4 marketplace primary queues/);
+    assert.match(fr143, /expected 4 marketplace DLQ depth alarms/);
     assert.doesNotMatch(fr142, /'partnerize'/);
     assert.match(fr142, /a-search-db-backed/);
   });

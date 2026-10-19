@@ -98,7 +98,7 @@ describe('FR-076 etsy normalize', () => {
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
     assert.ok(et);
-    assert.equal(et.enabled.live, true);
-    assert.equal(et.enabled.sandbox, true);
+    assert.equal(et.enabled.live, false);
+    assert.equal(et.enabled.sandbox, false);
   });
 });

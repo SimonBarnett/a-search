@@ -84,3 +84,5 @@ Read `.grok/skills/a-search-cj/SKILL.md` for runtime worker, GraphQL query
 shape, and S3 results path.
 
 Contract: `docs/provider-onboarding-skills.md` (FR-060a).
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

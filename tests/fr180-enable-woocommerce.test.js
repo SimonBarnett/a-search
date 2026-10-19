@@ -46,8 +46,8 @@ describe('FR-180 enable woocommerce', () => {
     assert.equal(byId.get('shopify').enabled.live, true, 'FR-178');
     assert.equal(byId.get('wix').enabled.live, true, 'FR-179 keep-both');
     assert.equal(byId.get('wix').enabled.sandbox, true, 'FR-179 keep-both');
-    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
-    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
+    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
+    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
     for (const id of STILL_DARK) {

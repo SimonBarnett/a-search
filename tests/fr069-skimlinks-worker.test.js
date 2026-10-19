@@ -138,8 +138,8 @@ describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', 
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk);
-    assert.equal(sk.enabled.live, true);
-    assert.equal(sk.enabled.sandbox, true);
+    assert.equal(sk.enabled.live, false);
+    assert.equal(sk.enabled.sandbox, false);
   });
 
   it('worker source no longer contains not-wired stub message', () => {

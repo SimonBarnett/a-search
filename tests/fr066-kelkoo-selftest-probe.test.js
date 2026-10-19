@@ -85,8 +85,8 @@ describe('FR-066 kelkoo selftestProbe + rateLimit', () => {
     );
     const kk = registry.sources.find((s) => s.id === 'kelkoo');
     assert.ok(kk, 'registry missing kelkoo');
-    assert.equal(kk.enabled.live, true);
-    assert.equal(kk.enabled.sandbox, true);
+    assert.equal(kk.enabled.live, false);
+    assert.equal(kk.enabled.sandbox, false);
     assert.ok(kk.rateLimit && typeof kk.rateLimit === 'object');
     assert.equal(typeof kk.rateLimit.maxConcurrency, 'number');
     assert.ok(kk.rateLimit.maxConcurrency >= 1);
