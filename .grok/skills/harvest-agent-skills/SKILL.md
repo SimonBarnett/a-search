@@ -544,3 +544,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a product PR is still OPEN, open docs/mrb-N from origin/main after that product merges (or from a tip that only has docs/tests). Never stack docs/mrb on the open product head. Do not put Closes on a stacked docs tip and close the product PR as superseded.
 - On WinPS StrictMode, optional searches.json fields such as market must be read via PSObject.Properties. A missing property throws, so an older queries-only file looks like a product failure.
 - FR #4376: /search entry must not stage or load merchant shop adapters; strip shared/shops from the staged asset and lazy-require shop routes --- never fix ImportModuleError by staging magento oauth1 into the entry zip.
+- FIX on CLOSED FAIL-superseded harvest tip: ACK, verify board, DONE FIX assigned URL; do not reopen.
