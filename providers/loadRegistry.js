@@ -63,4 +63,14 @@ function rateLimit(id) {
   return src.rateLimit;
 }
 
-module.exports = { loadRegistry, enabled, rateLimit };
+/**
+ * FR #4451: live API search providers run on AWS (registry awsSearch).
+ * Skimlinks and other affiliates/merchants are SQL downloads, searched by the walrus drain.
+ * @param {{ kind?: string, class?: string } | null | undefined} entry
+ * @returns {boolean}
+ */
+function isAwsSearchProvider(entry) {
+  return !!(entry && entry.awsSearch === true && entry.kind === 'live');
+}
+
+module.exports = { loadRegistry, enabled, rateLimit, isAwsSearchProvider };

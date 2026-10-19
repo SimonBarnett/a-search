@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * FR-070 / FR-168: skimlinks selftestProbe + registry rateLimit (enabled).
@@ -14,7 +14,7 @@ const {
   probeSkimlinksSelftest,
   skimlinksSelftestProbe,
   DEFAULT_FIXTURE,
-} = require('../providers/live/skimlinks/src/selftestProbe');
+} = require('../providers/local/skimlinks/src/selftestProbe');
 
 const credEnv = {
   SKIMLINKS_API_KEY: 'fixture-key',

@@ -23,7 +23,6 @@ const ENABLED_IDS = [
   'cj',
   'kelkoo',
   'etsy',
-  'skimlinks',
 ];
 const RETENTION_DAYS = 30;
 
@@ -94,7 +93,7 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
         // #2139 shop-sync FIFO DLQ alarm is not a provider worker alarm
         !/^a-search-shop-sync/.test(String((res.Properties && res.Properties.AlarmName) || '')),
     );
-    // Marketplace worker DLQ alarms only (7 x live+sandbox = 14). FR-2139 shop-sync separate.
+    // Marketplace worker DLQ alarms only (6 search providers x live+sandbox = 12). FR-2139 shop-sync separate.
     const workerDlqAlarms = alarms.filter((a) => {
       const name = (a.Properties && a.Properties.AlarmName) || '';
       const blob = JSON.stringify(a.Properties || {});
@@ -106,8 +105,8 @@ describe('FR-143 CloudWatch retention + DLQ depth alarms', () => {
     });
     assert.equal(
       workerDlqAlarms.length,
-      14,
-      `expected 14 marketplace DLQ depth alarms, got ${workerDlqAlarms.length}`,
+      12,
+      `expected 12 marketplace DLQ depth alarms, got ${workerDlqAlarms.length}`,
     );
 
     for (const id of ENABLED_IDS) {

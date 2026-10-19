@@ -47,10 +47,10 @@ describe('MRB #1318 hostile FR-167 enable kelkoo', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
+    assert.match(fr142, /expected 12 marketplace primary queues/);
+    assert.match(fr143, /expected 12 marketplace DLQ depth alarms/);
     assert.match(fr142, /'kelkoo'/);
-    assert.match(fr142, /'skimlinks'/);
+    assert.doesNotMatch(fr142, /'skimlinks'/);
     assert.doesNotMatch(fr142, /'aliexpress'/);
   });
 

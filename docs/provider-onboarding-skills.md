@@ -23,7 +23,7 @@ Examples:
 | `awin` | `providers/local/awin/.grok/skills/a-search-awin-onboarding/SKILL.md` |
 | `cj` | `providers/live/cj/.grok/skills/a-search-cj-onboarding/SKILL.md` |
 | `kelkoo` | `providers/live/kelkoo/.grok/skills/a-search-kelkoo-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
-| `skimlinks` | `providers/live/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
+| `skimlinks` | `providers/local/skimlinks/.grok/skills/a-search-skimlinks-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `aliexpress` | `providers/live/aliexpress/.grok/skills/a-search-aliexpress-onboarding/SKILL.md` (enabled FR-169; onboarding skill retained) |
 | `etsy` | `providers/live/etsy/.grok/skills/a-search-etsy-onboarding/SKILL.md` (FR-062 stub; stay-dark) |
 | `bol` | `providers/live/bol/.grok/skills/a-search-bol-onboarding/SKILL.md` (FR-062 stub; stay-dark) |

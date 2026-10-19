@@ -23,7 +23,6 @@ const ENABLED_IDS = [
   'cj',
   'kelkoo',
   'etsy',
-  'skimlinks',
 ];
 const MAX_RECEIVE_COUNT = 3;
 
@@ -103,7 +102,7 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
       }
     }
 
-    // FR-3949: 7 marketplace x live+sandbox = 14. Provider queues are FIFO
+    // FR #4451: 6 search providers x live+sandbox = 12 (skimlinks is SQL, not a provider queue).
     // (FR #4039: a-search-provider-*-dlq.fifo). Count only those names so
     // shop-sync / widget-agent FIFO are not mixed in.
     const named = queues
@@ -115,10 +114,10 @@ describe('FR-142 SQS DLQs for enabled worker queues', () => {
     const dlqs = named.filter((n) => isProviderDlq(n));
     assert.equal(
       primaries.length,
-      14,
-      `expected 14 marketplace primary queues, got ${primaries.length}`,
+      12,
+      `expected 12 marketplace primary queues, got ${primaries.length}`,
     );
-    assert.equal(dlqs.length, 14, `expected 14 DLQs, got ${dlqs.length}`);
+    assert.equal(dlqs.length, 12, `expected 12 DLQs, got ${dlqs.length}`);
 
     // FR-3949: one shared DB-backed queue + DLQ with FR-142 redrive.
     const dbPrimary = findQueueByName('a-search-db-backed');

@@ -138,7 +138,7 @@ const NETWORK_PARAMS = Object.freeze({
     clickIdParam: null,
   },
   skimlinks: {
-    class: 'provider',
+    class: 'affiliate',
     affiliateEnv: 'SKIMLINKS_PUBLISHER_ID',
     affiliateParam: 'id',
     tenantParam: 'xcust',

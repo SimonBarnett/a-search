@@ -103,7 +103,7 @@ flip only that id, pin others stay dark) - see
     { "id": "rakuten", "kind": "live", "folder": "providers/live/rakuten", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_RAKUTEN_URL" },
     { "id": "cj", "kind": "live", "folder": "providers/live/cj", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_CJ_URL" },
     { "id": "kelkoo", "kind": "live", "folder": "providers/live/kelkoo", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_KELKOO_URL" },
-    { "id": "skimlinks", "kind": "live", "folder": "providers/live/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL" },
+    { "id": "skimlinks", "kind": "local", "folder": "providers/local/skimlinks", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SKIMLINKS_URL", "class": "affiliate" },
     { "id": "aliexpress", "kind": "live", "folder": "providers/live/aliexpress", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_ALIEXPRESS_URL" },
     { "id": "etsy", "kind": "live", "folder": "providers/live/etsy", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_ETSY_URL" },
     { "id": "bol", "kind": "live", "folder": "providers/live/bol", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_BOL_URL" },

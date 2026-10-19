@@ -68,7 +68,7 @@ function lambdaLogGroup(scope, id) {
     removalPolicy: cdk.RemovalPolicy.RETAIN,
   });
 }
-const { loadRegistry } = require('../../providers/loadRegistry');
+const { loadRegistry, isAwsSearchProvider } = require('../../providers/loadRegistry');
 const { queueName, queueDlqName } = require('../../providers/queueName');
 const {
   stageEntryLambdaAsset,
@@ -684,7 +684,9 @@ class ASearchStack extends cdk.Stack {
     // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
     // they share the single a-search-db-backed queue created below.
     for (const src of enabledSources) {
-      if (isLocalProviderFolder(src.folder)) {
+      // FR #4451: per-source AWS queues/Lambdas only for awsSearch providers.
+      // Local/SQL sources (including skimlinks) share the db-backed queue.
+      if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
       // FR #4480: enabled live providers must have a .env. The message names

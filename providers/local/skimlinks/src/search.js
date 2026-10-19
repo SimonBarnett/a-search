@@ -44,7 +44,7 @@ function assertSkimlinksCreds(env) {
   if (!c.apiKey) missing.push('SKIMLINKS_API_KEY');
   if (missing.length) {
     throw new SkimlinksCredsError(
-      `Skimlinks Product API credentials missing: ${missing.join(', ')}. Set them in providers/live/skimlinks/.env (never commit).`,
+      `Skimlinks Product API credentials missing: ${missing.join(', ')}. Set them in providers/local/skimlinks/.env (never commit).`,
     );
   }
   return c;

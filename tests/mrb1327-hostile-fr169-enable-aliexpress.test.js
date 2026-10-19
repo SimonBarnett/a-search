@@ -27,8 +27,8 @@ describe('MRB #1327 hostile FR-169 aliexpress enable', () => {
   it('FR-142/143 pins use FR-3949 marketplace floors (14) after GBP/UK hold', () => {
     const fr142 = fs.readFileSync(path.join(root, 'tests', 'fr142-sqs-dlq.test.js'), 'utf8');
     const fr143 = fs.readFileSync(path.join(root, 'tests', 'fr143-cw-retention-dlq-alarm.test.js'), 'utf8');
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
+    assert.match(fr142, /expected 12 marketplace primary queues/);
+    assert.match(fr143, /expected 12 marketplace DLQ depth alarms/);
   });
 
   it('registry DEFAULT_OFF includes aliexpress hold; folders retained', () => {

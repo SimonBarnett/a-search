@@ -16,7 +16,6 @@ const {
 
 const LIVE = [
   'amazon',
-  'skimlinks',
   'rakuten',
   'kelkoo',
   'etsy',

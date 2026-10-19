@@ -133,20 +133,17 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'IMPACT_CAMPAIGN_ID',
       'impact-onboarding-sandbox',
     );
-    assertNoCredential(
-      envOf('a-search-skimlinks-worker-live'),
-      'SKIMLINKS_API_KEY',
-      'skimlinks-live',
-    );
-    assertNoCredential(
-      envOf('a-search-skimlinks-worker-sandbox'),
-      'SKIMLINKS_PUBLISHER_ID',
-      'skimlinks-sandbox',
-    );
-    assert.equal(
-      envOf('a-search-skimlinks-worker-live').SKIMLINKS_COUNTRY,
-      'uk',
-    );
+    // FR #4451: skimlinks is a SQL affiliate, not an AWS worker.
+    for (const name of [
+      'a-search-skimlinks-worker-live',
+      'a-search-skimlinks-worker-sandbox',
+    ]) {
+      assert.equal(
+        fns.some((res) => res.Properties && res.Properties.FunctionName === name),
+        false,
+        `${name} must not be synthesized`,
+      );
+    }
 
     // Stay-dark: no worker Lambdas
     for (const dark of STAY_DARK_SAMPLE) {

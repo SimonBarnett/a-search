@@ -1,12 +1,12 @@
 ---
 name: a-search-skimlinks
 description: >
-  Maintain a-search skimlinks live API provider worker. Use in providers/live/skimlinks.
+  Maintain a-search skimlinks live API provider worker. Use in providers/local/skimlinks.
 ---
 
 # a-search skimlinks (live)
 
-Registry folder `providers/live/skimlinks`. Enabled: live=false, sandbox=false
+Registry folder `providers/local/skimlinks`. Enabled: live=false, sandbox=false
 (CAST IRON stay-dark — see `docs/phase2-providers.md`).
 
 ## Search path (FR-067)
@@ -44,3 +44,5 @@ is a later FR while stay-dark).
 ## Env
 
 See `.env.example`. Queue env: `SQS_SKIMLINKS_URL`.
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

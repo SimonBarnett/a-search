@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /** MRB #691 hostile: FR-067 skimlinks search + fixture shape (enabled FR-168). */
 
@@ -12,7 +12,7 @@ const root = path.join(__dirname, '..');
 describe('MRB #691 hostile FR-067 skimlinks search', () => {
   it('search.js injectable + credential assert; FR-168 enabled', () => {
     const src = fs.readFileSync(
-      path.join(root, 'providers/live/skimlinks/src/search.js'),
+      path.join(root, 'providers/local/skimlinks/src/search.js'),
       'utf8',
     );
     assert.match(src, /httpRequest/);
@@ -24,7 +24,7 @@ describe('MRB #691 hostile FR-067 skimlinks search', () => {
   it('fixture uses skimlinksProductAPI.products and example.test URLs', () => {
     const fix = JSON.parse(
       fs.readFileSync(
-        path.join(root, 'providers/live/skimlinks/fixtures/products-ok.json'),
+        path.join(root, 'providers/local/skimlinks/fixtures/products-ok.json'),
         'utf8',
       ),
     );
