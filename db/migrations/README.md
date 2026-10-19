@@ -28,5 +28,9 @@ Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME
 | `016_WidgetStats.sql` | WidgetStatsDaily + WidgetEventDedupe (FR-234 / #1348) |
 | `017_ShopInvoices_StripeEvents.sql` | ShopInvoices + StripeEvents idempotency (FR-239 / #1353) |
 | `018_Merchants_OtpCodes.sql` | Merchants verified contact + OtpCodes hashed secrets (FR-228); never SystemOTPs |
+| `019_Parts_ImportColumns.sql` | Parts PartId/UX + Brand/Category/GTIN/LinkData (FR #4463) |
+| `020_Parts_FullText.sql` | FULLTEXT catalog + index on Parts (FR #4463) |
+| `021_ImportCatalog.sql` | ImportProviders / ImportFeeds (FR #4463) |
+| `022_IngestSchema.sql` | ingest.* runs/files/staging/rejects/failures/purge + RCSI (FR #4463) |
 
 Every file starts with `-- target: a_search`.

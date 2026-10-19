@@ -130,6 +130,7 @@ describe('FR #4450 live providers agent queries', () => {
       RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
       RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
       RAKUTEN_SID: 'FAKE_sid',
+      RAKUTEN_AFFILIATE_ID: 'aff-1',
     };
     assert.deepEqual(
       await searchRakuten(

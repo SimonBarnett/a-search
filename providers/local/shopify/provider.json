@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "provider": "shopify",
+  "class": "merchant",
+  "enabled": true,
+  "source": {
+    "bucket": "a-merchants",
+    "glob": "shopify/*/parts/????-??-??.jsonl"
+  },
+  "format": "jsonl",
+  "encoding": "utf-8",
+  "mapping": {
+    "sku": {
+      "from": "id"
+    },
+    "title": {
+      "from": "title"
+    },
+    "description": {
+      "from": "body_html",
+      "transform": [
+        "stripHtml"
+      ]
+    },
+    "brand": {
+      "from": "vendor"
+    },
+    "category": {
+      "from": "product_type"
+    },
+    "price": {
+      "from": "$.variants[0].price",
+      "transform": [
+        "decimal"
+      ]
+    },
+    "currency": {
+      "from": "currency",
+      "default": "GBP"
+    },
+    "url": {
+      "from": "handle",
+      "transform": [
+        {
+          "template": "https://{shopdomain}/products/{value}"
+        }
+      ]
+    },
+    "image_url": {
+      "from": "$.images[0].src"
+    },
+    "gtin": {
+      "from": "$.variants[0].barcode"
+    },
+    "mpn": {
+      "from": "$.variants[0].sku"
+    },
+    "availability": {
+      "from": "status"
+    }
+  },
+  "link": {
+    "builder": "merchant-plain",
+    "store": []
+  },
+  "dedupeKey": [
+    "sku"
+  ],
+  "requiredFields": [
+    "sku",
+    "title",
+    "url"
+  ],
+  "validation": {
+    "maxRejectPct": 5,
+    "minRows": 1,
+    "minRowsVsPreviousPct": 50,
+    "maxRemovePct": 50,
+    "expectedColumns": [
+      "id",
+      "title",
+      "handle",
+      "variants"
+    ]
+  },
+  "mode": "full",
+  "deleteMissing": "soft",
+  "feedOverrides": {}
+}

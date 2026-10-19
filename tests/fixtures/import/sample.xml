@@ -1,0 +1,5 @@
+﻿<?xml version="1.0"?>
+<rss><channel>
+<item><id>X1</id><title>Xml One</title><url>https://ex.example/x1</url><price>2.00</price></item>
+<item><id>X2</id><title>Xml Two</title><url>https://ex.example/x2</url><price>3.00</price></item>
+</channel></rss>

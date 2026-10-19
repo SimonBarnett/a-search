@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SimonBarnett/a-search/providers/import-provider.schema.json",
+  "title": "a-search import provider.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "provider",
+    "class",
+    "enabled",
+    "source",
+    "format",
+    "mapping",
+    "link",
+    "dedupeKey",
+    "requiredFields",
+    "validation",
+    "mode",
+    "deleteMissing"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "class": { "type": "string", "enum": ["affiliate", "merchant"] },
+    "enabled": { "type": "boolean" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bucket", "glob"],
+      "properties": {
+        "bucket": { "type": "string", "enum": ["a-affiliates", "a-merchants"] },
+        "glob": { "type": "string", "minLength": 1 }
+      }
+    },
+    "format": { "type": "string", "enum": ["csv", "tsv", "json", "jsonl", "xml"] },
+    "encoding": {
+      "type": "string",
+      "enum": ["utf-8", "utf-16le", "windows-1252", "iso-8859-1"],
+      "default": "utf-8"
+    },
+    "csv": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "delimiter": { "type": "string", "minLength": 1 },
+        "quote": { "type": "string" },
+        "header": { "type": "boolean" }
+      }
+    },
+    "json": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "recordPath": { "type": "string" }
+      }
+    },
+    "xml": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "recordPath": { "type": "string" }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["from"],
+        "properties": {
+          "from": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+            ]
+          },
+          "transform": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "object" }
+              ]
+            }
+          },
+          "default": {}
+        }
+      }
+    },
+    "transforms": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["builder", "store"],
+      "properties": {
+        "builder": { "type": "string", "minLength": 1 },
+        "store": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dedupeKey": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "requiredFields": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxRejectPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minRows": { "type": "integer", "minimum": 0 },
+        "minRowsVsPreviousPct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maxRemovePct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "expectedColumns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "mode": { "type": "string", "enum": ["full", "incremental"] },
+    "deleteMissing": { "type": "string", "enum": ["soft", "hard", "none"] },
+    "softDeleteRetentionDays": { "type": "integer", "minimum": 1 },
+    "largeFeedRows": { "type": "integer", "minimum": 1 },
+    "feedOverrides": { "type": "object" }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "provider": "magento",
+  "class": "merchant",
+  "enabled": false,
+  "source": {
+    "bucket": "a-merchants",
+    "glob": "magento/*/parts/????-??-??.jsonl"
+  },
+  "format": "jsonl",
+  "encoding": "utf-8",
+  "mapping": {
+    "sku": {
+      "from": "id"
+    },
+    "title": {
+      "from": "title"
+    },
+    "url": {
+      "from": "url"
+    },
+    "price": {
+      "from": "price",
+      "transform": [
+        "decimal"
+      ]
+    }
+  },
+  "link": {
+    "builder": "merchant-plain",
+    "store": []
+  },
+  "dedupeKey": [
+    "sku"
+  ],
+  "requiredFields": [
+    "sku",
+    "title",
+    "url"
+  ],
+  "validation": {
+    "maxRejectPct": 5,
+    "minRows": 1,
+    "minRowsVsPreviousPct": 50,
+    "maxRemovePct": 50,
+    "expectedColumns": [
+      "id",
+      "title"
+    ]
+  },
+  "mode": "full",
+  "deleteMissing": "soft",
+  "feedOverrides": {}
+}
