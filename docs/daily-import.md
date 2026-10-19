@@ -1,6 +1,6 @@
 # Daily parts import on walrus (FR #4463)
 
-Deterministic daily import of affiliate + merchant part files from the rclone mounts into `a_search` / `a_search_sandbox`, steered by `providers/local/*/provider.json`.
+Deterministic daily import of affiliate + merchant part files from the rclone mounts into _search / Recommended sandbox DB _search_sandbox (FR-146 / FR-251), steered by providers/local/*/provider.json.
 
 ## Schedule
 
