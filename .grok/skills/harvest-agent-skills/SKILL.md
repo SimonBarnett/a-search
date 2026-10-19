@@ -545,3 +545,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - On WinPS StrictMode, optional searches.json fields such as market must be read via PSObject.Properties. A missing property throws, so an older queries-only file looks like a product failure.
 - FR #4376: /search entry must not stage or load merchant shop adapters; strip shared/shops from the staged asset and lazy-require shop routes --- never fix ImportModuleError by staging magento oauth1 into the entry zip.
 - entry agent path: never inject a throwing headObject stub - typeof function blocks defaultAclubsIo(); omit S3 deps so production falls back to a-clubs client.
+- a-search entry sqsSend: MessageGroupId/MessageDeduplicationId are FIFO-only — attach only when QueueUrl ends in .fifo; standard a-search-db-backed (sql) rejects them with InvalidParameterValue (FR #4411)
