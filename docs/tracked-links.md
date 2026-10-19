@@ -44,7 +44,7 @@ Merchants have `merchantConnect: true`.
 | ebay | provider | `campid` + EPN params | `customid` | - | - |
 | etsy / rakuten | provider | `id` (+ `mid`) | `u1` | - | - |
 | cj | provider | path `/click-{PID}-` | `sid` | - | - |
-| skimlinks | provider | `id` | `xcust` | - | - |
+| skimlinks | affiliate | `id` | `xcust` | - | - |
 | kelkoo / aliexpress / bol | provider | per `.env` | custom1 / aff_sub / subId | - | - |
 | shopify, wix, woocommerce, squarespace, magento, bigcommerce, ecwid, prestashop | merchant | - | - | - | - |
 
