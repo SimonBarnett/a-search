@@ -558,3 +558,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX when test-and-synth fails fr149 hostile b<128 on docs/deploy.md: replace U+2014 with ASCII hyphen, keep UTF-8 no BOM; fold main if a sibling already landed the same ASCII row; do not self-MRB after synchronize (FR #4604)
 - Rakuten Advertising Product Search is GET https://api.linksynergy.com/productsearch/1.0 with a Bearer token from RAKUTEN_PRODUCT_SEARCH_TOKEN; never put the token on the URL; missing token is rakuten_missing_credentials (FR #4438 intake-skip suffix).
 - A local-folder move of an HTTP provider makes FR-119 require classifyMssqlConnectError in its selftestProbe. Skip that probe; do not pretend an HTTP fixture check connects to MSSQL.
+- a-search FIX: docs naming a_search_sandbox must also say Recommended / FR-146 / FR-251 (fr119); write markdown with Python chr(96) backticks so WinPS does not turn them into BEL
