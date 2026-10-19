@@ -8,7 +8,7 @@ description: >
 
 # a-search Rakuten (live provider)
 
-> **CAST IRON:** Never commit the Rakuten Product Search token. Keep it in
+> **CAST IRON:** Never commit Rakuten application keys. Keep them in
 > `providers/live/rakuten/.env` only.
 
 > **CAST IRON harvest:** file every issue/FR/gap via
@@ -24,7 +24,7 @@ Registry id `rakuten` (`kind: live`, default-on).
 `src/worker.js` exports `run(msg, deps?)`:
 
 1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
-2. Require `RAKUTEN_PRODUCT_SEARCH_TOKEN` (Bearer token; never log it)
+2. Require `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`
 3. Product Search GET (`src/search.js`) → XML parse → `products[]`
 4. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/rakuten/{userId}/{catalogId}/{searchId}.json`
 
@@ -59,13 +59,11 @@ Rakuten enforces **rate limits** per application key. Playbook:
 
 ## Env
 
-See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_PRODUCT_SEARCH_TOKEN`,
-`RAKUTEN_SITE_ID`, `RAKUTEN_ENDPOINT`, `SQS_RAKUTEN_URL`,
+See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
+`RAKUTEN_CLIENT_SECRET`, `RAKUTEN_ENDPOINT`, `SQS_RAKUTEN_URL`,
 `S3_RESULTS_BUCKET`.
 
-Missing token: `RakutenCredsError` / `missing_rakuten_token`.
-Product Search is `GET https://api.linksynergy.com/productsearch/1.0`
-with `Authorization: Bearer`. Never put the token on the URL or in a log.
+Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
 
 ## Tests
 

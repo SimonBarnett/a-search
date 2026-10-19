@@ -22,6 +22,7 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   copyObject?: Function,
  *   getObjectTagging?: Function,
  *   putObjectTagging?: Function,
+ *   bucket?: string,
  *   now?: Date|string|number,
  * }} opts
  */
@@ -52,6 +53,8 @@ async function writeInResultToS3(opts) {
       putObject: opts.putObject,
       getObjectTagging: opts.getObjectTagging,
       putObjectTagging: opts.putObjectTagging,
+      // FR #4441: CopySource in rewriteMarkerMetadata needs the real bucket name.
+      bucket: opts.bucket,
       now: opts.now,
     };
     await opts.touchLastmod({ Key: `${body.hostkey}/${body.guid}/`, ...s3 });

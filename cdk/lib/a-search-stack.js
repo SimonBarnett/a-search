@@ -230,7 +230,9 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'EBAY_CAMPAIGN_ID',
   ],
   rakuten: [
-    'RAKUTEN_PRODUCT_SEARCH_TOKEN',
+    'RAKUTEN_CLIENT_ID',
+    'RAKUTEN_CLIENT_SECRET',
+    'RAKUTEN_SID',
     'RAKUTEN_SITE_ID',
   ],
   cj: ['CJ_API_TOKEN', 'CJ_COMPANY_ID', 'CJ_WEBSITE_ID'],
@@ -313,6 +315,7 @@ const PROVIDER_PLAIN_DEFAULTS = {
     EBAY_MARKETPLACE_ID: 'EBAY_GB',
   },
   rakuten: {
+    RAKUTEN_TOKEN_URL: 'https://api.linksynergy.com/token',
     RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
   },
   cj: {
@@ -686,8 +689,23 @@ class ASearchStack extends cdk.Stack {
       if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
+      // FR #4480: enabled live providers must have a .env. The message names
+      // the file and never a value. Disabled providers are not staged.
+      const providerEnvRoot = this.node.tryGetContext('providerEnvRoot') || '';
+      const envFile = providerEnvFilePath(
+        repoRoot,
+        src.id,
+        providerEnvRoot || undefined,
+      );
+      if (!fs.existsSync(envFile)) {
+        throw new Error(
+          `provider env ${src.id}: missing file ${envFile}. Fill providers/live/${src.id}/.env from .env.example.`,
+        );
+      }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
-      const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src);
+      const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src, {
+        envFile,
+      });
       const pascal = pascalSource(src.id);
       const envs = /** @type {Array<'live'|'sandbox'>} */ (
         ['live', 'sandbox'].filter((e) => src.enabled[e] === true)
@@ -752,25 +770,20 @@ class ASearchStack extends cdk.Stack {
         wireResultsBucketAccess(worker, resultsBucket);
         // FR #4038: workers write a-clubs IN/ (shared schema); need Put/Get + bucket env.
         wireAclubsInAccess(worker, aClubsBucket);
-        // FR #4336 / #4439: amazon, ebay, and etsy read a gitignored env file.
-        // Other enabled sources stay on per-source Secrets Manager JSON (FR-138).
+        // FR #4480: credentials ride in the bundled .env, not Secrets Manager.
+        // Amazon, eBay, and Etsy still copy non-secret public keys plus the
+        // fixture/file values used by existing synth pins (FR #4336).
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
-        if (providerKeys) {
-          if (PROVIDER_ENV_FILE[src.id]) {
-            const setKeys = wireProviderEnvFromFile(
-              worker,
-              src.id,
-              this.node.tryGetContext('providerEnvRoot') || '',
-              repoRoot,
-            );
-            applyProviderPlainDefaults(worker, src.id, env, setKeys);
-          } else {
-            const providerSecret = resolveProviderSecret(src.id);
-            if (providerSecret) {
-              wireProviderSecretEnv(worker, providerSecret, providerKeys);
-            }
-            applyProviderPlainDefaults(worker, src.id, env);
-          }
+        if (providerKeys && PROVIDER_ENV_FILE[src.id]) {
+          const setKeys = wireProviderEnvFromFile(
+            worker,
+            src.id,
+            this.node.tryGetContext('providerEnvRoot') || '',
+            repoRoot,
+          );
+          applyProviderPlainDefaults(worker, src.id, env, setKeys);
+        } else if (providerKeys) {
+          applyProviderPlainDefaults(worker, src.id, env);
         }
         const sqsOpts = { batchSize: 1 };
         const reservedConcurrency = 1;

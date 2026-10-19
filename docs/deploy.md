@@ -100,16 +100,15 @@ local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138 / FR #4336)
 
-A first deploy needs the gitignored `providers/live/amazon/.env`,
-`providers/live/ebay/.env`, and `providers/live/etsy/.env` files
-(FR #4336 / FR #4439) and no provider secret context.
-Do not pass `amazonProviderSecretArn`, `ebayProviderSecretArn`, or
-`etsyProviderSecretArn`. Other
-enabled ids (rakuten, cj, awin, impact) get a Secrets Manager grant only when
-`-c <id>ProviderSecretArn` is a real ARN in this account. With that context
-omitted, those Lambdas still deploy and have no credential env and no grant.
-Synth never writes an ARN in account `000000000000` into a Lambda environment
-(FR #4352). See [secrets-matrix.md](secrets-matrix.md).
+`npm run deploy` first fills `providers/live/amazon/.env` and
+`providers/live/ebay/.env` from the existing `/madeira/amazon/*` and
+`/madeira/ebay/*` SSM parameters, then bundles each enabled live provider
+`.env` into that provider's Lambda asset. The file stays gitignored. A missing
+file fails the deploy with the path and never prints values. Rakuten,
+Commission Junction, Kelkoo, Skimlinks, and Etsy use the `.env` already in
+`providers/live/<id>/`. Do not pass amazonProviderSecretArn or any other ProviderSecretArn. Live search workers
+are amazon, ebay, rakuten, cj, kelkoo, skimlinks, and etsy. AliExpress and Bol
+stay in the registry turned off. See [secrets-matrix.md](secrets-matrix.md).
 
 ## 5. cdk deploy
 

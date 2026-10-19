@@ -7,6 +7,7 @@
  */
 
 const path = require('node:path');
+const { applyBundledProviderEnv } = require('../../../../shared/loadBundledProviderEnv');
 const {
   assertWorkerEnv,
   EnvIsolationError,
@@ -38,6 +39,7 @@ async function run(msg, deps) {
   if (!msg || typeof msg !== 'object') {
     throw new Error('run(msg) requires a message object');
   }
+  if (!(deps && deps.env)) applyBundledProviderEnv(__dirname);
   const envVars = (deps && deps.env) || process.env;
   assertWorkerEnv(msg, envVars.A_SEARCH_ENV);
 

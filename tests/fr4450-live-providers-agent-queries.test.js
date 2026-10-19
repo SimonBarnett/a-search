@@ -126,8 +126,9 @@ describe('FR #4450 live providers agent queries', () => {
     const { searchRakuten } = require('../providers/live/rakuten/src/search');
     const calls = [];
     const env = {
-      RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
-      RAKUTEN_AFFILIATE_ID: 'aff-1',
+      RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
+      RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
+      RAKUTEN_SID: 'FAKE_sid',
     };
     assert.deepEqual(
       await searchRakuten(
@@ -142,12 +143,18 @@ describe('FR #4450 live providers agent queries', () => {
       env,
       httpRequest: async (req) => {
         calls.push(req);
+        if (req.method === 'POST') {
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ access_token: 'FAKE_rakuten_access', expires_in: 3600 }),
+          };
+        }
         const blob = JSON.stringify(req);
         assert.match(blob, /model/i);
         assert.doesNotMatch(blob, /keyword['\"]?\s*[:=]\s*['\"]\s*['\"]/);
         return { statusCode: 200, body: '<root/>' };
       },
     });
-    assert.equal(calls.length, 1);
+    assert.equal(calls.length, 2);
   });
 });
