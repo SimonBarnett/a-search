@@ -37,10 +37,10 @@ describe('FR-170 enable etsy', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const et = byId.get('etsy');
     assert.ok(et, 'registry missing etsy');
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
     const kk = byId.get('kelkoo');
-    assert.equal(kk.enabled.live, false, 'FR-167');
+    assert.equal(kk.enabled.live, true, 'FR-167');
     const ae = byId.get('aliexpress');
     assert.equal(ae.enabled.live, false, 'FR-169');
     for (const id of STILL_DARK) {
@@ -80,9 +80,6 @@ describe('FR-170 enable etsy', () => {
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-    const rawTpl = fs.readFileSync(templatePath, 'utf8');
-    assert.doesNotMatch(rawTpl, /a-search-etsy-worker-/);
-    return;
     const resources = tpl.Resources || {};
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',
@@ -101,13 +98,10 @@ describe('FR-170 enable etsy', () => {
 
     for (const env of ['live', 'sandbox']) {
       const envVars = envOf(`a-search-etsy-worker-${env}`);
-      // FR #4352: no provider secret context means no credential env.
-      assert.equal(envVars.ETSY_API_KEY, undefined, `etsy ${env} must not set ETSY_API_KEY`);
-      assert.equal(
-        envVars.ETSY_SHARED_SECRET,
-        undefined,
-        `etsy ${env} must not set ETSY_SHARED_SECRET`,
-      );
+      // FR #4439: synth fixture providers/live/etsy/.env equivalent sets the key.
+      // No Secrets Manager grant. Shared secret stays unset when the key embeds it.
+      assert.equal(envVars.ETSY_API_KEY, 'FAKE_ETSY_KEY:FAKE_ETSY_SECRET');
+      assert.equal(envVars.ETSY_SHARED_SECRET, undefined);
       assert.equal(envVars.ETSY_AFFILIATE_NETWORK, 'rakuten');
       const qHit = queues.find(
         (q) =>

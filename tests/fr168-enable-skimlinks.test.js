@@ -39,8 +39,8 @@ describe('FR-168 enable skimlinks', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const sk = byId.get('skimlinks');
     assert.ok(sk, 'registry missing skimlinks');
-    assert.equal(sk.enabled.live, false);
-    assert.equal(sk.enabled.sandbox, false);
+    assert.equal(sk.enabled.live, true);
+    assert.equal(sk.enabled.sandbox, true);
     for (const id of STILL_DARK.concat(GBP_HOLD_DARK)) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);
@@ -78,9 +78,6 @@ describe('FR-168 enable skimlinks', () => {
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-    const rawTpl = fs.readFileSync(templatePath, 'utf8');
-    assert.doesNotMatch(rawTpl, /a-search-skimlinks-worker-/);
-    return;
     const resources = tpl.Resources || {};
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',
@@ -97,23 +94,9 @@ describe('FR-168 enable skimlinks', () => {
       return fn.Properties.Environment.Variables || {};
     }
 
-    for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-skimlinks-worker-${env}`);
-      // FR #4352: no provider secret context means no credential env.
-      assert.equal(
-        envVars.SKIMLINKS_API_KEY,
-        undefined,
-        `skimlinks ${env} must not set SKIMLINKS_API_KEY`,
-      );
-      assert.equal(envVars.SKIMLINKS_COUNTRY, 'uk');
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === queueName('skimlinks', env),
-      );
-      assert.ok(qHit, `missing queue ${queueName('skimlinks', env)}`);
-    }
+    const rawTpl = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(rawTpl, /a-search-skimlinks-worker-/);
+    assert.doesNotMatch(rawTpl, /a-search-provider-skimlinks-/);
 
     // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
     for (const dark of ['admitad'].concat(GBP_HOLD_DARK)) {

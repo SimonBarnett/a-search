@@ -41,8 +41,8 @@ describe('FR-169 enable aliexpress', () => {
     assert.equal(ae.enabled.sandbox, false);
     const kk = byId.get('kelkoo');
     assert.ok(kk, 'kelkoo');
-    assert.equal(kk.enabled.live, false, 'FR-167 kelkoo.live');
-    assert.equal(kk.enabled.sandbox, false, 'FR-167 kelkoo.sandbox');
+    assert.equal(kk.enabled.live, true, 'FR-167 kelkoo.live');
+    assert.equal(kk.enabled.sandbox, true, 'FR-167 kelkoo.sandbox');
     for (const id of STILL_DARK) {
       assert.ok(byId.has(id), `missing ${id}`);
       assert.equal(byId.get(id).enabled.live, false, `${id}.live`);

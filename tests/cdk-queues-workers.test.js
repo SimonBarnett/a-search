@@ -17,7 +17,7 @@ const { queueName } = require('../providers/queueName');
 const root = path.join(__dirname, '..');
 
 /** Marketplace (kind:live) ids that still get per-source AWS workers. */
-const LIVE_ENABLED_IDS = ['amazon', 'ebay'];
+const LIVE_ENABLED_IDS = ['amazon', 'ebay', 'rakuten', 'cj'];
 /** Local/DB-backed ids: worker modules remain, but CDK no longer wires queues. */
 const LOCAL_ENABLED_IDS = ['awin', 'impact'];
 
@@ -74,11 +74,6 @@ describe('FR-036 CDK queues + workers for enabled shortlist', () => {
     assert.doesNotMatch(tpl, /a-search-awin-sandbox/);
     assert.doesNotMatch(tpl, /a-search-awin-worker-/);
     assert.doesNotMatch(tpl, /a-search-impact-worker-/);
-    assert.doesNotMatch(tpl, /a-search-rakuten-worker-/);
-    assert.doesNotMatch(tpl, /a-search-cj-worker-/);
-    assert.doesNotMatch(tpl, /a-search-kelkoo-worker-/);
-    assert.doesNotMatch(tpl, /a-search-skimlinks-worker-/);
-    assert.doesNotMatch(tpl, /a-search-etsy-worker-/);
     assert.match(tpl, /a-search-db-backed/);
     assert.match(tpl, /SQS_DB_BACKED_URL/);
 

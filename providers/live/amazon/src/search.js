@@ -54,16 +54,15 @@ function assertAmazonCreds(env) {
   return c;
 }
 
+const {
+  keywordsFromAgentMsg,
+} = require('../../../../shared/search/keywordsFromAgentMsg');
+
 function keywordsFromMsg(msg) {
-  if (msg && typeof msg.q === 'string' && msg.q.trim()) return msg.q.trim();
-  if (msg && Array.isArray(msg.searchterms)) {
-    const parts = msg.searchterms
-      .filter((t) => typeof t === 'string' && t.trim())
-      .map((t) => t.trim());
-    if (parts.length) return parts.join(' ');
-  }
-  return '';
+  // FR #4450 / #4446: agent fan-out uses queries/exclude (legacy q/searchterms kept).
+  return keywordsFromAgentMsg(msg);
 }
+
 
 /**
  * Build SearchItems JSON body (PA-API 5).
@@ -74,7 +73,7 @@ function buildSearchItemsBody(msg, creds) {
     PartnerTag: creds.partnerTag,
     PartnerType: 'Associates',
     Marketplace: marketplaceForHost(creds.host),
-    Keywords: keywords || ' ',
+    Keywords: keywords,
     SearchIndex: 'All',
     Resources: [
       'Images.Primary.Large',
@@ -207,6 +206,7 @@ async function defaultHttpRequest(signed) {
  * @returns {Promise<object[]>} products
  */
 async function searchAmazon(msg, deps) {
+  if (!keywordsFromMsg(msg)) return [];
   const env = (deps && deps.env) || process.env;
   const creds = assertAmazonCreds(env);
   const payload = buildSearchItemsBody(msg, creds);

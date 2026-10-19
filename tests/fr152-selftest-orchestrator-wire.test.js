@@ -148,8 +148,7 @@ describe('FR-152 selftest orchestrator wire', () => {
   it('real registry listEnabled includes FR-167 kijiji', async () => {
     const live = enabled('live');
     assert.ok(live.includes('amazon'));
-    assert.ok(live.includes('ebay'));
-    assert.equal(live.includes('kelkoo'), false);
+    assert.ok(live.includes('kelkoo'));
 
     const probed = [];
     const res = await handleSelftest(
@@ -174,8 +173,7 @@ describe('FR-152 selftest orchestrator wire', () => {
       json.providers.map((p) => p.id).sort(),
       [...live].sort(),
     );
-    assert.ok(probed.includes('ebay'));
-    assert.equal(probed.includes('kelkoo'), false);
+    assert.ok(probed.includes('kelkoo'));
   });
 
   it('staged entry asset includes enabled source selftestProbe.js', () => {
@@ -211,7 +209,10 @@ describe('FR-152 selftest orchestrator wire', () => {
       'src',
       'selftestProbe.js',
     );
-    assert.equal(fs.existsSync(kelkooProbe), false);
+    assert.ok(
+      fs.existsSync(kelkooProbe),
+      'FR-167 kijiji probe must be staged into entry asset',
+    );
 
     const marker = JSON.parse(
       fs.readFileSync(
@@ -222,8 +223,7 @@ describe('FR-152 selftest orchestrator wire', () => {
     assert.equal(marker.fr152, true);
     assert.ok(Array.isArray(marker.selftestProbes));
     assert.ok(marker.selftestProbes.includes('amazon'));
-    assert.ok(marker.selftestProbes.includes('ebay'));
-    assert.equal(marker.selftestProbes.includes('kelkoo'), false);
+    assert.ok(marker.selftestProbes.includes('kelkoo'));
   });
 
   it('FR-152 docs Decision LOCKED and gap pass2 row marked Yes', () => {

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /** MRB #701 hostile: FR-070 skimlinks selftest + rateLimit (enabled FR-168). */
 
@@ -12,7 +12,7 @@ const root = path.join(__dirname, '..');
 describe('MRB #701 hostile FR-070 skimlinks selftest', () => {
   it('selftestProbe uses searchSkimlinks + skimlinksProductAPI fixture shape', () => {
     const src = fs.readFileSync(
-      path.join(root, 'providers/live/skimlinks/src/selftestProbe.js'),
+      path.join(root, 'providers/local/skimlinks/src/selftestProbe.js'),
       'utf8',
     );
     assert.match(src, /assertSkimlinksCreds/);
@@ -26,8 +26,8 @@ describe('MRB #701 hostile FR-070 skimlinks selftest', () => {
       fs.readFileSync(path.join(root, 'providers/registry.json'), 'utf8'),
     );
     const sl = registry.sources.find((s) => s.id === 'skimlinks');
-    assert.equal(sl.enabled.live, false);
-    assert.equal(sl.enabled.sandbox, false);
+    assert.equal(sl.enabled.live, true);
+    assert.equal(sl.enabled.sandbox, true);
     assert.ok(sl.rateLimit.maxConcurrency >= 1);
     assert.ok(sl.rateLimit.minIntervalMs >= 0);
   });
@@ -36,7 +36,7 @@ describe('MRB #701 hostile FR-070 skimlinks selftest', () => {
     const text = fs.readFileSync(
       path.join(
         root,
-        'providers/live/skimlinks/.grok/skills/a-search-skimlinks/SKILL.md',
+        'providers/local/skimlinks/.grok/skills/a-search-skimlinks/SKILL.md',
       ),
       'utf8',
     );

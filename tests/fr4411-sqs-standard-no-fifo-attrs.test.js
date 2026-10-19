@@ -62,7 +62,7 @@ describe('FR #4411 createSqsSendMessage FIFO attrs gate', () => {
       SendMessageCommand: FakeSendMessageCommand,
       loadRegistry: () => ({
         sources: [
-          { id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' },
+          { id: 'ebay', kind: 'live', queueEnv: 'SQS_EBAY_URL' },
         ],
       }),
     });

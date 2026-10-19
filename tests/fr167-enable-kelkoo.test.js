@@ -38,13 +38,13 @@ describe('FR-167 enable provider kijiji', () => {
     const byId = new Map(registry.sources.map((s) => [s.id, s]));
     const kk = byId.get('kelkoo');
     assert.ok(kk, 'registry missing kijiji');
-    assert.equal(kk.enabled.live, false, 'kelkoo.live');
-    assert.equal(kk.enabled.sandbox, false, 'kelkoo.sandbox');
+    assert.equal(kk.enabled.live, true, 'kelkoo.live');
+    assert.equal(kk.enabled.sandbox, true, 'kelkoo.sandbox');
     assert.equal(kk.kind, 'live');
     assert.equal(kk.queueEnv, 'SQS_KELKOO_URL');
     // FR-168 skimlinks stays on; GBP/UK hold (FR-254) keeps aliexpress dark.
-    assert.equal(byId.get('skimlinks').enabled.live, false, 'skimlinks.live');
-    assert.equal(byId.get('skimlinks').enabled.sandbox, false, 'skimlinks.sandbox');
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'skimlinks.live');
+    assert.equal(byId.get('skimlinks').enabled.sandbox, true, 'skimlinks.sandbox');
     assert.equal(byId.get('aliexpress').enabled.live, false, 'GBP hold aliexpress.live');
     assert.equal(byId.get('aliexpress').enabled.sandbox, false, 'GBP hold aliexpress.sandbox');
     for (const id of OTHER_STAY_DARK) {
@@ -80,9 +80,6 @@ describe('FR-167 enable provider kijiji', () => {
     const templatePath = path.join(outdir, 'ASearchStack.template.json');
     assert.ok(fs.existsSync(templatePath), 'missing template');
     const tpl = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-    const rawTpl = fs.readFileSync(templatePath, 'utf8');
-    assert.doesNotMatch(rawTpl, /a-search-kelkoo-worker-/);
-    return;
     const resources = tpl.Resources || {};
     const fns = Object.values(resources).filter(
       (res) => res && res.Type === 'AWS::Lambda::Function',

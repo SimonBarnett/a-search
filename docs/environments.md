@@ -161,15 +161,15 @@ fallback is not available (`shared/mssql/classifyConnectError.js`).
 
 ### CDK Secrets Manager - provider credentials (FR-138)
 
-Amazon and eBay (FR #4336) read `providers/live/<id>/.env` at synth. They
-have no Secrets Manager grant. Other enabled provider workers (rakuten, cj,
-awin, impact) and awin/impact onboarding receive marketplace credential env
-from **per-source** Secrets Manager JSON secrets. Stay-dark providers are
-omitted (no grant).
+Amazon, eBay, and Etsy (FR #4336 / FR #4439) read `providers/live/<id>/.env`
+at synth. They have no Secrets Manager grant. Other enabled provider workers
+(rakuten, cj, awin, impact) and awin/impact onboarding receive marketplace
+credential env from **per-source** Secrets Manager JSON secrets. Stay-dark
+providers are omitted (no grant).
 
 | Deploy context | Meaning |
 |----------------|---------|
-| `-c rakutenProviderSecretArn=arn:...` | Real ARN for rakuten (same pattern for remaining secret providers, not amazon or ebay) |
+| `-c rakutenProviderSecretArn=arn:...` | Real ARN for rakuten (same pattern for remaining secret providers, not amazon, ebay, or etsy) |
 | (omit) | No secret construct and no credential env (FR #4352). Do not use account `000000000000`. |
 
 JSON keys match that provider's `.env.example` credential names (e.g.

@@ -111,7 +111,7 @@ describe('FR-075 etsy search client', () => {
     );
     const et = registry.sources.find((s) => s.id === 'etsy');
     assert.ok(et, 'registry missing etsy');
-    assert.equal(et.enabled.live, false);
-    assert.equal(et.enabled.sandbox, false);
+    assert.equal(et.enabled.live, true);
+    assert.equal(et.enabled.sandbox, true);
   });
 });

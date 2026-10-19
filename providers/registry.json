@@ -36,59 +36,62 @@
       "kind": "live",
       "folder": "providers/live/rakuten",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_RAKUTEN_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 1000
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "cj",
       "kind": "live",
       "folder": "providers/live/cj",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_CJ_URL",
       "rateLimit": {
         "maxConcurrency": 2
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "kelkoo",
       "kind": "live",
       "folder": "providers/live/kelkoo",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_KELKOO_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "skimlinks",
-      "kind": "live",
-      "folder": "providers/live/skimlinks",
+      "kind": "local",
+      "folder": "providers/local/skimlinks",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_SKIMLINKS_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "affiliate"
     },
     {
       "id": "aliexpress",
@@ -103,22 +106,24 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "etsy",
       "kind": "live",
       "folder": "providers/live/etsy",
       "enabled": {
-        "live": false,
-        "sandbox": false
+        "live": true,
+        "sandbox": true
       },
       "queueEnv": "SQS_ETSY_URL",
       "rateLimit": {
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "bol",
@@ -133,7 +138,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "awin",

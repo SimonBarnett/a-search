@@ -53,7 +53,7 @@ describe('FR-248 network params', () => {
     for (const s of reg.sources) {
       assert.ok(s.class, `missing class on ${s.id}`);
       assert.ok(
-        ['affiliate', 'merchant', 'provider', 'search'].includes(s.class),
+        ['affiliate', 'merchant', 'provider'].includes(s.class),
         `${s.id} bad class ${s.class}`,
       );
       if (s.kind === 'live') assert.equal(s.class, 'provider', s.id);

@@ -14,7 +14,7 @@ const root = path.join(__dirname, '..');
 const fixturePath = path.join(
   root,
   'providers',
-  'live',
+  'local',
   'skimlinks',
   'fixtures',
   'products-ok.json',
@@ -22,7 +22,7 @@ const fixturePath = path.join(
 const searchPath = path.join(
   root,
   'providers',
-  'live',
+  'local',
   'skimlinks',
   'src',
   'search.js',
@@ -30,14 +30,14 @@ const searchPath = path.join(
 const envExample = path.join(
   root,
   'providers',
-  'live',
+  'local',
   'skimlinks',
   '.env.example',
 );
 
 describe('FR-067 skimlinks search client', () => {
   it('search.js and fixture exist', () => {
-    assert.ok(fs.existsSync(searchPath), 'missing providers/live/skimlinks/src/search.js');
+    assert.ok(fs.existsSync(searchPath), 'missing providers/local/skimlinks/src/search.js');
     assert.ok(fs.existsSync(fixturePath), 'missing fixtures/products-ok.json');
     assert.ok(fs.existsSync(envExample), 'missing .env.example');
     const envText = fs.readFileSync(envExample, 'utf8');
@@ -48,7 +48,7 @@ describe('FR-067 skimlinks search client', () => {
     const {
       searchSkimlinks,
       DEFAULT_PRODUCT_BASE,
-    } = require('../providers/live/skimlinks/src/search');
+    } = require('../providers/local/skimlinks/src/search');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const httpCalls = [];
 
@@ -89,7 +89,7 @@ describe('FR-067 skimlinks search client', () => {
     const {
       searchSkimlinks,
       SkimlinksCredsError,
-    } = require('../providers/live/skimlinks/src/search');
+    } = require('../providers/local/skimlinks/src/search');
 
     await assert.rejects(
       () =>
@@ -122,7 +122,7 @@ describe('FR-067 skimlinks search client', () => {
     );
     const sk = registry.sources.find((s) => s.id === 'skimlinks');
     assert.ok(sk, 'registry missing skimlinks');
-    assert.equal(sk.enabled.live, false);
-    assert.equal(sk.enabled.sandbox, false);
+    assert.equal(sk.enabled.live, true);
+    assert.equal(sk.enabled.sandbox, true);
   });
 });

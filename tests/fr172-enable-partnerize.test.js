@@ -39,10 +39,10 @@ describe('FR-172 enable partnerize', () => {
     assert.ok(pz, 'registry missing partnerize');
     assert.equal(pz.enabled.live, true);
     assert.equal(pz.enabled.sandbox, true);
-    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
+    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
     assert.equal(byId.get('aliexpress').enabled.live, false, 'FR-169');
-    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
-    assert.equal(byId.get('skimlinks').enabled.live, false, 'FR-168');
+    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
+    assert.equal(byId.get('skimlinks').enabled.live, true, 'FR-168');
     assert.equal(byId.get('bol').enabled.live, false, 'FR-171 bol.live');
     assert.equal(byId.get('bol').enabled.sandbox, false, 'FR-171 bol.sandbox');
     for (const id of STILL_DARK) {

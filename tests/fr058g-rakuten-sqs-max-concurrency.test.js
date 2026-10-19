@@ -51,10 +51,9 @@ describe('FR-058g CDK rakuten SQS maxConcurrency', () => {
     }
     assert.equal(
       rakutenWorkerLogicalIds.size,
-      0,
-      'FR #4451: rakuten is not an AWS worker',
+      2,
+      'expected rakuten live+sandbox workers',
     );
-    return;
 
     const rakutenMappings = mappings.filter((res) => {
       const fn = res.Properties && res.Properties.FunctionName;

@@ -64,8 +64,8 @@ function rateLimit(id) {
 }
 
 /**
- * FR #4451: only live search providers run on AWS (class "search").
- * Affiliates and merchants are downloaded into SQL and searched by the walrus drain.
+ * FR #4451: live API search providers run on AWS (registry awsSearch).
+ * Skimlinks and other affiliates/merchants are SQL downloads, searched by the walrus drain.
  * @param {{ kind?: string, class?: string } | null | undefined} entry
  * @returns {boolean}
  */

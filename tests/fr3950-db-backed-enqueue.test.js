@@ -50,7 +50,7 @@ describe('FR-3950 DB-backed single-queue enqueue', () => {
       SendMessageCommand: FakeSendMessageCommand,
       loadRegistry: () => ({
         sources: [
-          { id: 'amazon', kind: 'live', awsSearch: true, queueEnv: 'SQS_AMAZON_URL' },
+          { id: 'amazon', kind: 'live', queueEnv: 'SQS_AMAZON_URL' },
           { id: 'awin', kind: 'local', queueEnv: 'SQS_AWIN_URL' },
           { id: 'shopify', kind: 'local', queueEnv: 'SQS_SHOPIFY_URL' },
         ],

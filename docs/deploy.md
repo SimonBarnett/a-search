@@ -100,9 +100,11 @@ local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138 / FR #4336)
 
-A first deploy needs the gitignored `providers/live/amazon/.env` and
-`providers/live/ebay/.env` files (FR #4336) and no provider secret context.
-Do not pass `amazonProviderSecretArn` or `ebayProviderSecretArn`. Other
+A first deploy needs the gitignored `providers/live/amazon/.env`,
+`providers/live/ebay/.env`, and `providers/live/etsy/.env` files
+(FR #4336 / FR #4439) and no provider secret context.
+Do not pass `amazonProviderSecretArn`, `ebayProviderSecretArn`, or
+`etsyProviderSecretArn`. Other
 enabled ids (rakuten, cj, awin, impact) get a Secrets Manager grant only when
 `-c <id>ProviderSecretArn` is a real ARN in this account. With that context
 omitted, those Lambdas still deploy and have no credential env and no grant.
@@ -210,7 +212,7 @@ After deploy succeeds, note at least:
 | Output | Use |
 |--------|-----|
 | **SearchApiUrl** | HTTP API base - `POST {url}/search` (JWT legacy + FR #4030 agent fan-out), `GET\|POST {url}/selftest`. Agent `/search` docs: [search-fanout.md](./search-fanout.md). |
-| **RedqueenSqlDrainUserName** | FR #4030 redqueen SQL drain IAM user (mint keys out-of-band) |
+| **Walrus SQL drain IAM** | Design: walrus drains `a-search-db-backed` (see [search-fanout.md](./search-fanout.md)). Stack output is **TBD** until #4447; CDK may still emit legacy `RedqueenSqlDrainUserName` / `a-search-redqueen-sql-drain` from #4030 — mint keys for the walrus drain host, not redqueen. |
 | `ResultsBucketName` | Pass to rclone / `S3_RESULTS_BUCKET` |
 | `EntryJwtSecretArn` / `MssqlSecretArn` / `*ProviderSecretArn` | Confirm secret wiring |
 

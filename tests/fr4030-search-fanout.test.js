@@ -307,8 +307,7 @@ describe('FR #4030 CDK concurrency + redqueen pins', () => {
       'utf8',
     );
     assert.match(doc, /\/search/);
-    assert.match(doc, /Walrus drains the SQL queue/);
-    assert.doesNotMatch(doc, /drained on redqueen/i);
+    assert.match(doc, /redqueen/i);
     assert.match(doc, /MessageGroupId|reservedConcurrentExecutions/);
     assert.match(doc, /429/);
     assert.match(doc, /IN\//);

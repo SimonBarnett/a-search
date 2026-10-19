@@ -106,20 +106,23 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.equal(ebaySandbox.EBAY_MARKETPLACE_ID, 'EBAY_GB');
     assert.equal(ebaySandbox.EBAY_ENV, 'sandbox');
 
-    // FR #4451: affiliate workers are not in the stack.
-    for (const name of [
-      'a-search-rakuten-worker-live',
-      'a-search-cj-worker-live',
-      'a-search-kelkoo-worker-live',
-      'a-search-skimlinks-worker-live',
-      'a-search-etsy-worker-live',
-    ]) {
-      assert.equal(
-        fns.some((res) => res.Properties && res.Properties.FunctionName === name),
-        false,
-        `${name} must not be synthesized`,
-      );
-    }
+    assertNoCredential(
+      envOf('a-search-rakuten-worker-live'),
+      'RAKUTEN_APPLICATION_KEY',
+      'rakuten-live',
+    );
+    assertNoCredential(
+      envOf('a-search-cj-worker-live'),
+      'CJ_API_TOKEN',
+      'cj-live',
+    );
+    // FR #4352: no placeholder secret. Plain defaults still apply.
+    assertNoCredential(
+      envOf('a-search-kelkoo-worker-live'),
+      'KELKOO_API_KEY',
+      'kelkoo-live',
+    );
+    assert.equal(envOf('a-search-kelkoo-worker-live').KELKOO_COUNTRY, 'uk');
     assertNoCredential(
       envOf('a-search-awin-onboarding-live'),
       'AWIN_API_TOKEN',
@@ -130,6 +133,18 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
       'IMPACT_CAMPAIGN_ID',
       'impact-onboarding-sandbox',
     );
+    // FR #4451: skimlinks is a SQL affiliate, not an AWS worker.
+    for (const name of [
+      'a-search-skimlinks-worker-live',
+      'a-search-skimlinks-worker-sandbox',
+    ]) {
+      assert.equal(
+        fns.some((res) => res.Properties && res.Properties.FunctionName === name),
+        false,
+        `${name} must not be synthesized`,
+      );
+    }
+
     // Stay-dark: no worker Lambdas
     for (const dark of STAY_DARK_SAMPLE) {
       const hit = fns.find(

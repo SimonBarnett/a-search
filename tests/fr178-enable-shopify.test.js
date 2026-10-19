@@ -42,8 +42,8 @@ describe('FR-178 enable shopify', () => {
     assert.equal(sh.enabled.sandbox, true);
     assert.equal(sh.class, 'merchant');
     assert.equal(sh.merchantConnect, true);
-    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
-    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
+    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
+    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 partnerize.live');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 partnerize.sandbox');
     for (const id of STILL_DARK) {

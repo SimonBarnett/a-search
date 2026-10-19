@@ -9,8 +9,13 @@ const { enabled, loadRegistry } = require('../providers/loadRegistry');
 const DEFAULT_ON = [
   'amazon',
   'ebay',
+  'rakuten',
+  'cj',
   'awin',
   'impact',
+  'kelkoo',
+  'etsy',
+  'skimlinks',
   'shopify',
   'partnerize',
   'tradedoubler',
@@ -24,11 +29,6 @@ const DEFAULT_OFF = [
   'bol',
   'aliexpress',
   'avantlink',
-  'rakuten',
-  'cj',
-  'kelkoo',
-  'etsy',
-  'skimlinks',
 ];
 
 describe('providers/loadRegistry', () => {

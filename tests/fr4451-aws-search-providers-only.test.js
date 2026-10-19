@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * FR #4451: /search fan-out on AWS is search providers only (amazon, ebay) + sql.
- * rakuten, cj, kelkoo, skimlinks and etsy are affiliates in SQL, not AWS workers.
+ * FR #4451: /search fan-out is the enabled live API search providers + sql.
+ * Skimlinks has no keyword-search API, so it is a local affiliate (SQL), not an AWS worker.
+ * AliExpress and Bol stay registry-disabled.
  */
 
 const { describe, it } = require('node:test');
@@ -13,37 +14,54 @@ const path = require('node:path');
 const { resolveFanOutTargets } = require('../entry/src/agentSearch');
 const { loadRegistry, isAwsSearchProvider } = require('../providers/loadRegistry');
 
-const OFF_AWS = ['rakuten', 'cj', 'kelkoo', 'skimlinks', 'etsy'];
+const AWS_ON = ['amazon', 'ebay', 'rakuten', 'cj', 'kelkoo', 'etsy'];
+const AWS_HOLD = ['aliexpress', 'bol'];
 
 describe('FR #4451 AWS search-provider fan-out', () => {
-  it('fan-out targets are exactly amazon, ebay and sql', () => {
-    assert.deepEqual(resolveFanOutTargets('live'), ['amazon', 'ebay', 'sql']);
-    assert.deepEqual(resolveFanOutTargets('sandbox'), ['amazon', 'ebay', 'sql']);
+  it('fan-out targets are the enabled search providers plus sql', () => {
+    const expected = [...AWS_ON, 'sql'];
+    assert.deepEqual(resolveFanOutTargets('live'), expected);
+    assert.deepEqual(resolveFanOutTargets('sandbox'), expected);
   });
 
-  it('only amazon and ebay are AWS search providers', () => {
+  it('awsSearch is the live API providers; skimlinks is a local affiliate', () => {
     const { sources } = loadRegistry();
-    const aws = sources.filter(isAwsSearchProvider).map((s) => s.id);
-    assert.deepEqual(aws, ['amazon', 'ebay']);
-    for (const id of OFF_AWS) {
-      const src = sources.find((s) => s.id === id);
-      assert.equal(src.class, 'provider', id);
-      assert.equal(src.awsSearch, undefined, id);
-      assert.equal(src.enabled.live, false, id);
-      assert.equal(src.enabled.sandbox, false, id);
-      assert.equal(isAwsSearchProvider(src), false, id);
+    const byId = new Map(sources.map((s) => [s.id, s]));
+    for (const id of AWS_ON) {
+      const src = byId.get(id);
+      assert.equal(src.kind, 'live', id);
+      assert.equal(src.awsSearch, true, id);
+      assert.equal(src.enabled.live, true, id);
+      assert.equal(src.enabled.sandbox, true, id);
+      assert.equal(isAwsSearchProvider(src), true, id);
     }
+    for (const id of AWS_HOLD) {
+      const src = byId.get(id);
+      assert.equal(src.awsSearch, true, id);
+      assert.equal(src.enabled.live, false, id);
+      assert.equal(isAwsSearchProvider(src), true, id);
+    }
+    const sk = byId.get('skimlinks');
+    assert.equal(sk.kind, 'local');
+    assert.equal(sk.class, 'affiliate');
+    assert.equal(sk.folder, 'providers/local/skimlinks');
+    assert.equal(sk.awsSearch, undefined);
+    assert.equal(sk.enabled.live, true);
+    assert.equal(isAwsSearchProvider(sk), false);
+    assert.equal(resolveFanOutTargets('live').includes('skimlinks'), false);
   });
 
-  it('search-fanout docs match: search providers on AWS, walrus drains SQL', () => {
+  it('search-fanout docs match the provider split and the walrus drain', () => {
     const text = fs.readFileSync(
       path.join(__dirname, '..', 'docs', 'search-fanout.md'),
       'utf8',
     );
-    assert.match(text, /Only search providers run on\s+AWS/);
-    assert.match(text, /Amazon/);
-    assert.match(text, /eBay/);
-    assert.match(text, /Walrus drains the SQL queue/);
-    assert.doesNotMatch(text, /drained on redqueen/);
+    assert.match(text, /Only search\s+providers run on AWS/);
+    assert.match(text, /Rakuten, CJ, Kelkoo and\s+Etsy/);
+    assert.match(text, /Skimlinks/);
+    assert.match(text, /## SQL SQS: drained on walrus/);
+    assert.match(text, /No AWS Lambda connects to MSSQL/);
+    assert.match(text, /madeiradb stays SELECT-only/);
+    assert.doesNotMatch(text, /## SQL SQS: drained on redqueen/);
   });
 });

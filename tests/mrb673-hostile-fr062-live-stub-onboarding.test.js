@@ -13,9 +13,9 @@ const root = path.join(__dirname, '..');
 /** Live stub onboarding books (skills still required even when enabled / held). */
 const IDS = ['kelkoo', 'skimlinks', 'etsy', 'bol'];
 /** Enabled live stubs after FR-167..170 (GBP/UK hold keeps bol+aliexpress dark). */
-const ENABLED_LIVE_STUBS = [];
-/** FR #4451 moved kelkoo/skimlinks/etsy off AWS. GBP hold keeps bol+aliexpress dark. */
-const STAY_DARK_IDS = ['kelkoo', 'skimlinks', 'etsy', 'bol', 'aliexpress'];
+const ENABLED_LIVE_STUBS = ['kelkoo', 'skimlinks', 'etsy'];
+/** Still-disabled / held live stubs. */
+const STAY_DARK_IDS = ['bol', 'aliexpress'];
 
 function readNoBom(rel) {
   const p = path.join(root, rel);
@@ -28,10 +28,11 @@ function readNoBom(rel) {
 describe('MRB #673 hostile FR-062 live stub onboarding', () => {
   for (const id of IDS) {
     it(`${id} onboarding skill: CAST IRON, stay-dark, deferred .env`, () => {
+      const kind = id === 'skimlinks' ? 'local' : 'live';
       const text = readNoBom(
         path.join(
           'providers',
-          'live',
+          kind,
           id,
           '.grok',
           'skills',

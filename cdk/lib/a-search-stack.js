@@ -414,7 +414,9 @@ function applyProviderPlainDefaults(fn, sourceId, env, skipKeys) {
 
 /**
  * FR #4336: amazon and ebay credentials are read from a gitignored env file
- * at synth time. Other providers stay on Secrets Manager (FR-138).
+ * at synth time. FR #4439: etsy uses the same path so a live worker is not
+ * deployed with ETSY_API_KEY unset (that threw etsy_missing_credentials).
+ * Other providers stay on Secrets Manager (FR-138).
  * EBAY_ENV is not copied from the file; the stack env sets it.
  */
 const PROVIDER_ENV_FILE = {
@@ -436,6 +438,10 @@ const PROVIDER_ENV_FILE = {
       'EBAY_MARKETPLACE_ID',
     ],
     optional: ['EBAY_REFRESH_TOKEN'],
+  },
+  etsy: {
+    required: ['ETSY_API_KEY'],
+    optional: ['ETSY_SHARED_SECRET'],
   },
 };
 
@@ -676,9 +682,9 @@ class ASearchStack extends cdk.Stack {
     // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
     // they share the single a-search-db-backed queue created below.
     for (const src of enabledSources) {
-      // FR #4451: AWS queues/Lambdas only for class "search" (amazon, ebay).
-      // Affiliates and merchants stay in SQL; do not synth their workers.
-      if (isLocalProviderFolder(src.folder) || !isAwsSearchProvider(src)) {
+      // FR #4451: per-source AWS queues/Lambdas only for awsSearch providers.
+      // Local/SQL sources (including skimlinks) share the db-backed queue.
+      if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
@@ -747,8 +753,8 @@ class ASearchStack extends cdk.Stack {
         wireResultsBucketAccess(worker, resultsBucket);
         // FR #4038: workers write a-clubs IN/ (shared schema); need Put/Get + bucket env.
         wireAclubsInAccess(worker, aClubsBucket);
-        // FR #4336: amazon and ebay read a gitignored env file. Other enabled
-        // sources stay on per-source Secrets Manager JSON (FR-138).
+        // FR #4336 / #4439: amazon, ebay, and etsy read a gitignored env file.
+        // Other enabled sources stay on per-source Secrets Manager JSON (FR-138).
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
         if (providerKeys) {
           if (PROVIDER_ENV_FILE[src.id]) {

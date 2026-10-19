@@ -39,8 +39,8 @@ describe('FR-174 enable tradedoubler', () => {
     assert.ok(td, 'registry missing tradedoubler');
     assert.equal(td.enabled.live, true);
     assert.equal(td.enabled.sandbox, true);
-    assert.equal(byId.get('kelkoo').enabled.live, false, 'FR-167');
-    assert.equal(byId.get('etsy').enabled.live, false, 'FR-170');
+    assert.equal(byId.get('kelkoo').enabled.live, true, 'FR-167');
+    assert.equal(byId.get('etsy').enabled.live, true, 'FR-170');
     assert.equal(byId.get('partnerize').enabled.live, true, 'FR-172 keep-both');
     assert.equal(byId.get('partnerize').enabled.sandbox, true, 'FR-172 keep-both');
     assert.equal(byId.get('bol').enabled.live, false, 'FR-171 keep-both');

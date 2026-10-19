@@ -74,7 +74,7 @@ describe('FR #4415 agent search fan-out userid', () => {
       newSearchId: () => 'srch_mmfc',
       enabled: () => ['ebay'],
       loadRegistry: () => ({
-        sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
+        sources: [{ id: 'ebay', kind: 'live', queueEnv: 'SQS_EBAY_URL' }],
       }),
     });
     assert.equal(result.searchid, 'srch_mmfc');

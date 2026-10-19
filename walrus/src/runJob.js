@@ -45,6 +45,7 @@ function isMaintainerJob(msg) {
  *   runMaintainer?: (msg: object, deps: object) => Promise<object>,
  *   queryParts?: Function,
  *   connect?: Function,
+ *   touchLastmod?: Function,
  * }} [deps]
  */
 async function runDrainJob(msg, deps) {
@@ -90,7 +91,20 @@ async function runDrainJob(msg, deps) {
     throw new Error(`local_worker_missing:${source}`);
   }
 
-  const putObject = createAClubsPutObject({ root: aClubsRoot, msg });
+  // FR #4447: sql IN files are {searchid}-sql.json (inResultSchema).
+  let writeMsg = msg;
+  if (source.toLowerCase() === 'sql') {
+    const base = String(
+      msg.searchid != null ? msg.searchid : msg.searchId || '',
+    )
+      .trim()
+      .replace(/-sql$/i, '');
+    if (base) {
+      writeMsg = { ...msg, searchId: `${base}-sql`, searchid: base, source: 'sql' };
+    }
+  }
+
+  const putObject = createAClubsPutObject({ root: aClubsRoot, msg: writeMsg });
   const workerEnv = {
     ...envVars,
     S3_RESULTS_BUCKET: envVars.S3_RESULTS_BUCKET || 'a-clubs',
@@ -101,13 +115,14 @@ async function runDrainJob(msg, deps) {
     putObject,
     queryParts: deps && deps.queryParts,
     connect: deps && deps.connect,
+    touchLastmod: deps && deps.touchLastmod,
   });
 
   // Ensure IN file exists even if a stub worker skipped PutObject.
   if (!result || !result.key) {
     writeAClubsIn({
       root: aClubsRoot,
-      msg,
+      msg: writeMsg,
       products: (result && result.products) || [],
     });
   }

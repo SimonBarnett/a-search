@@ -61,7 +61,7 @@ const PROVIDERS = [
   },
   {
     id: 'skimlinks',
-    worker: 'providers/live/skimlinks/src/worker.js',
+    worker: 'providers/local/skimlinks/src/worker.js',
     env: { SKIMLINKS_API_KEY: 'EXAMPLE_KEY' },
   },
 ];
