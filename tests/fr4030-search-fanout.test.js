@@ -239,8 +239,8 @@ describe('FR #4030 agent fan-out', () => {
     const cmds = [];
     const send = createSqsSendMessage({
       envVars: {
-        SQS_DB_BACKED_URL: 'https://sqs.example/sql',
-        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/sql',
+        SQS_DB_BACKED_URL: 'https://sqs.example/a-search-db-backed',
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/a-search-db-backed',
       },
       sqsClient: {
         send: async (cmd) => {
@@ -263,10 +263,13 @@ describe('FR #4030 agent fan-out', () => {
       env: 'live',
       searchid: 's1',
       messageGroupId: 'sql',
+      messageDeduplicationId: 's1-sql',
     });
     assert.equal(cmds.length, 1);
-    assert.equal(cmds[0].QueueUrl, 'https://sqs.example/sql');
-    assert.equal(cmds[0].MessageGroupId, 'sql');
+    assert.equal(cmds[0].QueueUrl, 'https://sqs.example/a-search-db-backed');
+    // FR #4411: standard a-search-db-backed must not get FIFO-only params.
+    assert.equal(cmds[0].MessageGroupId, undefined);
+    assert.equal(cmds[0].MessageDeduplicationId, undefined);
   });
 });
 
