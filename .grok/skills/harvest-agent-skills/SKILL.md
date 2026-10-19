@@ -544,3 +544,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a product PR is still OPEN, open docs/mrb-N from origin/main after that product merges (or from a tip that only has docs/tests). Never stack docs/mrb on the open product head. Do not put Closes on a stacked docs tip and close the product PR as superseded.
 - On WinPS StrictMode, optional searches.json fields such as market must be read via PSObject.Properties. A missing property throws, so an older queries-only file looks like a product failure.
 - Entry Lambda staging: merchantConnect provider src must be copied into the asset even when the source is disabled for selftest; shop adapters eager-require those modules at init.
+- docs/mrb for a harvest tip: contiguous prior+lesson pin is enough when the lesson is already on main; Refs the tip; leave product FR PR open.
