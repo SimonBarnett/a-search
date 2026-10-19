@@ -3,7 +3,8 @@
 /**
  * FR #4428: Lambda invokes handler(event, context). Context is not deps.
  * When putObject was not injected, build S3 calls with the AWS SDK default
- * credential chain (A_CLUBS_BUCKET is applied by writeLiveProviderInResult).
+ * credential chain. writeLiveProviderInResult injects A_CLUBS_BUCKET on every
+ * S3 call (put/head/get/copy/tagging) — FR #4441.
  */
 
 const S3_COMMANDS = {
