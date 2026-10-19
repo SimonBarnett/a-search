@@ -94,23 +94,9 @@ describe('FR-168 enable skimlinks', () => {
       return fn.Properties.Environment.Variables || {};
     }
 
-    for (const env of ['live', 'sandbox']) {
-      const envVars = envOf(`a-search-skimlinks-worker-${env}`);
-      // FR #4352: no provider secret context means no credential env.
-      assert.equal(
-        envVars.SKIMLINKS_API_KEY,
-        undefined,
-        `skimlinks ${env} must not set SKIMLINKS_API_KEY`,
-      );
-      assert.equal(envVars.SKIMLINKS_COUNTRY, 'uk');
-      const qHit = queues.find(
-        (q) =>
-          q.Properties &&
-          typeof q.Properties.QueueName === 'string' &&
-          q.Properties.QueueName === queueName('skimlinks', env),
-      );
-      assert.ok(qHit, `missing queue ${queueName('skimlinks', env)}`);
-    }
+    const rawTpl = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(rawTpl, /a-search-skimlinks-worker-/);
+    assert.doesNotMatch(rawTpl, /a-search-provider-skimlinks-/);
 
     // Stay-dark + GBP/UK hold ids must not have workers (folders retained).
     for (const dark of ['admitad'].concat(GBP_HOLD_DARK)) {

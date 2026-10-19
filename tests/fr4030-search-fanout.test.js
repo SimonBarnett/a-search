@@ -93,8 +93,8 @@ describe('FR #4030 agent fan-out', () => {
       enabled: () => ['ebay', 'amazon', 'shopify'],
       loadRegistry: () => ({
         sources: [
-          { id: 'ebay', kind: 'live' },
-          { id: 'amazon', kind: 'live' },
+          { id: 'ebay', kind: 'live', awsSearch: true },
+          { id: 'amazon', kind: 'live', awsSearch: true },
           { id: 'shopify', kind: 'local' },
         ],
       }),
@@ -147,7 +147,7 @@ describe('FR #4030 agent fan-out', () => {
       newSearchId: () => 'srch_fixed',
       enabled: () => ['ebay'],
       loadRegistry: () => ({
-        sources: [{ id: 'ebay', kind: 'live', queueEnv: 'SQS_EBAY_URL' }],
+        sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
       }),
     });
     assert.equal(result.searchid, 'srch_fixed');

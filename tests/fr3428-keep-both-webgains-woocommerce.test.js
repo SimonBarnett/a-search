@@ -40,15 +40,16 @@ describe('FR-3428 keep-both webgains and woocommerce', () => {
       'utf8',
     );
     // FR-3949: marketplace-only worker floors; webgains/woocommerce are DB-backed.
-    assert.match(fr142, /expected 14 marketplace primary queues/);
+    assert.match(fr142, /expected 12 marketplace primary queues/);
     assert.match(fr142, /a-search-db-backed/);
     assert.doesNotMatch(fr142, /expected 30 primary queues/);
     const fr143 = fs.readFileSync(
       path.join(root, 'tests', 'fr143-cw-retention-dlq-alarm.test.js'),
       'utf8',
     );
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
-    assert.match(fr143, /workerDlqAlarms\.length,\s*14,/);
+    assert.match(fr143, /expected 12 marketplace DLQ depth alarms/);
+    // FR #4451: skimlinks left AWS; 6 search providers x live+sandbox = 12 (was 14).
+    assert.match(fr143, /workerDlqAlarms\.length,\s*12,/);
     assert.doesNotMatch(fr143, /expected 30 DLQ depth alarms/);
   });
 });

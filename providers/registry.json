@@ -13,7 +13,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "ebay",
@@ -27,7 +28,8 @@
       "rateLimit": {
         "maxConcurrency": 2
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "rakuten",
@@ -42,7 +44,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 1000
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "cj",
@@ -56,7 +59,8 @@
       "rateLimit": {
         "maxConcurrency": 2
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "kelkoo",
@@ -71,12 +75,13 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "skimlinks",
-      "kind": "live",
-      "folder": "providers/live/skimlinks",
+      "kind": "local",
+      "folder": "providers/local/skimlinks",
       "enabled": {
         "live": true,
         "sandbox": true
@@ -86,7 +91,7 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "affiliate"
     },
     {
       "id": "aliexpress",
@@ -101,7 +106,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "etsy",
@@ -116,7 +122,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "bol",
@@ -131,7 +138,8 @@
         "maxConcurrency": 1,
         "minIntervalMs": 250
       },
-      "class": "provider"
+      "class": "provider",
+      "awsSearch": true
     },
     {
       "id": "awin",

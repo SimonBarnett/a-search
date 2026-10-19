@@ -49,10 +49,10 @@ describe('MRB #1334 hostile FR-170 enable etsy', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
+    assert.match(fr142, /expected 12 marketplace primary queues/);
+    assert.match(fr143, /expected 12 marketplace DLQ depth alarms/);
     assert.match(fr142, /'etsy'/);
-    assert.match(fr142, /'skimlinks'/);
+    assert.doesNotMatch(fr142, /'skimlinks'/);
   });
 
   it('stay-dark pins exclude etsy; DEFAULT_ON includes etsy; Decision LOCKED', () => {

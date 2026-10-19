@@ -12,13 +12,26 @@ on the FR-153 allowlist (never `*`).
 
 ## Fan-out
 
+An affiliate is a source we download parts from and are paid in commission. A
+merchant is a source we download parts from and charge a monthly fee. A search
+provider returns search results from a live API at search time. **Only search
+providers run on AWS.** Those are **Amazon, eBay, Rakuten, CJ, Kelkoo and
+Etsy**. AliExpress and Bol are search providers too, and stay registry-disabled
+until an enable FR. **Skimlinks** has no documented keyword-search API, so it
+is an affiliate catalogue downloaded into SQL, not an AWS worker. Other
+affiliates and merchants are downloaded into SQL and searched with full-text
+search. `/search` enqueues only to the enabled search-provider queues plus the
+SQL queue.
+
 After validating that `a-clubs/{hostkey}/{guid}/` exists (404 `guid_not_found`
 otherwise), entry reads `userid` from the host marker `a-clubs/{hostkey}/`
 Metadata (FR #4415 / #4287). Missing userid is **400 `userid_required`** ---
 never enqueue jobs that would crash workers with `TrackedUrlError`. Then entry
 mints a `searchid` and enqueues:
 
-1. one message to **each enabled live** provider queue (registry `kind:live`)
+1. one message to **each enabled AWS search provider** queue (registry
+   `awsSearch: true`: amazon, ebay, rakuten, cj, kelkoo, etsy; aliexpress and bol
+   when enabled)
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env
    `SQS_DB_BACKED_URL` / `SQS_SQL_URL`)
 
@@ -92,6 +105,9 @@ successful write.
 inbound SQL ports stay closed; Lambda only enqueues. Runnable drain / sql-worker
 gaps are tracked in #4447 (docs here match the design; that issue lands the
 service).
+
+Affiliate and merchant catalogues, including Skimlinks, are downloaded into that
+database and searched by this drain, not by an AWS provider Lambda.
 
 **IAM:** consume on the SQL queue + Put/Get/List on `a-clubs` belongs to a
 **walrus** SQL-drain principal. Stack output name is **TBD** until #4447 (today

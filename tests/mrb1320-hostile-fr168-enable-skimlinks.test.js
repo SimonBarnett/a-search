@@ -51,9 +51,9 @@ describe('MRB #1320 hostile FR-168 enable skimlinks', () => {
     const fr143 = utf8NoBom(
       path.join('tests', 'fr143-cw-retention-dlq-alarm.test.js'),
     );
-    assert.match(fr142, /expected 14 marketplace primary queues/);
-    assert.match(fr143, /expected 14 marketplace DLQ depth alarms/);
-    assert.match(fr142, /'skimlinks'/);
+    assert.match(fr142, /expected 12 marketplace primary queues/);
+    assert.match(fr143, /expected 12 marketplace DLQ depth alarms/);
+    assert.doesNotMatch(fr142, /'skimlinks'/);
     assert.match(fr142, /'kelkoo'/);
     assert.doesNotMatch(fr142, /'aliexpress'/);
   });

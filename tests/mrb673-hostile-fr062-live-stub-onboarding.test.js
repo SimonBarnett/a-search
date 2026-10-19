@@ -28,10 +28,11 @@ function readNoBom(rel) {
 describe('MRB #673 hostile FR-062 live stub onboarding', () => {
   for (const id of IDS) {
     it(`${id} onboarding skill: CAST IRON, stay-dark, deferred .env`, () => {
+      const kind = id === 'skimlinks' ? 'local' : 'live';
       const text = readNoBom(
         path.join(
           'providers',
-          'live',
+          kind,
           id,
           '.grok',
           'skills',

@@ -45,3 +45,5 @@ is a later FR while stay-dark).
 
 See `.env.example`. Queue env: `SQS_KELKOO_URL`. Requires `KELKOO_PUBLISHER_ID`
 for tracked landing URLs.
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

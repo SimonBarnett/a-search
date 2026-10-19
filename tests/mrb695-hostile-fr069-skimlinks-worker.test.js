@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /** MRB #695 hostile: FR-069 skimlinks worker enabled (FR-168) + no stub. */
 
@@ -12,7 +12,7 @@ const root = path.join(__dirname, '..');
 describe('MRB #695 hostile FR-069 skimlinks worker', () => {
   it('worker wires search normalize writeResults; no not-wired stub', () => {
     const src = fs.readFileSync(
-      path.join(root, 'providers/live/skimlinks/src/worker.js'),
+      path.join(root, 'providers/local/skimlinks/src/worker.js'),
       'utf8',
     );
     assert.doesNotMatch(src, /not wired yet/i);
@@ -24,7 +24,7 @@ describe('MRB #695 hostile FR-069 skimlinks worker', () => {
 
   it('normalize reads skimlinksProductAPI and divides minor-unit price', () => {
     const src = fs.readFileSync(
-      path.join(root, 'providers/live/skimlinks/src/normalize.js'),
+      path.join(root, 'providers/local/skimlinks/src/normalize.js'),
       'utf8',
     );
     assert.match(src, /skimlinksProductAPI/);

@@ -18,3 +18,5 @@ Provider CWD for registry id `kelkoo` (`kind: live`).
 
 - `src/worker.js` — `run(msg)` stub
 - `.env.example` — placeholders
+
+File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.

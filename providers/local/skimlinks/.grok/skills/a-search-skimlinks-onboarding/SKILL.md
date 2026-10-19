@@ -3,7 +3,7 @@ name: a-search-skimlinks-onboarding
 description: >
   Minimal onboarding stub for disabled registry id `skimlinks`.
   Not enabled - live credential steps UNKNOWN / deferred. Use in
-  providers/live/skimlinks or /a-search-skimlinks-onboarding.
+  providers/local/skimlinks or /a-search-skimlinks-onboarding.
 ---
 
 # a-search Skimlinks onboarding (disabled stub)
@@ -16,7 +16,7 @@ description: >
 > 3. Never put tokens, passwords, or partner keys in a filing, skill, log, or commit.
 > Never park a-search product lessons under bobiverse `harvest/SKILL.md`.
 
-You are in **`providers/live/skimlinks/`**. Registry: **enabled live=false, sandbox=false** — **not enabled** (CAST IRON stay-dark until account details exist; see `docs/phase2-providers.md`).
+You are in **`providers/local/skimlinks/`**. Registry: **enabled live=false, sandbox=false** — **not enabled** (CAST IRON stay-dark until account details exist; see `docs/phase2-providers.md`).
 
 ## Status: UNKNOWN / not enabled
 
@@ -29,7 +29,7 @@ files a follow-up FR. Do **not** invent live credential steps or set
 
 ## Obtain `.env` (deferred)
 
-Placeholders only — copy from `.env.example` into `providers/live/skimlinks/.env`
+Placeholders only — copy from `.env.example` into `providers/local/skimlinks/.env`
 (never `entry/.env`, never commit real values):
 
 | Placeholder | Notes |

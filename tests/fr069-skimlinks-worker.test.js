@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * FR-069 / FR-168: skimlinks worker wires search -> normalize -> writeResults (enabled).
@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const fixturePath = path.join(
   root,
   'providers',
-  'live',
+  'local',
   'skimlinks',
   'fixtures',
   'products-ok.json',
@@ -41,7 +41,7 @@ const credEnv = {
 
 describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', () => {
   it('fixture path writes results via injected putObject; no stub message', async () => {
-    const { run } = require('../providers/live/skimlinks/src/worker');
+    const { run } = require('../providers/local/skimlinks/src/worker');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const puts = [];
 
@@ -81,7 +81,7 @@ describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', 
   });
 
   it('wrong-env message refused via assertEnv before HTTP', async () => {
-    const { run } = require('../providers/live/skimlinks/src/worker');
+    const { run } = require('../providers/local/skimlinks/src/worker');
     await assert.rejects(
       () =>
         run(
@@ -106,7 +106,7 @@ describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', 
   it('normalize(fixture) passes assertProductSchema; empty products ok', () => {
     const {
       normalizeSearchResponse,
-    } = require('../providers/live/skimlinks/src/normalize');
+    } = require('../providers/local/skimlinks/src/normalize');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const products = normalizeSearchResponse(fixture, {
       userId: 'U-SK',
@@ -144,7 +144,7 @@ describe('FR-069 skimlinks worker searchâ†’normalizeâ†’writeResults', 
 
   it('worker source no longer contains not-wired stub message', () => {
     const src = fs.readFileSync(
-      path.join(root, 'providers', 'live', 'skimlinks', 'src', 'worker.js'),
+      path.join(root, 'providers', 'local', 'skimlinks', 'src', 'worker.js'),
       'utf8',
     );
     assert.doesNotMatch(src, /not wired yet/i);

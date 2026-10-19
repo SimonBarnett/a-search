@@ -21,7 +21,6 @@ const agentMsg = {
 
 const providers = [
   'amazon',
-  'skimlinks',
   'rakuten',
   'kelkoo',
   'etsy',

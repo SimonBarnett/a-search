@@ -243,7 +243,7 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
         newSearchId: () => 'srch_once',
         enabled: () => ['ebay'],
         loadRegistry: () => ({
-          sources: [{ id: 'ebay', kind: 'live', queueEnv: 'SQS_EBAY_URL' }],
+          sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
         }),
       });
       if (lost) {
@@ -318,7 +318,7 @@ describe('FR #4265 /search is idempotent per GUID', () => {
       newSearchId: () => 'srch_fixed',
       enabled: () => ['ebay'],
       loadRegistry: () => ({
-        sources: [{ id: 'ebay', kind: 'live', queueEnv: 'SQS_EBAY_URL' }],
+        sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
       }),
     };
     const first = await handleAgentSearch(opts);
