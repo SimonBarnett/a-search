@@ -75,20 +75,28 @@ Providers and the SQL drain write:
 Schema: `shared/search/inResultSchema.js` (`searchid`, `source`, `hostkey`,
 `guid`, `products[]`). Affiliate links keep the existing tenant + affiliate id
 rules. Writers bump GUID and host `lastmod` (#3968) via
-`shared/search/writeInResultS3.js`. SQL/redqueen path uses the schema now;
+`shared/search/writeInResultS3.js`. The SQL/walrus drain uses the schema now;
 **provider workers wire `writeInResultToS3` in #4040**.
 
-## SQL SQS: drained on redqueen
+## SQL SQS: drained on walrus
 
-`redqueen/sql-search-drain` long-polls the SQL queue over outbound HTTPS (no
-inbound ports), runs the database search against the a-search DB on **walrus**
-over the LAN (**never madeiradb**), writes the same IN/ format, and deletes the
-message only after a successful write.
+**Walrus** drains the SQL queue (`a-search-db-backed`) as an on-box service
+(webhook → SQS). It long-polls over outbound HTTPS only (no inbound ports), runs
+the database search against the a-search DB on **walrus** over the LAN (**never
+madeiradb** — madeiradb stays SELECT-only via `mdb.*` views), and writes
+`a-clubs/{hostkey}/{guid}/IN/{searchid}-sql.json` in the common IN/ format onto
+the drive mapped to the a-search S3 bucket. The message is deleted only after a
+successful write.
 
-**Reuse:** the drain loop / SQS poll helpers live in `walrus/src/*` and are
-required from redqueen (ownership moves to redqueen; walrus code is the shared
-library during transition). IAM user `a-search-redqueen-sql-drain` has consume on
-the SQL queue + Put/Get/List on `a-clubs`.
+**No AWS Lambda connects to MSSQL.** The a-search database lives on walrus and
+inbound SQL ports stay closed; Lambda only enqueues. Runnable drain / sql-worker
+gaps are tracked in #4447 (docs here match the design; that issue lands the
+service).
+
+**IAM:** consume on the SQL queue + Put/Get/List on `a-clubs` belongs to a
+**walrus** SQL-drain principal. Stack output name is **TBD** until #4447 (today
+CDK still emits `RedqueenSqlDrainUserName` / `a-search-redqueen-sql-drain` from
+the #4030 transition — treat that as legacy until renamed).
 
 ## Access
 
@@ -96,6 +104,6 @@ the SQL queue + Put/Get/List on `a-clubs`.
 |-----------|-----|
 | Entry `/search` | Send to provider queues + SQL queue; Head/Get on `a-clubs` markers |
 | Provider worker | Receive own queue; write `a-clubs/*/*/IN/*` |
-| Redqueen SQL drain | Receive/delete SQL queue; write `a-clubs` IN/ |
+| Walrus SQL drain | Receive/delete SQL queue; write `a-clubs` IN/ (no Lambda→MSSQL) |
 
 No secrets (agent key, provider API keys, emails) in logs.
