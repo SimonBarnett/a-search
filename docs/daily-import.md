@@ -1,0 +1,55 @@
+# Daily parts import on walrus (FR #4463)
+
+Deterministic daily import of affiliate + merchant part files from the rclone mounts into `a_search` / `a_search_sandbox`, steered by `providers/local/*/provider.json`.
+
+## Schedule
+
+- Windows Scheduled Task: **`a-search-daily-import`**
+- Default trigger: **daily 04:00** (Europe/London local clock)
+- `MultipleInstances = IgnoreNew`, `StartWhenAvailable`, execution limit 4 h
+- Install: `walrus/install/Register-DailyImportTask.ps1` (supports `-WhatIf`)
+
+```powershell
+.\walrus\install\Register-DailyImportTask.ps1 -WhatIf
+.\walrus\install\Register-DailyImportTask.ps1
+```
+
+## Command
+
+```powershell
+node walrus/import/cli.js run
+node walrus/import/cli.js run --provider awin --feed 1902
+node walrus/import/cli.js run --dry-run --provider shopify --feed shop1
+```
+
+Exit codes: `0` ok / nothing to do, `1` one or more feeds failed (agent started), `2` lock held or precheck failed.
+
+## Locks
+
+1. SQL `sp_getapplock` resource `a-search-daily-import` (session-scoped; released if process dies)
+2. File lock `%ProgramData%\a-search\import.lock`
+
+## Mounts
+
+- Affiliates: `D:\s3\a-affiliates\{provider}\{affiliateid}\{yyyy-mm-dd}.{ext}`
+- Merchants: `D:\s3\a-merchants\{provider}\{merchantid}\parts\{yyyy-mm-dd}.{ext}`
+
+Override with `A_AFFILIATES_ROOT` / `A_MERCHANTS_ROOT`.
+
+## provider.json
+
+Version-controlled under `providers/local/{id}/provider.json`. Schema: `providers/import-provider.schema.json`. No secrets. Search providers (amazon, ebay, rakuten, cj, kelkoo, etsy) must not have one.
+
+## Logs / failures
+
+- Log: `%ProgramData%\a-search\daily-import.log`
+- Failure samples: `%ProgramData%\a-search\import\failures\{runId}\{provider}\{feedKey}\`
+- Review agent brief: `walrus/import/AGENT.md`
+
+## Purge
+
+Rows in `ingest.PurgeRequests` are hard-deleted for that `(provider, feedKey)` at the start of each run (FR-241 unpaid shops).
+
+## Manual UAT
+
+Sandbox (`a_search_sandbox`) with real `awin/1902` and one Shopify shop first. Simon gives go before registering the live task.
