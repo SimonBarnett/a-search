@@ -564,3 +564,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After resolving a merge, rg for ^<<<<<<< before commit and push. A tip that fails fr4197 non-ASCII in harvest-agent-skills is fixed by one origin/main fold when main already has the ASCII row (FR #4649), plus strip any leftover conflict markers in the same FIX.
 - After FR #4451 isAwsSearchProvider filter, agentSearch test mocks with kind:live must set awsSearch:true or fan-out only enqueues sql and fr4265 idempotent counts fail 1!==2
 - Hostile pins that assert !includes('<<<<<<<') false-positive when a harvest lesson documents rg for conflict markers; match /^<<<<<<<(?: |$)/m (and >>>>) or reword the lesson without the literal marker bytes.
+- Hostile pins that assert !includes(conflict-marker) false-positive when a harvest lesson documents rg for markers; match line-start /^<<<<<<<(?: |$)/m or reword without literal marker bytes.
