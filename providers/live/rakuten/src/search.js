@@ -9,9 +9,10 @@ const { normalizeSearchItems } = require('./normalize');
 
 class RakutenCredsError extends Error {
   constructor(message) {
-    super(message || 'missing_rakuten_token');
+    super(message || 'rakuten_missing_credentials');
     this.name = 'RakutenCredsError';
-    this.code = 'missing_rakuten_token';
+    // Suffix _missing_credentials so handleSqsWith429 skips intake fatals (FR #4438).
+    this.code = 'rakuten_missing_credentials';
   }
 }
 
@@ -41,7 +42,8 @@ function assertRakutenCreds(env) {
   const c = readRakutenCreds(env);
   if (!c.token) {
     throw new RakutenCredsError(
-      'Rakuten Product Search token missing: RAKUTEN_PRODUCT_SEARCH_TOKEN. Set it in providers/live/rakuten/.env (never commit).',
+      'Rakuten Product Search credentials missing: RAKUTEN_PRODUCT_SEARCH_TOKEN. ' +
+        'Set it in providers/live/rakuten/.env (never commit).',
     );
   }
   return c;

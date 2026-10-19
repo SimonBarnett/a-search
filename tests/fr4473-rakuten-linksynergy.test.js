@@ -68,7 +68,7 @@ describe('FR #4473 Rakuten Linksynergy Product Search', () => {
     assert.match(products[0].url, /u1=MMFC0001/);
   });
 
-  it('missing token fails closed with missing_rakuten_token and does not call HTTP', async () => {
+  it('missing token fails closed with rakuten_missing_credentials and does not call HTTP', async () => {
     await assert.rejects(
       () =>
         searchRakuten(
@@ -82,7 +82,7 @@ describe('FR #4473 Rakuten Linksynergy Product Search', () => {
         ),
       (err) => {
         assert.ok(err instanceof RakutenCredsError);
-        assert.equal(err.code, 'missing_rakuten_token');
+        assert.equal(err.code, 'rakuten_missing_credentials');
         return true;
       },
     );

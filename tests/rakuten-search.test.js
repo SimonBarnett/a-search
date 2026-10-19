@@ -101,11 +101,11 @@ describe('FR-040 rakuten Product Search client', () => {
       (err) => {
         assert.ok(
           err instanceof RakutenCredsError ||
-            err.code === 'missing_rakuten_token',
+            err.code === 'rakuten_missing_credentials',
         );
         assert.match(
           String(err.message),
-          /RAKUTEN_PRODUCT_SEARCH_TOKEN|missing_rakuten_token/i,
+          /RAKUTEN_PRODUCT_SEARCH_TOKEN|rakuten_missing_credentials/i,
         );
         return true;
       },

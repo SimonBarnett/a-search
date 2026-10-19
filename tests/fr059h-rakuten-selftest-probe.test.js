@@ -48,7 +48,7 @@ describe('FR-059h rakuten selftest probe', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'rakuten');
-    assert.equal(result.error, 'missing_rakuten_token');
+    assert.equal(result.error, 'rakuten_missing_credentials');
     assert.equal(httpCalls.length, 0);
   });
 
