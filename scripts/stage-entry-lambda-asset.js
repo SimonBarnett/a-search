@@ -6,6 +6,8 @@
  * FR-415: also stage shared/ so entry can require ../../shared/intake/reportException.
  * FR-152: stage enabled providers' src/selftestProbe.js trees (+ fixtures) so
  * /selftest can require probe modules from the zip.
+ * FR #4376: also stage merchantConnect provider src trees (shop adapters eager-
+ * require them; disabled sources are skipped by FR-152 alone).
  *
  * Layout (asset root):
  *   entry/src/**           handler entry/src/index.handler
@@ -50,6 +52,21 @@ function enabledSelftestSources(root) {
       (s.enabled.live === true || s.enabled.sandbox === true),
   );
 }
+
+/**
+ * FR #4376: registry sources with merchantConnect (shop adapters require their src).
+ * @param {string} root
+ * @returns {Array<{ id: string, folder: string }>}
+ */
+function merchantConnectSources(root) {
+  const registryPath = path.join(root, 'providers', 'registry.json');
+  const data = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  const sources = Array.isArray(data.sources) ? data.sources : [];
+  return sources.filter(
+    (s) => s && s.id && s.folder && s.merchantConnect === true,
+  );
+}
+
 
 /**
  * @param {string} [repoRoot]
@@ -115,6 +132,32 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     stagedProbeIds.push(String(src.id));
   }
 
+  // FR #4376: stage merchantConnect provider src (shop adapters eager-require).
+  /** @type {Set<string>} */
+  const stagedFolders = new Set(
+    selftestSources.map((s) => String(s.folder).replace(/\\/g, '/')),
+  );
+  /** @type {string[]} */
+  const stagedMerchantIds = [];
+  for (const src of merchantConnectSources(root)) {
+    const folderPosix = String(src.folder).replace(/\\/g, '/');
+    if (stagedFolders.has(folderPosix)) {
+      stagedMerchantIds.push(String(src.id));
+      continue;
+    }
+    const providerSrc = path.join(root, ...folderPosix.split('/'), 'src');
+    if (!fs.existsSync(providerSrc)) {
+      throw new Error(
+        `stage-entry-lambda-asset: merchantConnect source ${src.id} missing ${providerSrc}`,
+      );
+    }
+    const providerDest = path.join(outDir, ...folderPosix.split('/'), 'src');
+    fs.mkdirSync(path.dirname(providerDest), { recursive: true });
+    fs.cpSync(providerSrc, providerDest, { recursive: true });
+    stagedFolders.add(folderPosix);
+    stagedMerchantIds.push(String(src.id));
+  }
+
   // Enqueue uses @aws-sdk/client-sqs — include from root install when available.
   const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
   if (fs.existsSync(sdkSrc)) {
@@ -160,6 +203,8 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         fr415: 'shared/intake/reportException',
         fr151: 'node_modules/jose',
         selftestProbes: stagedProbeIds,
+        merchantConnectProviders: stagedMerchantIds,
+        fr4376: 'merchantConnect provider src for shop adapters',
       },
       null,
       2,
@@ -187,6 +232,7 @@ function requiredEntryAssetPaths() {
     'providers/live/amazon/src/selftestProbe.js',
     'providers/live/ebay/src/selftestProbe.js',
     'providers/local/awin/src/selftestProbe.js',
+    'providers/local/magento/src/oauth1.js',
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
     'shared/selftest/orchestrator.js',
@@ -202,6 +248,7 @@ if (require.main === module) {
 module.exports = {
   stageEntryLambdaAsset,
   requiredEntryAssetPaths,
+  merchantConnectSources,
   enabledSelftestSources,
   PROVIDER_FILES,
 };
