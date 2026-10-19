@@ -12,6 +12,6 @@ test("mrb3641 hostile synth-flake lesson contiguous", () => {
   assert.ok(!raw.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])));
   const text = raw.toString("utf8");
   assert.ok(text.includes(NEEDLE));
-  assert.ok(!text.includes("<<<<<<<"));
-  assert.ok(!text.includes(">>>>>>>"));
+  assert.ok(!/^<<<<<<<(?: |$)/m.test(text));
+  assert.ok(!/^>>>>>>>(?: |$)/m.test(text));
 });
