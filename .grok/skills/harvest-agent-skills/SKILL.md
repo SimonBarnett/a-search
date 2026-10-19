@@ -554,3 +554,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Live provider search must build Browse/search keywords from fan-out queries (string or {q}) and exclude match terms; never fall back to a blank or space q.
 - Walrus SQL drain: npm start must long-poll SQS via createDrainRunner; ship providers/local/sql/src/worker.js (SELECT-only Parts) plus nssm Register-WalrusSqlDrainService; IN key is {searchid}-sql.json per inResultSchema; docs redqueen wording is a separate FR (#4448).
 - Only registry awsSearch providers (amazon, ebay) get AWS queues and Lambdas; affiliates and merchants are searched by the walrus SQL drain. Do not cdk-deploy a teardown without Simon.
+- When an FR says only skimlinks leaves AWS, keep the other live keyword APIs enabled with awsSearch, and set skimlinks kind local under providers/local so the folder matches kind.
