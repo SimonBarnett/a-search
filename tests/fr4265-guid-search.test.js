@@ -295,11 +295,8 @@ describe('FR #4265 /search is idempotent per GUID', () => {
   it('a second POST returns the same searchid and does not send again', async () => {
     const s3 = createMemoryS3();
     const host = 'club.example';
-    await s3.putObject({
-      Key: `${host}/${GUID}/`,
-      Body: Buffer.alloc(0),
-      Metadata: {},
-    });
+    // FR #4415: host marker userid required before fan-out.
+    await seed(s3, host, GUID);
     const sent = [];
     const opts = {
       event: {

@@ -117,7 +117,10 @@ describe('FR #4030 agent fan-out', () => {
   it('fan-out puts one message on every provider queue plus sql', async () => {
     /** @type {object[]} */
     const sent = [];
-    const heads = new Set([`club.example/${GUID}/`]);
+    const meta = {
+      [`club.example/`]: { userid: 'MMFC0001' },
+      [`club.example/${GUID}/`]: {},
+    };
     const result = await handleAgentSearch({
       event: {
         headers: { 'x-agent-api-key': FAKE_KEY },
@@ -130,13 +133,13 @@ describe('FR #4030 agent fan-out', () => {
       },
       env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
       headObject: async ({ Key }) => {
-        if (!heads.has(Key)) {
+        if (!(Key in meta)) {
           const err = new Error('missing');
           err.name = 'NotFound';
           err.$metadata = { httpStatusCode: 404 };
           throw err;
         }
-        return {};
+        return { Metadata: meta[Key] };
       },
       sendMessage: async (p) => {
         sent.push(p);
@@ -152,8 +155,11 @@ describe('FR #4030 agent fan-out', () => {
     assert.equal(sent.length, 2);
     assert.equal(sent[0].source, 'ebay');
     assert.equal(sent[0].messageGroupId, 'ebay');
+    assert.equal(sent[0].userId, 'MMFC0001');
+    assert.equal(sent[0].userid, 'MMFC0001');
     assert.equal(sent[1].source, 'sql');
     assert.equal(sent[1].messageGroupId, 'sql');
+    assert.equal(sent[1].userId, 'MMFC0001');
   });
 
   it('unknown GUID returns 404; missing agent key returns 401', async () => {
@@ -217,7 +223,12 @@ describe('FR #4030 agent fan-out', () => {
         },
         {
           env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
-          headObject: async () => ({}),
+          headObject: async ({ Key }) => {
+            if (Key === 'club.example/') {
+              return { Metadata: { userid: 'MMFC0001' } };
+            }
+            return {};
+          },
           sendMessage: async () => {},
           newSearchId: () => 'srch_h',
           enabled: () => [],
