@@ -559,3 +559,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Rakuten Advertising Product Search is GET https://api.linksynergy.com/productsearch/1.0 with a Bearer token from RAKUTEN_PRODUCT_SEARCH_TOKEN; never put the token on the URL; missing token is rakuten_missing_credentials (FR #4438 intake-skip suffix).
 - A local-folder move of an HTTP provider makes FR-119 require classifyMssqlConnectError in its selftestProbe. Skip that probe; do not pretend an HTTP fixture check connects to MSSQL.
 - When skimlinks moves to kind local class affiliate, set shared/links/networkParams.js skimlinks class and the docs/tracked-links.md row to affiliate in the same commit or fr248 strictEquals getSourceClass to the registry.
+- When skimlinks registry class becomes affiliate, update networkParams.js and docs/tracked-links.md in the same tip or fr248 fails getSourceClass
