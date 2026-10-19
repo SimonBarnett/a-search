@@ -37,7 +37,6 @@ async function run(msg, deps) {
     throw new Error('run(msg) requires a message object');
   }
   if (!(deps && deps.env)) applyBundledProviderEnv(__dirname);
-  if (!(deps && deps.env)) applyBundledProviderEnv(__dirname);
   const envVars = (deps && deps.env) || process.env;
   assertWorkerEnv(msg, envVars.A_SEARCH_ENV);
   assertRakutenCreds(envVars);
