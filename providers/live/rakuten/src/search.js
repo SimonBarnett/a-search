@@ -44,7 +44,9 @@ function assertRakutenCreds(env) {
   if (!c.applicationKey) missing.push('RAKUTEN_APPLICATION_KEY');
   if (missing.length) {
     throw new RakutenCredsError(
-      `Rakuten Product Search credentials missing: ${missing.join(', ')}. Set them in providers/live/rakuten/.env (never commit).`,
+      `Rakuten Product Search credentials missing: ${missing.join(', ')}. ` +
+        `Set them in the provider Secrets Manager secret (CDK -c rakutenProviderSecretArn=…) ` +
+        `or providers/live/rakuten/.env for local (never commit).`,
     );
   }
   return c;

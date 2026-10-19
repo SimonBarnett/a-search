@@ -21,6 +21,28 @@ function isEnvIsolation(err) {
 }
 
 /**
+ * FR #4437: provider credential gaps (*_missing_credentials / *CredsError) are
+ * deploy/ops config — SQS still retries/DLQ, but intake must not get a fatal
+ * on every attempt (same class as env isolation; cf. FR #4427 transient skip).
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isMissingCredentials(err) {
+  if (!err || typeof err !== 'object') return false;
+  const code = typeof err.code === 'string' ? err.code : '';
+  if (/_missing_credentials$/i.test(code) || code === 'missing_credentials') {
+    return true;
+  }
+  const name = typeof err.name === 'string' ? err.name : '';
+  if (/CredsError$/i.test(name)) return true;
+  const msg = typeof err.message === 'string' ? err.message : '';
+  if (/credentials missing/i.test(msg) || /missing_credentials/i.test(msg)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * @param {{
  *   event: { Records?: Array<{ body?: string, receiptHandle?: string }> },
  *   run: (msg: object, deps?: object) => Promise<unknown>,
@@ -80,10 +102,12 @@ async function handleSqsWith429(opts) {
     } catch (err) {
       // FR #4427: transient vendor HTTP (429/502/503/504) retries via SQS;
       // do not file intake fatals on every attempt.
+      // FR #4437: missing provider credentials are ops/config — skip intake spam.
       const transient = backoffFor429({ err }).is429;
       if (
         !transient &&
         !isEnvIsolation(err) &&
+        !isMissingCredentials(err) &&
         typeof opts.reportException === 'function'
       ) {
         try {
@@ -107,4 +131,5 @@ async function handleSqsWith429(opts) {
 module.exports = {
   handleSqsWith429,
   isEnvIsolation,
+  isMissingCredentials,
 };
