@@ -169,7 +169,12 @@ async function defaultCreatorsHttpRequest(req) {
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(`Amazon Creators non-JSON response (${res.status})`);
+    // FR #4427: same status attach as PA-API non-JSON path.
+    const err = new Error(`Amazon Creators non-JSON response (${res.status})`);
+    err.status = res.status;
+    err.code = 'creators_non_json';
+    err.bodyText = String(text || '').slice(0, 200);
+    throw err;
   }
   if (!res.ok) {
     const err = new Error(`Amazon Creators HTTP ${res.status}: ${text.slice(0, 200)}`);
