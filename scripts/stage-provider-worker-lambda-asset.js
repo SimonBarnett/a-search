@@ -13,6 +13,7 @@
  * Layout (asset root), preserving monorepo-relative requires from src/*.js:
  *   <src.folder>/src/**     e.g. providers/live/amazon/src/worker.js
  *   shared/**               including shared/intake/reportException.js
+ *   worker/lib/**           normalizeProduct (FR #4414; ../../../../worker/lib from src/)
  *   node_modules/@aws-sdk/** (+ @smithy + @aws/lambda-invoke-store + small transitives when present)
  *   node_modules/mssql/**   (providers/local/* only)
  *
@@ -70,6 +71,19 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
     throw new Error(`stage-provider-worker-lambda-asset: missing ${sharedSrc}`);
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
+
+  // FR #4414: amazon (and other providers) require ../../../../worker/lib/normalizeProduct
+  // from providers/.../src/*.js --- stage worker/lib at the asset root.
+  const workerLibSrc = path.join(root, 'worker', 'lib');
+  if (!fs.existsSync(workerLibSrc)) {
+    throw new Error(
+      `stage-provider-worker-lambda-asset: missing ${workerLibSrc} (FR #4414)`,
+    );
+  }
+  fs.mkdirSync(path.join(outDir, 'worker'), { recursive: true });
+  fs.cpSync(workerLibSrc, path.join(outDir, 'worker', 'lib'), {
+    recursive: true,
+  });
 
   // FR-134: writeResults uses @aws-sdk/client-s3 — include from root install when available.
   const sdkSrc = path.join(root, 'node_modules', '@aws-sdk');
@@ -132,6 +146,7 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
         folder: folderPosix,
         handler: workerHandlerPath(src),
         shared: true,
+        workerLib: true,
         awsSdkS3,
         reportException: 'shared/intake/reportException.js',
         mssql: mssqlPackages.length > 0,
@@ -159,6 +174,7 @@ function requiredWorkerAssetPaths(src) {
     'shared/intake/redact.js',
     'shared/assertEnv.js',
     'shared/writeResults.js',
+    'worker/lib/normalizeProduct.js',
     'node_modules/@aws-sdk/client-s3',
   ];
 }
