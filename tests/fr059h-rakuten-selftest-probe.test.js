@@ -14,9 +14,9 @@ const {
 } = require('../providers/live/rakuten/src/selftestProbe');
 
 const credEnv = {
-  RAKUTEN_APPLICATION_KEY: 'app-key-test',
+  RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
   RAKUTEN_AFFILIATE_ID: 'aff-test',
-  RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+  RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
 };
 
 describe('FR-059h rakuten selftest probe', () => {

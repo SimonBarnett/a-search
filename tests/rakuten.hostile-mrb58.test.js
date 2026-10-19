@@ -35,7 +35,7 @@ describe('MRB #58 hostile: FR-018 rakuten scaffold', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
-          RAKUTEN_APPLICATION_KEY: 'k',
+          RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_token',
           RAKUTEN_SITE_ID: 'site-test',
           S3_RESULTS_BUCKET: 'b',
         },

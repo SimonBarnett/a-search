@@ -127,7 +127,7 @@ describe('FR #4450 live providers agent queries', () => {
     const { searchRakuten } = require('../providers/live/rakuten/src/search');
     const calls = [];
     const env = {
-      RAKUTEN_APPLICATION_KEY: 'app-key-test',
+      RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
       RAKUTEN_AFFILIATE_ID: 'aff-1',
     };
     assert.deepEqual(

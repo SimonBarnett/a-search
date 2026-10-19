@@ -11,28 +11,28 @@ class RakutenCredsError extends Error {
   constructor(message) {
     super(message || 'rakuten_missing_credentials');
     this.name = 'RakutenCredsError';
+    // Suffix _missing_credentials so handleSqsWith429 skips intake fatals (FR #4438).
     this.code = 'rakuten_missing_credentials';
   }
 }
+
+const DEFAULT_PRODUCT_SEARCH_URL =
+  'https://api.linksynergy.com/productsearch/1.0';
 
 /**
  * @param {Record<string, string|undefined>} [env]
  */
 function readRakutenCreds(env) {
   const e = env || process.env;
-  const applicationKey =
-    e.RAKUTEN_APPLICATION_KEY != null
-      ? String(e.RAKUTEN_APPLICATION_KEY).trim()
-      : '';
-  const affiliateId =
-    e.RAKUTEN_AFFILIATE_ID != null
-      ? String(e.RAKUTEN_AFFILIATE_ID).trim()
+  const token =
+    e.RAKUTEN_PRODUCT_SEARCH_TOKEN != null
+      ? String(e.RAKUTEN_PRODUCT_SEARCH_TOKEN).trim()
       : '';
   const endpoint =
     e.RAKUTEN_ENDPOINT != null && String(e.RAKUTEN_ENDPOINT).trim()
-      ? String(e.RAKUTEN_ENDPOINT).trim().replace(/\/?$/, '/')
-      : 'https://api.rakuten.com/';
-  return { applicationKey, affiliateId, endpoint };
+      ? String(e.RAKUTEN_ENDPOINT).trim()
+      : DEFAULT_PRODUCT_SEARCH_URL;
+  return { token, endpoint };
 }
 
 /**
@@ -40,14 +40,37 @@ function readRakutenCreds(env) {
  */
 function assertRakutenCreds(env) {
   const c = readRakutenCreds(env);
-  const missing = [];
-  if (!c.applicationKey) missing.push('RAKUTEN_APPLICATION_KEY');
-  if (missing.length) {
+  if (!c.token) {
     throw new RakutenCredsError(
-      `Rakuten Product Search credentials missing: ${missing.join(', ')}. Set them in providers/live/rakuten/.env (never commit).`,
+      'Rakuten Product Search credentials missing: RAKUTEN_PRODUCT_SEARCH_TOKEN. ' +
+        'Set it in providers/live/rakuten/.env (never commit).',
     );
   }
   return c;
+}
+
+/**
+ * Documented publisher Product Search: GET api.linksynergy.com/productsearch/1.0
+ * with Authorization Bearer. The token is never placed on the URL.
+ * @param {{ token: string, endpoint: string }} creds
+ * @param {string} keyword
+ */
+function buildProductSearchRequest(creds, keyword) {
+  const base = String(creds.endpoint || DEFAULT_PRODUCT_SEARCH_URL).trim();
+  const withPath = /productsearch\/1\.0/i.test(base)
+    ? base
+    : `${base.replace(/\/$/, '')}/productsearch/1.0`;
+  const u = new URL(withPath);
+  u.searchParams.set('keyword', keyword);
+  u.searchParams.set('max', '10');
+  return {
+    method: 'GET',
+    url: u.toString(),
+    headers: {
+      Accept: 'application/xml, text/xml, */*',
+      Authorization: `Bearer ${creds.token}`,
+    },
+  };
 }
 
 const {
@@ -207,20 +230,8 @@ async function searchRakuten(msg, deps) {
       : defaultHttpRequest;
 
   const keyword = keywordsFromMsg(msg);
-  const params = new URLSearchParams({
-    applicationkey: creds.applicationKey,
-    keyword,
-    max: '10',
-  });
-  if (creds.affiliateId) params.set('affiliateid_1', creds.affiliateId);
-
-  // Common Product Search path under configured endpoint root.
-  const url = `${creds.endpoint}productsearch/1.0?${params.toString()}`;
-  const res = await httpRequest({
-    method: 'GET',
-    url,
-    headers: { Accept: 'application/xml, text/xml, */*' },
-  });
+  const req = buildProductSearchRequest(creds, keyword);
+  const res = await httpRequest(req);
 
   const xml =
     typeof res === 'string'
@@ -243,4 +254,6 @@ module.exports = {
   RakutenCredsError,
   parseProductSearchXml,
   keywordsFromMsg,
+  buildProductSearchRequest,
+  DEFAULT_PRODUCT_SEARCH_URL,
 };
