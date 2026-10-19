@@ -7,19 +7,39 @@
 
 /**
  * @param {unknown} err
+ * @returns {number}
+ */
+function httpStatusOf(err) {
+  if (!err || typeof err !== 'object') return NaN;
+  return Number(
+    /** @type {{ status?: number, statusCode?: number, $metadata?: { httpStatusCode?: number } }} */ (
+      err
+    ).status ??
+      /** @type {{ statusCode?: number }} */ (err).statusCode ??
+      (err.$metadata && err.$metadata.httpStatusCode),
+  );
+}
+
+/**
+ * @param {unknown} err
  * @returns {boolean}
  */
 function isHttp429(err) {
   if (!err || typeof err !== 'object') return false;
-  const status =
-    /** @type {{ status?: number, statusCode?: number, $metadata?: { httpStatusCode?: number } }} */ (
-      err
-    ).status ??
-    /** @type {{ statusCode?: number }} */ (err).statusCode ??
-    (err.$metadata && err.$metadata.httpStatusCode);
-  if (Number(status) === 429) return true;
+  if (httpStatusOf(err) === 429) return true;
   const code = String(/** @type {{ code?: string, name?: string }} */ (err).code || err.name || '');
   return /429|TooManyRequests|throttl/i.test(code);
+}
+
+/**
+ * FR #4427: vendor HTML/gateway faults (502/503/504) are retryable like 429.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isTransientVendorHttp(err) {
+  if (isHttp429(err)) return true;
+  const status = httpStatusOf(err);
+  return status === 502 || status === 503 || status === 504;
 }
 
 /**
@@ -62,7 +82,7 @@ function backoffFor429(opts) {
     o.retryAfter != null
       ? o.retryAfter
       : headers['retry-after'] || headers['Retry-After'];
-  const hit = isHttp429(o.err) || retryRaw != null;
+  const hit = isTransientVendorHttp(o.err) || retryRaw != null;
   if (!hit) {
     return { is429: false, visibilityTimeout: 0, reason: 'not_429' };
   }
@@ -71,7 +91,9 @@ function backoffFor429(opts) {
 }
 
 module.exports = {
+  httpStatusOf,
   isHttp429,
+  isTransientVendorHttp,
   parseRetryAfterSeconds,
   backoffFor429,
 };

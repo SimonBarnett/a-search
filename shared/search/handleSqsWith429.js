@@ -78,7 +78,14 @@ async function handleSqsWith429(opts) {
         throw err;
       }
     } catch (err) {
-      if (!isEnvIsolation(err) && typeof opts.reportException === 'function') {
+      // FR #4427: transient vendor HTTP (429/502/503/504) retries via SQS;
+      // do not file intake fatals on every attempt.
+      const transient = backoffFor429({ err }).is429;
+      if (
+        !transient &&
+        !isEnvIsolation(err) &&
+        typeof opts.reportException === 'function'
+      ) {
         try {
           await opts.reportException({
             err,
