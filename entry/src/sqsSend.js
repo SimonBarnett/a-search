@@ -11,6 +11,19 @@ const { resolveQueueUrl } = require('../../providers/resolveQueueUrl');
 const { queueEnvForSource } = require('./dbBackedQueue');
 
 /**
+ * True when QueueUrl names a FIFO queue (name ends with .fifo).
+ * FR #4411: MessageGroupId / MessageDeduplicationId are FIFO-only; AWS rejects
+ * them on standard queues (InvalidParameterValue), including a-search-db-backed.
+ * @param {string|null|undefined} queueUrl
+ * @returns {boolean}
+ */
+function isFifoQueueUrl(queueUrl) {
+  if (!queueUrl || typeof queueUrl !== 'string') return false;
+  const pathOnly = queueUrl.split('?')[0];
+  return /\.fifo$/i.test(pathOnly);
+}
+
+/**
  * @param {{
  *   envVars?: Record<string, string|undefined>,
  *   sqsClient?: { send: (cmd: object) => Promise<object> },
@@ -71,9 +84,9 @@ function createSqsSendMessage(opts = {}) {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(payload),
     };
-    // FR #4030: when provider queues are FIFO, one MessageGroupId per provider
-    // serialises work (one job at a time). Harmless on standard queues.
-    if (payload.messageGroupId) {
+    // FR #4030 / #4411: FIFO MessageGroupId + MessageDeduplicationId only when
+    // QueueUrl is FIFO. Standard queues (sql → a-search-db-backed) reject them.
+    if (payload.messageGroupId && isFifoQueueUrl(queueUrl)) {
       input.MessageGroupId = String(payload.messageGroupId);
       const dedupe =
         payload.messageDeduplicationId ||
@@ -85,4 +98,4 @@ function createSqsSendMessage(opts = {}) {
   };
 }
 
-module.exports = { createSqsSendMessage };
+module.exports = { createSqsSendMessage, isFifoQueueUrl };
