@@ -212,7 +212,7 @@ After deploy succeeds, note at least:
 | Output | Use |
 |--------|-----|
 | **SearchApiUrl** | HTTP API base - `POST {url}/search` (JWT legacy + FR #4030 agent fan-out), `GET\|POST {url}/selftest`. Agent `/search` docs: [search-fanout.md](./search-fanout.md). |
-| **Walrus SQL drain IAM** | Design: walrus drains `a-search-db-backed` (see [search-fanout.md](./search-fanout.md)). Stack output is **TBD** until #4447; CDK may still emit legacy `RedqueenSqlDrainUserName` / `a-search-redqueen-sql-drain` from #4030 --- mint keys for the walrus drain host, not redqueen. |
+| **Walrus SQL drain IAM** | Design: walrus drains `a-search-db-backed` (see [search-fanout.md](./search-fanout.md)). Stack output is **TBD** until #4447; CDK may still emit legacy `RedqueenSqlDrainUserName` / `a-search-redqueen-sql-drain` from #4030 - mint keys for the walrus drain host, not redqueen. |
 | `ResultsBucketName` | Pass to rclone / `S3_RESULTS_BUCKET` |
 | `EntryJwtSecretArn` / `MssqlSecretArn` / `*ProviderSecretArn` | Confirm secret wiring |
 
