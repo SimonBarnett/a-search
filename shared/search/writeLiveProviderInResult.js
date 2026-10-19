@@ -86,11 +86,23 @@ async function writeLiveProviderInResult(opts) {
     throw new Error('putObject_required');
   }
 
-  const putObject = async (args) => {
-    const a = args && typeof args === 'object' ? { ...args } : {};
-    if (!a.Bucket) a.Bucket = bucket;
-    return opts.putObject(a);
+  // FR #4441: touchLastmod -> readMarkerState/rewriteMarkerMetadata call
+  // head/get/copy/tagging with Key only. Inject Bucket on every S3 fn, not just put.
+  const withBucket = (fn) => {
+    if (typeof fn !== 'function') return fn;
+    return async (args) => {
+      const a = args && typeof args === 'object' ? { ...args } : {};
+      if (!a.Bucket) a.Bucket = bucket;
+      return fn(a);
+    };
   };
+
+  const putObject = withBucket(opts.putObject);
+  const headObject = withBucket(opts.headObject);
+  const getObject = withBucket(opts.getObject);
+  const copyObject = withBucket(opts.copyObject);
+  const getObjectTagging = withBucket(opts.getObjectTagging);
+  const putObjectTagging = withBucket(opts.putObjectTagging);
 
   const touch =
     typeof opts.touchLastmod === 'function' ? opts.touchLastmod : defaultTouchLastmod;
@@ -105,11 +117,12 @@ async function writeLiveProviderInResult(opts) {
     exclude: opts.exclude != null ? opts.exclude : msg.exclude,
     putObject,
     touchLastmod: touch,
-    headObject: opts.headObject,
-    getObject: opts.getObject,
-    copyObject: opts.copyObject,
-    getObjectTagging: opts.getObjectTagging,
-    putObjectTagging: opts.putObjectTagging,
+    headObject,
+    getObject,
+    copyObject,
+    getObjectTagging,
+    putObjectTagging,
+    bucket,
     now: opts.now,
   });
 
