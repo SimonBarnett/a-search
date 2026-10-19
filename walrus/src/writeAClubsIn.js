@@ -52,12 +52,14 @@ function writeAClubsIn(opts) {
 
 /**
  * putObject shim so existing local workers' writeResults land on a-clubs IN/.
+ * When Key is `{host}/{guid}/IN/{stem}.json` (FR #4030 / #4447), that path wins
+ * over msg.searchId so sql can write `{searchid}-sql.json`.
  * @param {{ root: string, msg: object }} opts
  */
 function createAClubsPutObject(opts) {
   const root = opts && opts.root != null ? String(opts.root).trim() : '';
   const msg = opts && opts.msg;
-  return async function putObject({ Body }) {
+  return async function putObject({ Body, Key }) {
     const productsBody =
       typeof Body === 'string'
         ? (() => {
@@ -72,9 +74,23 @@ function createAClubsPutObject(opts) {
       productsBody && Array.isArray(productsBody.products)
         ? productsBody.products
         : [];
+
+    let writeMsg = msg;
+    const keyStr = Key != null ? String(Key).trim() : '';
+    const m = keyStr.match(/^([^/]+)\/([^/]+)\/IN\/([^/]+)\.json$/i);
+    if (m) {
+      writeMsg = {
+        ...(msg && typeof msg === 'object' ? msg : {}),
+        host: m[1],
+        widgetGuid: m[2],
+        guid: m[2],
+        searchId: m[3],
+      };
+    }
+
     return writeAClubsIn({
       root,
-      msg,
+      msg: writeMsg,
       products,
       body: productsBody && typeof productsBody === 'object' ? productsBody : undefined,
     });
