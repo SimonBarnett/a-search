@@ -543,3 +543,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a Lambda reserved concurrency is 1, do not set SQS event source MaximumConcurrency. The AWS floor is 2, and Lambda rejects a maximum above the reserve. Reserved concurrency already serialises the worker.
 - When a product PR is still OPEN, open docs/mrb-N from origin/main after that product merges (or from a tip that only has docs/tests). Never stack docs/mrb on the open product head. Do not put Closes on a stacked docs tip and close the product PR as superseded.
 - On WinPS StrictMode, optional searches.json fields such as market must be read via PSObject.Properties. A missing property throws, so an older queries-only file looks like a product failure.
+- FIX on a PR already CLOSED FAIL-superseded: ACK, verify covering product lesson on main, DONE FIX with the assigned PR URL, do not reopen
