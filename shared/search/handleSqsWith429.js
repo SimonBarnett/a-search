@@ -21,6 +21,23 @@ function isEnvIsolation(err) {
 }
 
 /**
+ * FR #4436: missing provider secrets are a config gap, not a code fatal.
+ * Still rethrow for SQS retry/DLQ; skip reportException intake spam.
+ *
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isMissingCredentials(err) {
+  if (!err) return false;
+  const code = typeof err.code === 'string' ? err.code : '';
+  if (code === 'missing_credentials' || code.endsWith('_missing_credentials')) {
+    return true;
+  }
+  const name = typeof err.name === 'string' ? err.name : '';
+  return name.endsWith('CredsError');
+}
+
+/**
  * @param {{
  *   event: { Records?: Array<{ body?: string, receiptHandle?: string }> },
  *   run: (msg: object, deps?: object) => Promise<unknown>,
@@ -80,10 +97,12 @@ async function handleSqsWith429(opts) {
     } catch (err) {
       // FR #4427: transient vendor HTTP (429/502/503/504) retries via SQS;
       // do not file intake fatals on every attempt.
+      // FR #4436: missing_*_credentials / *CredsError is config, not a code fatal.
       const transient = backoffFor429({ err }).is429;
       if (
         !transient &&
         !isEnvIsolation(err) &&
+        !isMissingCredentials(err) &&
         typeof opts.reportException === 'function'
       ) {
         try {
@@ -107,4 +126,5 @@ async function handleSqsWith429(opts) {
 module.exports = {
   handleSqsWith429,
   isEnvIsolation,
+  isMissingCredentials,
 };
