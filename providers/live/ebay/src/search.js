@@ -55,15 +55,87 @@ function assertEbayCreds(env) {
   return c;
 }
 
-function keywordsFromMsg(msg) {
-  if (msg && typeof msg.q === 'string' && msg.q.trim()) return msg.q.trim();
+/**
+ * Non-empty query strings from an agent /search or legacy fan-out message.
+ * Prefers `queries` (searches.json shape: string or {q}), then `q`, then
+ * `searchterms` joined as one string.
+ * @param {object} msg
+ * @returns {string[]}
+ */
+function queryTextsFromMsg(msg) {
+  if (msg && Array.isArray(msg.queries) && msg.queries.length) {
+    const parts = [];
+    for (const row of msg.queries) {
+      if (typeof row === 'string' && row.trim()) {
+        parts.push(row.trim());
+        continue;
+      }
+      if (row && typeof row === 'object' && row.q != null) {
+        const text = String(row.q).trim();
+        if (text) parts.push(text);
+      }
+    }
+    if (parts.length) return parts;
+  }
+  if (msg && typeof msg.q === 'string' && msg.q.trim()) {
+    return [msg.q.trim()];
+  }
   if (msg && Array.isArray(msg.searchterms)) {
     const parts = msg.searchterms
       .filter((t) => typeof t === 'string' && t.trim())
       .map((t) => t.trim());
-    if (parts.length) return parts.join(' ');
+    if (parts.length) return [parts.join(' ')];
   }
-  return '';
+  return [];
+}
+
+/**
+ * Exclude match terms from msg.exclude (string or {match}). Skip tokens
+ * shorter than 3 chars (FR #4318 whole-word rule).
+ * @param {object} msg
+ * @returns {string[]}
+ */
+function excludeMatchTerms(msg) {
+  if (!msg || !Array.isArray(msg.exclude)) return [];
+  const out = [];
+  for (const rule of msg.exclude) {
+    let term = '';
+    if (typeof rule === 'string') term = rule.trim();
+    else if (rule && typeof rule === 'object' && rule.match != null) {
+      term = String(rule.match).trim();
+    }
+    if (term.length >= 3) out.push(term);
+  }
+  return out;
+}
+
+/**
+ * Build Browse API `q` from one query text plus `-term` exclusions.
+ * @param {string} queryText
+ * @param {Array<string|{match?: string}>} [exclude]
+ * @returns {string}
+ */
+function buildEbayBrowseQ(queryText, exclude) {
+  const base = queryText != null ? String(queryText).trim() : '';
+  if (!base) return '';
+  const terms =
+    Array.isArray(exclude) && exclude.length && typeof exclude[0] === 'string'
+      ? exclude.filter((t) => typeof t === 'string' && t.trim().length >= 3).map((t) => t.trim())
+      : excludeMatchTerms({ exclude });
+  let q = base;
+  for (const term of terms) {
+    if (/\s/.test(term)) {
+      q += ` -"${term.replace(/"/g, '')}"`;
+    } else {
+      q += ` -${term}`;
+    }
+  }
+  return q;
+}
+
+function keywordsFromMsg(msg) {
+  const texts = queryTextsFromMsg(msg);
+  return texts.length ? texts.join(' ') : '';
 }
 
 function apiHost(ebayEnv) {
@@ -177,28 +249,55 @@ async function searchEbay(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
 
+  // FR #4446: never Browse with a blank q / space. Empty queries → empty products.
+  const texts = queryTextsFromMsg(msg);
+  if (!texts.length) {
+    return [];
+  }
+  const excludeTerms = excludeMatchTerms(msg);
+
   const token =
     deps && typeof deps.accessToken === 'string' && deps.accessToken
       ? deps.accessToken
       : await fetchAccessToken(creds, httpRequest);
 
-  const q = keywordsFromMsg(msg) || ' ';
   const host = apiHost(creds.ebayEnv);
-  const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=10`;
-  const browseJson = await httpRequest({
-    method: 'GET',
-    url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-EBAY-C-MARKETPLACE-ID': creds.marketplaceId,
-      Accept: 'application/json',
-    },
-  });
-  return normalizeSearchResponse(browseJson, {
+  const cap = 10;
+  const merged = [];
+  const seen = new Set();
+  const normOpts = {
     userId: msg && msg.userId,
     env: msg && msg.env,
     envVars,
-  });
+  };
+
+  for (const text of texts) {
+    if (merged.length >= cap) break;
+    const q = buildEbayBrowseQ(text, excludeTerms);
+    if (!q) continue;
+    const limit = Math.min(cap, cap - merged.length);
+    const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=${limit}`;
+    const browseJson = await httpRequest({
+      method: 'GET',
+      url,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-EBAY-C-MARKETPLACE-ID': creds.marketplaceId,
+        Accept: 'application/json',
+      },
+    });
+    const products = normalizeSearchResponse(browseJson, normOpts);
+    for (const p of products) {
+      const id = p && p.id != null ? String(p.id) : '';
+      if (id) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+      }
+      merged.push(p);
+      if (merged.length >= cap) break;
+    }
+  }
+  return merged;
 }
 
 module.exports = {
@@ -210,4 +309,7 @@ module.exports = {
   fetchAccessToken,
   apiHost,
   keywordsFromMsg,
+  queryTextsFromMsg,
+  excludeMatchTerms,
+  buildEbayBrowseQ,
 };
