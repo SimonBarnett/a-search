@@ -74,22 +74,19 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 ## Provider credentials (FR-138) - enabled sources only
 
-Amazon, eBay, and Etsy (FR #4336 / FR #4439) do not use Secrets Manager. Synth reads
-`providers/live/amazon/.env`, `providers/live/ebay/.env`, and
-`providers/live/etsy/.env` (gitignored; copy from `.env.example`) and sets those
-values on the worker Lambdas. A missing required key fails synth. The error
-names the key, never the value. No provider env value is a stack output.
-`EBAY_ENV` still comes from the stack env (live means production). Other
-enabled sources stay on per-source Secrets Manager JSON only when
-`-c <id>ProviderSecretArn` is a real ARN. With that context omitted, those
-Lambdas deploy with no credential env and no grant.
-Synth does not write account `000000000000` into a Lambda environment (FR #4352).
+Enabled live providers do not use Secrets Manager. Deploy bundles
+`providers/live/<id>/.env` into that worker Lambda. The worker reads the file
+at run time. Amazon and eBay files are filled from `/madeira/amazon/*` and
+`/madeira/ebay/*` SSM parameters (values are not printed). A missing `.env`
+fails deploy and names the file only. Rakuten reads `RAKUTEN_CLIENT_ID`,
+`RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`, then exchanges them for a short-lived
+token. `EBAY_ENV` still comes from the stack env (live means production).
 
 | Source | Keys (become env names) | Lambdas |
 |--------|-------------------------|---------|
 | amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` | `a-search-amazon-worker-{live,sandbox}` |
 | ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
-| rakuten | `RAKUTEN_PRODUCT_SEARCH_TOKEN`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
+| rakuten | bundled `.env`: `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
 | impact | `IMPACT_CAMPAIGN_ID`, `IMPACT_ACCOUNT_SID`, `IMPACT_AUTH_TOKEN` | workers + impact onboarding live/sandbox |

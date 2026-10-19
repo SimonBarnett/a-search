@@ -14,8 +14,9 @@ const {
 } = require('../providers/live/rakuten/src/selftestProbe');
 
 const credEnv = {
-  RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
-  RAKUTEN_AFFILIATE_ID: 'aff-test',
+  RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
+  RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
+  RAKUTEN_SID: 'FAKE_sid',
   RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
 };
 
@@ -59,12 +60,18 @@ describe('FR-059h rakuten selftest probe', () => {
       env: credEnv,
       httpRequest: async (req) => {
         calls.push(req);
+        if (req.method === 'POST') {
+          return JSON.stringify({
+            access_token: 'FAKE_rakuten_access',
+            expires_in: 3600,
+          });
+        }
         assert.match(String(req.url), /productsearch/);
         return fixture;
       },
     });
     assert.equal(result.ok, true);
-    assert.equal(calls.length, 1);
+    assert.equal(calls.length, 2);
   });
 
   it('rakutenSelftestProbe rejects non-rakuten source', async () => {

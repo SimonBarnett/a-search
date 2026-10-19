@@ -32,7 +32,9 @@ const baseMsg = {
 
 const credEnv = {
   A_SEARCH_ENV: 'sandbox',
-  RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
+  RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
+  RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
+  RAKUTEN_SID: 'FAKE_sid',
   RAKUTEN_SITE_ID: 'site-test',
   RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
   S3_RESULTS_BUCKET: 'test-results',
@@ -48,12 +50,26 @@ describe('FR-040 rakuten Product Search client', () => {
       env: credEnv,
       httpRequest: async (req) => {
         httpCalls.push(req);
+        if (req.method === 'POST') {
+          assert.match(req.url, /api\.linksynergy\.com\/token/);
+          assert.match(req.headers.Authorization, /^Bearer /);
+          assert.doesNotMatch(req.url, /FAKE_rakuten/);
+          return {
+            statusCode: 200,
+            headers: {},
+            body: JSON.stringify({
+              access_token: 'FAKE_rakuten_access',
+              refresh_token: 'FAKE_rakuten_refresh',
+              expires_in: 3600,
+            }),
+          };
+        }
         const u = new URL(req.url);
         assert.equal(u.hostname, 'api.linksynergy.com');
         assert.equal(u.pathname, '/productsearch/1.0');
-        assert.match(u.searchParams.get('keyword') || '', /shoes/);
-        assert.equal(req.headers.Authorization, 'Bearer FAKE_rakuten_product_search_token');
-        assert.doesNotMatch(req.url, /FAKE_rakuten_product_search_token/);
+        assert.equal(u.searchParams.get('keyword'), 'shoes');
+        assert.equal(req.headers.Authorization, 'Bearer FAKE_rakuten_access');
+        assert.doesNotMatch(req.url, /FAKE_rakuten/);
         assert.equal(req.method, 'GET');
         return { statusCode: 200, headers: {}, body: fixture };
       },
@@ -72,7 +88,7 @@ describe('FR-040 rakuten Product Search client', () => {
     assert.equal(out.products[0].currency, 'GBP');
     assert.equal(out.products[0].source, 'rakuten');
     assert.doesNotMatch(JSON.stringify(out), /not wired yet/i);
-    assert.equal(httpCalls.length, 1);
+    assert.equal(httpCalls.length, 2);
     assert.equal(puts.length, 1);
     assert.equal(
       puts[0].Key,
@@ -105,7 +121,7 @@ describe('FR-040 rakuten Product Search client', () => {
         );
         assert.match(
           String(err.message),
-          /RAKUTEN_PRODUCT_SEARCH_TOKEN|rakuten_missing_credentials/i,
+          /RAKUTEN_CLIENT_ID|credentials missing/i,
         );
         return true;
       },
