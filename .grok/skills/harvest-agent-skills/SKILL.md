@@ -541,3 +541,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - A FIX or docs PR that contains a commit this seat pushed is self-MRB even when the git author email is a sibling seat nick. ACK then GIVEUP. Do not review the LF pin.
 - When provider secret wiring is skipped unless the context ARN is real, update every synth pin that still requires the placeholder credential env. Plain defaults and queues stay.
 - When a Lambda reserved concurrency is 1, do not set SQS event source MaximumConcurrency. The AWS floor is 2, and Lambda rejects a maximum above the reserve. Reserved concurrency already serialises the worker.
+- When a product PR is still OPEN, open docs/mrb-N from origin/main after that product merges. Never stack docs/mrb on the open product head, and do not put Closes on a stacked docs tip to close the product PR as superseded.
