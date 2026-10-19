@@ -98,13 +98,10 @@ describe('FR-170 enable etsy', () => {
 
     for (const env of ['live', 'sandbox']) {
       const envVars = envOf(`a-search-etsy-worker-${env}`);
-      // FR #4352: no provider secret context means no credential env.
-      assert.equal(envVars.ETSY_API_KEY, undefined, `etsy ${env} must not set ETSY_API_KEY`);
-      assert.equal(
-        envVars.ETSY_SHARED_SECRET,
-        undefined,
-        `etsy ${env} must not set ETSY_SHARED_SECRET`,
-      );
+      // FR #4439: synth fixture providers/live/etsy/.env equivalent sets the key.
+      // No Secrets Manager grant. Shared secret stays unset when the key embeds it.
+      assert.equal(envVars.ETSY_API_KEY, 'FAKE_ETSY_KEY:FAKE_ETSY_SECRET');
+      assert.equal(envVars.ETSY_SHARED_SECRET, undefined);
       assert.equal(envVars.ETSY_AFFILIATE_NETWORK, 'rakuten');
       const qHit = queues.find(
         (q) =>

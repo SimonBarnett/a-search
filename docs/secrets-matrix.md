@@ -74,14 +74,15 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 ## Provider credentials (FR-138) - enabled sources only
 
-Amazon and eBay (FR #4336) do not use Secrets Manager. Synth reads
-`providers/live/amazon/.env` and `providers/live/ebay/.env` (gitignored; copy
-from `.env.example`) and sets those values on the worker Lambdas. A missing
-required key fails synth. The error names the key, never the value. No provider
-env value is a stack output. `EBAY_ENV` still comes from the stack env
-(live means production). Other enabled sources stay on per-source Secrets
-Manager JSON only when `-c <id>ProviderSecretArn` is a real ARN. With that
-context omitted, those Lambdas deploy with no credential env and no grant.
+Amazon, eBay, and Etsy (FR #4336 / FR #4439) do not use Secrets Manager. Synth reads
+`providers/live/amazon/.env`, `providers/live/ebay/.env`, and
+`providers/live/etsy/.env` (gitignored; copy from `.env.example`) and sets those
+values on the worker Lambdas. A missing required key fails synth. The error
+names the key, never the value. No provider env value is a stack output.
+`EBAY_ENV` still comes from the stack env (live means production). Other
+enabled sources stay on per-source Secrets Manager JSON only when
+`-c <id>ProviderSecretArn` is a real ARN. With that context omitted, those
+Lambdas deploy with no credential env and no grant.
 Synth does not write account `000000000000` into a Lambda environment (FR #4352).
 
 | Source | Keys (become env names) | Lambdas |
@@ -98,7 +99,7 @@ Synth does not write account `000000000000` into a Lambda environment (FR #4352)
 | shopify | worker | SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STORE_URL | Secrets Manager JSON (`a-search/{env}/providers/shopify/app` + selftest fallback) |
 | woocommerce | `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, `WOOCOMMERCE_STORE_URL` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180) |
 | avantlink | `AVANTLINK_API_KEY`, `AVANTLINK_API_TOKEN`, `AVANTLINK_FEED_TOKEN`, `AVANTLINK_PUBLISHER_ID`, `AVANTLINK_AFFILIATE_ID` | `a-search-avantlink-worker-{live,sandbox}` (FR-177) |
-| etsy | `ETSY_API_KEY`, `ETSY_SHARED_SECRET` | `a-search-etsy-worker-{live,sandbox}` (FR-170/FR-244); plain `ETSY_AFFILIATE_NETWORK=rakuten`; mid/publisher from secrets (`ETSY_RAKUTEN_MID`, `RAKUTEN_PUBLISHER_ID`) |
+| etsy | env file: `ETSY_API_KEY` (`ETSY_SHARED_SECRET` optional when the key is `key:secret`) | `a-search-etsy-worker-{live,sandbox}` (FR-170/FR-244 / FR #4439); plain `ETSY_AFFILIATE_NETWORK=rakuten` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
 | tradedoubler | `TRADEDOUBLER_API_KEY`, `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_FEED_TOKEN`, `TRADEDOUBLER_AFFILIATE_ID`, `TRADEDOUBLER_PUBLISHER_ID` | `a-search-tradedoubler-worker-{live,sandbox}` (FR-174) |

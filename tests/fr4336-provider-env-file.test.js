@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR #4336: amazon and ebay credentials come from an env file, not Secrets Manager.
+ * FR #4336 / #4439: amazon, ebay, and etsy credentials come from an env file.
  */
 
 const { describe, it } = require('node:test');
@@ -26,6 +26,10 @@ describe('FR #4336 provider env files', () => {
     assert.equal(ebay.EBAY_MARKETPLACE_ID, 'EBAY_GB');
     assert.equal(Object.hasOwn(ebay, 'EBAY_ENV'), false);
     assert.equal(Object.hasOwn(ebay, 'EBAY_REFRESH_TOKEN'), false);
+
+    const etsy = readProviderEnvFile(root, 'etsy', fixtures);
+    assert.equal(etsy.ETSY_API_KEY, 'FAKE_ETSY_KEY:FAKE_ETSY_SECRET');
+    assert.equal(Object.hasOwn(etsy, 'ETSY_SHARED_SECRET'), false);
   });
 
   it('fails when a required key is missing and does not echo a present value', () => {

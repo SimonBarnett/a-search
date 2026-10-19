@@ -100,9 +100,11 @@ local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138 / FR #4336)
 
-A first deploy needs the gitignored `providers/live/amazon/.env` and
-`providers/live/ebay/.env` files (FR #4336) and no provider secret context.
-Do not pass `amazonProviderSecretArn` or `ebayProviderSecretArn`. Other
+A first deploy needs the gitignored `providers/live/amazon/.env`,
+`providers/live/ebay/.env`, and `providers/live/etsy/.env` files
+(FR #4336 / FR #4439) and no provider secret context.
+Do not pass `amazonProviderSecretArn`, `ebayProviderSecretArn`, or
+`etsyProviderSecretArn`. Other
 enabled ids (rakuten, cj, awin, impact) get a Secrets Manager grant only when
 `-c <id>ProviderSecretArn` is a real ARN in this account. With that context
 omitted, those Lambdas still deploy and have no credential env and no grant.
