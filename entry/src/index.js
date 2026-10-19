@@ -85,34 +85,30 @@ const {
   handlePartnerRegister,
 } = require('./partnerRegister');
 const {
-  matchMerchantShopsRoute,
-  handleMerchantShopsConnect,
-  handleMerchantShopsCallback,
-  handleMerchantShops,
-} = require('./merchantShops');
-const {
-  matchShopifyWebhookRoute,
-  handleShopifyWebhook,
-} = require('./shopifyWebhooks');
-const {
-  matchWixWebhookRoute,
-  handleWixWebhook,
-} = require('./wixWebhooks');
-const {
-  matchEcwidWebhookRoute,
-  handleEcwidWebhook,
-} = require('./ecwidWebhooks');
-const {
   matchStripeWebhookRoute,
   handleStripeWidgetUpgradeWebhook,
 } = require('./stripeWidgetUpgradeWebhook');
-const {
-  handleStripeWebhook,
-} = require('./stripeWebhook');
-const {
-  matchBigCommerceWebhookRoute,
-  handleBigCommerceWebhook,
-} = require('./bigcommerceWebhooks');
+
+// FR #4376: merchant shop adapters (shared/shops + providers/local/*) must not load
+// at entry init — /search only enqueues. Lazy-require shop modules on those routes.
+function loadMerchantShops() {
+  return require('./merchantShops');
+}
+function loadShopifyWebhooks() {
+  return require('./shopifyWebhooks');
+}
+function loadWixWebhooks() {
+  return require('./wixWebhooks');
+}
+function loadEcwidWebhooks() {
+  return require('./ecwidWebhooks');
+}
+function loadBigCommerceWebhooks() {
+  return require('./bigcommerceWebhooks');
+}
+function loadStripeShopWebhook() {
+  return require('./stripeWebhook');
+}
 const {
   matchLoginEntryRoute,
   handleLoginEntry,
@@ -299,12 +295,46 @@ async function handler(event, _context, deps = {}) {
   const payoutRoute = matchAccountPayoutsRoute(method, path);
   const widgetsRoute = matchWidgetsCreateRoute(method, path);
   const partnerRoute = matchPartnerRegisterRoute(method, path);
-  const merchantRoute = matchMerchantShopsRoute(method, path);
-  const shopifyWebhookRoute = matchShopifyWebhookRoute(method, path);
-  const wixWebhookRoute = matchWixWebhookRoute(method, path);
-  const ecwidWebhookRoute = matchEcwidWebhookRoute(method, path);
   const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
-  const bigcommerceWebhookRoute = matchBigCommerceWebhookRoute(method, path);
+  // FR #4376: only load shop adapter modules when the request targets those routes.
+  let merchantRoute = null;
+  let merchantShops = null;
+  if (String(path || '').startsWith('/merchant/shops')) {
+    merchantShops = loadMerchantShops();
+    merchantRoute = merchantShops.matchMerchantShopsRoute(method, path);
+  }
+  let shopifyWebhookRoute = null;
+  let shopifyWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/shopify') {
+    shopifyWebhooks = loadShopifyWebhooks();
+    shopifyWebhookRoute = shopifyWebhooks.matchShopifyWebhookRoute(method, path);
+  }
+  let wixWebhookRoute = null;
+  let wixWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/wix') {
+    wixWebhooks = loadWixWebhooks();
+    wixWebhookRoute = wixWebhooks.matchWixWebhookRoute(method, path);
+  }
+  let ecwidWebhookRoute = null;
+  let ecwidWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/ecwid') {
+    ecwidWebhooks = loadEcwidWebhooks();
+    ecwidWebhookRoute = ecwidWebhooks.matchEcwidWebhookRoute(method, path);
+  }
+  let bigcommerceWebhookRoute = null;
+  let bigcommerceWebhooks = null;
+  if (
+    method === 'POST' &&
+    (path === '/webhooks/shop/bigcommerce' ||
+      path === '/webhooks/shop/bigcommerce/uninstall' ||
+      path === '/webhooks/shop/bigcommerce/load')
+  ) {
+    bigcommerceWebhooks = loadBigCommerceWebhooks();
+    bigcommerceWebhookRoute = bigcommerceWebhooks.matchBigCommerceWebhookRoute(
+      method,
+      path,
+    );
+  }
   const loginRoute = matchLoginEntryRoute(method, path);
   const oauthRoute = matchOAuthCallbackRoute(method, path);
   const authRoute = matchAuthEmailRoute(method, path);
@@ -386,7 +416,7 @@ async function handler(event, _context, deps = {}) {
         skipped = false;
       }
       if (!skipped) return upgrade;
-      return await handleStripeWebhook(event, deps);
+      return await loadStripeShopWebhook().handleStripeWebhook(event, deps);
     }
     // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
     if (clubRevenueShareRoute) {
@@ -439,16 +469,16 @@ async function handler(event, _context, deps = {}) {
       return await handlePartnerRegister(event, deps);
     }
     if (shopifyWebhookRoute) {
-      return await handleShopifyWebhook(event, deps);
+      return await shopifyWebhooks.handleShopifyWebhook(event, deps);
     }
     if (wixWebhookRoute) {
-      return await handleWixWebhook(event, deps);
+      return await wixWebhooks.handleWixWebhook(event, deps);
     }
     if (ecwidWebhookRoute) {
-      return await handleEcwidWebhook(event, deps);
+      return await ecwidWebhooks.handleEcwidWebhook(event, deps);
     }
     if (bigcommerceWebhookRoute) {
-      return await handleBigCommerceWebhook(event, deps);
+      return await bigcommerceWebhooks.handleBigCommerceWebhook(event, deps);
     }
     if (
       merchantRoute === 'GET /merchant/shops' ||
@@ -456,16 +486,16 @@ async function handler(event, _context, deps = {}) {
       merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
       merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
     ) {
-      return await handleMerchantShops(event, merchantRoute, deps);
+      return await merchantShops.handleMerchantShops(event, merchantRoute, deps);
     }
     if (merchantRoute === 'POST /merchant/shops/connect') {
-      return await handleMerchantShopsConnect(event, deps);
+      return await merchantShops.handleMerchantShopsConnect(event, deps);
     }
     if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
-      return await handleMerchantShopsCallback(event, deps);
+      return await merchantShops.handleMerchantShopsCallback(event, deps);
     }
     if (merchantRoute === 'GET|POST /merchant/shops/magento/identity') {
-      return await handleMerchantShops(event, merchantRoute, deps);
+      return await merchantShops.handleMerchantShops(event, merchantRoute, deps);
     }
     return await handleSearch(event, deps);
   } catch (err) {
@@ -863,9 +893,19 @@ module.exports = {
   handleAccountPayouts,
   handleWidgetsCreate,
   handlePartnerRegister,
-  handleMerchantShopsConnect,
-  handleMerchantShopsCallback,
-  handleMerchantShops,
+  // FR #4376: lazy re-exports so requiring index does not load shared/shops.
+  get handleMerchantShopsConnect() {
+    return loadMerchantShops().handleMerchantShopsConnect;
+  },
+  get handleMerchantShopsCallback() {
+    return loadMerchantShops().handleMerchantShopsCallback;
+  },
+  get handleMerchantShops() {
+    return loadMerchantShops().handleMerchantShops;
+  },
+  get matchMerchantShopsRoute() {
+    return loadMerchantShops().matchMerchantShopsRoute;
+  },
   validateSearchBody,
   newSearchId,
   defaultEnqueue,
@@ -877,9 +917,10 @@ module.exports = {
   matchAccountPayoutsRoute,
   matchWidgetsCreateRoute,
   matchPartnerRegisterRoute,
-  matchMerchantShopsRoute,
   matchStripeWebhookRoute,
-  handleStripeWebhook,
+  get handleStripeWebhook() {
+    return loadStripeShopWebhook().handleStripeWebhook;
+  },
   matchLoginEntryRoute,
   handleLoginEntry,
   matchOAuthCallbackRoute,

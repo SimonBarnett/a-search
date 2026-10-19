@@ -6,6 +6,8 @@
  * FR-415: also stage shared/ so entry can require ../../shared/intake/reportException.
  * FR-152: stage enabled providers' src/selftestProbe.js trees (+ fixtures) so
  * /selftest can require probe modules from the zip.
+ * FR #4376: strip shared/shops from the staged asset — entry /search must not
+ * load or ship merchant shop adapters (do not stage magento provider src).
  *
  * Layout (asset root):
  *   entry/src/**           handler entry/src/index.handler
@@ -84,6 +86,12 @@ function stageEntryLambdaAsset(repoRoot, opts) {
     throw new Error(`stage-entry-lambda-asset: missing ${sharedSrc}`);
   }
   fs.cpSync(sharedSrc, path.join(outDir, 'shared'), { recursive: true });
+  // FR #4376: /search entry must not ship merchant shop adapters (Simon 2026-10-19).
+  // Merchants are DB-backed via SQL SQS; shop-connect lives outside this Lambda.
+  const shopsDir = path.join(outDir, 'shared', 'shops');
+  if (fs.existsSync(shopsDir)) {
+    fs.rmSync(shopsDir, { recursive: true, force: true });
+  }
 
   // FR-152: stage enabled provider src (+ fixtures) for selftestProbe requires.
   const selftestSources = enabledSelftestSources(root);
