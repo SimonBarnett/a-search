@@ -553,3 +553,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon PA-API/Creators non-JSON responses must set err.status (+ code); treat 502/503/504 as transient like 429 in backoffFor429 and skip reportException so SQS retries do not spam intake fatals
 - Live provider search must build Browse/search keywords from fan-out queries (string or {q}) and exclude match terms; never fall back to a blank or space q.
 - Walrus SQL drain: npm start must long-poll SQS via createDrainRunner; ship providers/local/sql/src/worker.js (SELECT-only Parts) plus nssm Register-WalrusSqlDrainService; IN key is {searchid}-sql.json per inResultSchema; docs redqueen wording is a separate FR (#4448).
+- Only registry awsSearch providers (amazon, ebay) get AWS queues and Lambdas; affiliates and merchants are searched by the walrus SQL drain. Do not cdk-deploy a teardown without Simon.
+- When an FR says only skimlinks leaves AWS, keep the other live keyword APIs enabled with awsSearch, and set skimlinks kind local under providers/local so the folder matches kind.
+- a-search FIX when test-and-synth fails fr149 hostile b<128 on docs/deploy.md: replace U+2014 with ASCII hyphen, keep UTF-8 no BOM; fold main if a sibling already landed the same ASCII row; do not self-MRB after synchronize (FR #4604)
+- Rakuten Advertising Product Search is GET https://api.linksynergy.com/productsearch/1.0 with a Bearer token from RAKUTEN_PRODUCT_SEARCH_TOKEN; never put the token on the URL; missing token is rakuten_missing_credentials (FR #4438 intake-skip suffix).
