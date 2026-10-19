@@ -556,3 +556,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Only registry awsSearch providers (amazon, ebay) get AWS queues and Lambdas; affiliates and merchants are searched by the walrus SQL drain. Do not cdk-deploy a teardown without Simon.
 - When an FR says only skimlinks leaves AWS, keep the other live keyword APIs enabled with awsSearch, and set skimlinks kind local under providers/local so the folder matches kind.
 - a-search FIX when test-and-synth fails fr149 hostile b<128 on docs/deploy.md: replace U+2014 with ASCII hyphen, keep UTF-8 no BOM; fold main if a sibling already landed the same ASCII row; do not self-MRB after synchronize (FR #4604)
+- a-search MRB on FR #4451 FIX tip: PASS when resolveFanOutTargets is the six live API providers plus sql, skimlinks is kind local affiliate under providers/local/skimlinks, and fr4451 tests green; leave MERGEABLE tip even if behind (FR #4649); arm gh pr merge --auto without CI poll (FR #3948)
