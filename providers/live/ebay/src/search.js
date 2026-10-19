@@ -6,6 +6,10 @@
  */
 
 const { normalizeSearchResponse } = require('./normalize');
+const {
+  keywordsFromAgentMsg,
+  collectExcludeTerms,
+} = require('../../../../shared/search/keywordsFromAgentMsg');
 
 class EbayCredsError extends Error {
   constructor(message) {
@@ -90,23 +94,14 @@ function queryTextsFromMsg(msg) {
 }
 
 /**
- * Exclude match terms from msg.exclude (string or {match}). Skip tokens
- * shorter than 3 chars (FR #4318 whole-word rule).
+ * Exclude match terms from msg.exclude (string or {match}).
+ * Uses shared agent helper (strips title: prefix) and skips tokens shorter
+ * than 3 chars (FR #4318 whole-word rule).
  * @param {object} msg
  * @returns {string[]}
  */
 function excludeMatchTerms(msg) {
-  if (!msg || !Array.isArray(msg.exclude)) return [];
-  const out = [];
-  for (const rule of msg.exclude) {
-    let term = '';
-    if (typeof rule === 'string') term = rule.trim();
-    else if (rule && typeof rule === 'object' && rule.match != null) {
-      term = String(rule.match).trim();
-    }
-    if (term.length >= 3) out.push(term);
-  }
-  return out;
+  return collectExcludeTerms(msg).filter((t) => String(t).trim().length >= 3);
 }
 
 /**
@@ -134,8 +129,9 @@ function buildEbayBrowseQ(queryText, exclude) {
 }
 
 function keywordsFromMsg(msg) {
-  const texts = queryTextsFromMsg(msg);
-  return texts.length ? texts.join(' ') : '';
+  // FR #4450 surface: shared queries/exclude string (searchEbay still fans out
+  // one Browse call per queryTextsFromMsg entry — FR #4446).
+  return keywordsFromAgentMsg(msg);
 }
 
 function apiHost(ebayEnv) {

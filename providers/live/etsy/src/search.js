@@ -85,16 +85,15 @@ function assertEtsyCreds(env) {
   return c;
 }
 
+const {
+  keywordsFromAgentMsg,
+} = require('../../../../shared/search/keywordsFromAgentMsg');
+
 function keywordsFromMsg(msg) {
-  if (msg && typeof msg.q === 'string' && msg.q.trim()) return msg.q.trim();
-  if (msg && Array.isArray(msg.searchterms)) {
-    const parts = msg.searchterms
-      .filter((t) => typeof t === 'string' && t.trim())
-      .map((t) => t.trim());
-    if (parts.length) return parts.join(' ');
-  }
-  return '';
+  // FR #4450 / #4446: agent fan-out uses queries/exclude (legacy q/searchterms kept).
+  return keywordsFromAgentMsg(msg);
 }
+
 
 /**
  * Build GET URL for /application/listings/active.
@@ -189,6 +188,7 @@ async function defaultHttpRequest(req) {
  * @returns {Promise<object>}
  */
 async function searchEtsy(msg, deps) {
+  if (!keywordsFromMsg(msg)) return [];
   const envVars = (deps && deps.env) || process.env;
   const creds = assertEtsyCreds(envVars);
   const httpRequest =
@@ -196,7 +196,7 @@ async function searchEtsy(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
 
-  const keywords = keywordsFromMsg(msg) || ' ';
+  const keywords = keywordsFromMsg(msg);
   const url = buildListingsSearchUrl(creds, keywords, {
     limit: msg && msg.limit,
     offset: msg && msg.offset,
