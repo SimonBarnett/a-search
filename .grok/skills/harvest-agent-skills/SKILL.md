@@ -549,3 +549,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search provider worker staging: copy worker/lib (normalizeProduct) into the Lambda asset root fail-closed; amazon src requires ../../../../worker/lib --- same packaging class as shared/ (FR-444) and @aws/lambda-invoke-store (FR-4409)
 - a-search agent /search: put host marker userid (a-clubs/{hostkey}/ Metadata) on every provider/SQL job as userId; missing userid is 400 userid_required at entry --- never let workers throw tracked_url_missing_userId (FR #4415)
 - FIX on a CLOSED harvest tip: ACK, point at the covering ASCII PR, DONE FIX with the assigned URL; do not reopen.
+- When a harvest-tip fold push is rejected because origin already has the same keep-both tree, review that origin head SHA and do not force-push a second fold.
