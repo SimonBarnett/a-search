@@ -71,12 +71,16 @@ describe('FR #4450 live providers agent queries', () => {
       accessToken: 'tok',
       httpRequest: async (req) => {
         calls.push(req);
-        assert.match(String(req.url), /model(\+|%20)?aircraft/i);
-        assert.doesNotMatch(String(req.url), /q=%20/);
+        const q = new URL(req.url).searchParams.get('q') || '';
+        assert.ok(q.trim() && q !== ' ');
+        assert.doesNotMatch(String(req.url), /q=%20(?:&|$)/);
+        // FR #4446/#4452: one Browse call per query text (shared helper joins; ebay fans out).
+        assert.match(q, /model aircraft|servo/i);
         return { itemSummaries: [] };
       },
     });
-    assert.equal(calls.length, 1);
+    assert.ok(calls.length >= 1);
+    assert.ok(calls.length <= 2);
   });
 
   it('amazon searchAmazon puts Keywords from queries (not space)', async () => {
