@@ -19,7 +19,10 @@ const {
   validateInResult,
   inResultKey,
 } = require('../shared/search/inResultSchema');
-const { SELECT_SQL } = require('../providers/local/sql/src/queryParts');
+const {
+  SELECT_SQL,
+  searchTextFromMsg,
+} = require('../providers/local/sql/src/queryParts');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -77,6 +80,18 @@ describe('FR #4447 sql worker path', () => {
     assert.match(SELECT_SQL, /^\s*SELECT\b/i);
     assert.doesNotMatch(SELECT_SQL, /\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|DROP|ALTER)\b/i);
     assert.match(SELECT_SQL, /FROM\s+dbo\.Parts/i);
+  });
+
+  it('searchTextFromMsg reads agent queries {q} + exclude (not string-only)', () => {
+    assert.equal(
+      searchTextFromMsg({
+        queries: [{ q: 'model aircraft' }, 'servo'],
+        exclude: [{ match: 'title:calendar' }],
+      }),
+      'model aircraft servo -calendar',
+    );
+    assert.equal(searchTextFromMsg({ q: 'legacy' }), 'legacy');
+    assert.equal(searchTextFromMsg({ queries: [] }), '');
   });
 });
 

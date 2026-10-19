@@ -78,30 +78,66 @@ function mssqlConfigFromEnv(envVars) {
 }
 
 /**
- * Build search text from fan-out payload (`q`, `queries`, or `searchterms`).
+ * One query/exclude term: string or searches.json `{ q }` / `{ match }`.
+ * @param {unknown} term
+ * @returns {string}
+ */
+function termText(term) {
+  if (typeof term === 'string') return term.trim();
+  if (!term || typeof term !== 'object') return '';
+  if (typeof term.q === 'string' && term.q.trim()) return term.q.trim();
+  if (typeof term.match === 'string' && term.match.trim()) {
+    const m = term.match.trim();
+    const colon = m.indexOf(':');
+    if (colon > 0 && colon < m.length - 1) return m.slice(colon + 1).trim();
+    return m;
+  }
+  return '';
+}
+
+/**
+ * Build search text from fan-out payload (`queries` / `exclude`, or legacy
+ * `q` / `searchterms`). Agent `/search` sends searches.json-shaped `{ q }`
+ * objects — string-only filters must not drop them (MRB #4455 / FR #4446 class).
  * @param {object} msg
  * @returns {string}
  */
 function searchTextFromMsg(msg) {
-  if (msg && typeof msg.q === 'string' && msg.q.trim() !== '') {
-    return msg.q.trim();
+  if (!msg || typeof msg !== 'object') return '';
+  const parts = [];
+  if (Array.isArray(msg.queries)) {
+    for (const row of msg.queries) {
+      const t = termText(row);
+      if (t) parts.push(t);
+    }
   }
-  if (msg && Array.isArray(msg.queries)) {
-    return msg.queries
-      .filter((t) => typeof t === 'string' && t.trim() !== '')
-      .map((t) => t.trim())
-      .join(' ');
+  if (!parts.length && typeof msg.q === 'string' && msg.q.trim() !== '') {
+    parts.push(msg.q.trim());
   }
-  if (msg && Array.isArray(msg.searchterms)) {
-    return msg.searchterms
-      .filter((t) => typeof t === 'string' && t.trim() !== '')
-      .map((t) => t.trim())
-      .join(' ');
+  if (!parts.length && Array.isArray(msg.searchterms)) {
+    for (const row of msg.searchterms) {
+      const t = termText(row);
+      if (t) parts.push(t);
+    }
   }
-  if (msg && typeof msg.searchterms === 'string' && msg.searchterms.trim() !== '') {
-    return msg.searchterms.trim();
+  if (
+    !parts.length &&
+    typeof msg.searchterms === 'string' &&
+    msg.searchterms.trim() !== ''
+  ) {
+    parts.push(msg.searchterms.trim());
   }
-  return '';
+  if (!parts.length) return '';
+  let q = parts.join(' ');
+  if (Array.isArray(msg.exclude)) {
+    for (const row of msg.exclude) {
+      const t = termText(row);
+      if (!t || t.length < 3) continue;
+      if (/\s/.test(t)) q += ` -"${t.replace(/"/g, '')}"`;
+      else q += ` -${t}`;
+    }
+  }
+  return q.trim();
 }
 
 /**
