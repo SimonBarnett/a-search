@@ -682,6 +682,25 @@ async function setHostStripe(opts) {
   };
 }
 
+
+/**
+ * Identity from a-clubs host marker Metadata (FR #4287 / #4415).
+ * `userid` wins; legacy `customernumber` is a fallback until migration.
+ * @param {Record<string, string>|null|undefined} md
+ * @returns {string} uppercase userid or empty
+ */
+function useridFromHostMetadata(md) {
+  const m = md || {};
+  const direct = String(m.userid || m.userId || '').trim();
+  if (direct) return direct.toUpperCase();
+  for (const [k, v] of Object.entries(m)) {
+    if (String(k).toLowerCase() !== 'customernumber') continue;
+    const legacy = String(v == null ? '' : v).trim();
+    if (legacy) return legacy.toUpperCase();
+  }
+  return '';
+}
+
 /** Metadata keys that must never appear in GET /parts JSON. */
 const PARTS_RESPONSE_SECRET_KEYS = Object.freeze([
   'email',
@@ -729,4 +748,5 @@ module.exports = {
   setHostCredentials,
   setHostStripe,
   partsResponseLeaksSecrets,
+  useridFromHostMetadata,
 };

@@ -10,6 +10,9 @@ const crypto = require('node:crypto');
 const { loadRegistry, enabled: registryEnabled } = require('../../providers/loadRegistry');
 const { isDbBackedSource } = require('./dbBackedQueue');
 const { createSqsSendMessage } = require('./sqsSend');
+const {
+  useridFromHostMetadata,
+} = require('../../shared/widgets/hostFolderMeta');
 
 class AgentSearchError extends Error {
   /**
@@ -262,6 +265,22 @@ async function handleAgentSearch(opts) {
     throw err;
   }
 
+  // FR #4415: tracked outbound links need userid from a-clubs host marker.
+  // Reject at /search (4xx) rather than letting workers throw TrackedUrlError.
+  const hostMarkerKey = `${hostkey}/`;
+  let hostUserid = '';
+  try {
+    const hostHead = await io.headObject({ Key: hostMarkerKey });
+    const md =
+      (hostHead && (hostHead.Metadata || hostHead.metadata)) || {};
+    hostUserid = useridFromHostMetadata(md);
+  } catch (err) {
+    if (!isMissingObject(err)) throw err;
+  }
+  if (!hostUserid) {
+    throw new AgentSearchError('userid_required', 400);
+  }
+
   const fanoutKey = searchFanoutKey(hostkey, guid);
   const prior = await readStoredFanout(io.getObject, fanoutKey);
   if (prior && prior.searchid) {
@@ -289,6 +308,9 @@ async function handleAgentSearch(opts) {
     const payload = {
       searchid,
       searchId: searchid,
+      // FR #4415: workers stamp tracked URLs with this tenant (msg.userId).
+      userId: hostUserid,
+      userid: hostUserid,
       source,
       hostkey,
       host: hostkey,
@@ -334,4 +356,5 @@ module.exports = {
   headerGet,
   parseJsonBody,
   setAclubsIoFactoryForTests,
+  useridFromHostMetadata,
 };

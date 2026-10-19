@@ -13,7 +13,10 @@ on the FR-153 allowlist (never `*`).
 ## Fan-out
 
 After validating that `a-clubs/{hostkey}/{guid}/` exists (404 `guid_not_found`
-otherwise), entry mints a `searchid` and enqueues:
+otherwise), entry reads `userid` from the host marker `a-clubs/{hostkey}/`
+Metadata (FR #4415 / #4287). Missing userid is **400 `userid_required`** ---
+never enqueue jobs that would crash workers with `TrackedUrlError`. Then entry
+mints a `searchid` and enqueues:
 
 1. one message to **each enabled live** provider queue (registry `kind:live`)
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env
@@ -29,8 +32,10 @@ successful fan-out writes that marker. `MessageDeduplicationId` is
 `{searchid}-{source}` so a lost response inside the FIFO dedupe window also
 does not double-enqueue.
 
-Payloads carry `messageGroupId=<provider|sql>` so FIFO queues serialise per
-provider. SQL messages use group `sql`.
+Each job payload includes `userId` / `userid` from the host marker so live
+providers can stamp tracked outbound links (FR #4415). Payloads also carry
+`messageGroupId=<provider|sql>` so FIFO queues serialise per provider. SQL
+messages use group `sql`.
 
 ## Provider queues (FR #4039)
 
