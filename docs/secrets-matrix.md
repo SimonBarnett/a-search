@@ -89,7 +89,7 @@ Synth does not write account `000000000000` into a Lambda environment (FR #4352)
 |--------|-------------------------|---------|
 | amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` | `a-search-amazon-worker-{live,sandbox}` |
 | ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
-| rakuten | `RAKUTEN_APPLICATION_KEY`, `RAKUTEN_AFFILIATE_ID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
+| rakuten | `RAKUTEN_PRODUCT_SEARCH_TOKEN`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
 | impact | `IMPACT_CAMPAIGN_ID`, `IMPACT_ACCOUNT_SID`, `IMPACT_AUTH_TOKEN` | workers + impact onboarding live/sandbox |

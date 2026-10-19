@@ -13,6 +13,7 @@ const {
   RakutenCredsError,
   readRakutenCreds,
   parseProductSearchXml,
+  buildProductSearchRequest,
 } = require('./search');
 
 const DEFAULT_FIXTURE = path.join(
@@ -57,7 +58,7 @@ async function probeRakutenSelftest(deps = {}) {
     const code =
       err && typeof err === 'object' && err.code
         ? String(err.code)
-        : 'rakuten_missing_credentials';
+        : 'missing_rakuten_token';
     return {
       ok: false,
       source,
@@ -70,18 +71,9 @@ async function probeRakutenSelftest(deps = {}) {
     let xml;
     if (typeof deps.httpRequest === 'function') {
       const creds = readRakutenCreds(env);
-      const params = new URLSearchParams({
-        applicationkey: creds.applicationKey,
-        keyword: 'selftest',
-        max: '10',
-      });
-      if (creds.affiliateId) params.set('affiliateid_1', creds.affiliateId);
-      const url = `${creds.endpoint}productsearch/1.0?${params.toString()}`;
-      const res = await deps.httpRequest({
-        method: 'GET',
-        url,
-        headers: { Accept: 'application/xml, text/xml, */*' },
-      });
+      const res = await deps.httpRequest(
+        buildProductSearchRequest(creds, 'selftest'),
+      );
       xml =
         typeof res === 'string'
           ? res

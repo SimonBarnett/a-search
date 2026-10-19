@@ -14,9 +14,9 @@ const {
 } = require('../providers/live/rakuten/src/selftestProbe');
 
 const credEnv = {
-  RAKUTEN_APPLICATION_KEY: 'app-key-test',
+  RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
   RAKUTEN_AFFILIATE_ID: 'aff-test',
-  RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+  RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
 };
 
 describe('FR-059h rakuten selftest probe', () => {
@@ -48,7 +48,7 @@ describe('FR-059h rakuten selftest probe', () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.source, 'rakuten');
-    assert.equal(result.error, 'rakuten_missing_credentials');
+    assert.equal(result.error, 'missing_rakuten_token');
     assert.equal(httpCalls.length, 0);
   });
 

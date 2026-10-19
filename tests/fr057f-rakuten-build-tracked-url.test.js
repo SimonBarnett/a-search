@@ -89,11 +89,11 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
-          RAKUTEN_APPLICATION_KEY: 'app-key-test',
+          RAKUTEN_PRODUCT_SEARCH_TOKEN: 'FAKE_rakuten_product_search_token',
           RAKUTEN_AFFILIATE_ID: 'aff-1',
           RAKUTEN_SITE_ID: 'site-7',
           RAKUTEN_MID: 'adv-9',
-          RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+          RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
           S3_RESULTS_BUCKET: 'test-results',
         },
         httpRequest: async () => xml,

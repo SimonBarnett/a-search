@@ -34,10 +34,9 @@ Never put them in `entry/.env` or commit real values.
 
 | Placeholder (`.env.example`) | How to obtain |
 |------------------------------|---------------|
-| `RAKUTEN_APPLICATION_KEY` | Rakuten affiliate / Product Search console — application key (required) |
-| `RAKUTEN_AFFILIATE_ID` | Optional affiliate id for attribution on Product Search |
-| `RAKUTEN_SITE_ID` | Tracked-link site/mid for `buildTrackedUrl` (FR-057); never commit a real id |
-| `RAKUTEN_ENDPOINT` | API root (default `https://api.rakuten.com/`) |
+| `RAKUTEN_PRODUCT_SEARCH_TOKEN` | Developer Portal Bearer token for Product Search (required). Never commit it. |
+| `RAKUTEN_SITE_ID` | Publisher id for tracked links (FR-248 `id`). Never commit a real id. |
+| `RAKUTEN_ENDPOINT` | Default `https://api.linksynergy.com/productsearch/1.0` |
 | `A_SEARCH_ENV` | `sandbox` while onboarding; `live` only after smoke OK |
 | `SQS_RAKUTEN_URL` | From stack/env for this `A_SEARCH_ENV` (see `docs/environments.md`) |
 | `S3_RESULTS_BUCKET` | Results bucket for this env |
@@ -45,8 +44,8 @@ Never put them in `entry/.env` or commit real values.
 Steps (agent-led):
 
 1. Confirm a Rakuten affiliate / publisher account for the target marketplace.
-2. Create or retrieve the **application key**; map into `RAKUTEN_APPLICATION_KEY`.
-3. Optionally set `RAKUTEN_AFFILIATE_ID` and `RAKUTEN_SITE_ID` for attribution / tracked links.
+2. Request the Product Search **Bearer token** in the Developer Portal and set `RAKUTEN_PRODUCT_SEARCH_TOKEN`.
+3. Set `RAKUTEN_SITE_ID` (publisher id) for tracked links. Do not log the token.
 4. Set `A_SEARCH_ENV=sandbox` and sandbox queue/bucket URLs first.
 5. Confirm `.env` is gitignored; `git status` must not show secret files.
 6. Do not log or echo secret values when verifying.
