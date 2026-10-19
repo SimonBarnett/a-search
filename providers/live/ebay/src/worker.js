@@ -12,6 +12,10 @@ const {
 } = require('../../../../shared/assertEnv');
 const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
 const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
+const { attachDefaultS3 } = require('../../../../shared/search/liveWorkerS3');
+const {
+  reportException: defaultReportException,
+} = require('../../../../shared/intake/reportException');
 const {
   searchEbay,
   assertEbayCreds,
@@ -47,6 +51,7 @@ async function run(msg, deps) {
     accessToken: deps && deps.accessToken,
   });
 
+  const liveS3 = attachDefaultS3(deps);
   const written = await writeLiveProviderInResult({
     msg,
     source: 'ebay',
@@ -54,13 +59,13 @@ async function run(msg, deps) {
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
-    putObject: deps && deps.putObject,
+    putObject: liveS3.putObject,
     touchLastmod: deps && deps.touchLastmod,
-    headObject: deps && deps.headObject,
-    getObject: deps && deps.getObject,
-    copyObject: deps && deps.copyObject,
-    getObjectTagging: deps && deps.getObjectTagging,
-    putObjectTagging: deps && deps.putObjectTagging,
+    headObject: liveS3.headObject,
+    getObject: liveS3.getObject,
+    copyObject: liveS3.copyObject,
+    getObjectTagging: liveS3.getObjectTagging,
+    putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
   });
 
@@ -79,14 +84,14 @@ async function run(msg, deps) {
  * SQS Lambda entry (FR-036). Parses Records and calls run(msg).
  * @param {{ Records?: Array<{ body: string }> }} event
  */
-async function handler(event, deps) {
-  const d = deps || {};
+async function handler(event, arg) {
+  const d = attachDefaultS3(arg);
   return handleSqsWith429({
     event,
     run: d.run || run,
     deps: d,
     changeMessageVisibility: d.changeMessageVisibility,
-    reportException: d.reportException,
+    reportException: d.reportException || defaultReportException,
     route: 'providers/live/ebay/handler',
     source: 'ebay',
   });

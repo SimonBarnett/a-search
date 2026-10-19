@@ -14,6 +14,7 @@ const {
 } = require('../../../../shared/assertEnv');
 const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
 const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
+const { attachDefaultS3 } = require('../../../../shared/search/liveWorkerS3');
 const {
   searchAmazon,
   assertAmazonCreds,
@@ -65,6 +66,7 @@ async function run(msg, deps) {
     httpRequest: deps && deps.httpRequest,
   });
 
+  const liveS3 = attachDefaultS3(deps);
   const written = await writeLiveProviderInResult({
     msg,
     source: 'amazon',
@@ -72,13 +74,13 @@ async function run(msg, deps) {
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
-    putObject: deps && deps.putObject,
+    putObject: liveS3.putObject,
     touchLastmod: deps && deps.touchLastmod,
-    headObject: deps && deps.headObject,
-    getObject: deps && deps.getObject,
-    copyObject: deps && deps.copyObject,
-    getObjectTagging: deps && deps.getObjectTagging,
-    putObjectTagging: deps && deps.putObjectTagging,
+    headObject: liveS3.headObject,
+    getObject: liveS3.getObject,
+    copyObject: liveS3.copyObject,
+    getObjectTagging: liveS3.getObjectTagging,
+    putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
   });
 
