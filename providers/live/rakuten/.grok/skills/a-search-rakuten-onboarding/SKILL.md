@@ -34,8 +34,8 @@ Never put them in `entry/.env` or commit real values.
 
 | Placeholder (`.env.example`) | How to obtain |
 |------------------------------|---------------|
-| `RAKUTEN_APPLICATION_KEY` | Rakuten affiliate / Product Search console — application key (required) |
-| `RAKUTEN_AFFILIATE_ID` | Optional affiliate id for attribution on Product Search |
+| `RAKUTEN_CLIENT_ID` | Rakuten affiliate / Product Search console — application key (required) |
+| `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID` | Client secret and SID for the token call. Never commit values. |
 | `RAKUTEN_SITE_ID` | Tracked-link site/mid for `buildTrackedUrl` (FR-057); never commit a real id |
 | `RAKUTEN_ENDPOINT` | API root (default `https://api.rakuten.com/`) |
 | `A_SEARCH_ENV` | `sandbox` while onboarding; `live` only after smoke OK |
@@ -45,8 +45,8 @@ Never put them in `entry/.env` or commit real values.
 Steps (agent-led):
 
 1. Confirm a Rakuten affiliate / publisher account for the target marketplace.
-2. Create or retrieve the **application key**; map into `RAKUTEN_APPLICATION_KEY`.
-3. Optionally set `RAKUTEN_AFFILIATE_ID` and `RAKUTEN_SITE_ID` for attribution / tracked links.
+2. Put `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID` in `.env`.
+3. Set `RAKUTEN_SITE_ID` for tracked links.
 4. Set `A_SEARCH_ENV=sandbox` and sandbox queue/bucket URLs first.
 5. Confirm `.env` is gitignored; `git status` must not show secret files.
 6. Do not log or echo secret values when verifying.

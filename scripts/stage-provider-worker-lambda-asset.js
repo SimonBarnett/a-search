@@ -66,6 +66,19 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
   fs.mkdirSync(path.dirname(providerDest), { recursive: true });
   fs.cpSync(providerSrc, providerDest, { recursive: true });
 
+  // FR #4480: bundle the gitignored provider .env into the asset. The worker
+  // reads it at run time. Never log the file contents.
+  if (opts && opts.envFile) {
+    const envFile = String(opts.envFile);
+    if (!fs.existsSync(envFile)) {
+      throw new Error(
+        `provider env ${src.id}: missing file ${envFile}. Fill providers/live/${src.id}/.env from .env.example.`,
+      );
+    }
+    const envDest = path.join(outDir, ...folderPosix.split('/'), '.env');
+    fs.copyFileSync(envFile, envDest);
+  }
+
   const sharedSrc = path.join(root, 'shared');
   if (!fs.existsSync(sharedSrc)) {
     throw new Error(`stage-provider-worker-lambda-asset: missing ${sharedSrc}`);

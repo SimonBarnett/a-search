@@ -24,7 +24,7 @@ describe('FR-060e rakuten onboarding skillbook', () => {
     assert.ok(fs.existsSync(p), `missing ${skillRel}`);
     const text = fs.readFileSync(p, 'utf8');
     assert.match(text, /CAST IRON/i);
-    assert.match(text, /RAKUTEN_APPLICATION_KEY/);
+    assert.match(text, /RAKUTEN_CLIENT_ID/);
     assert.match(text, /RAKUTEN_AFFILIATE_ID|RAKUTEN_SITE_ID/);
     assert.match(text, /rate limit/i);
     assert.match(text, /\.env/);

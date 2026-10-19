@@ -24,7 +24,7 @@ Registry id `rakuten` (`kind: live`, default-on).
 `src/worker.js` exports `run(msg, deps?)`:
 
 1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
-2. Require `RAKUTEN_APPLICATION_KEY` (optional `RAKUTEN_AFFILIATE_ID`)
+2. Require `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`
 3. Product Search GET (`src/search.js`) → XML parse → `products[]`
 4. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/rakuten/{userId}/{catalogId}/{searchId}.json`
 
@@ -59,8 +59,8 @@ Rakuten enforces **rate limits** per application key. Playbook:
 
 ## Env
 
-See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_APPLICATION_KEY`,
-`RAKUTEN_AFFILIATE_ID`, `RAKUTEN_ENDPOINT`, `SQS_RAKUTEN_URL`,
+See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
+`RAKUTEN_CLIENT_SECRET`, `RAKUTEN_ENDPOINT`, `SQS_RAKUTEN_URL`,
 `S3_RESULTS_BUCKET`.
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.

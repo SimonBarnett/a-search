@@ -55,11 +55,21 @@ describe('FR-018 rakuten provider scaffold', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
-          RAKUTEN_APPLICATION_KEY: 'k',
+          RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
+          RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
+          RAKUTEN_SID: 'FAKE_sid',
           RAKUTEN_SITE_ID: 'site-test',
           S3_RESULTS_BUCKET: 'b',
         },
-        httpRequest: async () => ({ statusCode: 200, headers: {}, body: fixture }),
+        httpRequest: async (req) => {
+          if (req.method === 'POST') {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ access_token: 'FAKE_rakuten_access', expires_in: 3600 }),
+            };
+          }
+          return { statusCode: 200, headers: {}, body: fixture };
+        },
         putObject: async () => ({ ETag: '"1"' }),
       },
     );

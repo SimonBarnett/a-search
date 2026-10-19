@@ -41,7 +41,7 @@ describe('FR-138 provider Secrets Manager CDK wiring', () => {
     assert.match(text, /AMAZON_ACCESS_KEY/);
     assert.match(text, /AMAZON_SECRET_KEY/);
     assert.match(text, /EBAY_CLIENT_SECRET/);
-    assert.match(text, /RAKUTEN_APPLICATION_KEY/);
+    assert.match(text, /RAKUTEN_CLIENT_ID/);
     assert.match(text, /CJ_API_TOKEN/);
     assert.match(text, /AWIN_API_TOKEN/);
     assert.match(text, /IMPACT_CAMPAIGN_ID/);

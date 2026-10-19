@@ -89,14 +89,23 @@ describe('FR-057f rakuten buildTrackedUrl wiring', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
-          RAKUTEN_APPLICATION_KEY: 'app-key-test',
-          RAKUTEN_AFFILIATE_ID: 'aff-1',
+          RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
+          RAKUTEN_CLIENT_SECRET: 'FAKE_rakuten_secret',
+          RAKUTEN_SID: 'FAKE_sid',
           RAKUTEN_SITE_ID: 'site-7',
           RAKUTEN_MID: 'adv-9',
-          RAKUTEN_ENDPOINT: 'https://api.rakuten.com/',
+          RAKUTEN_ENDPOINT: 'https://api.linksynergy.com/productsearch/1.0',
           S3_RESULTS_BUCKET: 'test-results',
         },
-        httpRequest: async () => xml,
+        httpRequest: async (req) => {
+          if (req.method === 'POST') {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ access_token: 'FAKE_rakuten_access', expires_in: 3600 }),
+            };
+          }
+          return xml;
+        },
         putObject: async () => ({}),
       },
     );
