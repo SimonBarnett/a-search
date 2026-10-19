@@ -169,6 +169,9 @@ describe('FR-119 local selftest probes use classified codes', () => {
       if (!id.isDirectory()) continue;
       const probe = path.join(local, id.name, 'src', 'selftestProbe.js');
       if (!fs.existsSync(probe)) continue;
+      // FR #4451: skimlinks is local for fan-out. Its probe is the HTTP
+      // Product API fixture, not an MSSQL connect.
+      if (id.name === 'skimlinks') continue;
       const text = fs.readFileSync(probe, 'utf8');
       assert.match(
         text,
