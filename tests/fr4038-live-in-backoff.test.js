@@ -24,6 +24,7 @@ const {
 } = require('../shared/search/writeLiveProviderInResult');
 const { handleSqsWith429 } = require('../shared/search/handleSqsWith429');
 
+// FR #4451: skimlinks is local affiliate (SQL), not an AWS live worker.
 const LIVE = [
   'amazon',
   'ebay',
@@ -33,7 +34,6 @@ const LIVE = [
   'cj',
   'kelkoo',
   'rakuten',
-  'skimlinks',
 ];
 
 describe('FR #4038 shared IN schema + write', () => {
