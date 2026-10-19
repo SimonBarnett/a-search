@@ -179,7 +179,13 @@ async function defaultHttpRequest(signed) {
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error(`Amazon PA-API non-JSON response (${res.status})`);
+    // FR #4427: attach status so SQS visibility backoff + intake skip work
+    // when PA-API returns HTML/gateway bodies (common on 503).
+    const err = new Error(`Amazon PA-API non-JSON response (${res.status})`);
+    err.status = res.status;
+    err.code = 'paapi_non_json';
+    err.bodyText = String(text || '').slice(0, 200);
+    throw err;
   }
   if (!res.ok) {
     const err = new Error(
