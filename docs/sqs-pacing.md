@@ -17,6 +17,7 @@ provider APIs do not rate-block the account.
 | Cap concurrency | Provider workers use `reservedConcurrentExecutions: 1` (one job at a time). SQS event-source `MaximumConcurrency` is omitted: the AWS floor is 2, which Lambda rejects when reserved concurrency is 1 (FR #4357). `sqsMaxConcurrencyForSource` remains for amazon, ebay, rakuten, cj, awin, and impact and is applied only when it does not exceed that reserved concurrency. |
 | Per source / per env | Live and sandbox queues stay separate (`docs/environments.md`). Pacing is **per queue** — sandbox must not share live concurrency budget. |
 | Back off on throttle | On 407 / 429 / provider "blocked" responses: use `shared/pacing/throttleBackoff.js` (`backoffOnHttpThrottle`) — sleep `Retry-After` (or default), then throw `ProviderThrottleError` so SQS can retry. Do **not** tight-loop HTTP in-process. |
+| Transient vendor HTTP (FR #4427) | Amazon PA-API / Creators HTML gateway **502/503/504** (including non-JSON bodies) use `shared/search/backoff429.isTransientVendorHttp` + `handleSqsWith429` visibility backoff and skip intake spam on those SQS retries. Hard **500** responses still call intake. |
 | Fail-when | Sustained 407/429 from a provider after deploy, or workers configured with high `batchSize` / unbounded concurrency against a rate-limited API. |
 
 ## Operator knobs
