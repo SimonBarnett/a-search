@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR #4739: Creators HTTP 403 AssociateNotEligible is permanent — write status IN,
+ * FR #4739: Creators HTTP 403 AssociateNotEligible is permanent - write status IN,
  * complete SQS, do not intake-fatal / DLQ-burn.
  */
 
