@@ -98,7 +98,7 @@ async function runDailyImport(opts) {
     return { exitCode: 2, code: 'lock_held' };
   }
 
-  if (!store.tryAppLock()) {
+  if (!(await store.tryAppLock())) {
     lock.release();
     log('lock_held applock');
     return { exitCode: 2, code: 'lock_held' };
@@ -111,14 +111,15 @@ async function runDailyImport(opts) {
       return { exitCode: 2, code: pc.code, detail: pc.detail };
     }
 
-    const run = store.beginRun(dryRun ? 'dry-run' : 'run');
+    const run = await store.beginRun(dryRun ? 'dry-run' : 'run');
     const results = [];
     let anyFail = false;
 
     // Purge requests first
-    for (const pr of store.purgeRequests.splice(0, store.purgeRequests.length)) {
+    const pendingPurge = store.purgeRequests.splice(0, store.purgeRequests.length);
+    for (const pr of pendingPurge) {
       if (!dryRun) {
-        store.hardPurge(pr.ProviderId, pr.FeedKey);
+        await store.hardPurge(pr.ProviderId, pr.FeedKey);
         pr.ProcessedRunId = run.runId;
       }
       results.push({ kind: 'purge', ...pr });
@@ -156,7 +157,7 @@ async function runDailyImport(opts) {
             });
             continue;
           }
-          if (store.isFileOk(f.fileKey, f.version) && !opts.force) {
+          if ((await store.isFileOk(f.fileKey, f.version)) && !opts.force) {
             results.push({
               provider: cfg.provider,
               feedKey,
@@ -187,7 +188,7 @@ async function runDailyImport(opts) {
               shopdomain: marker && marker.shopdomain,
             });
 
-            const active = store.listActive(cfg.provider, feedKey);
+            const active = await store.listActive(cfg.provider, feedKey);
             const stagedKeys = new Set(parsed.staged.map((r) => String(r.MerchantProductId)));
             let wouldDelete = 0;
             if (cfg.deleteMissing === 'soft' || cfg.deleteMissing === 'hard') {
@@ -222,7 +223,7 @@ async function runDailyImport(opts) {
                 ...parsed.rejects.slice(0, 50).map((r) => r.rawRow),
               ].join('\n');
               fs.writeFileSync(samplePath, redactSecrets(sample), 'utf8');
-              store.addFailure({
+              await store.addFailure({
                 RunId: run.runId,
                 ProviderId: cfg.provider,
                 FeedKey: feedKey,
@@ -256,7 +257,7 @@ async function runDailyImport(opts) {
               continue;
             }
 
-            const merge = store.mergeFeed({
+            const merge = await store.mergeFeed({
               runId: run.runId,
               providerId: cfg.provider,
               feedKey,
@@ -269,7 +270,7 @@ async function runDailyImport(opts) {
             });
 
             if (!dryRun) {
-              store.markFileOk(f.fileKey, f.version, cfg.provider, feedKey);
+              await store.markFileOk(f.fileKey, f.version, cfg.provider, feedKey);
               if (typeof opts.deleteFile === 'function') {
                 await opts.deleteFile(f.path);
               } else if (opts.deleteOnSuccess) {
@@ -306,7 +307,7 @@ async function runDailyImport(opts) {
           } catch (err) {
             anyFail = true;
             const code = (err && err.code) || 'sql_error';
-            store.addFailure({
+            await store.addFailure({
               RunId: run.runId,
               ProviderId: cfg.provider,
               FeedKey: feedKey,
@@ -338,14 +339,15 @@ async function runDailyImport(opts) {
     }
 
     try {
-      store.endOfRunHealth();
+      await store.endOfRunHealth();
       for (const r of results) {
         if (r.status === 'ok' && r.provider && r.feedKey) {
-          const title = (store.listActive(r.provider, r.feedKey)[0] || {}).Title || '';
+          const activeRows = await store.listActive(r.provider, r.feedKey);
+          const title = (activeRows[0] || {}).Title || '';
           const token = String(title).split(/\s+/).find((w) => w.length >= 3);
-          if (token && !store.containstableProbe(r.provider, r.feedKey, token)) {
+          if (token && !(await store.containstableProbe(r.provider, r.feedKey, token))) {
             anyFail = true;
-            store.addFailure({
+            await store.addFailure({
               RunId: run.runId,
               ProviderId: r.provider,
               FeedKey: r.feedKey,
@@ -357,7 +359,7 @@ async function runDailyImport(opts) {
       }
     } catch (err) {
       anyFail = true;
-      store.addFailure({
+      await store.addFailure({
         RunId: run.runId,
         ProviderId: '_run',
         FeedKey: '_fts',
@@ -381,7 +383,7 @@ async function runDailyImport(opts) {
       results,
     };
   } finally {
-    store.releaseAppLock();
+    await store.releaseAppLock();
     lock.release();
   }
 }
