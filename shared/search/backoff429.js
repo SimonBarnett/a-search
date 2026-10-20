@@ -33,7 +33,7 @@ function isHttp429(err) {
 
 /**
  * FR #4562: Amazon PA-API / Creators non-JSON HTML bodies are permanent for
- * this attempt class — do not burn three SQS receives into the DLQ.
+ * this attempt class - do not burn three SQS receives into the DLQ.
  * @param {unknown} err
  * @returns {boolean}
  */

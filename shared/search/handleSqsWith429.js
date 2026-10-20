@@ -261,7 +261,7 @@ async function handleSqsWith429(opts) {
         });
         continue;
       }
-      // FR #4562 / #4739: Amazon permanent vendor faults — complete the batch
+      // FR #4562 / #4739: Amazon permanent vendor faults - complete the batch
       // (worker should write status IN); do not retry into DLQ or spam intake.
       if (isAmazonPermanentVendorFault(err)) {
         const code = err && typeof err.code === 'string' ? err.code : '';

@@ -49,7 +49,7 @@ class AmazonCreatorsHttpError extends Error {
 
 /**
  * Feature flag (FR-181 / FR-182 / FR #4562).
- * Default **on** (Creators) when AMAZON_SEARCH_API is unset — PA-API 5 returns
+ * Default **on** (Creators) when AMAZON_SEARCH_API is unset - PA-API 5 returns
  * HTML 503s in production. Explicit `paapi` or AMAZON_CREATORS_ENABLED=false
  * keeps the old path.
  *
