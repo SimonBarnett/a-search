@@ -26,6 +26,11 @@ const {
 } = require('./resolve-stage-suffix');
 const { resolveCorsOrigins } = require('./resolve-cors-origins');
 const { resolveCostTags } = require('./resolve-cost-tags');
+const {
+  BUNDLED_ENV_REQUIRED,
+  requiredBundledEnvKeys,
+  assertProviderEnvFileKeys,
+} = require('./provider-env-assert');
 /** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
 
@@ -545,6 +550,16 @@ function wireProviderEnvFromFile(fn, sourceId, envRoot, repoRoot) {
 }
 
 /**
+ * FR #4560: default IgnoreMode.GIT strips repo-root `.gitignore` `.env` from
+ * staged worker assets. DOCKER mode has no .dockerignore in the asset tree, so
+ * the copied provider `.env` stays in the Lambda zip.
+ * @returns {{ ignoreMode: cdk.IgnoreMode }}
+ */
+function workerLambdaCodeAssetOptions() {
+  return { ignoreMode: cdk.IgnoreMode.DOCKER };
+}
+
+/**
  * FR-023/024/035/036/037: entry Lambda (providers-aware asset) + API Gateway POST /search +
  * per-enabled-source live/sandbox queues + SQS-triggered worker Lambdas +
  * maintainer EventBridge schedules + awin onboarding live/sandbox + impact onboarding live/sandbox Lambdas (FR-056a/b/c/d).
@@ -710,19 +725,15 @@ class ASearchStack extends cdk.Stack {
       if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
-      // FR #4480: enabled live providers must have a .env. The message names
-      // the file and never a value. Disabled providers are not staged.
+      // FR #4480 / #4560: enabled live providers must have a .env with required
+      // key names present (never print values). Disabled providers are not staged.
       const providerEnvRoot = this.node.tryGetContext('providerEnvRoot') || '';
       const envFile = providerEnvFilePath(
         repoRoot,
         src.id,
         providerEnvRoot || undefined,
       );
-      if (!fs.existsSync(envFile)) {
-        throw new Error(
-          `provider env ${src.id}: missing file ${envFile}. Fill providers/live/${src.id}/.env from .env.example.`,
-        );
-      }
+      assertProviderEnvFileKeys(envFile, src.id);
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src, {
         envFile,
@@ -775,7 +786,11 @@ class ASearchStack extends cdk.Stack {
             functionName: stagedName(`a-search-${src.id}-worker-${env}`),
             runtime: lambda.Runtime.NODEJS_24_X,
             handler: workerHandlerPath(src),
-            code: lambda.Code.fromAsset(workerAssetDir),
+            // FR #4560: IgnoreMode.DOCKER so staged `.env` is not stripped by .gitignore
+            code: lambda.Code.fromAsset(
+              workerAssetDir,
+              workerLambdaCodeAssetOptions(),
+            ),
             timeout: cdk.Duration.seconds(WORKER_LAMBDA_TIMEOUT_SEC),
             memorySize: WORKER_LAMBDA_MEMORY_MB,
             reservedConcurrentExecutions: 1,
@@ -1763,8 +1778,12 @@ module.exports = {
   PROVIDER_CREDENTIAL_KEYS,
   PROVIDER_PLAIN_DEFAULTS,
   PROVIDER_ENV_FILE,
+  BUNDLED_ENV_REQUIRED,
   parseDotEnv,
   readProviderEnvFile,
+  requiredBundledEnvKeys,
+  assertProviderEnvFileKeys,
+  workerLambdaCodeAssetOptions,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
   ENTRY_LAMBDA_MEMORY_MB,
