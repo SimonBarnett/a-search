@@ -76,7 +76,12 @@ async function probeCjSelftest(deps = {}) {
     let json;
     if (typeof deps.httpRequest === 'function') {
       const creds = readCjCreds(env);
-      const payload = buildProductsQuery('selftest', creds.companyId);
+      // FR #4713: linkCode(pid:) needs website id (same as searchCj).
+      const payload = buildProductsQuery(
+        'selftest',
+        creds.companyId,
+        creds.websiteId,
+      );
       json = await deps.httpRequest({
         method: 'POST',
         url: creds.graphqlUrl,
