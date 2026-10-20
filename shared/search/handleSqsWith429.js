@@ -52,6 +52,8 @@ function isVendorClientSkip(err) {
   if (isMissingProviderCreds(err)) return true;
   const code = err && typeof err.code === 'string' ? err.code : '';
   if (code === 'rakuten_invalid_context') return true;
+  // FR #4762: CJ not Authorised (often non-JSON 403) — permanent account/token.
+  if (code === 'cj_not_authorised') return true;
   return /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || err || ''));
 }
 

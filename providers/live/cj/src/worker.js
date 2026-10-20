@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * CJ live provider worker (FR-041).
- * GraphQL Product Search -> normalize -> a-clubs IN/ (writeLiveProviderInResult) (injectable HTTP + putObject).
+ * CJ live provider worker (FR-041 / FR #4762).
+ * GraphQL Product Search -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
+ * FR #4762: cj_not_authorised (non-JSON 403) -> status IN, no DLQ / intake burn.
  */
 
 const path = require('node:path');
@@ -24,6 +25,15 @@ const {
 } = require('./search');
 
 /**
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isCjPermanentVendorFault(err) {
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  return code === 'cj_not_authorised';
+}
+
+/**
  * @param {object} msg
  * @param {{
  *   env?: Record<string, string|undefined>,
@@ -43,16 +53,10 @@ async function run(msg, deps) {
 
   const searchFn =
     deps && typeof deps.searchCj === 'function' ? deps.searchCj : searchCj;
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
-
   const liveS3 = attachDefaultS3(deps);
-  const written = await writeLiveProviderInResult({
+  const writeOpts = {
     msg,
     source: 'cj',
-    products,
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
@@ -64,6 +68,50 @@ async function run(msg, deps) {
     getObjectTagging: liveS3.getObjectTagging,
     putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
+  };
+
+  let products;
+  try {
+    products = await searchFn(msg, {
+      env: envVars,
+      httpRequest: deps && deps.httpRequest,
+    });
+  } catch (err) {
+    // FR #4762: CJ not Authorised (often non-JSON 403) is permanent for this
+    // account/token class. Write status IN; do not burn DLQ.
+    if (isCjPermanentVendorFault(err)) {
+      const status = {
+        code: err.code,
+        httpStatus: err.status != null ? err.status : err.statusCode,
+        message: err && err.message ? String(err.message) : String(err),
+        bodyPreview:
+          err && err.bodyText != null
+            ? String(err.bodyText).slice(0, 200)
+            : undefined,
+      };
+      const written = await writeLiveProviderInResult({
+        ...writeOpts,
+        products: [],
+        status,
+      });
+      return {
+        ok: true,
+        skipped: 'cj_not_authorised',
+        source: 'cj',
+        searchId: msg.searchId,
+        env: msg.env,
+        products: [],
+        key: written.key,
+        bucket: written.bucket,
+        status,
+      };
+    }
+    throw err;
+  }
+
+  const written = await writeLiveProviderInResult({
+    ...writeOpts,
+    products,
   });
 
   return {

@@ -146,6 +146,44 @@ function buildProductsQuery(keywords, companyId, websiteId) {
 }
 
 /**
+ * FR #4762: permanent CJ auth faults (do not DLQ / intake-fatal).
+ * @param {number} status
+ * @param {object|null|undefined} json
+ * @param {string} [text]
+ * @returns {string|null}
+ */
+function classifyCjHttpFault(status, json, text) {
+  const body = json && typeof json === 'object' ? json : {};
+  const msg = String(body.message || text || '');
+  const statusN = Number(status);
+  if (
+    statusN === 401 ||
+    /not Authori[sz]ed/i.test(msg) ||
+    /unauthorized/i.test(msg)
+  ) {
+    return 'cj_not_authorised';
+  }
+  return null;
+}
+
+/**
+ * @param {Error} err
+ * @param {number} status
+ * @param {object|null|undefined} json
+ * @param {string} text
+ */
+function attachCjHttpFault(err, status, json, text) {
+  err.statusCode = status;
+  err.status = status;
+  const fault = classifyCjHttpFault(status, json, text);
+  if (fault) {
+    err.code = fault;
+    err.nonRetryable = true;
+  }
+  return err;
+}
+
+/**
  * @param {{ method: string, url: string, headers?: object, body?: string }} req
  */
 async function defaultHttpRequest(req) {
@@ -175,21 +213,21 @@ async function defaultHttpRequest(req) {
           let json;
           try {
             json = text ? JSON.parse(text) : {};
-          } catch (err) {
-            reject(
-              new Error(
-                `CJ HTTP non-JSON ${res.statusCode}: ${text.slice(0, 200)}`,
-              ),
+          } catch {
+            // FR #4762: non-JSON 403 Authorised body is permanent (status IN).
+            const err = new Error(
+              `CJ HTTP non-JSON ${res.statusCode}: ${text.slice(0, 200)}`,
             );
+            err.bodyText = String(text || '').slice(0, 200);
+            reject(attachCjHttpFault(err, res.statusCode, null, text));
             return;
           }
           if (res.statusCode >= 400) {
             const err = new Error(
               `CJ HTTP ${res.statusCode}: ${text.slice(0, 300)}`,
             );
-            err.statusCode = res.statusCode;
             err.body = json;
-            reject(err);
+            reject(attachCjHttpFault(err, res.statusCode, json, text));
             return;
           }
           resolve(json);
@@ -259,5 +297,6 @@ module.exports = {
   normalizeCjKeywordList,
   MAX_CJ_KEYWORDS,
   keywordsFromMsg,
+  classifyCjHttpFault,
   DEFAULT_GRAPHQL_URL,
 };
