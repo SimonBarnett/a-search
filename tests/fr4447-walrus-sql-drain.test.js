@@ -247,6 +247,8 @@ describe('FR #4447 walrus drain entry + service registration', () => {
     assert.match(ps1, /DryRun|WhatIf/);
     assert.match(ps1, /a-search-walrus-sql-drain|walrus-sql-drain/i);
     assert.match(ps1, /walrus\\src\\index\.js|walrus\/src\/index\.js/);
+    assert.match(ps1, /SqsDbBackedUrl|SQS_DB_BACKED_URL/);
+    assert.match(ps1, /MssqlServer|MSSQL_SERVER/);
     assert.doesNotMatch(ps1, /sc\.exe create/);
   });
 });

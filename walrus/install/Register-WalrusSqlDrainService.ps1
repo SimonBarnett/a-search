@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Register the walrus SQL SQS drain as a Windows service via nssm (FR #4447).
+  Register the walrus SQL SQS drain as a Windows service via nssm (FR #4447 / #4511).
 
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-walrus-sql-drain" with nssm wrapping
@@ -9,6 +9,11 @@
   Auto-start, restart on failure. Outbound HTTPS SQS only --- no inbound port.
   Logs to InstallRoot\walrus\logs\. Bare sc.exe + node.exe is rejected (error 1053);
   nssm is required. Compatible with Windows PowerShell 5.1.
+
+  FR #4511: AppEnvironmentExtra must include every env the drain reads
+  (SQS_DB_BACKED_URL, AWS_REGION, MSSQL_SERVER, SQL auth, A_CLUBS_ROOT, ...).
+  Re-running this script rewrites the full env so hand-set nssm values are not lost
+  only when you pass the same parameters again.
 
 .PARAMETER InstallRoot
   Stable install folder containing walrus\src\index.js.
@@ -22,20 +27,45 @@
 .PARAMETER AwsProfile
   Named AWS profile for outbound SQS (default a-search-walrus-sql-drain).
 
+.PARAMETER AwsRegion
+  AWS region for the SQS client (default eu-west-2).
+
+.PARAMETER SqsDbBackedUrl
+  Queue URL for a-search-db-backed (stack output). Required unless Unregister.
+
 .PARAMETER AClubsRoot
-  Mapped a-clubs root (sets A_CLUBS_ROOT). Optional when already in the machine env.
+  Mapped a-clubs root (sets A_CLUBS_ROOT). Required unless Unregister.
 
 .PARAMETER ASearchEnv
-  live|sandbox (sets A_SEARCH_ENV).
+  live|sandbox (sets A_SEARCH_ENV). Default live.
+
+.PARAMETER MssqlServer
+  SQL host (e.g. walrus\ASEARCH). Required unless Unregister.
 
 .PARAMETER MssqlDatabase
   a_search or a_search_sandbox (sets MSSQL_DATABASE). Never madeiradb for writers.
+  Default a_search when ASearchEnv=live, else a_search_sandbox.
+
+.PARAMETER MssqlUser
+  SQL login for LocalSystem + SQL auth. Pair with -MssqlPasswordFile.
+
+.PARAMETER MssqlPasswordFile
+  Path to a one-line password file (never echoed). Sets MSSQL_PASSWORD in nssm env.
+
+.PARAMETER ServiceAccount
+  Windows account for nssm ObjectName (trusted SQL connection). Sets
+  MSSQL_TRUSTED_CONNECTION=true. Pair with -ServicePasswordFile when the account
+  needs a password.
+
+.PARAMETER ServicePasswordFile
+  Password file for -ServiceAccount ObjectName (never echoed).
 
 .PARAMETER NssmExe
   Path to nssm.exe (default: C:\ai\bob\third_party\nssm\win64\nssm.exe or PATH).
 
 .PARAMETER WhatIf
-  Alias DryRun: print nssm commands only; do not change the machine.
+  Alias DryRun: print nssm commands and the full AppEnvironmentExtra with secrets
+  masked; do not change the machine.
 
 .PARAMETER Unregister
   Remove the service via nssm.
@@ -46,10 +76,17 @@ param(
   [string]$ServiceName = 'a-search-walrus-sql-drain',
   [string]$NodeExe = 'node',
   [string]$AwsProfile = 'a-search-walrus-sql-drain',
+  [string]$AwsRegion = 'eu-west-2',
+  [string]$SqsDbBackedUrl,
   [string]$AClubsRoot,
   [ValidateSet('', 'live', 'sandbox')]
-  [string]$ASearchEnv = '',
+  [string]$ASearchEnv = 'live',
+  [string]$MssqlServer,
   [string]$MssqlDatabase,
+  [string]$MssqlUser,
+  [string]$MssqlPasswordFile,
+  [string]$ServiceAccount,
+  [string]$ServicePasswordFile,
   [string]$NssmExe,
   [Alias('DryRun')][switch]$WhatIf,
   [switch]$Unregister
@@ -82,16 +119,76 @@ function Resolve-NodePath {
   return $cmd.Source
 }
 
+function Read-SecretFile {
+  param([string]$Path)
+  if (-not $Path) { return $null }
+  if (-not (Test-Path -LiteralPath $Path)) {
+    throw "secret_file_missing: $Path"
+  }
+  $raw = [System.IO.File]::ReadAllText($Path).Trim()
+  if (-not $raw) { throw "secret_file_empty: $Path" }
+  return $raw
+}
+
 function Invoke-Nssm {
   # Never name the arg array $Args (PowerShell automatic; always empty).
   param([string]$Nssm, [string[]]$NssmArgs)
-  $line = 'nssm ' + ($NssmArgs -join ' ')
   if ($DryRun) {
-    Write-Host "[DryRun] $line"
+    $displayArgs = foreach ($a in $NssmArgs) {
+      if ($a -match '^(MSSQL_PASSWORD|AWS_SECRET_ACCESS_KEY)=') {
+        ($a -replace '=.*$', '=***')
+      } else {
+        $a
+      }
+    }
+    Write-Host ('[DryRun] nssm ' + ($displayArgs -join ' '))
     return 0
   }
   & $Nssm @NssmArgs | Out-Host
   return [int]$LASTEXITCODE
+}
+
+function Build-DrainEnvPairs {
+  # nssm AppEnvironmentExtra: KEY=VALUE each as a separate arg (FR #4164 pattern).
+  param(
+    [string]$AwsProfile,
+    [string]$AwsRegion,
+    [string]$SqsDbBackedUrl,
+    [string]$AClubsRoot,
+    [string]$ASearchEnv,
+    [string]$MssqlServer,
+    [string]$MssqlDatabase,
+    [string]$MssqlUser,
+    [string]$MssqlPassword,
+    [bool]$TrustedConnection
+  )
+  $envPairs = New-Object System.Collections.Generic.List[string]
+  [void]$envPairs.Add("AWS_PROFILE=$AwsProfile")
+  [void]$envPairs.Add("AWS_REGION=$AwsRegion")
+  [void]$envPairs.Add("SQS_DB_BACKED_URL=$SqsDbBackedUrl")
+  [void]$envPairs.Add("A_CLUBS_ROOT=$AClubsRoot")
+  if ($ASearchEnv) { [void]$envPairs.Add("A_SEARCH_ENV=$ASearchEnv") }
+  [void]$envPairs.Add("MSSQL_SERVER=$MssqlServer")
+  [void]$envPairs.Add("MSSQL_DATABASE=$MssqlDatabase")
+  if ($TrustedConnection) {
+    [void]$envPairs.Add('MSSQL_TRUSTED_CONNECTION=true')
+  } else {
+    [void]$envPairs.Add("MSSQL_USER=$MssqlUser")
+    [void]$envPairs.Add("MSSQL_PASSWORD=$MssqlPassword")
+  }
+  return ,$envPairs.ToArray()
+}
+
+function Format-EnvPairsForDisplay {
+  param([string[]]$EnvPairs)
+  $lines = foreach ($p in $EnvPairs) {
+    if ($p -match '^(MSSQL_PASSWORD|AWS_SECRET_ACCESS_KEY)=') {
+      ($p -replace '=.*$', '=***')
+    } else {
+      $p
+    }
+  }
+  return ($lines -join "`n") + "`n"
 }
 
 $indexJs = Join-Path $InstallRoot 'walrus\src\index.js'
@@ -117,6 +214,62 @@ if ($Unregister) {
   return
 }
 
+# --- resolve required register params (FR #4511) ---
+if (-not $SqsDbBackedUrl) {
+  throw 'SqsDbBackedUrl_required: pass -SqsDbBackedUrl <a-search-db-backed queue URL from stack output>'
+}
+if (-not $AClubsRoot) {
+  throw 'AClubsRoot_required: pass -AClubsRoot <mapped a-clubs root, e.g. D:\s3\a-clubs>'
+}
+if (-not $MssqlServer) {
+  throw 'MssqlServer_required: pass -MssqlServer <host\instance, e.g. walrus\ASEARCH>'
+}
+
+if (-not $MssqlDatabase) {
+  if ($ASearchEnv -eq 'sandbox') { $MssqlDatabase = 'a_search_sandbox' }
+  else { $MssqlDatabase = 'a_search' }
+}
+$dbNorm = $MssqlDatabase.Trim().ToLowerInvariant()
+if ($dbNorm -eq 'madeiradb') {
+  throw 'madeiradb_read_only: MSSQL_DATABASE must be a_search or a_search_sandbox for the walrus SQL drain'
+}
+if ($dbNorm -ne 'a_search' -and $dbNorm -ne 'a_search_sandbox') {
+  throw "MSSQL_DATABASE_invalid: expected a_search or a_search_sandbox, got $MssqlDatabase"
+}
+
+$useTrusted = [bool]$ServiceAccount
+$mssqlPassword = $null
+if ($useTrusted) {
+  if ($MssqlUser -or $MssqlPasswordFile) {
+    throw 'auth_conflict: use either -ServiceAccount (trusted) or -MssqlUser/-MssqlPasswordFile (SQL auth), not both'
+  }
+} else {
+  if (-not $MssqlUser) {
+    throw 'MssqlUser_required: pass -MssqlUser and -MssqlPasswordFile, or -ServiceAccount for trusted SQL'
+  }
+  if (-not $MssqlPasswordFile) {
+    throw 'MssqlPasswordFile_required: pass -MssqlPasswordFile (password never on the command line)'
+  }
+  $mssqlPassword = Read-SecretFile -Path $MssqlPasswordFile
+}
+
+$envPairs = Build-DrainEnvPairs `
+  -AwsProfile $AwsProfile `
+  -AwsRegion $AwsRegion `
+  -SqsDbBackedUrl $SqsDbBackedUrl `
+  -AClubsRoot $AClubsRoot `
+  -ASearchEnv $ASearchEnv `
+  -MssqlServer $MssqlServer `
+  -MssqlDatabase $MssqlDatabase `
+  -MssqlUser $MssqlUser `
+  -MssqlPassword $mssqlPassword `
+  -TrustedConnection $useTrusted
+
+if ($DryRun) {
+  Write-Host '[DryRun] AppEnvironmentExtra (secrets masked):'
+  Write-Host (Format-EnvPairsForDisplay -EnvPairs $envPairs)
+}
+
 if (-not $DryRun) {
   New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 }
@@ -134,7 +287,7 @@ $sets = @(
   @('AppParameters', $appParams),
   @('AppDirectory', $InstallRoot),
   @('DisplayName', 'a-search walrus SQL drain'),
-  @('Description', 'FR #4447: long-poll a-search-db-backed over outbound HTTPS; write a-clubs IN/'),
+  @('Description', 'FR #4447/#4511: long-poll a-search-db-backed over outbound HTTPS; write a-clubs IN/'),
   @('Start', 'SERVICE_AUTO_START'),
   @('AppStdout', $stdoutLog),
   @('AppStderr', $stderrLog),
@@ -149,21 +302,27 @@ foreach ($s in $sets) {
   if ($code -ne 0) { throw "nssm set $($s[0]) failed: $code" }
 }
 
-# AppEnvironmentExtra: AWS_PROFILE + optional A_CLUBS_ROOT / A_SEARCH_ENV / MSSQL_DATABASE
-$envLines = New-Object System.Collections.Generic.List[string]
-[void]$envLines.Add("AWS_PROFILE=$AwsProfile")
-if ($AClubsRoot) { [void]$envLines.Add("A_CLUBS_ROOT=$AClubsRoot") }
-if ($ASearchEnv) { [void]$envLines.Add("A_SEARCH_ENV=$ASearchEnv") }
-if ($MssqlDatabase) {
-  $db = $MssqlDatabase.Trim().ToLowerInvariant()
-  if ($db -eq 'madeiradb') {
-    throw 'madeiradb_read_only: MSSQL_DATABASE must be a_search or a_search_sandbox for the walrus SQL drain'
-  }
-  [void]$envLines.Add("MSSQL_DATABASE=$MssqlDatabase")
-}
-$envExtra = ($envLines -join "`n") + "`n"
-$code = Invoke-Nssm -Nssm $nssm -NssmArgs @('set', $ServiceName, 'AppEnvironmentExtra', $envExtra)
+$code = Invoke-Nssm -Nssm $nssm -NssmArgs (@('set', $ServiceName, 'AppEnvironmentExtra') + $envPairs)
 if ($code -ne 0) { throw "nssm set AppEnvironmentExtra failed: $code" }
+
+if ($useTrusted) {
+  $svcUser = $ServiceAccount
+  $svcPass = $null
+  if ($ServicePasswordFile) {
+    $svcPass = Read-SecretFile -Path $ServicePasswordFile
+  }
+  if ($DryRun) {
+    Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser ***"
+  } else {
+    if ($svcPass) {
+      $null = & $nssm set $ServiceName ObjectName $svcUser $svcPass 2>&1 | Out-Null
+    } else {
+      $null = & $nssm set $ServiceName ObjectName $svcUser 2>&1 | Out-Null
+    }
+    $code = [int]$LASTEXITCODE
+    if ($code -ne 0) { throw "nssm ObjectName failed: $code" }
+  }
+}
 
 if (-not $DryRun) {
   Start-Service -Name $ServiceName -ErrorAction SilentlyContinue

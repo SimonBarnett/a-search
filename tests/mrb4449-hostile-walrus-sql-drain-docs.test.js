@@ -21,9 +21,9 @@ describe('docs/mrb-4449 walrus SQL drain (FR #4448)', () => {
     assert.doesNotMatch(doc, /\| Redqueen SQL drain \|/);
   });
 
-  it('deploy.md points Walrus SQL drain IAM / TBD until #4447', () => {
+  it('deploy.md points Walrus SQL drain IAM and register script', () => {
     const doc = fs.readFileSync(path.join(ROOT, 'docs', 'deploy.md'), 'utf8');
     assert.match(doc, /Walrus SQL drain IAM/);
-    assert.match(doc, /#4447/);
+    assert.match(doc, /Register-WalrusSqlDrainService|walrus-sql-drain/);
   });
 });

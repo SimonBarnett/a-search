@@ -102,9 +102,9 @@ the drive mapped to the a-search S3 bucket. The message is deleted only after a
 successful write.
 
 **No AWS Lambda connects to MSSQL.** The a-search database lives on walrus and
-inbound SQL ports stay closed; Lambda only enqueues. Runnable drain / sql-worker
-gaps are tracked in #4447 (docs here match the design; that issue lands the
-service).
+inbound SQL ports stay closed; Lambda only enqueues. Install the on-box service
+with `walrus/install/Register-WalrusSqlDrainService.ps1` (full env: queue URL,
+region, MSSQL server/auth, a-clubs root — see [walrus-sql-drain.md](./walrus-sql-drain.md)).
 
 Affiliate and merchant catalogues, including Skimlinks, are downloaded into that
 database and searched by this drain, not by an AWS provider Lambda.
