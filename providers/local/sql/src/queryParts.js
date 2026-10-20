@@ -6,6 +6,8 @@
  * on walrus; madeiradb must remain read-only if ever pointed here.
  */
 
+const { applyTrustedMssqlOdbc } = require('../../../../shared/mssql/trustedOdbc');
+
 class SqlMssqlConfigError extends Error {
   /**
    * @param {string} [message]
@@ -82,9 +84,8 @@ function mssqlConfigFromEnv(envVars) {
   };
 
   if (useTrusted) {
-    // FR #4534: ODBC trusted connection via msnodesqlv8 (not tedious NTLM).
-    cfg.driver = 'msnodesqlv8';
-    cfg.options.trustedConnection = true;
+    // FR #4534 / #4548: msnodesqlv8 + ODBC Driver 17 (not Native Client 11.0 / NTLM).
+    applyTrustedMssqlOdbc(cfg, envVars);
   } else {
     if (!user) {
       throw new SqlMssqlConfigError(

@@ -17,6 +17,7 @@ const {
   DEFAULT_ALLOWLIST,
   connectAsearchMssql,
 } = require('../shared/mssql/connect');
+const { applyTrustedMssqlOdbc } = require('../shared/mssql/trustedOdbc');
 
 const ROOT = path.join(__dirname, '..');
 const MIGRATIONS_DIR = path.join(ROOT, 'db', 'migrations');
@@ -204,10 +205,8 @@ function migratorConfigFromEnv(env = process.env) {
     },
   };
   if (trusted) {
-    config.options = {
-      .../** @type {object} */ (config.options),
-      trustedConnection: true,
-    };
+    // FR #4548: msnodesqlv8 + ODBC Driver 17 (not Native Client 11.0).
+    applyTrustedMssqlOdbc(config, env);
   } else {
     const user = String(env.MSSQL_USER || '').trim();
     const password = String(env.MSSQL_PASSWORD || '');
