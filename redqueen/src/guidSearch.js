@@ -11,6 +11,10 @@ const {
   boundQueries,
   isFullTier,
 } = require('../../shared/widgets/agentWidgetContext');
+const {
+  keywordsOnly,
+  normalizeMarketCurrency,
+} = require('../../shared/search/cleanSearchQuery');
 function searchesObjectKey(hostkey, guid) {
   const host = String(hostkey).replace(/\/+$/, '');
   const id = String(guid).trim().toLowerCase();
@@ -110,31 +114,6 @@ function mergeExclude(existing, extra) {
   return out;
 }
 
-function escapeRegExp(text) {
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * FR #4318: q is product keywords. Market, currency and postcodes are not keywords.
- * @param {string} text
- * @param {string} market
- * @param {string} currency
- */
-function keywordsOnly(text, market, currency) {
-  let q = String(text || '');
-  for (const phrase of [market, currency]) {
-    const p = String(phrase || '').trim();
-    if (p.length < 2) continue;
-    const escaped = escapeRegExp(p);
-    const re = /\s|[()]/.test(p) || p.length > 3
-      ? new RegExp(escaped, 'ig')
-      : new RegExp(`(?:^|[^A-Za-z0-9])${escaped}(?:[^A-Za-z0-9]|$)`, 'ig');
-    q = q.replace(re, ' ');
-  }
-  q = q.replace(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi, ' ');
-  return q.replace(/\s+/g, ' ').trim();
-}
-
 /**
  * @param {{
  *   review?: object,
@@ -159,11 +138,17 @@ function buildSearchesDoc(input) {
     const seed = intent || (summary.split(/[.\n]/)[0] || '').trim();
     queries = boundQueries(asQueryRows(seed ? [seed] : []), cap);
   }
-  const market = steering.market ? String(steering.market).trim() : '';
-  const currency = steering.currency ? String(steering.currency).trim() : '';
+  // FR #4563: prefer steering; fall back to existing; normalize long UK strings → GB/GBP.
+  const { market, currency } = normalizeMarketCurrency({
+    market: steering.market || existing.market || '',
+    currency: steering.currency || existing.currency || '',
+  });
+  // Also strip location baked into q when market was only in the query text.
+  const stripMarket = market || String(steering.market || existing.market || '');
+  const stripCurrency = currency || String(steering.currency || existing.currency || '');
   queries = queries
     .map((q) => ({
-      q: keywordsOnly(q.q, market, currency),
+      q: keywordsOnly(q.q, stripMarket, stripCurrency),
       intent: q.intent || 'page',
       maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
     }))

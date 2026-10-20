@@ -1,6 +1,6 @@
 'use strict';
 
-/** FR-059f: amazon selftest probe — ok on fixture; false on missing creds */
+/** FR-059f: amazon selftest probe - ok on fixture; false on missing creds */
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
@@ -13,7 +13,9 @@ const {
   DEFAULT_FIXTURE,
 } = require('../providers/live/amazon/src/selftestProbe');
 
+// FR #4562: deploy default is Creators; pin paapi for legacy PA-API selftest.
 const credEnv = {
+  AMAZON_SEARCH_API: 'paapi',
   AMAZON_ACCESS_KEY: 'AKIATEST',
   AMAZON_SECRET_KEY: 'secret-test',
   AMAZON_PARTNER_TAG: 'tag-20',
@@ -42,7 +44,7 @@ describe('FR-059f amazon selftest probe', () => {
   it('ok false on missing credentials (no HTTP)', async () => {
     const httpCalls = [];
     const result = await probeAmazonSelftest({
-      env: { A_SEARCH_ENV: 'sandbox' },
+      env: { A_SEARCH_ENV: 'sandbox', AMAZON_SEARCH_API: 'paapi' },
       httpRequest: async () => {
         httpCalls.push(1);
         throw new Error('should not call');

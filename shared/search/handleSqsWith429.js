@@ -32,6 +32,19 @@ function isMissingProviderCreds(err) {
 }
 
 /**
+ * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query fault.
+ * Skip intake fatal (same class as missing creds); do not DLQ-loop.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isVendorClientSkip(err) {
+  if (isMissingProviderCreds(err)) return true;
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  if (code === 'rakuten_invalid_context') return true;
+  return /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || err || ''));
+}
+
+/**
  * @param {{
  *   event: { Records?: Array<{ body?: string, receiptHandle?: string }> },
  *   run: (msg: object, deps?: object) => Promise<unknown>,
@@ -94,11 +107,13 @@ async function handleSqsWith429(opts) {
       const transient = backoffFor429({ err }).is429;
       // FR #4438: missing provider creds must not file an intake fatal or
       // fail the SQS batch (that retries and files the same issue again).
-      if (isMissingProviderCreds(err)) {
+      if (isVendorClientSkip(err)) {
         results.push({
           ok: false,
-          skipped: 'missing_credentials',
-          code: err.code,
+          skipped: isMissingProviderCreds(err)
+            ? 'missing_credentials'
+            : 'vendor_client_error',
+          code: err && err.code,
           source: opts.source || '',
         });
         continue;
@@ -141,4 +156,5 @@ module.exports = {
   handleSqsWith429,
   isEnvIsolation,
   isMissingProviderCreds,
+  isVendorClientSkip,
 };
