@@ -569,3 +569,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - walrus SQL drain register: AppEnvironmentExtra must pass every env the drain reads (SQS_DB_BACKED_URL, AWS_REGION, MSSQL_SERVER, SQL auth via password-file or trusted ServiceAccount) as separate nssm KEY=VALUE args; drain assertDrainEnv lists missing keys and exits before ReceiveMessage
 - SQL Server: never EXEC(N'...' + QUOTENAME(@x) + N'...'); build nvarchar(max) @sql then EXEC sys.sp_executesql @sql. madeiradb.dbo.Users column is email_address (alias AS email on mdb.Users).
 - walrus daily import: cli must use createSqlStore (ingest staging + MERGE dbo.Parts + delete-missing) unless IMPORT_MEMORY=1; Register-DailyImportTask passes MSSQL env like the drain register; never madeiradb
+- FR #4519: dynamic CREATE VIEW must use @sql + sp_executesql (EXEC+QUOTENAME invalid); mdb.Users maps email_address AS email; MRB re-runs fr4519+fr251 pins then --auto --merge
