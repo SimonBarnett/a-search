@@ -600,3 +600,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR: when entry syncs searches.json searchid after fan-out (#4563), IAM AgentSearchFanoutMarker must PutObject a-clubs/*/*/searches.json not only search-fanout.json
 - MRB FAIL on ASCII tip: one fix PR from FR tip with ASCII normalize + hostile pin; Refs not second Closes; DONE FAIL; re-queue re-board and DONE FAIL again.
 - After FR #4650 envVars gate, any handleAgentSearch test that expects fan-out must set SQS_<SOURCE>_LIVE_URL (fr4030/#4708 and fr4265).
+- Amazon Creators deploy: mint LwA client_credentials from existing /madeira/amazon access-key+secret-key (amzn1.application-oa2-client / oa2-cs), POST creatorsapi.amazon/catalog/v1/searchItems with x-marketplace; do not require a static AMAZON_CREATORS_CREDENTIAL bearer.
