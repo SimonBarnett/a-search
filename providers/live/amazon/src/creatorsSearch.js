@@ -49,7 +49,7 @@ class AmazonCreatorsHttpError extends Error {
 
 /**
  * Feature flag (FR-181 / FR-182 / FR #4562).
- * Default **on** (Creators) when AMAZON_SEARCH_API is unset — PA-API 5 returns
+ * Default **on** (Creators) when AMAZON_SEARCH_API is unset - PA-API 5 returns
  * HTML 503s in production. Explicit `paapi` or AMAZON_CREATORS_ENABLED=false
  * keeps the old path.
  *
@@ -399,6 +399,30 @@ function normalizeCreatorsItem(item, track) {
   return product;
 }
 
+/**
+ * FR #4739: permanent Creators account faults (do not DLQ / intake-fatal).
+ * @param {number} status
+ * @param {object|null|undefined} json
+ * @param {string} [text]
+ * @returns {string|null} fault code or null
+ */
+function classifyCreatorsHttpFault(status, json, text) {
+  const body = json && typeof json === 'object' ? json : {};
+  const reason = String(body.reason || '').trim();
+  const type = String(body.type || body.__type || '').trim();
+  const msg = String(body.message || text || '');
+  if (
+    /AssociateNotEligible/i.test(reason) ||
+    /AssociateNotEligible/i.test(msg) ||
+    (/AccessDenied/i.test(type) && /eligib/i.test(msg))
+  ) {
+    return 'creators_not_eligible';
+  }
+  // Only tag when the body names eligibility; bare 403 stays hard fail.
+  void status;
+  return null;
+}
+
 async function defaultCreatorsHttpRequest(req) {
   const res = await fetch(req.url, {
     method: req.method,
@@ -424,6 +448,11 @@ async function defaultCreatorsHttpRequest(req) {
     );
     err.status = res.status;
     err.body = json;
+    const fault = classifyCreatorsHttpFault(res.status, json, text);
+    if (fault) {
+      err.code = fault;
+      err.nonRetryable = true;
+    }
     throw err;
   }
   return json;
@@ -476,6 +505,7 @@ module.exports = {
   resolveCreatorsTokenUrl,
   resolveCreatorsMarketplace,
   clearCreatorsTokenCache,
+  classifyCreatorsHttpFault,
   DEFAULT_CREATORS_ENDPOINT,
   DEFAULT_TOKEN_URL_EU,
 };

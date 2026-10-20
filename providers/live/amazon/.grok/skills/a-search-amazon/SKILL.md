@@ -55,7 +55,9 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
    (`AMAZON_SEARCH_API=paapi`): same access/secret/partnerTag keys
 3. Search HTTP (`src/search.js` or `src/creatorsSearch.js`); injectable `httpRequest`
    - FR-182/183 / #4562: Creators default on; explicit `paapi` keeps PA-API
-   - Non-JSON (`paapi_non_json` / `creators_non_json`): status IN, no DLQ burn
+   - Permanent vendor faults (`paapi_non_json` / `creators_non_json` /
+     `creators_not_eligible` AssociateNotEligible): status IN, no DLQ / intake
+     burn (FR #4562 / #4739)
 4. Normalize items (`src/normalize.js`) - `products[]`
 5. `writeLiveProviderInResult` - a-clubs `IN/{searchid}-amazon.json`
 

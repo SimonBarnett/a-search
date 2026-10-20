@@ -6,6 +6,7 @@
  * Explicit AMAZON_SEARCH_API=paapi keeps PA-API SearchItems.
  * Fail-closed if Creators creds missing while Creators path is selected.
  * FR #4562: paapi_non_json / creators_non_json -> status IN, no DLQ burn.
+ * FR #4739: creators_not_eligible (AssociateNotEligible) -> same.
  */
 
 const path = require('node:path');
@@ -17,7 +18,9 @@ const {
 const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
 const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
 const { attachDefaultS3 } = require('../../../../shared/search/liveWorkerS3');
-const { isAmazonNonJsonFault } = require('../../../../shared/search/backoff429');
+const {
+  isAmazonPermanentVendorFault,
+} = require('../../../../shared/search/backoff429');
 const {
   searchAmazon,
   assertAmazonCreds,
@@ -89,11 +92,12 @@ async function run(msg, deps) {
       httpRequest: deps && deps.httpRequest,
     });
   } catch (err) {
-    // FR #4562: non-JSON HTML from Amazon is permanent for this attempt class.
-    // Write status IN (empty products) and complete; do not burn 3x into DLQ.
-    if (isAmazonNonJsonFault(err)) {
+    // FR #4562 / #4739: permanent Amazon vendor faults (non-JSON HTML or
+    // Creators AssociateNotEligible). Write status IN; do not burn DLQ.
+    if (isAmazonPermanentVendorFault(err)) {
+      const code = err && typeof err.code === 'string' ? err.code : '';
       const status = {
-        code: err.code,
+        code,
         httpStatus: err.status,
         message: err && err.message ? String(err.message) : String(err),
         bodyPreview:
@@ -108,7 +112,10 @@ async function run(msg, deps) {
       });
       return {
         ok: true,
-        skipped: 'vendor_non_json',
+        skipped:
+          code === 'creators_not_eligible'
+            ? 'creators_not_eligible'
+            : 'vendor_non_json',
         source: 'amazon',
         searchId: msg.searchId,
         env: msg.env,
