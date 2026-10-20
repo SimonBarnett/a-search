@@ -43,13 +43,25 @@ function isAmazonNonJsonFault(err) {
 }
 
 /**
+ * FR #4562 / #4739: permanent Amazon vendor faults (non-JSON HTML or Creators
+ * AssociateNotEligible). Worker writes status IN; SQS completes; no intake spam.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isAmazonPermanentVendorFault(err) {
+  if (isAmazonNonJsonFault(err)) return true;
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  return code === 'creators_not_eligible';
+}
+
+/**
  * FR #4427: vendor HTML/gateway faults (502/503/504) are retryable like 429.
- * FR #4562: Amazon non-JSON (`paapi_non_json` / `creators_non_json`) is not.
+ * FR #4562 / #4739: Amazon permanent faults are not.
  * @param {unknown} err
  * @returns {boolean}
  */
 function isTransientVendorHttp(err) {
-  if (isAmazonNonJsonFault(err)) return false;
+  if (isAmazonPermanentVendorFault(err)) return false;
   if (isHttp429(err)) return true;
   const status = httpStatusOf(err);
   return status === 502 || status === 503 || status === 504;
@@ -107,6 +119,7 @@ module.exports = {
   httpStatusOf,
   isHttp429,
   isAmazonNonJsonFault,
+  isAmazonPermanentVendorFault,
   isTransientVendorHttp,
   parseRetryAfterSeconds,
   backoffFor429,
