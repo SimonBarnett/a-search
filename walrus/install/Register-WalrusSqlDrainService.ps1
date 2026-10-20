@@ -54,13 +54,14 @@
 
 .PARAMETER ServiceAccount
   Windows account for nssm ObjectName (trusted SQL connection). Sets
-  MSSQL_TRUSTED_CONNECTION=true. -ServicePasswordFile is optional: omit it and
-  set the password via nssm interactively (FR #4534). Never write the service
-  password into AppEnvironmentExtra or the registry from this script.
+  MSSQL_TRUSTED_CONNECTION=true. -ServicePasswordFile is optional (FR #4534 /
+  #4570): omit it and the script skips ObjectName (nssm needs username+password
+  together) then prints the exact interactive `nssm set ... ObjectName` step.
+  Never write the service password into AppEnvironmentExtra or the registry.
 
 .PARAMETER ServicePasswordFile
-  Optional password file for -ServiceAccount ObjectName (never echoed). Prefer
-  interactive nssm ObjectName when the operator sets the password by hand.
+  Optional password file for -ServiceAccount ObjectName (never echoed). When
+  omitted, ObjectName is skipped and the operator runs nssm interactively.
 
 .PARAMETER MssqlOdbcDriver
   ODBC driver name for trusted msnodesqlv8 (FR #4548). Sets MSSQL_ODBC_DRIVER.
@@ -347,27 +348,28 @@ $code = Invoke-Nssm -Nssm $nssm -NssmArgs (@('set', $ServiceName, 'AppEnvironmen
 if ($code -ne 0) { throw "nssm set AppEnvironmentExtra failed: $code" }
 
 if ($useTrusted) {
-  # FR #4534: ObjectName without password is OK; operator may set password via nssm.
-  # Never put the service account password into AppEnvironmentExtra.
+  # FR #4534 / #4570: never put the service account password into AppEnvironmentExtra.
+  # nssm ObjectName requires username AND password. When -ServicePasswordFile is
+  # omitted, skip ObjectName (do not call nssm with username alone --- it errors)
+  # and print the exact interactive step for the operator.
   $svcUser = $ServiceAccount
   $svcPass = $null
   if ($ServicePasswordFile) {
     $svcPass = Read-SecretFile -Path $ServicePasswordFile
   }
-  if ($DryRun) {
-    if ($svcPass) {
+  if ($svcPass) {
+    if ($DryRun) {
       Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser ***"
     } else {
-      Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser (password via nssm interactive / omitted)"
+      $null = & $nssm set $ServiceName ObjectName $svcUser $svcPass 2>&1 | Out-Null
+      $code = [int]$LASTEXITCODE
+      if ($code -ne 0) { throw "nssm ObjectName failed: $code" }
     }
   } else {
-    if ($svcPass) {
-      $null = & $nssm set $ServiceName ObjectName $svcUser $svcPass 2>&1 | Out-Null
-    } else {
-      $null = & $nssm set $ServiceName ObjectName $svcUser 2>&1 | Out-Null
-    }
-    $code = [int]$LASTEXITCODE
-    if ($code -ne 0) { throw "nssm ObjectName failed: $code" }
+    # FR #4570: skip ObjectName when no password file; never prompt/echo/store.
+    Write-Host "ObjectName skipped (no -ServicePasswordFile). Run interactively next:"
+    Write-Host "  nssm set $ServiceName ObjectName $svcUser"
+    Write-Host "  (nssm prompts for the account password; do not pass it on the command line)"
   }
 }
 

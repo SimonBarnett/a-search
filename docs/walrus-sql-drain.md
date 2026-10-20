@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -18,9 +18,11 @@ No AWS Lambda connects to MSSQL. No inbound ports on walrus.
   -MssqlUser 'a_search_drain' `
   -MssqlPasswordFile 'C:\ai\a-search\walrus\config\mssql.password'
 
-# Trusted connection under a Windows service account (FR #4534 / #4548).
+# Trusted connection under a Windows service account (FR #4534 / #4548 / #4570).
 # On a domain controller use WONDERLAND\a-search-drain (local .\account is not possible).
-# Omit -ServicePasswordFile and set the ObjectName password via nssm interactively.
+# Omit -ServicePasswordFile: the register script skips ObjectName and prints the
+# interactive step (nssm needs username+password together; never prompts/stores).
+#   nssm set a-search-walrus-sql-drain ObjectName WONDERLAND\a-search-drain
 # Trusted SQL uses msnodesqlv8 + ODBC Driver 17 (not Native Client 11.0 / tedious NTLM).
 # Optional: -MssqlOdbcDriver 'ODBC Driver 18 for SQL Server' (default is Driver 17).
 .\walrus\install\Register-WalrusSqlDrainService.ps1 `
@@ -71,3 +73,25 @@ the Node process mid-message (nssm would otherwise restart and redrive until DLQ
 ## Logs
 
 `InstallRoot\walrus\logs\walrus-sql-drain.{out,err}.log`
+
+Startup prints one JSON line (queue, aClubsRoot, database). FR #4570: each
+processed message adds one INFO JSON line with `searchid`, `host`, `guid`,
+`productCount`, `durationMs`, and `outcome` (`written` | `released` | `error`).
+No secrets and no query PII beyond host and guid.
+
+## Listing IN files on the rclone mount (FR #4570)
+
+On `D:\s3\a-clubs`, wildcard paths like `D:\s3\a-clubs\*\*\IN` return nothing.
+Use a recursive listing or the S3 API:
+
+```powershell
+Get-ChildItem -LiteralPath 'D:\s3\a-clubs' -Recurse -Filter '*-sql.json'
+```
+
+## Per-message outcomes
+
+| outcome | Meaning |
+|---------|---------|
+| `written` | Job ok; message deleted from SQS |
+| `released` | Job returned not-ok; visibility set to 0 for retry |
+| `error` | Thrown / bad JSON; visibility released; process keeps running |
