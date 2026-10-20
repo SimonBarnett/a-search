@@ -23,7 +23,7 @@ Registry id `cj` (`kind: live`, default-on).
 
 `src/worker.js` exports `run(msg, deps?)`:
 
-1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
+1. `assertWorkerEnv` --- `message.env` must equal `A_SEARCH_ENV`
 2. Require `CJ_API_TOKEN` + `CJ_WEBSITE_ID` (linkCode pid; optional `CJ_COMPANY_ID`)
 3. GraphQL POST to `CJ_GRAPHQL_URL` (`src/search.js`); injectable `httpRequest`
 4. Normalize `data.products.resultList` → `products[]`
@@ -35,7 +35,9 @@ Fixture: `fixtures/products-ok.json` (`tests/cj-search.test.js`).
 
 Product search uses CJ's GraphQL API at **`ads.api.cj.com`** (HTTPS default
 `https://ads.api.cj.com/query`). Authenticate with `Authorization: Bearer`
-using `CJ_API_TOKEN`. Send GraphQL queries only — do not scrape the publisher UI.
+using `CJ_API_TOKEN`. Send GraphQL queries only --- do not scrape the publisher UI.
+
+`products.keywords` is `[String!]!` (FR #4740). Cap at **10** whitespace-separated tokens (FR #4748); CJ returns HTTP 400 "Too many keywords" otherwise.
 
 ## Env
 
