@@ -586,3 +586,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
 - fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
+- fill-madeira: only require /madeira SSM for registry-enabled providers; missing bundled .env soft-deploys (keep Lambda/queue/DLQ, omit .env, run-time fail-closed); document Kelkoo operator .env (no /madeira/kelkoo)
