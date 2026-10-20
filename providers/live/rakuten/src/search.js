@@ -6,6 +6,10 @@
  */
 
 const { normalizeSearchItems } = require('./normalize');
+const {
+  keywordsFromAgentMsg,
+  collectExcludeTerms,
+} = require('../../../../shared/search/keywordsFromAgentMsg');
 
 class RakutenCredsError extends Error {
   constructor(message) {
@@ -13,6 +17,20 @@ class RakutenCredsError extends Error {
     this.name = 'RakutenCredsError';
     this.code = 'rakuten_missing_credentials';
   }
+}
+
+/**
+ * FR #4544: Linksynergy Product Search rejects Lucene-style excludes in
+ * `keyword` with INVALID_CONTEXT_VALUE. Also flags that ErrorID in responses.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isRakutenInvalidContext(err) {
+  if (!err || typeof err !== 'object') return false;
+  if (/** @type {{ code?: string }} */ (err).code === 'rakuten_invalid_context') {
+    return true;
+  }
+  return /INVALID_CONTEXT_VALUE/i.test(String(err.message || err));
 }
 
 /**
@@ -76,14 +94,36 @@ function resetRakutenTokenCache() {
   };
 }
 
-function productSearchUrl(endpoint, keyword) {
+/**
+ * Build Product Search URL.
+ * @param {string} endpoint
+ * @param {string|{ keyword?: string, none?: string, language?: string, max?: number }} keywordOrOpts
+ *   string = keyword only (legacy). Object form: FR #4544 uses `none` for excludes
+ *   (never Lucene `-term` inside keyword) and `language` (default en_US).
+ */
+function productSearchUrl(endpoint, keywordOrOpts) {
   const raw = String(endpoint || DEFAULT_PRODUCT_SEARCH_URL).trim();
   const withPath = /productsearch\/1\.0/i.test(raw)
     ? raw
     : `${raw.replace(/\/$/, '')}/productsearch/1.0`;
   const u = new URL(withPath);
+  let keyword = '';
+  let none = '';
+  let language = 'en_US';
+  let max = 10;
+  if (keywordOrOpts && typeof keywordOrOpts === 'object') {
+    keyword = String(keywordOrOpts.keyword || '').trim();
+    none = String(keywordOrOpts.none || '').trim();
+    language = String(keywordOrOpts.language || 'en_US').trim() || 'en_US';
+    const m = Number(keywordOrOpts.max);
+    if (Number.isFinite(m) && m > 0) max = Math.floor(m);
+  } else {
+    keyword = String(keywordOrOpts || '').trim();
+  }
   u.searchParams.set('keyword', keyword);
-  u.searchParams.set('max', '10');
+  u.searchParams.set('max', String(max));
+  if (none) u.searchParams.set('none', none);
+  if (language) u.searchParams.set('language', language);
   return u.toString();
 }
 
@@ -151,12 +191,9 @@ async function fetchRakutenAccessToken(creds, httpRequest, now, useCache) {
   return accessToken;
 }
 
-const {
-  keywordsFromAgentMsg,
-} = require('../../../../shared/search/keywordsFromAgentMsg');
-
 function keywordsFromMsg(msg) {
-  // FR #4450 / #4446: agent fan-out uses queries/exclude (legacy q/searchterms kept).
+  // FR #4450 / #4446: shared export keeps minus-style for agent contract tests.
+  // searchRakuten itself uses excludeStyle none + `none` query param (FR #4544).
   return keywordsFromAgentMsg(msg);
 }
 
@@ -277,6 +314,10 @@ async function defaultHttpRequest(req) {
               `Rakuten HTTP ${res.statusCode}: ${text.slice(0, 300)}`,
             );
             err.statusCode = res.statusCode;
+            // FR #4544: vendor client error — do not treat as code fatal.
+            if (/INVALID_CONTEXT_VALUE/i.test(text)) {
+              err.code = 'rakuten_invalid_context';
+            }
             reject(err);
             return;
           }
@@ -299,7 +340,9 @@ async function defaultHttpRequest(req) {
  * @returns {Promise<object[]>}
  */
 async function searchRakuten(msg, deps) {
-  if (!keywordsFromMsg(msg)) return [];
+  // FR #4544: Product Search `none` param for excludes — never `-term` in keyword.
+  const keyword = keywordsFromAgentMsg(msg, { excludeStyle: 'none' });
+  if (!keyword) return [];
   const envVars = (deps && deps.env) || process.env;
   const creds = assertRakutenCreds(envVars);
   const httpRequest =
@@ -307,7 +350,9 @@ async function searchRakuten(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
 
-  const keyword = keywordsFromMsg(msg);
+  const none = collectExcludeTerms(msg).join(' ');
+  const language =
+    String(envVars.RAKUTEN_LANGUAGE || 'en_US').trim() || 'en_US';
   const useCache = httpRequest === defaultHttpRequest;
   const accessToken = await fetchRakutenAccessToken(
     creds,
@@ -315,15 +360,27 @@ async function searchRakuten(msg, deps) {
     Date.now(),
     useCache,
   );
-  const url = productSearchUrl(creds.endpoint, keyword);
-  const res = await httpRequest({
-    method: 'GET',
-    url,
-    headers: {
-      Accept: 'application/xml, text/xml, */*',
-      Authorization: `Bearer ${accessToken}`,
-    },
+  const url = productSearchUrl(creds.endpoint, {
+    keyword,
+    none,
+    language,
+    max: 10,
   });
+  let res;
+  try {
+    res = await httpRequest({
+      method: 'GET',
+      url,
+      headers: {
+        Accept: 'application/xml, text/xml, */*',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  } catch (err) {
+    // FR #4544: empty result, complete the SQS message — do not intake-fatal.
+    if (isRakutenInvalidContext(err)) return [];
+    throw err;
+  }
 
   const xml =
     typeof res === 'string'
@@ -331,6 +388,7 @@ async function searchRakuten(msg, deps) {
       : res && typeof res.body === 'string'
         ? res.body
         : '';
+  if (/INVALID_CONTEXT_VALUE/i.test(xml)) return [];
   const rawItems = parseProductSearchXml(xml);
   return normalizeSearchItems(rawItems, {
     userId: msg && msg.userId,
@@ -349,6 +407,7 @@ module.exports = {
   RakutenCredsError,
   parseProductSearchXml,
   keywordsFromMsg,
+  isRakutenInvalidContext,
   DEFAULT_TOKEN_URL,
   DEFAULT_PRODUCT_SEARCH_URL,
 };
