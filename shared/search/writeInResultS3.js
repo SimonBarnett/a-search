@@ -16,6 +16,7 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   queries?: unknown[],
  *   exclude?: unknown[],
  *   status?: object,
+ *   error?: string,
  *   putObject: Function,
  *   touchLastmod?: Function,
  *   headObject?: Function,
@@ -40,6 +41,7 @@ async function writeInResultToS3(opts) {
     queries: opts.queries,
     exclude: opts.exclude,
     status: opts.status,
+    error: opts.error,
   });
   const Key = inResultKey({
     hostkey: body.hostkey,

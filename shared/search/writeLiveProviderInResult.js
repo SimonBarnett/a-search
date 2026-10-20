@@ -42,6 +42,7 @@ function resolveInPathFromMsg(msg) {
  *   queries?: unknown[],
  *   exclude?: unknown[],
  *   status?: object,
+ *   error?: string,
  *   envVars?: Record<string, string|undefined>,
  *   putObject?: Function,
  *   touchLastmod?: Function,
@@ -118,6 +119,8 @@ async function writeLiveProviderInResult(opts) {
     exclude: opts.exclude != null ? opts.exclude : msg.exclude,
     // FR #4562: optional vendor status (e.g. paapi_non_json) on IN body.
     status: opts.status,
+    // FR #4561: error string for missing_credentials / non-retryable skips.
+    error: opts.error,
     putObject,
     touchLastmod: touch,
     headObject,

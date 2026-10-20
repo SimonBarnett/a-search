@@ -75,6 +75,10 @@ function validateInResult(raw) {
   if (o.status && typeof o.status === 'object' && !Array.isArray(o.status)) {
     value.status = o.status;
   }
+  // FR #4561: error for non-retryable provider skips (e.g. missing_credentials).
+  if (o.error != null && String(o.error).trim() !== '') {
+    value.error = String(o.error).trim();
+  }
   return { ok: true, value };
 }
 
@@ -89,6 +93,7 @@ function validateInResult(raw) {
  *   queries?: unknown[],
  *   exclude?: unknown[],
  *   status?: object,
+ *   error?: string,
  * }} opts
  */
 function buildInResult(opts) {
@@ -101,6 +106,7 @@ function buildInResult(opts) {
     queries: opts.queries,
     exclude: opts.exclude,
     status: opts.status,
+    error: opts.error,
   });
   if (!v.ok) {
     const err = new Error(v.error);
