@@ -54,11 +54,19 @@
 
 .PARAMETER ServiceAccount
   Windows account for nssm ObjectName (trusted SQL connection). Sets
-  MSSQL_TRUSTED_CONNECTION=true. Pair with -ServicePasswordFile when the account
-  needs a password.
+  MSSQL_TRUSTED_CONNECTION=true. -ServicePasswordFile is optional: omit it and
+  set the password via nssm interactively (FR #4534). Never write the service
+  password into AppEnvironmentExtra or the registry from this script.
 
 .PARAMETER ServicePasswordFile
-  Password file for -ServiceAccount ObjectName (never echoed).
+  Optional password file for -ServiceAccount ObjectName (never echoed). Prefer
+  interactive nssm ObjectName when the operator sets the password by hand.
+
+.PARAMETER AwsSharedCredentialsFile
+  Optional path for AWS_SHARED_CREDENTIALS_FILE (e.g. C:\ai\a-search\walrus\aws\credentials).
+
+.PARAMETER AwsConfigFile
+  Optional path for AWS_CONFIG_FILE (e.g. C:\ai\a-search\walrus\aws\config).
 
 .PARAMETER NssmExe
   Path to nssm.exe (default: C:\ai\bob\third_party\nssm\win64\nssm.exe or PATH).
@@ -87,6 +95,8 @@ param(
   [string]$MssqlPasswordFile,
   [string]$ServiceAccount,
   [string]$ServicePasswordFile,
+  [string]$AwsSharedCredentialsFile,
+  [string]$AwsConfigFile,
   [string]$NssmExe,
   [Alias('DryRun')][switch]$WhatIf,
   [switch]$Unregister
@@ -160,11 +170,19 @@ function Build-DrainEnvPairs {
     [string]$MssqlDatabase,
     [string]$MssqlUser,
     [string]$MssqlPassword,
-    [bool]$TrustedConnection
+    [bool]$TrustedConnection,
+    [string]$AwsSharedCredentialsFile,
+    [string]$AwsConfigFile
   )
   $envPairs = New-Object System.Collections.Generic.List[string]
   [void]$envPairs.Add("AWS_PROFILE=$AwsProfile")
   [void]$envPairs.Add("AWS_REGION=$AwsRegion")
+  if ($AwsSharedCredentialsFile) {
+    [void]$envPairs.Add("AWS_SHARED_CREDENTIALS_FILE=$AwsSharedCredentialsFile")
+  }
+  if ($AwsConfigFile) {
+    [void]$envPairs.Add("AWS_CONFIG_FILE=$AwsConfigFile")
+  }
   [void]$envPairs.Add("SQS_DB_BACKED_URL=$SqsDbBackedUrl")
   [void]$envPairs.Add("A_CLUBS_ROOT=$AClubsRoot")
   if ($ASearchEnv) { [void]$envPairs.Add("A_SEARCH_ENV=$ASearchEnv") }
@@ -253,6 +271,13 @@ if ($useTrusted) {
   $mssqlPassword = Read-SecretFile -Path $MssqlPasswordFile
 }
 
+if ($AwsSharedCredentialsFile -and -not (Test-Path -LiteralPath $AwsSharedCredentialsFile) -and -not $DryRun) {
+  throw "AwsSharedCredentialsFile_missing: $AwsSharedCredentialsFile"
+}
+if ($AwsConfigFile -and -not (Test-Path -LiteralPath $AwsConfigFile) -and -not $DryRun) {
+  throw "AwsConfigFile_missing: $AwsConfigFile"
+}
+
 $envPairs = Build-DrainEnvPairs `
   -AwsProfile $AwsProfile `
   -AwsRegion $AwsRegion `
@@ -263,7 +288,9 @@ $envPairs = Build-DrainEnvPairs `
   -MssqlDatabase $MssqlDatabase `
   -MssqlUser $MssqlUser `
   -MssqlPassword $mssqlPassword `
-  -TrustedConnection $useTrusted
+  -TrustedConnection $useTrusted `
+  -AwsSharedCredentialsFile $AwsSharedCredentialsFile `
+  -AwsConfigFile $AwsConfigFile
 
 if ($DryRun) {
   Write-Host '[DryRun] AppEnvironmentExtra (secrets masked):'
@@ -306,13 +333,19 @@ $code = Invoke-Nssm -Nssm $nssm -NssmArgs (@('set', $ServiceName, 'AppEnvironmen
 if ($code -ne 0) { throw "nssm set AppEnvironmentExtra failed: $code" }
 
 if ($useTrusted) {
+  # FR #4534: ObjectName without password is OK; operator may set password via nssm.
+  # Never put the service account password into AppEnvironmentExtra.
   $svcUser = $ServiceAccount
   $svcPass = $null
   if ($ServicePasswordFile) {
     $svcPass = Read-SecretFile -Path $ServicePasswordFile
   }
   if ($DryRun) {
-    Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser ***"
+    if ($svcPass) {
+      Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser ***"
+    } else {
+      Write-Host "[DryRun] nssm set $ServiceName ObjectName $svcUser (password via nssm interactive / omitted)"
+    }
   } else {
     if ($svcPass) {
       $null = & $nssm set $ServiceName ObjectName $svcUser $svcPass 2>&1 | Out-Null
