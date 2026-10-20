@@ -593,3 +593,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX #main: when assigned commit CI red is already fixed on newer main by a merged PR, DONE FIX with that PR URL; do not open a second heal PR
 - After folding main into a docs/mrb pin PR, re-run sibling harvest pins: #4670 fuller fill-madeira tip broke mrb4661 colon-form needle; pin must-skip + registry-enabled SSM + soft-deploys together
 - a-search FIX CONFLICTING on handleSqs/IN writers after FR #4561 lands: keep-both isAmazonNonJsonFault + writeLiveProviderInResult, and both status and error on IN schema/write path; also align mrb4661 pin to fuller fill-madeira tip
+- a-search FR: Rakuten daily signup like Awin needs one provider-aware agent entry (cwd a-affiliates/{provider}), not a Rakuten fork of run.js; applications-only records under _applications (no SQL feeds)
+- Reopened FR after soft-deploy: missing credentials must omit fan-out and keep resources, never soft-deploy-on; fill never throws on absent SSM.
+- a-search MRB FR #4650: after handleAgentSearch passes env as envVars, fr4030 fan-out fixtures must set SQS_*_URL or ebay is skipped; land one fix PR into the tip then PASS
+- a-search CJ: GraphQL linkCode(pid: ID!) must use CJ_WEBSITE_ID; assertCjCreds fails closed without it; never omit pid on linkCode
+- a-search FR: when entry syncs searches.json searchid after fan-out (#4563), IAM AgentSearchFanoutMarker must PutObject a-clubs/*/*/searches.json not only search-fanout.json
+- MRB FAIL on ASCII tip: one fix PR from FR tip with ASCII normalize + hostile pin; Refs not second Closes; DONE FAIL; re-queue re-board and DONE FAIL again.
+- After FR #4650 envVars gate, any handleAgentSearch test that expects fan-out must set SQS_<SOURCE>_LIVE_URL (fr4030/#4708 and fr4265).
+- Amazon Creators deploy: mint LwA client_credentials from existing /madeira/amazon access-key+secret-key (amzn1.application-oa2-client / oa2-cs), POST creatorsapi.amazon/catalog/v1/searchItems with x-marketplace; do not require a static AMAZON_CREATORS_CREDENTIAL bearer.
