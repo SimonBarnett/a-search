@@ -57,8 +57,29 @@ async function writeInResultToS3(opts) {
       bucket: opts.bucket,
       now: opts.now,
     };
-    await opts.touchLastmod({ Key: `${body.hostkey}/${body.guid}/`, ...s3 });
-    await opts.touchLastmod({ Key: `${body.hostkey}/`, ...s3 });
+    // FR #4559: IN/ JSON is the search result. Marker lastmod rewrite is best-effort —
+    // a 403/AccessDenied on CopyObject must not throw (else successful searches hit DLQ).
+    const logWarn =
+      typeof opts.log === 'function'
+        ? opts.log
+        : (msg) => {
+            try {
+              console.warn(msg);
+            } catch {
+              // ignore
+            }
+          };
+    for (const markerKey of [
+      `${body.hostkey}/${body.guid}/`,
+      `${body.hostkey}/`,
+    ]) {
+      try {
+        await opts.touchLastmod({ Key: markerKey, ...s3 });
+      } catch (err) {
+        const detail = err && err.message ? String(err.message) : String(err);
+        logWarn(`touchLastmod_best_effort_failed key=${markerKey} ${detail}`);
+      }
+    }
   }
 
   return { Key, body };
