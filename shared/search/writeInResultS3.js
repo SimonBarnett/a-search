@@ -57,7 +57,7 @@ async function writeInResultToS3(opts) {
       bucket: opts.bucket,
       now: opts.now,
     };
-    // FR #4559: IN/ JSON is the search result. Marker lastmod rewrite is best-effort —
+    // FR #4559: IN/ JSON is the search result. Marker lastmod rewrite is best-effort ---
     // a 403/AccessDenied on CopyObject must not throw (else successful searches hit DLQ).
     const logWarn =
       typeof opts.log === 'function'
