@@ -37,7 +37,7 @@ Never put them in `entry/.env` or commit real values.
 | `CJ_API_TOKEN` | CJ Affiliate / Developers — personal access token for GraphQL (required) |
 | `CJ_GRAPHQL_URL` | Default `https://ads.api.cj.com/query` unless CJ documents another host |
 | `CJ_COMPANY_ID` | Optional company/property id for `products(companyId: …)` scoping |
-| `CJ_WEBSITE_ID` | Tracked-link website/sid for `buildTrackedUrl` (FR-057); never commit a real id |
+| `CJ_WEBSITE_ID` | Publisher website/property PID for GraphQL `linkCode(pid:)` (FR #4713) and `buildTrackedUrl` (FR-057); never commit a real id |
 | `A_SEARCH_ENV` | `sandbox` while onboarding; `live` only after smoke OK |
 | `SQS_CJ_URL` | From stack/env for this `A_SEARCH_ENV` (see `docs/environments.md`) |
 | `S3_RESULTS_BUCKET` | Results bucket for this env |
@@ -46,7 +46,7 @@ Steps (agent-led):
 
 1. Confirm a CJ Affiliate publisher account and developer access.
 2. Create a GraphQL **personal access token**; map into `CJ_API_TOKEN` only in `.env`.
-3. Optionally set `CJ_COMPANY_ID` (product company scope) and `CJ_WEBSITE_ID` (tracked links).
+3. Set `CJ_WEBSITE_ID` (required PID for `linkCode` + tracked links). Optionally set `CJ_COMPANY_ID` (product company scope).
 4. Set `A_SEARCH_ENV=sandbox` and sandbox queue/bucket URLs first.
 5. Confirm `.env` is gitignored; `git status` must not show secret files.
 6. Do not log or echo token values when verifying.

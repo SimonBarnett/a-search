@@ -29,7 +29,10 @@ function readCjCreds(env) {
       : DEFAULT_GRAPHQL_URL;
   const companyId =
     e.CJ_COMPANY_ID != null ? String(e.CJ_COMPANY_ID).trim() : '';
-  return { token, graphqlUrl, companyId };
+  // FR #4713: GraphQL linkCode(pid: ID!) is the publisher website / property id.
+  const websiteId =
+    e.CJ_WEBSITE_ID != null ? String(e.CJ_WEBSITE_ID).trim() : '';
+  return { token, graphqlUrl, companyId, websiteId };
 }
 
 /**
@@ -39,6 +42,8 @@ function assertCjCreds(env) {
   const c = readCjCreds(env);
   const missing = [];
   if (!c.token) missing.push('CJ_API_TOKEN');
+  // FR #4713: ads.api.cj.com requires linkCode(pid:) — same id as tracked CJ_WEBSITE_ID.
+  if (!c.websiteId) missing.push('CJ_WEBSITE_ID');
   if (missing.length) {
     throw new CjCredsError(
       `CJ GraphQL credentials missing: ${missing.join(', ')}. Set them in providers/live/cj/.env (never commit).`,
@@ -57,11 +62,23 @@ function keywordsFromMsg(msg) {
 }
 
 
-/** Minimal products search query (fields may vary by CJ schema version). */
-function buildProductsQuery(keywords, companyId) {
+/**
+ * Minimal products search query (fields may vary by CJ schema version).
+ * FR #4713: linkCode requires pid (publisher website / property ID).
+ * @param {string} keywords
+ * @param {string} [companyId]
+ * @param {string} websiteId CJ_WEBSITE_ID / GraphQL linkCode pid
+ */
+function buildProductsQuery(keywords, companyId, websiteId) {
   const companyArg = companyId
-    ? `companyId: "${companyId.replace(/"/g, '')}", `
+    ? `companyId: "${String(companyId).replace(/"/g, '')}", `
     : '';
+  const pid = String(websiteId || '').replace(/"/g, '');
+  if (!pid) {
+    throw new CjCredsError(
+      'CJ GraphQL credentials missing: CJ_WEBSITE_ID. Set them in providers/live/cj/.env (never commit).',
+    );
+  }
   return {
     query: `query ProductSearch($keywords: String!) {
   products(${companyArg}keywords: $keywords, limit: 10) {
@@ -70,7 +87,7 @@ function buildProductsQuery(keywords, companyId) {
       title
       imageLink
       price { amount currency }
-      linkCode { clickUrl }
+      linkCode(pid: "${pid}") { clickUrl }
     }
   }
 }`,
@@ -153,7 +170,11 @@ async function searchCj(msg, deps) {
       : defaultHttpRequest;
 
   const keywords = keywordsFromMsg(msg);
-  const payload = buildProductsQuery(keywords, creds.companyId);
+  const payload = buildProductsQuery(
+    keywords,
+    creds.companyId,
+    creds.websiteId,
+  );
   const json = await httpRequest({
     method: 'POST',
     url: creds.graphqlUrl,
