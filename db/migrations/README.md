@@ -16,8 +16,8 @@ Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME
 | `003_PartFeedKeys.sql` | PartFeedKeys (from maintainer/sql) |
 | `004_Parts.sql` | Parts |
 | `005_PartsStaging.sql` | PartsStaging |
-| `006_MergeParts.sql` | MergeParts proc |
-| `007_DeleteMissingParts.sql` | DeleteMissingParts proc |
+| `006_MergeParts.sql` | `CREATE OR ALTER PROCEDURE dbo.MergeParts` (FR #4518; was bare MERGE) |
+| `007_DeleteMissingParts.sql` | `CREATE OR ALTER PROCEDURE dbo.DeleteMissingParts` (FR #4518; was bare UPDATE) |
 | `008_ImpactPendingOnboard.sql` | Impact onboarding queue |
 | `010_Shops.sql` | Merchant Shops (FR-216 / FR-235) |
 | `011_ShopStatusLog.sql` | Shop status log (FR-235) |
