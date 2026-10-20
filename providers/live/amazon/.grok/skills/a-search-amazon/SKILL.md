@@ -22,8 +22,8 @@ registry id `amazon` (`kind: live`, default-on).
 
 ## API choice (FR-045 + FR-181 + FR #4562)
 
-LOCKED (Phase 1): Amazon PA-API SearchItems shipped in FR-030 and remains
-available. Associates Creators API is implemented (FR-182/183).
+LOCKED (Phase 1): Amazon live search uses PA-API SearchItems (shipped in
+FR-030). Associates Creators API is a follow-up FR (implemented FR-182/183).
 
 Decision (LOCKED) / FR-181 coexistence: Creators API runs **behind a feature flag**.
 **PA-API SearchItems remains** available via explicit `AMAZON_SEARCH_API=paapi`.
