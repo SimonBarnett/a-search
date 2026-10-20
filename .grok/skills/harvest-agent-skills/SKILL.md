@@ -570,3 +570,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - SQL Server: never EXEC(N'...' + QUOTENAME(@x) + N'...'); build nvarchar(max) @sql then EXEC sys.sp_executesql @sql. madeiradb.dbo.Users column is email_address (alias AS email on mdb.Users).
 - walrus daily import: cli must use createSqlStore (ingest staging + MERGE dbo.Parts + delete-missing) unless IMPORT_MEMORY=1; Register-DailyImportTask passes MSSQL env like the drain register; never madeiradb
 - FR #4521: db-migrate.js applies GO batches via mssql, stops on first error, skips SchemaMigrations matching Sha256; 006/007 must be CREATE OR ALTER PROCEDURE not bare parameterized DML
+- When FR #4521 migrator tip CONFLICTS with merged FR #4518 CREATE OR ALTER PROCEDURE files, keep main procedure bodies and fold; update fr4518 empty-ledger tests to Map Sha256 ledger for the new runMigrations API.
