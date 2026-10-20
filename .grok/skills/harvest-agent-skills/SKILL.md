@@ -572,4 +572,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4521: db-migrate.js applies GO batches via mssql, stops on first error, skips SchemaMigrations matching Sha256; 006/007 must be CREATE OR ALTER PROCEDURE not bare parameterized DML
 - Walrus trusted SQL: MSSQL_TRUSTED_CONNECTION must use mssql/msnodesqlv8 + ODBC trustedConnection; tedious NTLM crashes ntlm-payload.js; drain processOnce must catch and ChangeVisibility(0) never delete; register -ServiceAccount without -ServicePasswordFile
 - FIX FR #4534: PowerShell Register dry-run tests must skip on non-win32 (Linux self-hosted CI); assemble FAKE_* passwords from parts for GitGuardian (FR #3304)
+- Rakuten Product Search: put agent excludes on none (with language), never Lucene -term in keyword; INVALID_CONTEXT_VALUE is client skip not intake fatal
 - Live a-clubs IN/ workers: grantReadWrite is not enough for touchLastmod; wireAclubsInAccess must also grant s3:CopyObject + Get/PutObjectTagging (FR #4545 / #4441).
