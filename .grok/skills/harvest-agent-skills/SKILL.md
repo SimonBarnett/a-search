@@ -606,3 +606,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
 - Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: tag creators_not_eligible (nonRetryable), write status IN empty products, complete SQS; do not intake-fatal or DLQ-burn (same class as paapi_non_json).
 - CJ Product Search: after [String!]! keywords, still cap whitespace tokens at 10 or CJ HTTP 400 Too many keywords; keep short phrases as one element.
+- CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone — a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
