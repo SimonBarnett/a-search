@@ -2,12 +2,15 @@
 'use strict';
 
 /**
- * FR #4463: walrus daily import CLI
- *   node walrus/import/cli.js run [--provider X] [--feed Y] [--dry-run]
+ * FR #4463 / #4520: walrus daily import CLI
+ * node walrus/import/cli.js run [--provider X] [--feed Y] [--dry-run]
+ *
+ * Production uses mssql store (ingest.* + MERGE dbo.Parts) unless IMPORT_MEMORY=1.
  */
 
 const path = require('node:path');
 const { createMemoryStore } = require('./src/memoryStore');
+const { createSqlStore } = require('./src/sqlStore');
 const { runDailyImport } = require('./src/runImport');
 
 function parseArgs(argv) {
@@ -47,27 +50,39 @@ async function main() {
   const merchantsRoot =
     process.env.A_MERCHANTS_ROOT || path.join('D:', 's3', 'a-merchants');
 
-  // Production path expects a real SQL store; unit/dev can set IMPORT_MEMORY=1.
+  const partEnv = database.includes('sandbox') ? 'sandbox' : 'live';
+  // FR #4520: real SQL store unless unit/dev sets IMPORT_MEMORY=1.
   const store =
     process.env.IMPORT_MEMORY === '1'
-      ? createMemoryStore({ env: database.includes('sandbox') ? 'sandbox' : 'live' })
-      : createMemoryStore({ env: database.includes('sandbox') ? 'sandbox' : 'live' });
+      ? createMemoryStore({ env: partEnv })
+      : createSqlStore({ env: partEnv, database, envVars: process.env });
 
-  const result = await runDailyImport({
-    repoRoot,
-    database,
-    affiliatesRoot,
-    merchantsRoot,
-    mountRoots: [affiliatesRoot, merchantsRoot],
-    ftsInstalled: process.env.IMPORT_SKIP_FTS_CHECK === '1' ? true : true,
-    store,
-    dryRun: opts.dryRun,
-    provider: opts.provider,
-    feed: opts.feed,
-    lockPath: process.env.A_SEARCH_IMPORT_LOCK,
-  });
+  try {
+    if (typeof store.loadPurgeRequests === 'function') {
+      await store.loadPurgeRequests();
+    }
 
-  process.exit(result.exitCode);
+    const result = await runDailyImport({
+      repoRoot,
+      database,
+      affiliatesRoot,
+      merchantsRoot,
+      mountRoots: [affiliatesRoot, merchantsRoot],
+      ftsInstalled: process.env.IMPORT_SKIP_FTS_CHECK === '1' ? true : true,
+      store,
+      dryRun: opts.dryRun,
+      provider: opts.provider,
+      feed: opts.feed,
+      lockPath: process.env.A_SEARCH_IMPORT_LOCK,
+      deleteOnSuccess: process.env.IMPORT_DELETE_ON_SUCCESS === '1',
+    });
+
+    process.exit(result.exitCode);
+  } finally {
+    if (store && typeof store.close === 'function') {
+      await store.close().catch(() => {});
+    }
+  }
 }
 
 if (require.main === module) {
