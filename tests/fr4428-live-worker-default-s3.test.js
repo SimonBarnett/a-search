@@ -21,6 +21,7 @@ const PROVIDERS = [
     id: 'amazon',
     worker: 'providers/live/amazon/src/worker.js',
     env: {
+      AMAZON_SEARCH_API: 'paapi',
       AMAZON_ACCESS_KEY: 'EXAMPLE_KEY',
       AMAZON_SECRET_KEY: 'EXAMPLE_SECRET',
       AMAZON_PARTNER_TAG: 'EXAMPLE_TAG',

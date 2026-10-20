@@ -69,6 +69,7 @@ describe('FR-057c amazon buildTrackedUrl wiring', () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const credEnv = {
       A_SEARCH_ENV: 'sandbox',
+      AMAZON_SEARCH_API: 'paapi',
       AMAZON_ACCESS_KEY: 'AKIATEST',
       AMAZON_SECRET_KEY: 'secret-test',
       AMAZON_PARTNER_TAG: 'tag-20',

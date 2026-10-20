@@ -23,18 +23,34 @@ class AmazonCreatorsCredsError extends Error {
 }
 
 /**
- * Feature flag (FR-181 / FR-182): default off.
- * Enable with AMAZON_SEARCH_API=creators or AMAZON_CREATORS_ENABLED=true|1|yes.
+ * Feature flag (FR-181 / FR-182 / FR #4562).
+ * Default **on** (Creators) when AMAZON_SEARCH_API is unset — PA-API 5 returns
+ * HTML 503s in production. Explicit `paapi` or AMAZON_CREATORS_ENABLED=false
+ * keeps the old path.
  *
  * @param {Record<string, string|undefined>} [env]
  * @returns {boolean}
  */
 function isCreatorsSearchEnabled(env) {
   const e = env || process.env;
-  const api = e.AMAZON_SEARCH_API != null ? String(e.AMAZON_SEARCH_API).trim().toLowerCase() : '';
+  const flag =
+    e.AMAZON_CREATORS_ENABLED != null
+      ? String(e.AMAZON_CREATORS_ENABLED).trim().toLowerCase()
+      : '';
+  if (flag === '0' || flag === 'false' || flag === 'no' || flag === 'off') {
+    return false;
+  }
+  const api =
+    e.AMAZON_SEARCH_API != null
+      ? String(e.AMAZON_SEARCH_API).trim().toLowerCase()
+      : '';
+  if (api === 'paapi' || api === 'pa-api' || api === 'paapi5') return false;
   if (api === 'creators' || api === 'creators_api') return true;
-  const flag = e.AMAZON_CREATORS_ENABLED != null ? String(e.AMAZON_CREATORS_ENABLED).trim().toLowerCase() : '';
-  return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on';
+  if (flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on') {
+    return true;
+  }
+  // FR #4562: unset / empty defaults to Creators.
+  return true;
 }
 
 /**
@@ -169,7 +185,8 @@ async function defaultCreatorsHttpRequest(req) {
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
-    // FR #4427: same status attach as PA-API non-JSON path.
+    // FR #4427 / #4562: same status attach as PA-API non-JSON path
+    // (non-retryable; worker writes status IN).
     const err = new Error(`Amazon Creators non-JSON response (${res.status})`);
     err.status = res.status;
     err.code = 'creators_non_json';

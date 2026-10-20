@@ -336,6 +336,8 @@ const PROVIDER_PLAIN_DEFAULTS = {
   amazon: {
     AMAZON_HOST: 'webservices.amazon.co.uk',
     AMAZON_REGION: 'eu-west-1',
+    // FR #4562: deploy default Creators (PA-API 5 returns HTML 503s).
+    AMAZON_SEARCH_API: 'creators',
   },
   ebay: {
     EBAY_MARKETPLACE_ID: 'EBAY_GB',

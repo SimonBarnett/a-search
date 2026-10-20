@@ -9,7 +9,7 @@
  * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query skip.
  */
 
-const { backoffFor429 } = require('./backoff429');
+const { backoffFor429, isAmazonNonJsonFault } = require('./backoff429');
 const {
   writeLiveProviderInResult,
   resolveInPathFromMsg,
@@ -254,6 +254,17 @@ async function handleSqsWith429(opts) {
             ? 'missing_credentials'
             : 'vendor_client_error',
           code: err && err.code,
+          source: opts.source || '',
+        });
+        continue;
+      }
+      // FR #4562: Amazon non-JSON HTML — complete the batch (worker should
+      // write status IN); do not retry into DLQ or spam intake.
+      if (isAmazonNonJsonFault(err)) {
+        results.push({
+          ok: false,
+          skipped: 'vendor_non_json',
+          code: err.code,
           source: opts.source || '',
         });
         continue;

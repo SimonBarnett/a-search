@@ -23,11 +23,10 @@ they do not unlock a silent client swap.
 
 ## Amazon Creators coexistence (FR-181)
 
-Decision (LOCKED): Creators API runs **behind a feature flag** (default off).
-**PA-API SearchItems remains** the live production path for `amazon`.
-Creators does **not** replace PA-API. Sandbox may enable the flag for trials;
-live stays PA-API until a later enable FR. Implementation: **FR-182+**
-(client + fixtures, flagged off). See [docs/fr/FR-181.md](fr/FR-181.md).
+Decision (LOCKED): Creators API runs **behind a feature flag**.
+**PA-API SearchItems remains** available via explicit `AMAZON_SEARCH_API=paapi`.
+**FR #4562** sets deploy default to Creators (`AMAZON_SEARCH_API=creators`).
+Implementation: **FR-182+** / FR #4562. See [docs/fr/FR-181.md](fr/FR-181.md).
 
 
 ## Market hold - GBP / UK (LOCKED 2026-10-14)
@@ -60,7 +59,7 @@ GBP shop connects).
 
 | id | Kind | Default enabled | Why include | Implementation note |
 |----|------|-----------------|-------------|---------------------|
-| `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). **FR-181:** Creators behind flag (default off); PA-API remains live; FR-182+ |
+| `amazon` | live | true | Core Madeira demand | **LOCKED Phase 1:** PA-API SearchItems (FR-030). **FR-181 / #4562:** Creators behind flag (deploy default on); PA-API via explicit paapi; FR-182+ |
 | `ebay` | live | true | Marketplace coverage | Browse API OAuth; port from `eBay.js` |
 | `awin` | local | true | Canonical aggregator -> local FTS | Product **datafeeds** ingest + local search (not Awin reporting API) |
 | `rakuten` | live | true | Real Product Search API | Keyword search; XML; 100 calls/min; optional later local-feed twin |

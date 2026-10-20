@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR-182 / #1029: Amazon Creators client + fixtures (flagged off by default).
+ * FR-182 / #1029: Amazon Creators client + fixtures.
+ * FR #4562 flipped deploy default to Creators; explicit paapi keeps PA-API.
  */
 
 const { describe, it } = require('node:test');
@@ -58,9 +59,9 @@ function utf8NoBom(rel) {
   return text;
 }
 
-describe('FR-182 Amazon Creators client (flagged off)', () => {
-  it('feature flag defaults off; creators|true enables', () => {
-    assert.equal(isCreatorsSearchEnabled({}), false);
+describe('FR-182 Amazon Creators client', () => {
+  it('feature flag defaults on (FR #4562); paapi / false disables', () => {
+    assert.equal(isCreatorsSearchEnabled({}), true);
     assert.equal(isCreatorsSearchEnabled({ AMAZON_SEARCH_API: 'paapi' }), false);
     assert.equal(isCreatorsSearchEnabled({ AMAZON_SEARCH_API: 'creators' }), true);
     assert.equal(isCreatorsSearchEnabled({ AMAZON_CREATORS_ENABLED: 'true' }), true);
@@ -113,18 +114,18 @@ describe('FR-182 Amazon Creators client (flagged off)', () => {
     assert.equal(req.method, 'POST');
   });
 
-  it('PA-API searchAmazon export still present (default path unchanged)', () => {
+  it('PA-API searchAmazon export still present (explicit paapi path)', () => {
     assert.equal(typeof searchAmazon, 'function');
   });
 
   it('FR-182 Decision LOCKED + .env.example Creators placeholders', () => {
     const fr = utf8NoBom('docs/fr/FR-182.md');
     assert.match(fr, /Decision \(LOCKED\)/);
-    assert.match(fr, /flagged off|feature flag|AMAZON_SEARCH_API/i);
+    assert.match(fr, /feature flag|AMAZON_SEARCH_API/i);
     assert.match(fr, /PA-API/);
     assert.match(fr, /creatorsSearch/);
     const envEx = utf8NoBom('providers/live/amazon/.env.example');
-    assert.match(envEx, /AMAZON_SEARCH_API/);
+    assert.match(envEx, /AMAZON_SEARCH_API\s*=\s*creators/);
     assert.match(envEx, /AMAZON_CREATORS_CREDENTIAL/);
     assert.match(envEx, /AMAZON_CREATORS_ENDPOINT/);
   });

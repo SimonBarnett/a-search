@@ -230,6 +230,7 @@ describe('FR #4038 live worker wiring pins', () => {
         env: {
           A_SEARCH_ENV: 'live',
           A_CLUBS_BUCKET: 'a-clubs',
+          AMAZON_SEARCH_API: 'paapi',
           AMAZON_ACCESS_KEY: 'FAKE_AK',
           AMAZON_SECRET_KEY: 'FAKE_SK',
           AMAZON_PARTNER_TAG: 'FAKE_TAG',

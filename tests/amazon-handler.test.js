@@ -100,6 +100,7 @@ describe('FR-038 amazon SQS handler', () => {
               worker.run(m, {
                 env: {
                   A_SEARCH_ENV: 'sandbox',
+                  AMAZON_SEARCH_API: 'paapi',
                   AMAZON_ACCESS_KEY: 'a',
                   AMAZON_SECRET_KEY: 'b',
                   AMAZON_PARTNER_TAG: 't',

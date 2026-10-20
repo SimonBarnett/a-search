@@ -32,11 +32,24 @@ function isHttp429(err) {
 }
 
 /**
+ * FR #4562: Amazon PA-API / Creators non-JSON HTML bodies are permanent for
+ * this attempt class — do not burn three SQS receives into the DLQ.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isAmazonNonJsonFault(err) {
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  return code === 'paapi_non_json' || code === 'creators_non_json';
+}
+
+/**
  * FR #4427: vendor HTML/gateway faults (502/503/504) are retryable like 429.
+ * FR #4562: Amazon non-JSON (`paapi_non_json` / `creators_non_json`) is not.
  * @param {unknown} err
  * @returns {boolean}
  */
 function isTransientVendorHttp(err) {
+  if (isAmazonNonJsonFault(err)) return false;
   if (isHttp429(err)) return true;
   const status = httpStatusOf(err);
   return status === 502 || status === 503 || status === 504;
@@ -93,6 +106,7 @@ function backoffFor429(opts) {
 module.exports = {
   httpStatusOf,
   isHttp429,
+  isAmazonNonJsonFault,
   isTransientVendorHttp,
   parseRetryAfterSeconds,
   backoffFor429,
