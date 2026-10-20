@@ -91,5 +91,5 @@ Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount e
 
 ## Affiliate agent (FR #4123 / #4701)
 
-`tools/agent.ps1` — run from `S:\a-affiliates\awin` or `S:\a-affiliates\rakuten` (`-DryRun`, `-Help`). See `redqueen/affiliate-agent/README.md`.
+`tools/agent.ps1` --- run from `S:\a-affiliates\awin` or `S:\a-affiliates\rakuten` (`-DryRun`, `-Help`). See `redqueen/affiliate-agent/README.md`.
 

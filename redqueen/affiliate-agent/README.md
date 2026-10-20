@@ -1,6 +1,6 @@
 # Affiliate agent (FR #4123 / #4701)
 
-Provider-aware daily agent for **Awin** (invite/join + feed folders) and **Rakuten** (applications/approvals only — no SQL feeds).
+Provider-aware daily agent for **Awin** (invite/join + feed folders) and **Rakuten** (applications/approvals only --- no SQL feeds).
 
 ## Entry points
 

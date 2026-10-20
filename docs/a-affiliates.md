@@ -151,7 +151,7 @@ report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
 
 Provider-aware entry: `tools/agent.ps1` or `redqueen/affiliate-agent/src/run.js`
 from cwd `S:\a-affiliates\rakuten` (same pattern as Awin under `...\awin`).
-Applications and approvals only — **no** Rakuten SQL download folders or
+Applications and approvals only --- **no** Rakuten SQL download folders or
 feeds. Records live at `rakuten/_applications/{mid|slug}/`. Schedule:
 `Register-AffiliateAgentTask.ps1 -Provider rakuten` (06:30 daily; does not
 alter `a-search-awin-agent`). Seed docs under

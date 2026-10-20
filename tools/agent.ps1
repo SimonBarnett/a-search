@@ -26,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 
 if ($Help) {
   Write-Host @"
-tools/agent.ps1 — affiliate agent (awin | rakuten)
+tools/agent.ps1 --- affiliate agent (awin | rakuten)
 
   cd S:\a-affiliates\rakuten
   .\tools\agent.ps1 [-DryRun]
@@ -35,7 +35,7 @@ tools/agent.ps1 — affiliate agent (awin | rakuten)
   .\tools\agent.ps1 [-DryRun]
 
 Providers: awin (FR #4123 invite/join + feeds), rakuten (FR #4701 applications only).
-Secrets: C:\passwords\awin.secret.txt | C:\passwords\rakuten.secret.txt — never printed.
+Secrets: C:\passwords\awin.secret.txt | C:\passwords\rakuten.secret.txt --- never printed.
 "@
   exit 0
 }
