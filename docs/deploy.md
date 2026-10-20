@@ -101,8 +101,9 @@ local workers, awin/impact onboarding - not live marketplace workers.
 ### Provider credentials (FR-138 / FR #4336)
 
 `npm run deploy` first fills `providers/live/amazon/.env` and
-`providers/live/ebay/.env` from the existing `/madeira/amazon/*` and
-`/madeira/ebay/*` SSM parameters, then bundles each enabled live provider
+`providers/live/ebay/.env` from the existing kebab-case `/madeira/amazon/*`
+and `/madeira/ebay/*` SSM parameters (e.g. `access-key`, `associate-tag`,
+`client-id`; values are never printed), then bundles each enabled live provider
 `.env` into that provider's Lambda asset. The file stays gitignored. A missing
 file fails the deploy with the path and never prints values. Rakuten,
 Commission Junction, Kelkoo, Skimlinks, and Etsy use the `.env` already in

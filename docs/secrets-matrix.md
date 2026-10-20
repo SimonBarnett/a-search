@@ -76,8 +76,10 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 Enabled live providers do not use Secrets Manager. Deploy bundles
 `providers/live/<id>/.env` into that worker Lambda. The worker reads the file
-at run time. Amazon and eBay files are filled from `/madeira/amazon/*` and
-`/madeira/ebay/*` SSM parameters (values are not printed). A missing `.env`
+at run time. Amazon and eBay files are filled from kebab-case
+`/madeira/amazon/{access-key,secret-key,associate-tag,host,region}` and
+`/madeira/ebay/{client-id,client-secret,campaign-id,marketplace-id}` SSM
+parameters (`refresh-token` optional; values are not printed). A missing `.env`
 fails deploy and names the file only. Rakuten reads `RAKUTEN_CLIENT_ID`,
 `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`, then exchanges them for a short-lived
 token. `EBAY_ENV` still comes from the stack env (live means production).
