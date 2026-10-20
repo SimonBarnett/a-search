@@ -10,20 +10,23 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+// Real account paths are kebab-case under /madeira/{amazon,ebay}/ (FR #4504).
+// Env keys stay SCREAMING_SNAKE for the provider .env; associate-tag -> PARTNER_TAG.
 const MADEIRA_ENV_PARAMS = {
   amazon: [
-    ['/madeira/amazon/AMAZON_ACCESS_KEY', 'AMAZON_ACCESS_KEY', true],
-    ['/madeira/amazon/AMAZON_SECRET_KEY', 'AMAZON_SECRET_KEY', true],
-    ['/madeira/amazon/AMAZON_PARTNER_TAG', 'AMAZON_PARTNER_TAG', true],
-    ['/madeira/amazon/AMAZON_HOST', 'AMAZON_HOST', true],
-    ['/madeira/amazon/AMAZON_REGION', 'AMAZON_REGION', true],
+    ['/madeira/amazon/access-key', 'AMAZON_ACCESS_KEY', true],
+    ['/madeira/amazon/secret-key', 'AMAZON_SECRET_KEY', true],
+    ['/madeira/amazon/associate-tag', 'AMAZON_PARTNER_TAG', true],
+    ['/madeira/amazon/host', 'AMAZON_HOST', true],
+    ['/madeira/amazon/region', 'AMAZON_REGION', true],
   ],
   ebay: [
-    ['/madeira/ebay/EBAY_CLIENT_ID', 'EBAY_CLIENT_ID', true],
-    ['/madeira/ebay/EBAY_CLIENT_SECRET', 'EBAY_CLIENT_SECRET', true],
-    ['/madeira/ebay/EBAY_CAMPAIGN_ID', 'EBAY_CAMPAIGN_ID', true],
-    ['/madeira/ebay/EBAY_MARKETPLACE_ID', 'EBAY_MARKETPLACE_ID', true],
-    ['/madeira/ebay/EBAY_REFRESH_TOKEN', 'EBAY_REFRESH_TOKEN', false],
+    ['/madeira/ebay/client-id', 'EBAY_CLIENT_ID', true],
+    ['/madeira/ebay/client-secret', 'EBAY_CLIENT_SECRET', true],
+    ['/madeira/ebay/campaign-id', 'EBAY_CAMPAIGN_ID', true],
+    ['/madeira/ebay/marketplace-id', 'EBAY_MARKETPLACE_ID', true],
+    // Optional: Browse client-credentials does not need it; ParameterNotFound -> skip.
+    ['/madeira/ebay/refresh-token', 'EBAY_REFRESH_TOKEN', false],
   ],
 };
 

@@ -100,15 +100,15 @@ describe('FR #4480 bundle provider env', () => {
   it('SSM fill writes amazon and ebay env files and names a missing parameter', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4480-ssm-'));
     const values = {
-      '/madeira/amazon/AMAZON_ACCESS_KEY': 'FAKE_AK',
-      '/madeira/amazon/AMAZON_SECRET_KEY': 'FAKE_SK',
-      '/madeira/amazon/AMAZON_PARTNER_TAG': 'FAKE_PT',
-      '/madeira/amazon/AMAZON_HOST': 'webservices.amazon.co.uk',
-      '/madeira/amazon/AMAZON_REGION': 'eu-west-1',
-      '/madeira/ebay/EBAY_CLIENT_ID': 'FAKE_ID',
-      '/madeira/ebay/EBAY_CLIENT_SECRET': 'FAKE_ES',
-      '/madeira/ebay/EBAY_CAMPAIGN_ID': 'FAKE_CP',
-      '/madeira/ebay/EBAY_MARKETPLACE_ID': 'EBAY_GB',
+      '/madeira/amazon/access-key': 'FAKE_AK',
+      '/madeira/amazon/secret-key': 'FAKE_SK',
+      '/madeira/amazon/associate-tag': 'FAKE_PT',
+      '/madeira/amazon/host': 'webservices.amazon.co.uk',
+      '/madeira/amazon/region': 'eu-west-1',
+      '/madeira/ebay/client-id': 'FAKE_ID',
+      '/madeira/ebay/client-secret': 'FAKE_ES',
+      '/madeira/ebay/campaign-id': 'FAKE_CP',
+      '/madeira/ebay/marketplace-id': 'EBAY_GB',
     };
     const written = fillMadeiraProviderEnv({
       repoRoot: root,
@@ -128,7 +128,7 @@ describe('FR #4480 bundle provider env', () => {
         }),
       (err) => {
         const message = String(err && err.message);
-        assert.match(message, /missing SSM parameter \/madeira\/amazon\/AMAZON_ACCESS_KEY/);
+        assert.match(message, /missing SSM parameter \/madeira\/amazon\/access-key/);
         assert.equal(message.includes('FAKE_AK'), false);
         return true;
       },
