@@ -88,3 +88,8 @@ node --test tests/fr4167-folder-download-winps.test.js
 ```
 
 Mocks cover mapping, secret masking, empty annotations, `-Json`, outside-mount exit 2, GUID/host search, download cwd/dry-run/secrets, no credentials in output, WinPS args-env handoff, shim exit codes, and unified AWS profile.
+
+## Affiliate agent (FR #4123 / #4701)
+
+`tools/agent.ps1` --- run from `S:\a-affiliates\awin` or `S:\a-affiliates\rakuten` (`-DryRun`, `-Help`). See `redqueen/affiliate-agent/README.md`.
+

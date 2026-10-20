@@ -23,6 +23,8 @@ function shouldIgnoreKey(key) {
   if (/\/parts\/latest\./i.test(k)) return true;
   if (/\/(AGENT|SKILLS)\.md$/i.test(k)) return true;
   if (/\/_invites\//i.test(k)) return true;
+  // FR #4701: Rakuten signup application markers are not feed files.
+  if (/\/_applications\//i.test(k)) return true;
   if (/\/provider\.json$/i.test(k)) return true;
   return false;
 }
