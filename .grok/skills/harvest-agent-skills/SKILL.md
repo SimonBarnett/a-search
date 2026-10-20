@@ -584,3 +584,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
 - a-search: keep canonical LOCKED pack at docs/vision.md; add short root VISION.md so MRB seats that look for VISION.md at repo root can quote IN/a-clubs/DLQ without falling back to issue text
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
+- FIX docs/mrb when fr4197 fails on SKILL.md U+2014: fold origin/main then replace em-dash with ASCII hyphen (UTF-8 no BOM); re-arm --auto; DONE FIX; never poll CI
