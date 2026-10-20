@@ -95,7 +95,8 @@ describe('FR #4265 searches.json from the page review', () => {
     assert.equal(cap, 3);
     assert.equal(doc.queries.length, 3);
     assert.equal(doc.queries[0].q, 'trainer kits');
-    assert.equal(doc.market, 'UK');
+    // FR #4563: short UK token normalises to GB
+    assert.equal(doc.market, 'GB');
     assert.equal(doc.currency, 'GBP');
     assert.equal(doc.queries[0].intent, 'shop');
     assert.equal(doc.queries[0].maxResults, 10);
@@ -163,7 +164,7 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
     assert.equal(posts[0].guid, GUID);
     assert.equal(posts[0].queries.length, 3);
     assert.equal(posts[0].queries[0].q, 'beginner trainer');
-    assert.equal(posts[0].market, 'UK');
+    assert.equal(posts[0].market, 'GB');
     assert.equal(posts[0].currency, 'GBP');
     assert.equal(posts[0].exclude[0].partId, 'keep-me');
     const saved = await s3.getObject({ Key: `${host}/${GUID}/searches.json` });
@@ -216,7 +217,9 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
     assert.equal(s3.objects.has(`${host}/${GUID}/searches.json`), false);
   });
 
-  it('a lost /search response retries without a second fan-out', async () => {
+  it('a lost /search response does not double fan-out (FR #4563 syncs searchid)', async () => {
+    // FR #4563: entry writes searchid into searches.json on fan-out, so a lost
+    // HTTP response still leaves the GUID marked searched; redqueen skips re-POST.
     const s3 = createMemoryS3();
     const host = 'retry.example.com';
     await seed(s3, host, GUID);
@@ -231,6 +234,8 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
             guid: body.guid,
             queries: body.queries,
             exclude: body.exclude,
+            market: body.market,
+            currency: body.currency,
           },
         },
         env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
@@ -280,13 +285,13 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
         postSearch,
       }),
     );
-    assert.equal(second.guids[0].detail, 'search_reposted');
+    assert.equal(second.guids[0].detail, 'guid_unchanged');
     assert.equal(sent.length, 2);
     assert.equal(sent[0].messageDeduplicationId, 'srch_once-ebay');
     const saved = await s3.getObject({ Key: `${host}/${GUID}/searches.json` });
     const doc = JSON.parse(saved.Body.toString('utf8'));
     assert.equal(doc.searchid, 'srch_once');
-    assert.equal(doc.market, 'UK');
+    assert.equal(doc.market, 'GB');
     assert.equal(doc.currency, 'GBP');
   });
 });

@@ -195,7 +195,12 @@ describe('FR #4534 Register-WalrusSqlDrainService dry-run', () => {
         assert.match(r.stdout, /AWS_SHARED_CREDENTIALS_FILE=/);
         assert.match(r.stdout, /AWS_CONFIG_FILE=/);
         assert.doesNotMatch(r.stdout, /ServicePasswordFile_required/i);
-        assert.match(r.stdout, /ObjectName.*a-search-drain/i);
+        // FR #4570: without password file, skip ObjectName and print interactive step.
+        assert.doesNotMatch(r.stdout, /\[DryRun\] nssm set .* ObjectName /i);
+        assert.match(
+          r.stdout,
+          /nssm set a-search-walrus-sql-drain ObjectName .*a-search-drain/i,
+        );
       } finally {
         try {
           fs.unlinkSync(awsCred);
