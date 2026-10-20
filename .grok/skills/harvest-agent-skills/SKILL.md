@@ -571,3 +571,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - walrus daily import: cli must use createSqlStore (ingest staging + MERGE dbo.Parts + delete-missing) unless IMPORT_MEMORY=1; Register-DailyImportTask passes MSSQL env like the drain register; never madeiradb
 - FR #4521: db-migrate.js applies GO batches via mssql, stops on first error, skips SchemaMigrations matching Sha256; 006/007 must be CREATE OR ALTER PROCEDURE not bare parameterized DML
 - Walrus trusted SQL: MSSQL_TRUSTED_CONNECTION must use mssql/msnodesqlv8 + ODBC trustedConnection; tedious NTLM crashes ntlm-payload.js; drain processOnce must catch and ChangeVisibility(0) never delete; register -ServiceAccount without -ServicePasswordFile
+- Walrus trusted SQL: MSSQL_TRUSTED_CONNECTION must use mssql/msnodesqlv8 + ODBC trustedConnection (tedious NTLM crashes ntlm-payload.js); drain processOnce/runLoop catch errors, ChangeVisibility(0), never delete, never crash the long-poll loop.
