@@ -581,3 +581,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - handleSqsWith429: *_missing_credentials must ERROR-log provider+searchid (no secrets) and write a-clubs status IN with products:[] error:missing_credentials, then ack/delete; never silent success
 - After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
 - When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
+- Do not merge harvest tips that only restate CLOSED-duplicate + resolve_harvest_skill_keep_both already on main; close unmerged and DONE PASS.
