@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * docs/mrb-4619: hostile pin for harvest-agent-skills nssm ObjectName +
