@@ -584,3 +584,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
 - nssm ObjectName needs username+password together: when -ServicePasswordFile is omitted, skip the ObjectName call and print the exact interactive nssm set step; never call ObjectName with username alone.
 - a-search: keep canonical LOCKED pack at docs/vision.md; add short root VISION.md so MRB seats that look for VISION.md at repo root can quote IN/a-clubs/DLQ without falling back to issue text
+- fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
