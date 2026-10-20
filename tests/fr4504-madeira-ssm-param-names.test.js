@@ -51,6 +51,7 @@ describe('FR #4504 madeira SSM param names', () => {
       '/madeira/ebay/client-secret': 'FAKE_ES',
       '/madeira/ebay/campaign-id': 'FAKE_CP',
       '/madeira/ebay/marketplace-id': 'EBAY_GB',
+      '/madeira/etsy/api-key': 'FAKE_ETSY_KEY',
     };
     fillMadeiraProviderEnv({
       repoRoot: root,
@@ -64,6 +65,7 @@ describe('FR #4504 madeira SSM param names', () => {
       [
         ...EXPECTED_AMAZON.map((r) => r[0]),
         ...EXPECTED_EBAY.map((r) => r[0]),
+        ...((MADEIRA_ENV_PARAMS.etsy || []).map((r) => r[0])),
       ],
     );
     const amazon = fs.readFileSync(
