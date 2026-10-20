@@ -24,7 +24,7 @@ Registry id `cj` (`kind: live`, default-on).
 `src/worker.js` exports `run(msg, deps?)`:
 
 1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
-2. Require `CJ_API_TOKEN` (optional `CJ_COMPANY_ID`)
+2. Require `CJ_API_TOKEN` + `CJ_WEBSITE_ID` (linkCode pid; optional `CJ_COMPANY_ID`)
 3. GraphQL POST to `CJ_GRAPHQL_URL` (`src/search.js`); injectable `httpRequest`
 4. Normalize `data.products.resultList` → `products[]`
 5. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/cj/{userId}/{catalogId}/{searchId}.json`
@@ -40,7 +40,8 @@ using `CJ_API_TOKEN`. Send GraphQL queries only — do not scrape the publisher 
 ## Env
 
 See `.env.example`: `A_SEARCH_ENV`, `CJ_API_TOKEN`, `CJ_GRAPHQL_URL`,
-optional `CJ_COMPANY_ID`, `SQS_CJ_URL`, `S3_RESULTS_BUCKET`.
+`CJ_WEBSITE_ID` (required for `linkCode(pid:)` / FR #4713), optional
+`CJ_COMPANY_ID`, `SQS_CJ_URL`, `S3_RESULTS_BUCKET`.
 
 Missing token → `CjCredsError` / `cj_missing_credentials`.
 
