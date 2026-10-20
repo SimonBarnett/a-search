@@ -48,9 +48,11 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
 `src/worker.js` exports `run(msg, deps?)`:
 
 1. `assertWorkerEnv` - `message.env` must equal `A_SEARCH_ENV`
-2. Creators path (default, FR #4562): `AMAZON_CREATORS_CREDENTIAL` + `AMAZON_PARTNER_TAG`
-   (fail-closed). PA-API path (`AMAZON_SEARCH_API=paapi`): `AMAZON_ACCESS_KEY`,
-   `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
+2. Creators path (default, FR #4562 / #4721): `AMAZON_ACCESS_KEY` +
+   `AMAZON_SECRET_KEY` + `AMAZON_PARTNER_TAG` (LwA client_credentials ->
+   `creatorsapi.amazon/catalog/v1/searchItems`). Optional
+   `AMAZON_CREATORS_CREDENTIAL` bearer override for fixtures. PA-API path
+   (`AMAZON_SEARCH_API=paapi`): same access/secret/partnerTag keys
 3. Search HTTP (`src/search.js` or `src/creatorsSearch.js`); injectable `httpRequest`
    - FR-182/183 / #4562: Creators default on; explicit `paapi` keeps PA-API
    - Non-JSON (`paapi_non_json` / `creators_non_json`): status IN, no DLQ burn
@@ -75,11 +77,13 @@ Tests: `tests/amazon-handler.test.js`.
 
 | Env | Purpose |
 |-----|---------|
-| `AMAZON_ACCESS_KEY` | PA-API access key id |
-| `AMAZON_SECRET_KEY` | PA-API secret |
+| `AMAZON_ACCESS_KEY` | PA-API key id + Creators LwA `client_id` (FR #4721) |
+| `AMAZON_SECRET_KEY` | PA-API secret + Creators LwA `client_secret` |
 | `AMAZON_PARTNER_TAG` | Associates partner tag |
 | `AMAZON_HOST` | default `webservices.amazon.co.uk` |
-| `AMAZON_REGION` | default `eu-west-1` |
+| `AMAZON_REGION` | default `eu-west-1` (selects EU vs NA token URL) |
+| `AMAZON_CREATORS_CREDENTIAL` | optional bearer override (fixtures / SSM) |
+| `AMAZON_CREATORS_ENDPOINT` | default `https://creatorsapi.amazon/catalog/v1/searchItems` |
 | `S3_RESULTS_BUCKET` | results PutObject |
 | `A_SEARCH_ENV` | `live` \| `sandbox` |
 

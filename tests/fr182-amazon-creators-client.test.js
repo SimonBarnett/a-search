@@ -68,7 +68,7 @@ describe('FR-182 Amazon Creators client', () => {
     assert.equal(isCreatorsSearchEnabled({ AMAZON_CREATORS_ENABLED: '0' }), false);
   });
 
-  it('assertCreatorsCreds requires credential + partner tag', () => {
+  it('assertCreatorsCreds requires partner tag + (access/secret or credential override)', () => {
     assert.throws(
       () => assertCreatorsCreds({ AMAZON_PARTNER_TAG: 'tag-20' }),
       (err) => err instanceof AmazonCreatorsCredsError,
@@ -76,6 +76,13 @@ describe('FR-182 Amazon Creators client', () => {
     assert.doesNotThrow(() =>
       assertCreatorsCreds({
         AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
+        AMAZON_PARTNER_TAG: 'tag-20',
+      }),
+    );
+    assert.doesNotThrow(() =>
+      assertCreatorsCreds({
+        AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+        AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
         AMAZON_PARTNER_TAG: 'tag-20',
       }),
     );
