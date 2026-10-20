@@ -583,3 +583,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
 - nssm ObjectName needs username+password together: when -ServicePasswordFile is omitted, skip the ObjectName call and print the exact interactive nssm set step; never call ObjectName with username alone.
+- a-search harvest: keep LOCKED pack at docs/vision.md and add short root VISION.md so MRB can quote vision without falling back to issue text.
