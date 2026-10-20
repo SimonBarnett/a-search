@@ -114,13 +114,14 @@ describe('FR #4030 agent fan-out', () => {
     assert.equal(isAgentSearchBody({ q: 'boots', catalogId: 1 }), false);
   });
 
-  it('fan-out puts one message on every provider queue plus sql', async () => {
+  it('fan-out puts one message on every credentialed provider queue plus sql', async () => {
     /** @type {object[]} */
     const sent = [];
     const meta = {
       [`club.example/`]: { userid: 'MMFC0001' },
       [`club.example/${GUID}/`]: {},
     };
+    // FR #4650: handleAgentSearch passes env as envVars; missing queue URL => skip provider.
     const result = await handleAgentSearch({
       event: {
         headers: { 'x-agent-api-key': FAKE_KEY },
@@ -131,7 +132,11 @@ describe('FR #4030 agent fan-out', () => {
           exclude: [],
         },
       },
-      env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+      env: {
+        A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+        SQS_EBAY_LIVE_URL: 'https://sqs.example/ebay.fifo',
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+      },
       headObject: async ({ Key }) => {
         if (!(Key in meta)) {
           const err = new Error('missing');
@@ -160,6 +165,50 @@ describe('FR #4030 agent fan-out', () => {
     assert.equal(sent[1].source, 'sql');
     assert.equal(sent[1].messageGroupId, 'sql');
     assert.equal(sent[1].userId, 'MMFC0001');
+  });
+
+  it('fan-out skips provider when queue URL env is missing (FR #4650)', async () => {
+    const sent = [];
+    const meta = {
+      [`club.example/`]: { userid: 'MMFC0001' },
+      [`club.example/${GUID}/`]: {},
+    };
+    const result = await handleAgentSearch({
+      event: {
+        headers: { 'x-agent-api-key': FAKE_KEY },
+        body: {
+          hostkey: 'club.example',
+          guid: GUID,
+          queries: ['boots'],
+          exclude: [],
+        },
+      },
+      env: {
+        A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+        // no SQS_EBAY_* — credentials/deploy omitted fan-out URL
+      },
+      headObject: async ({ Key }) => {
+        if (!(Key in meta)) {
+          const err = new Error('missing');
+          err.name = 'NotFound';
+          err.$metadata = { httpStatusCode: 404 };
+          throw err;
+        }
+        return { Metadata: meta[Key] };
+      },
+      sendMessage: async (p) => {
+        sent.push(p);
+      },
+      newSearchId: () => 'srch_skip',
+      enabled: () => ['ebay'],
+      loadRegistry: () => ({
+        sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
+      }),
+    });
+    assert.deepEqual(result.queued, ['sql']);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].source, 'sql');
   });
 
   it('unknown GUID returns 404; missing agent key returns 401', async () => {
