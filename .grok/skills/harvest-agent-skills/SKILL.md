@@ -564,8 +564,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After resolving a merge, rg for conflict-marker line starts (triple less-than) before commit and push. A tip that fails fr4197 non-ASCII in harvest-agent-skills is fixed by one origin/main fold when main already has the ASCII row (FR #4649), plus strip any leftover conflict markers in the same FIX.
 - After FR #4451 isAwsSearchProvider filter, agentSearch test mocks with kind:live must set awsSearch:true or fan-out only enqueues sql and fr4265 idempotent counts fail 1!==2
 - When skimlinks moves to kind local class affiliate, add providers/local/skimlinks/provider.json (even disabled stub) or FR #4463 loadAllProviderConfigs fails with missing_provider_json and the import pipeline tests fail.
-- Hostile pins that assert !includes('<<<<<<<') false-positive when a harvest lesson documents rg for conflict markers; match /^<<<<<<<(?: |$)/m (and >>>>) or reword the lesson without the literal marker bytes.
-- FR #4510: etsy deploy key source is kebab-case SSM /madeira/etsy/api-key via fill-madeira-ssm-env (same as amazon/ebay); registry stayed enabled on main; never commit .env
+- Hostile pins that assert !includes('- FR #4510: etsy deploy key source is kebab-case SSM /madeira/etsy/api-key via fill-madeira-ssm-env (same as amazon/ebay); registry stayed enabled on main; never commit .env
 - walrus SQL drain register: AppEnvironmentExtra must pass every env the drain reads (SQS_DB_BACKED_URL, AWS_REGION, MSSQL_SERVER, SQL auth via password-file or trusted ServiceAccount) as separate nssm KEY=VALUE args; drain assertDrainEnv lists missing keys and exits before ReceiveMessage
 - SQL Server: never EXEC(N'...' + QUOTENAME(@x) + N'...'); build nvarchar(max) @sql then EXEC sys.sp_executesql @sql. madeiradb.dbo.Users column is email_address (alias AS email on mdb.Users).
 - walrus daily import: cli must use createSqlStore (ingest staging + MERGE dbo.Parts + delete-missing) unless IMPORT_MEMORY=1; Register-DailyImportTask passes MSSQL env like the drain register; never madeiradb
@@ -582,6 +581,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
 - When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
-- nssm ObjectName needs username+password together: when -ServicePasswordFile is omitted, skip the ObjectName call and print the exact interactive nssm set step; never call ObjectName with username alone.
 - a-search: keep canonical LOCKED pack at docs/vision.md; add short root VISION.md so MRB seats that look for VISION.md at repo root can quote IN/a-clubs/DLQ without falling back to issue text
+<<<<<<< HEAD
 - When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
+- nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
