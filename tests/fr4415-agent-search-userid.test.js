@@ -63,7 +63,12 @@ describe('FR #4415 agent search fan-out userid', () => {
           queries: ['servo'],
         },
       },
-      env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+      // FR #4650: env is passed as envVars; missing SQS_* URL skips the provider.
+      env: {
+        A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+        SQS_EBAY_LIVE_URL: 'https://sqs.example/ebay.fifo',
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+      },
       headObject: async ({ Key }) => {
         if (!(Key in meta)) throw notFound();
         return { Metadata: meta[Key] };
