@@ -938,11 +938,16 @@ class ASearchStack extends cdk.Stack {
     entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
     aClubsBucket.grantRead(entry);
     // FR #4265: remember one searchid per GUID so a retry does not fan out twice.
+    // FR #4712 / #4563: syncSearchesSearchid also PutObjects host/guid/searches.json;
+    // grantRead alone is Get*; without PutObject on searches.json entry AccessDenied.
     entry.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'AgentSearchFanoutMarker',
         actions: ['s3:GetObject', 's3:PutObject'],
-        resources: ['arn:aws:s3:::a-clubs/*/*/search-fanout.json'],
+        resources: [
+          'arn:aws:s3:::a-clubs/*/*/search-fanout.json',
+          'arn:aws:s3:::a-clubs/*/*/searches.json',
+        ],
       }),
     );
 
