@@ -9,7 +9,7 @@ without falling back to issue text alone (FR #4572).
 
 One JWT-authenticated HTTP search call fans out work to every enabled live
 marketplace provider and every enabled local MSSQL-backed part source, each
-isolated in its own folder with its own `.env` and skillbook — affiliate
+isolated in its own folder with its own `.env` and skillbook --- affiliate
 search contract for Club Madeira / a-search.
 
 ## Live results, a-clubs, and DLQ (MRB themes)
@@ -18,8 +18,8 @@ search contract for Club Madeira / a-search.
   (`IN/{searchid}-{source}.json`) via `writeLiveProviderInResult` (FR #4038).
 - Paced SQS consumers (`batchSize: 1`, reserved concurrency 1) back off on
   real **429**; permanent vendor faults (for example Amazon non-JSON HTML)
-  write a status IN and complete the receive — do not burn three receives
+  write a status IN and complete the receive --- do not burn three receives
   into the **DLQ**.
 - Per-source secrets stay isolated; fatals intake to `SimonBarnett/a-search`.
 
-See Success rows S1–S20, Architecture, and Environments in `docs/vision.md`.
+See Success rows S1-S20, Architecture, and Environments in `docs/vision.md`.
