@@ -568,3 +568,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4510: etsy deploy key source is kebab-case SSM /madeira/etsy/api-key via fill-madeira-ssm-env (same as amazon/ebay); registry stayed enabled on main; never commit .env
 - walrus SQL drain register: AppEnvironmentExtra must pass every env the drain reads (SQS_DB_BACKED_URL, AWS_REGION, MSSQL_SERVER, SQL auth via password-file or trusted ServiceAccount) as separate nssm KEY=VALUE args; drain assertDrainEnv lists missing keys and exits before ReceiveMessage
 - SQL Server: never EXEC(N'...' + QUOTENAME(@x) + N'...'); build nvarchar(max) @sql then EXEC sys.sp_executesql @sql. madeiradb.dbo.Users column is email_address (alias AS email on mdb.Users).
+- FR #4521: db-migrate.js applies GO batches via mssql, stops on first error, skips SchemaMigrations matching Sha256; 006/007 must be CREATE OR ALTER PROCEDURE not bare parameterized DML
