@@ -65,7 +65,8 @@ function keywordsFromMsg(msg) {
 /**
  * Minimal products search query (fields may vary by CJ schema version).
  * FR #4713: linkCode requires pid (publisher website / property ID).
- * @param {string} keywords
+ * FR #4740: products.keywords is [String!] (not String!); send a non-empty array.
+ * @param {string|string[]} keywords
  * @param {string} [companyId]
  * @param {string} websiteId CJ_WEBSITE_ID / GraphQL linkCode pid
  */
@@ -79,8 +80,18 @@ function buildProductsQuery(keywords, companyId, websiteId) {
       'CJ GraphQL credentials missing: CJ_WEBSITE_ID. Set them in providers/live/cj/.env (never commit).',
     );
   }
+  let keywordList;
+  if (Array.isArray(keywords)) {
+    keywordList = keywords.map((k) => String(k || '').trim()).filter(Boolean);
+  } else {
+    const one = String(keywords || '').trim();
+    keywordList = one ? [one] : [];
+  }
+  if (!keywordList.length) {
+    throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
+  }
   return {
-    query: `query ProductSearch($keywords: String!) {
+    query: `query ProductSearch($keywords: [String!]!) {
   products(${companyArg}keywords: $keywords, limit: 10) {
     resultList {
       id
@@ -91,7 +102,7 @@ function buildProductsQuery(keywords, companyId, websiteId) {
     }
   }
 }`,
-    variables: { keywords },
+    variables: { keywords: keywordList },
   };
 }
 
