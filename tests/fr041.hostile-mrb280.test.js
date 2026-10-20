@@ -73,7 +73,8 @@ describe('MRB #280 hostile: FR-041 cj GraphQL search', () => {
     assert.match(q.query, /companyId:\s*"CID-99"/);
     assert.match(q.query, /linkCode\s*\(\s*pid:\s*"web-test"\s*\)/);
     assert.match(q.query, /ProductSearch|products/);
-    assert.equal(q.variables.keywords, 'shoes');
+    assert.deepEqual(q.variables.keywords, ['shoes']);
+    assert.match(q.query, /\$keywords:\s*\[String!\]!/);
 
     await assert.rejects(
       () =>
