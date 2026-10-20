@@ -68,8 +68,10 @@ describe('MRB #280 hostile: FR-041 cj GraphQL search', () => {
   });
 
   it('GraphQL errors[] → thrown; companyId lands in query when set', async () => {
-    const q = buildProductsQuery('shoes', 'CID-99');
+    // FR #4713: linkCode(pid:) requires website id (third arg).
+    const q = buildProductsQuery('shoes', 'CID-99', 'web-test');
     assert.match(q.query, /companyId:\s*"CID-99"/);
+    assert.match(q.query, /linkCode\s*\(\s*pid:\s*"web-test"\s*\)/);
     assert.match(q.query, /ProductSearch|products/);
     assert.equal(q.variables.keywords, 'shoes');
 

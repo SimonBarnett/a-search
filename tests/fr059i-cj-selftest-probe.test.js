@@ -17,6 +17,8 @@ const credEnv = {
   CJ_API_TOKEN: 'token-test',
   CJ_GRAPHQL_URL: 'https://ads.api.cj.com/query',
   CJ_COMPANY_ID: '123',
+  // FR #4713: GraphQL linkCode(pid:) requires website id.
+  CJ_WEBSITE_ID: '99999',
 };
 
 describe('FR-059i cj selftest probe', () => {
