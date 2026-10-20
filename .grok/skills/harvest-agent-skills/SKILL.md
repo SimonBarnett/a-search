@@ -590,3 +590,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FIX when tip CONFLICTING on secrets-matrix after sibling creators-credential land: keep-both FR #4650 soft-deploy+enabled gate with main creators-credential path; DONE FIX; no CI poll
 - Amazon deploy default Creators; paapi_non_json/creators_non_json write status IN and complete SQS (not transient); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
 - a-search FIX after Creators default: fr4427 must expect handleSqsWith429 complete on paapi_non_json (not reject+backoff); plain 503 without that code stays transient; pin AMAZON_SEARCH_API=paapi on PA-API unit envs
+- a-search harvest-lesson MRB: PASS fr4427 expect complete-on-paapi_non_json + pin AMAZON_SEARCH_API=paapi on PA-API unit envs after Creators default flip
