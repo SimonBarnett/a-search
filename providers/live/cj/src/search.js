@@ -66,11 +66,19 @@ function keywordsFromMsg(msg) {
 const MAX_CJ_KEYWORDS = 10;
 
 /**
- * FR #4748: normalize to [String!] with at most MAX_CJ_KEYWORDS whitespace
- * tokens (CJ counts words across the keywords argument).
+ * FR #4748 / #4752: normalize to [String!] with at most MAX_CJ_KEYWORDS tokens.
+ * CJ counts on non-alphanumeric splits (hyphen in `761-14` is two keywords), not
+ * whitespace alone — whitespace-only caps still 400 "Too many keywords".
  * @param {string|string[]} keywords
  * @returns {string[]}
  */
+function splitCjKeywordTokens(text) {
+  return String(text || '')
+    .split(/[^A-Za-z0-9]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
 function normalizeCjKeywordList(keywords) {
   let keywordList;
   if (Array.isArray(keywords)) {
@@ -82,13 +90,9 @@ function normalizeCjKeywordList(keywords) {
   if (!keywordList.length) {
     throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
   }
-  // Cap array length, then cap total whitespace-separated tokens.
-  if (keywordList.length > MAX_CJ_KEYWORDS) {
-    keywordList = keywordList.slice(0, MAX_CJ_KEYWORDS);
-  }
   const tokens = [];
   for (const item of keywordList) {
-    for (const t of String(item).split(/\s+/).filter(Boolean)) {
+    for (const t of splitCjKeywordTokens(item)) {
       if (tokens.length >= MAX_CJ_KEYWORDS) break;
       tokens.push(t);
     }
@@ -98,7 +102,7 @@ function normalizeCjKeywordList(keywords) {
     throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
   }
   // Keep a single joined element when the caller passed one string (FR #4740
-  // shape); otherwise preserve token array from an explicit list.
+  // shape); otherwise return the expanded token list from an explicit array.
   if (!Array.isArray(keywords)) {
     return [tokens.join(' ')];
   }
@@ -109,7 +113,7 @@ function normalizeCjKeywordList(keywords) {
  * Minimal products search query (fields may vary by CJ schema version).
  * FR #4713: linkCode requires pid (publisher website / property ID).
  * FR #4740: products.keywords is [String!] (not String!); send a non-empty array.
- * FR #4748: at most 10 keyword tokens (CJ HTTP 400 otherwise).
+ * FR #4748 / #4752: at most 10 CJ-counted tokens (split on non-alnum; HTTP 400 otherwise).
  * @param {string|string[]} keywords
  * @param {string} [companyId]
  * @param {string} websiteId CJ_WEBSITE_ID / GraphQL linkCode pid
