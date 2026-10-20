@@ -57,7 +57,10 @@ describe('FR #4748 CJ keywords max 10', () => {
     );
     const kw = parsed.variables.keywords;
     assert.ok(Array.isArray(kw));
-    const tokenCount = kw.join(' ').split(/\s+/).filter(Boolean).length;
+    const tokenCount = kw
+      .join(' ')
+      .split(/[^A-Za-z0-9]+/)
+      .filter(Boolean).length;
     assert.ok(tokenCount <= 10, `tokenCount=${tokenCount}`);
   });
 });

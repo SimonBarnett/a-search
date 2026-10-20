@@ -37,7 +37,7 @@ Product search uses CJ's GraphQL API at **`ads.api.cj.com`** (HTTPS default
 `https://ads.api.cj.com/query`). Authenticate with `Authorization: Bearer`
 using `CJ_API_TOKEN`. Send GraphQL queries only --- do not scrape the publisher UI.
 
-`products.keywords` is `[String!]!` (FR #4740). Cap at **10** whitespace-separated tokens (FR #4748); CJ returns HTTP 400 "Too many keywords" otherwise.
+`products.keywords` is `[String!]!` (FR #4740). Cap at **10** CJ-counted tokens (FR #4748 / #4752): split on non-alphanumeric (hyphen in `761-14` is two keywords), not whitespace alone; CJ returns HTTP 400 "Too many keywords" otherwise.
 
 ## Env
 
