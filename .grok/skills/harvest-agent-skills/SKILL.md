@@ -597,3 +597,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Reopened FR after soft-deploy: missing credentials must omit fan-out and keep resources, never soft-deploy-on; fill never throws on absent SSM.
 - a-search MRB FR #4650: after handleAgentSearch passes env as envVars, fr4030 fan-out fixtures must set SQS_*_URL or ebay is skipped; land one fix PR into the tip then PASS
 - a-search FR: when entry syncs searches.json searchid after fan-out (#4563), IAM AgentSearchFanoutMarker must PutObject a-clubs/*/*/searches.json not only search-fanout.json
+- MRB FAIL on ASCII tip: one fix PR from FR tip with ASCII normalize + hostile pin; Refs not second Closes; DONE FAIL; re-queue re-board and DONE FAIL again.
