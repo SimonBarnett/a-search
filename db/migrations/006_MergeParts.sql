@@ -1,7 +1,8 @@
 -- target: a_search
 -- FR-251: moved from maintainer/sql/004_MergeParts.sql
--- FR-014 / FR #4518: set-based MERGE PartsStaging -> Parts as a procedure
+-- FR-014 / FR #4518: dbo.MergeParts procedure (set-based MERGE PartsStaging -> Parts)
 -- Apply after bulk load into PartsStaging. No per-row INSERT loop.
+-- Runtime: EXEC dbo.MergeParts @Source=..., @FeedKey=..., @Env=...
 SET NOCOUNT ON;
 GO
 

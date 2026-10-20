@@ -1,7 +1,8 @@
 -- target: a_search
 -- FR-251: moved from maintainer/sql/005_DeleteMissingParts.sql
--- FR-015 / FR #4518: soft-delete Parts missing from PartsStaging as a procedure
+-- FR-015 / FR #4518: dbo.DeleteMissingParts procedure (soft-delete missing from staging)
 -- Scope: @Source + @FeedKey + @Env only. Do not clear the whole Parts table.
+-- Runtime: EXEC dbo.DeleteMissingParts @Source=..., @FeedKey=..., @Env=...
 SET NOCOUNT ON;
 GO
 

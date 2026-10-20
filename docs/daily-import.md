@@ -24,6 +24,23 @@ node walrus/import/cli.js run --dry-run --provider shopify --feed shop1
 
 Exit codes: `0` ok / nothing to do, `1` one or more feeds failed (agent started), `2` lock held or precheck failed.
 
+## SQL store (FR #4520)
+
+Production uses an mssql-backed store (`walrus/import/src/sqlStore.js`): stage into `ingest.PartsStaging`, `MERGE` into `dbo.Parts`, then soft/hard delete-missing for that `(Source, FeedKey, Env)`. Set `IMPORT_MEMORY=1` only for unit/dev (in-memory store). Never `madeiradb`.
+
+Required env (same names as the walrus SQL drain, FR #4515):
+
+- `MSSQL_SERVER`, `MSSQL_DATABASE` (`a_search` or `a_search_sandbox`)
+- Auth: `MSSQL_TRUSTED_CONNECTION=true` **or** `MSSQL_USER` + `MSSQL_PASSWORD`
+
+```powershell
+.\walrus\install\Register-DailyImportTask.ps1 `
+  -MssqlServer 'walrus\ASEARCH' `
+  -MssqlDatabase a_search_sandbox `
+  -MssqlUser import `
+  -MssqlPasswordFile C:\secure\import.password
+```
+
 ## Locks
 
 1. SQL `sp_getapplock` resource `a-search-daily-import` (session-scoped; released if process dies)
