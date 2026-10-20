@@ -580,3 +580,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When /search writes search-fanout.json, also sync searches.json searchid (and normalized market/currency) so redqueen does not keep a stale id; handleAgentSearch tests take one opts object with event+headObject (not two args).
 - handleSqsWith429: *_missing_credentials must ERROR-log provider+searchid (no secrets) and write a-clubs status IN with products:[] error:missing_credentials, then ack/delete; never silent success
 - After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
+- Agent /search must keep product-only q (strip town/postcode/currency), store market/currency as fields (e.g. GB/GBP), map eBay marketplace from market, and sync searches.json searchid with search-fanout.json
