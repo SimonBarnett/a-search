@@ -147,6 +147,17 @@ onboarding: invite/join, approvals, feed links, and merge-writes to
 (schedule, Grok-then-Cursor runtime, `-DryRun`, credentials file contract,
 report path, skillbooks). Feed download remains #3999 / #4108; DB import #4001.
 
+## Daily Rakuten signup agent (FR #4701)
+
+Provider-aware entry: `tools/agent.ps1` or `redqueen/affiliate-agent/src/run.js`
+from cwd `S:\a-affiliates\rakuten` (same pattern as Awin under `...\awin`).
+Applications and approvals only — **no** Rakuten SQL download folders or
+feeds. Records live at `rakuten/_applications/{mid|slug}/`. Schedule:
+`Register-AffiliateAgentTask.ps1 -Provider rakuten` (06:30 daily; does not
+alter `a-search-awin-agent`). Seed docs under
+`redqueen/affiliate-agent/seed/a-affiliates/`. See
+`redqueen/affiliate-agent/README.md`.
+
 ## Provider AGENT.md --- Download format (FR #4208 / #4195)
 
 Live playbooks live in S3 (not the git tree): `s3://a-affiliates/{provider}/AGENT.md`
