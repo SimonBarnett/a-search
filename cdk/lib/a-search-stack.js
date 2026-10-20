@@ -197,12 +197,28 @@ function wireResultsBucketAccess(fn, bucket) {
 
 /**
  * FR #4038 / #4030: live provider workers write a-clubs/{host}/{guid}/IN/*.
+ * FR #4545 / #4441: touchLastmod -> rewriteMarkerMetadata uses CopyObject +
+ * object tagging; grantReadWrite does not include s3:CopyObject (ebay AccessDenied).
  * @param {lambda.Function} fn
  * @param {s3.IBucket} bucket
  */
 function wireAclubsInAccess(fn, bucket) {
   fn.addEnvironment('A_CLUBS_BUCKET', bucket.bucketName);
   bucket.grantReadWrite(fn);
+  const objectArn = bucket.arnForObjects
+    ? bucket.arnForObjects('*')
+    : `arn:aws:s3:::${bucket.bucketName}/*`;
+  fn.addToRolePolicy(
+    new iam.PolicyStatement({
+      sid: 'AclubsInCopyAndTag',
+      actions: [
+        's3:CopyObject',
+        's3:GetObjectTagging',
+        's3:PutObjectTagging',
+      ],
+      resources: [objectArn],
+    }),
+  );
 }
 
 /**
