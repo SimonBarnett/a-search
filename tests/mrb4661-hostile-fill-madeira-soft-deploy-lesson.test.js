@@ -10,8 +10,9 @@ describe('docs/mrb-4661 fill-madeira soft-deploy pin', () => {
   it('harvest-agent-skills pins skip disabled registry + soft-deploy missing .env', () => {
     const p = path.join(__dirname, '..', '.grok', 'skills', 'harvest-agent-skills', 'SKILL.md');
     const src = fs.readFileSync(p, 'utf8');
-    // Main reworded the tip (FR #4650); pin the durable phrases.
-    assert.match(src, /fill-madeira: only require \/madeira SSM for registry-enabled providers/);
+    // Fuller tip (PR #4670): must-skip + registry-enabled SSM + soft-deploy.
+    assert.match(src, /fill-madeira must skip disabled registry sources/);
+    assert.match(src, /only require \/madeira SSM for registry-enabled providers/);
     assert.match(src, /soft-deploys/);
     assert.match(src, /keep Lambda\/queue\/DLQ/);
   });
