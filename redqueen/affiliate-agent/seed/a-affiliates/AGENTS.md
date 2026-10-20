@@ -1,4 +1,4 @@
-# AGENTS — a-affiliates (seed for FR #4701)
+# AGENTS --- a-affiliates (seed for FR #4701)
 
 Generic affiliate rules for every provider. Provider `{provider}/AGENT.md` wins on conflicts.
 

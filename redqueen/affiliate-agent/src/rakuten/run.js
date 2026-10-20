@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * FR #4701: daily Rakuten signup agent — applications/approvals only (no SQL feeds).
+ * FR #4701: daily Rakuten signup agent --- applications/approvals only (no SQL feeds).
  */
 
 const fs = require('node:fs');
