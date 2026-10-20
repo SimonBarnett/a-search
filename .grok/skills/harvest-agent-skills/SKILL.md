@@ -582,3 +582,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
 - When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
+- Complementary Amazon tips OK: #4586 (unit pin + isTransientVendorHttp) and #4595 (Creators default + fill-madeira follow-up) are not exact twins --- merge both.
