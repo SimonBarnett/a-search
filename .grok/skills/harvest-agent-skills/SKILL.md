@@ -573,3 +573,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Walrus trusted SQL: MSSQL_TRUSTED_CONNECTION must use mssql/msnodesqlv8 + ODBC trustedConnection; tedious NTLM crashes ntlm-payload.js; drain processOnce must catch and ChangeVisibility(0) never delete; register -ServiceAccount without -ServicePasswordFile
 - FIX FR #4534: PowerShell Register dry-run tests must skip on non-win32 (Linux self-hosted CI); assemble FAKE_* passwords from parts for GitGuardian (FR #3304)
 - Live a-clubs IN/ workers: grantReadWrite is not enough for touchLastmod; wireAclubsInAccess must also grant s3:CopyObject + Get/PutObjectTagging (FR #4545 / #4441).
+- CDK bucket.grantReadWrite does not include s3:CopyObject; live a-clubs IN/ touchLastmod rewriteMarkerMetadata needs explicit CopyObject + Get/PutObjectTagging on the worker role (FR #4545).
