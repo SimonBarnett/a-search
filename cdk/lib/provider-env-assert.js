@@ -93,23 +93,47 @@ function assertProviderEnvFileKeys(filePath, sourceId, keys) {
 
 /**
  * FR #4650: missing or incomplete bundled .env must not fail synth.
- * Keep Lambda/queue/DLQ; worker fail-closes at run time (e.g. kelkoo_missing_credentials).
+ * Keep Lambda/queue/DLQ; omit fan-out when not ok (provider off for /search).
  * Message names keys/paths only - never values.
  * @param {string} filePath
  * @param {string} sourceId
  * @param {string[]} [keys]
- * @returns {{ ok: true } | { ok: false, message: string }}
+ * @returns {{ ok: boolean, message?: string, missingKeys: string[] }}
  */
 function softCheckProviderEnvFileKeys(filePath, sourceId, keys) {
-  try {
-    assertProviderEnvFileKeys(filePath, sourceId, keys);
-    return { ok: true };
-  } catch (err) {
+  const required =
+    Array.isArray(keys) && keys.length
+      ? keys
+      : requiredBundledEnvKeys(sourceId);
+  if (!required.length) {
+    return { ok: true, missingKeys: [] };
+  }
+  if (!fs.existsSync(filePath)) {
     return {
       ok: false,
-      message: String((err && err.message) || err),
+      missingKeys: required.slice(),
+      message: `provider env ${sourceId}: missing file ${filePath}. Required: ${required.join(', ')}`,
     };
   }
+  let parsed;
+  try {
+    parsed = parseDotEnv(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return {
+      ok: false,
+      missingKeys: required.slice(),
+      message: `provider env ${sourceId}: invalid line in ${filePath}`,
+    };
+  }
+  const missing = required.filter((key) => !String(parsed[key] || '').trim());
+  if (missing.length) {
+    return {
+      ok: false,
+      missingKeys: missing,
+      message: `provider env ${sourceId}: missing required ${missing.join(', ')} in ${filePath}`,
+    };
+  }
+  return { ok: true, missingKeys: [] };
 }
 
 module.exports = {

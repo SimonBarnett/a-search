@@ -722,6 +722,8 @@ class ASearchStack extends cdk.Stack {
     // FR-036 / FR-3949: marketplace (non-local) queues + workers only.
     // Local/DB-backed providers skip per-source queue/DLQ/worker/alarms/entry URL;
     // they share the single a-search-db-backed queue created below.
+    /** @type {Array<{ id: string, missingKeys: string[] }>} */
+    const credentialDisabled = [];
     for (const src of enabledSources) {
       // FR #4451: per-source AWS queues/Lambdas only for awsSearch providers.
       // Local/SQL sources (including skimlinks) share the db-backed queue.
@@ -729,8 +731,8 @@ class ASearchStack extends cdk.Stack {
         continue;
       }
       // FR #4480 / #4560 / #4650: prefer a .env with required key names (never
-      // print values). Missing credentials soft-deploy: keep Lambda/queue/DLQ,
-      // omit the bundle, worker fail-closes at run time (e.g. kelkoo).
+      // print values). Missing credentials: keep Lambda/queue/DLQ (no delete),
+      // omit the bundle, and do not fan out from /search (provider off).
       const providerEnvRoot = this.node.tryGetContext('providerEnvRoot') || '';
       const envFile = providerEnvFilePath(
         repoRoot,
@@ -740,10 +742,10 @@ class ASearchStack extends cdk.Stack {
       const envCheck = softCheckProviderEnvFileKeys(envFile, src.id);
       const envReady = envCheck.ok === true;
       if (!envReady) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[a-search] provider env ${src.id}: missing credentials; deploying fail-closed (resources kept): ${envCheck.message}`,
-        );
+        credentialDisabled.push({
+          id: src.id,
+          missingKeys: envCheck.missingKeys || [],
+        });
       }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src, {
@@ -784,9 +786,12 @@ class ASearchStack extends cdk.Stack {
           },
         });
 
-        const urlKey = queueUrlEnvKey(src.queueEnv, env);
-        entry.addEnvironment(urlKey, queue.queueUrl);
-        queue.grantSendMessages(entry);
+        // FR #4650: missing credentials => provider off for fan-out (resources kept).
+        if (envReady) {
+          const urlKey = queueUrlEnvKey(src.queueEnv, env);
+          entry.addEnvironment(urlKey, queue.queueUrl);
+          queue.grantSendMessages(entry);
+        }
 
         // FR #4030 / FR #4357: reserved concurrency 1 is one job at a time.
         // ESM MaximumConcurrency cannot be below 2, so it is not set here.
@@ -872,6 +877,16 @@ class ASearchStack extends cdk.Stack {
         );
         dlqAlarm.addAlarmAction(new cw_actions.SnsAction(opsAlarmTopic));
       }
+    }
+    if (credentialDisabled.length) {
+      const parts = credentialDisabled.map((row) => {
+        const keys = (row.missingKeys || []).join(', ');
+        return `${row.id}: missing ${keys}`;
+      });
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[a-search] providers disabled (missing credentials): ${parts.join('; ')}`,
+      );
     }
 
     // FR-3949: one standard SQS + DLQ for all DB-backed merchant/affiliate search.

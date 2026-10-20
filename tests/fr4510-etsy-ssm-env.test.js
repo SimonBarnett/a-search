@@ -78,30 +78,28 @@ describe('FR #4510 etsy SSM env fill', () => {
     assert.equal(etsyEnv.includes('ETSY_SHARED_SECRET'), false);
   });
 
-  it('missing required etsy api-key names the real SSM path and never a value', () => {
+  it('missing required etsy api-key disables etsy (no throw) and never leaks a value', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4510-miss-'));
     const sentinel = 'FAKE_SHOULD_NOT_LEAK';
-    assert.throws(
-      () =>
-        fillMadeiraProviderEnv({
-          repoRoot: root,
-          getParameter: (name) => {
-            if (name.startsWith('/madeira/etsy/')) {
-              return name.includes('api-key') ? '' : sentinel;
-            }
-            return AMAZON_EBAY_STUB[name] || '';
-          },
-        }),
-      (err) => {
-        const message = String(err && err.message);
-        assert.match(
-          message,
-          /missing SSM parameter \/madeira\/etsy\/api-key/,
-        );
-        assert.equal(message.includes(sentinel), false);
-        assert.equal(/ETSY_API_KEY=/.test(message), false);
-        return true;
+    const { written, disabled } = fillMadeiraProviderEnv({
+      repoRoot: root,
+      getParameter: (name) => {
+        if (name.startsWith('/madeira/etsy/')) {
+          return name.includes('api-key') ? '' : sentinel;
+        }
+        return AMAZON_EBAY_STUB[name] || '';
       },
+    });
+    assert.ok(written.length >= 2);
+    const etsyOff = disabled.find((d) => d.id === 'etsy');
+    assert.ok(etsyOff);
+    assert.ok(etsyOff.missingKeys.includes('/madeira/etsy/api-key'));
+    assert.equal(
+      fs.existsSync(path.join(root, 'providers', 'live', 'etsy', '.env')),
+      false,
     );
+    const blob = JSON.stringify(disabled);
+    assert.equal(blob.includes(sentinel), false);
+    assert.equal(/ETSY_API_KEY=/.test(blob), false);
   });
 });
