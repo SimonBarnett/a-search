@@ -98,23 +98,37 @@ Secret JSON keys: `SERVER`, `USER`, `PASSWORD`. `MSSQL_DATABASE` is plain CDK
 context (live default **`a_search`**, FR-251). Legacy targets were maintainer,
 local workers, awin/impact onboarding - not live marketplace workers.
 
-### Provider credentials (FR-138 / FR #4336)
+### Provider credentials (FR-138 / FR #4336 / FR #4650)
 
-`npm run deploy` first fills `providers/live/amazon/.env`,
-`providers/live/ebay/.env`, and `providers/live/etsy/.env` from the existing
-kebab-case `/madeira/amazon/*`, `/madeira/ebay/*`, and `/madeira/etsy/*` SSM
-parameters (e.g. `access-key`, `associate-tag`, `client-id`, `api-key`; values
-are never printed), then bundles each enabled live provider `.env` into that
-provider's Lambda asset. The file stays gitignored in git, but the worker asset
-pack uses `IgnoreMode.DOCKER` so CDK does not strip `.env` via the repo
-`.gitignore` (FR #4560). Synth fails before deploy when an enabled provider
-`.env` is missing required key *names* (values never printed). Rakuten, CJ, and
-Kelkoo rely on that bundled file at cold start (`applyBundledProviderEnv`).
+`npm run deploy` first runs `cdk/lib/fill-madeira-ssm-env.js`, which fills
+`providers/live/<id>/.env` from kebab-case `/madeira/<id>/*` SSM **only for
+providers enabled** in `providers/registry.json` (live or sandbox). Today that
+is amazon, ebay, and etsy when those ids are enabled (e.g. `access-key`,
+`associate-tag`, `client-id`, `api-key`; values are never printed). A disabled
+provider (both envs false) is skipped, so missing `/madeira/etsy/api-key` does
+not block deploy when Etsy is off.
+
+Each enabled live provider's `.env` is then bundled into that worker Lambda.
+The file stays gitignored in git, but the worker asset pack uses
+`IgnoreMode.DOCKER` so CDK does not strip `.env` via the repo `.gitignore`
+(FR #4560). When an enabled provider `.env` is missing required key *names*,
+synth **soft-deploys**: Lambda, queue, and DLQ stay (no delete), the `.env` is
+omitted from the asset, and the worker fail-closes at run time (e.g.
+`kelkoo_missing_credentials`). Values are never printed.
+
+**Kelkoo** has no `/madeira/kelkoo/*` SSM path and no Secrets Manager secret.
+Ops supply `providers/live/kelkoo/.env` (gitignored) from the Kelkoo Publisher
+Center Shopping API JWT (`KELKOO_API_KEY`) plus `KELKOO_PUBLISHER_ID` before
+deploy when search should run. Without that file, the Kelkoo worker still
+deploys fail-closed and keeps its DLQ (FR #4650). Rakuten and CJ use their
+bundled `.env` files the same way (operator secret files on the deploy host).
+
 Do not pass amazonProviderSecretArn or any other ProviderSecretArn. Live search
 workers are amazon, ebay, rakuten, cj, kelkoo, skimlinks, and etsy. AliExpress
 and Bol stay in the registry turned off. See [secrets-matrix.md](secrets-matrix.md).
 
-Etsy (FR #4510): put the Open API v3 keystring in SSM before deploy:
+Etsy (FR #4510): when Etsy is enabled, put the Open API v3 keystring in SSM
+before deploy:
 
 ```bash
 aws ssm put-parameter --name /madeira/etsy/api-key --type SecureString --value 'KEYSTRING' --region eu-west-2

@@ -91,9 +91,31 @@ function assertProviderEnvFileKeys(filePath, sourceId, keys) {
   }
 }
 
+/**
+ * FR #4650: missing or incomplete bundled .env must not fail synth.
+ * Keep Lambda/queue/DLQ; worker fail-closes at run time (e.g. kelkoo_missing_credentials).
+ * Message names keys/paths only - never values.
+ * @param {string} filePath
+ * @param {string} sourceId
+ * @param {string[]} [keys]
+ * @returns {{ ok: true } | { ok: false, message: string }}
+ */
+function softCheckProviderEnvFileKeys(filePath, sourceId, keys) {
+  try {
+    assertProviderEnvFileKeys(filePath, sourceId, keys);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      message: String((err && err.message) || err),
+    };
+  }
+}
+
 module.exports = {
   BUNDLED_ENV_REQUIRED,
   parseDotEnv,
   requiredBundledEnvKeys,
   assertProviderEnvFileKeys,
+  softCheckProviderEnvFileKeys,
 };

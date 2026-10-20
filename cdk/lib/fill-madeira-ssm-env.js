@@ -4,6 +4,9 @@
  * Deploy step: write amazon, ebay, and etsy provider `.env` files from existing
  * `/madeira/*` SSM parameters, then the stack bundles those files.
  * Parameter values are never printed.
+ * FR #4650: only fill/require SSM for providers enabled in providers/registry.json
+ * (live or sandbox). Disabled sources are skipped so deploy does not need their params.
+ * Kelkoo has no /madeira path - operator supplies providers/live/kelkoo/.env (or soft-deploy).
  */
 
 const fs = require('node:fs');
@@ -37,6 +40,36 @@ const MADEIRA_ENV_PARAMS = {
   ],
 };
 
+/**
+ * @param {{
+ *   repoRoot: string,
+ *   enabledSourceIds?: string[],
+ *   registryPath?: string,
+ * }} opts
+ * @returns {Set<string>}
+ */
+function resolveEnabledMadeiraSourceIds(opts) {
+  if (Array.isArray(opts.enabledSourceIds)) {
+    return new Set(opts.enabledSourceIds.map(String));
+  }
+  const registryPath =
+    opts.registryPath ||
+    path.join(opts.repoRoot, 'providers', 'registry.json');
+  if (!fs.existsSync(registryPath)) {
+    // Temp test roots without a registry: fill every MADEIRA source (legacy).
+    return new Set(Object.keys(MADEIRA_ENV_PARAMS));
+  }
+  const data = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+  const enabled = new Set();
+  for (const src of data.sources || []) {
+    if (!src || !src.id) continue;
+    if (src.enabled && (src.enabled.live === true || src.enabled.sandbox === true)) {
+      enabled.add(String(src.id));
+    }
+  }
+  return enabled;
+}
+
 function renderDotEnv(pairs) {
   const lines = [
     '# Generated at deploy from /madeira/* SSM. Gitignored. Do not commit.',
@@ -52,6 +85,8 @@ function renderDotEnv(pairs) {
  * @param {{
  *   repoRoot: string,
  *   getParameter: (name: string) => string|null|undefined,
+ *   enabledSourceIds?: string[],
+ *   registryPath?: string,
  * }} opts
  * @returns {string[]} files written
  */
@@ -60,8 +95,10 @@ function fillMadeiraProviderEnv(opts) {
     throw new Error('fillMadeiraProviderEnv: getParameter required');
   }
   const repoRoot = opts.repoRoot;
+  const enabledIds = resolveEnabledMadeiraSourceIds(opts);
   const written = [];
   for (const [sourceId, rows] of Object.entries(MADEIRA_ENV_PARAMS)) {
+    if (!enabledIds.has(sourceId)) continue;
     const pairs = [];
     for (const [paramName, envKey, required] of rows) {
       let value;
@@ -143,4 +180,5 @@ module.exports = {
   MADEIRA_ENV_PARAMS,
   fillMadeiraProviderEnv,
   renderDotEnv,
+  resolveEnabledMadeiraSourceIds,
 };
