@@ -594,3 +594,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After folding main into a docs/mrb pin PR, re-run sibling harvest pins: #4670 fuller fill-madeira tip broke mrb4661 colon-form needle; pin must-skip + registry-enabled SSM + soft-deploys together
 - a-search FIX CONFLICTING on handleSqs/IN writers after FR #4561 lands: keep-both isAmazonNonJsonFault + writeLiveProviderInResult, and both status and error on IN schema/write path; also align mrb4661 pin to fuller fill-madeira tip
 - Reopened FR after soft-deploy: missing credentials must omit fan-out and keep resources, never soft-deploy-on; fill never throws on absent SSM.
+- a-search MRB FR #4650: after handleAgentSearch passes env as envVars, fr4030 fan-out fixtures must set SQS_*_URL or ebay is skipped; land one fix PR into the tip then PASS
