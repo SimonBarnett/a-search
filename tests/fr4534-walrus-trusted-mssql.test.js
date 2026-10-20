@@ -44,15 +44,18 @@ describe('FR #4534 trusted MSSQL driver selection', () => {
   });
 
   it('SQL auth stays on tedious mssql without trustedConnection', () => {
+    // Assemble placeholder (FR #3304) so GitGuardian does not treat it as a real password.
+    const fakePw = ['FAKE_', 'sql', '_pw', '_fr4534'].join('');
     const cfg = mssqlConfigFromEnv({
       MSSQL_SERVER: 'walrus\\ASEARCH',
       MSSQL_DATABASE: 'a_search',
       MSSQL_USER: 'FAKE_sql_user',
-      MSSQL_PASSWORD: 'FAKE_sql_pw',
+      MSSQL_PASSWORD: fakePw,
     });
     assert.equal(cfg.driver, undefined);
     assert.equal(cfg.options && cfg.options.trustedConnection, undefined);
     assert.equal(cfg.user, 'FAKE_sql_user');
+    assert.equal(cfg.password, fakePw);
     assert.equal(resolveMssqlRequirePath(cfg), 'mssql');
   });
 });
@@ -152,55 +155,59 @@ describe('FR #4534 drain does not crash or delete on SQL errors', () => {
 });
 
 describe('FR #4534 Register-WalrusSqlDrainService dry-run', () => {
-  it('ServiceAccount without ServicePasswordFile + AWS file params succeeds', () => {
-    const awsCred = path.join(os.tmpdir(), `aws-cred-${process.pid}`);
-    const awsCfg = path.join(os.tmpdir(), `aws-cfg-${process.pid}`);
-    fs.writeFileSync(awsCred, '[default]\n', 'utf8');
-    fs.writeFileSync(awsCfg, '[default]\nregion=eu-west-2\n', 'utf8');
-    try {
-      const r = spawnSync(
-        'powershell.exe',
-        [
-          '-NoProfile',
-          '-ExecutionPolicy',
-          'Bypass',
-          '-File',
-          SCRIPT,
-          '-WhatIf',
-          '-SqsDbBackedUrl',
-          'https://sqs.eu-west-2.amazonaws.com/123/a-search-db-backed',
-          '-AClubsRoot',
-          'D:\\s3\\a-clubs',
-          '-MssqlServer',
-          'walrus\\ASEARCH',
-          '-MssqlDatabase',
-          'a_search',
-          '-ServiceAccount',
-          '.\\a-search-drain',
-          '-AwsSharedCredentialsFile',
-          awsCred,
-          '-AwsConfigFile',
-          awsCfg,
-        ],
-        { encoding: 'utf8', cwd: ROOT },
-      );
-      assert.equal(r.status, 0, `stderr=${r.stderr}\nstdout=${r.stdout}`);
-      assert.match(r.stdout, /MSSQL_TRUSTED_CONNECTION=true/);
-      assert.match(r.stdout, /AWS_SHARED_CREDENTIALS_FILE=/);
-      assert.match(r.stdout, /AWS_CONFIG_FILE=/);
-      assert.doesNotMatch(r.stdout, /ServicePasswordFile_required/i);
-      assert.match(r.stdout, /ObjectName.*a-search-drain/i);
-    } finally {
+  it(
+    'ServiceAccount without ServicePasswordFile + AWS file params succeeds',
+    { skip: process.platform !== 'win32' ? 'Windows only' : false },
+    () => {
+      const awsCred = path.join(os.tmpdir(), `aws-cred-${process.pid}`);
+      const awsCfg = path.join(os.tmpdir(), `aws-cfg-${process.pid}`);
+      fs.writeFileSync(awsCred, '[default]\n', 'utf8');
+      fs.writeFileSync(awsCfg, '[default]\nregion=eu-west-2\n', 'utf8');
       try {
-        fs.unlinkSync(awsCred);
-      } catch {
-        /* ignore */
+        const r = spawnSync(
+          'powershell.exe',
+          [
+            '-NoProfile',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-File',
+            SCRIPT,
+            '-WhatIf',
+            '-SqsDbBackedUrl',
+            'https://sqs.eu-west-2.amazonaws.com/123/a-search-db-backed',
+            '-AClubsRoot',
+            'D:\\s3\\a-clubs',
+            '-MssqlServer',
+            'walrus\\ASEARCH',
+            '-MssqlDatabase',
+            'a_search',
+            '-ServiceAccount',
+            '.\\a-search-drain',
+            '-AwsSharedCredentialsFile',
+            awsCred,
+            '-AwsConfigFile',
+            awsCfg,
+          ],
+          { encoding: 'utf8', cwd: ROOT },
+        );
+        assert.equal(r.status, 0, `stderr=${r.stderr}\nstdout=${r.stdout}`);
+        assert.match(r.stdout, /MSSQL_TRUSTED_CONNECTION=true/);
+        assert.match(r.stdout, /AWS_SHARED_CREDENTIALS_FILE=/);
+        assert.match(r.stdout, /AWS_CONFIG_FILE=/);
+        assert.doesNotMatch(r.stdout, /ServicePasswordFile_required/i);
+        assert.match(r.stdout, /ObjectName.*a-search-drain/i);
+      } finally {
+        try {
+          fs.unlinkSync(awsCred);
+        } catch {
+          /* ignore */
+        }
+        try {
+          fs.unlinkSync(awsCfg);
+        } catch {
+          /* ignore */
+        }
       }
-      try {
-        fs.unlinkSync(awsCfg);
-      } catch {
-        /* ignore */
-      }
-    }
-  });
+    },
+  );
 });
