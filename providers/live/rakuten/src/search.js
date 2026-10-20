@@ -340,9 +340,10 @@ async function defaultHttpRequest(req) {
  * @returns {Promise<object[]>}
  */
 async function searchRakuten(msg, deps) {
+  // FR #4450 / MRB #4456: empty-guard before HTTP (pin: keywordsFromMsg).
+  if (!keywordsFromMsg(msg)) return [];
   // FR #4544: Product Search `none` param for excludes — never `-term` in keyword.
   const keyword = keywordsFromAgentMsg(msg, { excludeStyle: 'none' });
-  if (!keyword) return [];
   const envVars = (deps && deps.env) || process.env;
   const creds = assertRakutenCreds(envVars);
   const httpRequest =
