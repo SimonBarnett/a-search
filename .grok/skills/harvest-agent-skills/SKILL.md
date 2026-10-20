@@ -585,3 +585,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
 - fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
+- Harvest meta tip that only restates close exact-family twins when CLOSED-duplicate + fr4197/U+2014 already on main: CLOSED-duplicate; DONE PASS
