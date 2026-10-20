@@ -36,12 +36,16 @@ mints a `searchid` and enqueues:
    `SQS_DB_BACKED_URL` / `SQS_SQL_URL`)
 
 Response: **`202 { searchid, queued: [providers..., "sql"] }`**. Nothing is
-written to MSSQL from AWS.
+written to MSSQL from AWS. Job payloads carry normalized `market` /
+`currency` (for example `GB` / `GBP`); providers must not rely on those
+strings living inside `q` (FR #4318 / #4563). eBay maps `market` to Browse
+`marketplace_id` (for example `EBAY_GB`).
 
 A second POST for the same GUID (FR #4265) reads
 `a-clubs/{hostkey}/{guid}/search-fanout.json` and returns
 `202 { searchid, queued, idempotent: true }` without sending again. The first
-successful fan-out writes that marker. On **FIFO** provider queues,
+successful fan-out writes that marker and updates
+`searches.json` `searchid` to match (FR #4563). On **FIFO** provider queues,
 `MessageDeduplicationId` is `{searchid}-{source}` so a lost response inside
 the FIFO dedupe window also does not double-enqueue. The SQL queue is
 **standard** (FR #4411): entry must **not** send `MessageGroupId` /

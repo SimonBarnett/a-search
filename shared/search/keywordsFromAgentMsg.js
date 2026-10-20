@@ -4,7 +4,13 @@
  * FR #4450 / #4446: agent POST /search fan-out carries `queries` / `exclude`
  * (searches.json shape). Live providers must not ignore those fields and must
  * never fall back to a blank / space / `*:*` Browse query.
+ * FR #4563: strip market/currency/postcode residue from q at fan-out time too.
  */
+
+const {
+  keywordsOnly,
+  normalizeMarketCurrency,
+} = require('./cleanSearchQuery');
 
 /**
  * @param {unknown} term
@@ -76,7 +82,15 @@ function keywordsFromAgentMsg(msg, opts) {
   const style = (opts && opts.excludeStyle) || 'minus';
   const include = collectQueryTerms(msg);
   if (!include.length) return '';
-  let q = include.join(' ');
+  const { market, currency } = normalizeMarketCurrency(msg || {});
+  const stripMarket = market || (msg && msg.market != null ? String(msg.market) : '');
+  const stripCurrency =
+    currency || (msg && msg.currency != null ? String(msg.currency) : '');
+  const cleaned = include
+    .map((t) => keywordsOnly(t, stripMarket, stripCurrency))
+    .filter(Boolean);
+  if (!cleaned.length) return '';
+  let q = cleaned.join(' ');
   if (style === 'minus') {
     for (const t of collectExcludeTerms(msg)) {
       if (/\s/.test(t)) q += ` -"${t.replace(/"/g, '')}"`;

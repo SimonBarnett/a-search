@@ -17,6 +17,9 @@ const { createSqsSendMessage } = require('./sqsSend');
 const {
   useridFromHostMetadata,
 } = require('../../shared/widgets/hostFolderMeta');
+const {
+  normalizeMarketCurrency,
+} = require('../../shared/search/cleanSearchQuery');
 
 class AgentSearchError extends Error {
   /**
@@ -306,6 +309,8 @@ async function handleAgentSearch(opts) {
     loadRegistry: io.loadRegistry,
   });
 
+  const { market, currency } = normalizeMarketCurrency(body);
+
   const send =
     io.sendMessage ||
     createSqsSendMessage({ envVars: io.env || process.env });
@@ -324,8 +329,8 @@ async function handleAgentSearch(opts) {
       widgetGuid: guid,
       queries,
       exclude,
-      ...(body.market ? { market: String(body.market) } : {}),
-      ...(body.currency ? { currency: String(body.currency) } : {}),
+      ...(market ? { market } : {}),
+      ...(currency ? { currency } : {}),
       env: jobEnv,
       sandbox: jobEnv === 'sandbox',
       // FIFO single-flight group per provider (FR #4030).
@@ -345,9 +350,59 @@ async function handleAgentSearch(opts) {
       ),
       ContentType: 'application/json',
     });
+    // FR #4563: keep searches.json searchid in sync with search-fanout.json.
+    await syncSearchesSearchid(io, hostkey, guid, searchid, {
+      market,
+      currency,
+    });
   }
 
   return { searchid, queued, idempotent: false };
+}
+
+/**
+ * FR #4563: when a new fan-out is written, update searches.json searchid
+ * (and market/currency when known) so redqueen and fan-out agree.
+ * @param {object} io
+ * @param {string} hostkey
+ * @param {string} guid
+ * @param {string} searchid
+ * @param {{ market?: string, currency?: string }} [mc]
+ */
+async function syncSearchesSearchid(io, hostkey, guid, searchid, mc) {
+  if (!io || typeof io.putObject !== 'function') return;
+  const host = String(hostkey).replace(/\/+$/, '');
+  const id = String(guid).trim().toLowerCase();
+  const key = `${host}/${id}/searches.json`;
+  let doc = { queries: [], exclude: [] };
+  if (typeof io.getObject === 'function') {
+    try {
+      const obj = await io.getObject({ Key: key });
+      let text = '';
+      const body = obj && obj.Body;
+      if (Buffer.isBuffer(body)) text = body.toString('utf8');
+      else if (typeof body === 'string') text = body;
+      else if (body && typeof body.transformToString === 'function') {
+        text = await body.transformToString();
+      }
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        doc = parsed;
+      }
+    } catch {
+      // no searches.json yet — still write a stub with searchid for agreement
+    }
+  }
+  doc.searchid = String(searchid);
+  if (mc && mc.market) doc.market = String(mc.market);
+  if (mc && mc.currency) doc.currency = String(mc.currency);
+  if (!Array.isArray(doc.queries)) doc.queries = [];
+  if (!Array.isArray(doc.exclude)) doc.exclude = [];
+  await io.putObject({
+    Key: key,
+    Body: Buffer.from(`${JSON.stringify(doc, null, 2)}\n`, 'utf8'),
+    ContentType: 'application/json',
+  });
 }
 
 module.exports = {
@@ -363,4 +418,5 @@ module.exports = {
   parseJsonBody,
   setAclubsIoFactoryForTests,
   useridFromHostMetadata,
+  syncSearchesSearchid,
 };
