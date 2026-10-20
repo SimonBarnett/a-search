@@ -15,6 +15,7 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   products?: object[],
  *   queries?: unknown[],
  *   exclude?: unknown[],
+ *   error?: string,
  *   putObject: Function,
  *   touchLastmod?: Function,
  *   headObject?: Function,
