@@ -591,3 +591,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon deploy default Creators; paapi_non_json/creators_non_json write status IN and complete SQS (not transient); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
 - a-search FIX after Creators default: fr4427 must expect handleSqsWith429 complete on paapi_non_json (not reject+backoff); plain 503 without that code stays transient; pin AMAZON_SEARCH_API=paapi on PA-API unit envs
 - a-search FIX #main: when assigned commit CI red is already fixed on newer main by a merged PR, DONE FIX with that PR URL; do not open a second heal PR
+- After folding main into a docs/mrb pin PR, re-run sibling harvest pins: #4670 fuller fill-madeira tip broke mrb4661 colon-form needle; pin must-skip + registry-enabled SSM + soft-deploys together
+- a-search FIX CONFLICTING on handleSqs/IN writers after FR #4561 lands: keep-both isAmazonNonJsonFault + writeLiveProviderInResult, and both status and error on IN schema/write path; also align mrb4661 pin to fuller fill-madeira tip
