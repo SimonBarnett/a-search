@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * docs/mrb-4586: hostile pin for harvest-agent-skills provider API default flip
