@@ -149,18 +149,21 @@ function stageProviderWorkerLambdaAsset(repoRoot, src, opts) {
     mssqlPackages = stageMssqlNodeModules(root, outDir).packages;
   }
 
+  const bundledEnv = Boolean(opts && opts.envFile);
   fs.writeFileSync(
     path.join(outDir, '.a-search-worker-asset.json'),
     JSON.stringify(
       {
         fr: '444',
         fr134: 'node_modules/@aws-sdk/client-s3',
+        fr4560: 'bundledEnv+IgnoreMode.DOCKER',
         id: src.id,
         folder: folderPosix,
         handler: workerHandlerPath(src),
         shared: true,
         workerLib: true,
         awsSdkS3,
+        bundledEnv,
         reportException: 'shared/intake/reportException.js',
         mssql: mssqlPackages.length > 0,
         mssqlPackages,
