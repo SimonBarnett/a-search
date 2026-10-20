@@ -575,5 +575,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Rakuten Product Search: put agent excludes on none (with language), never Lucene -term in keyword; INVALID_CONTEXT_VALUE is client skip not intake fatal
 - Live a-clubs IN/ workers: grantReadWrite is not enough for touchLastmod; wireAclubsInAccess must also grant s3:CopyObject + Get/PutObjectTagging (FR #4545 / #4441).
 - Trusted msnodesqlv8 must set MSSQL_ODBC_DRIVER (default ODBC Driver 17) or MSSQL_CONNECTION_STRING; Native Client 11.0 is often missing on modern Windows hosts
+- CDK Code.fromAsset default IgnoreMode.GIT applies repo .gitignore — staged providers/live/<id>/.env is stripped from worker zips; use IgnoreMode.DOCKER for worker assets and assert required .env key names before synth (never print values).
 - When changing live search.js keyword build, keep the exact empty-guard pin if (!keywordsFromMsg(msg)) return [] before HTTP (MRB #4456); do not swap to if (!keyword) after keywordsFromAgentMsg.
 - handleSqsWith429: *_missing_credentials must ERROR-log provider+searchid (no secrets) and write a-clubs status IN with products:[] error:missing_credentials, then ack/delete; never silent success
+- After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
