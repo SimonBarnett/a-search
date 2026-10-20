@@ -566,3 +566,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When skimlinks moves to kind local class affiliate, add providers/local/skimlinks/provider.json (even disabled stub) or FR #4463 loadAllProviderConfigs fails with missing_provider_json and the import pipeline tests fail.
 - Hostile pins that assert !includes('<<<<<<<') false-positive when a harvest lesson documents rg for conflict markers; match /^<<<<<<<(?: |$)/m (and >>>>) or reword the lesson without the literal marker bytes.
 - FR #4510: etsy deploy key source is kebab-case SSM /madeira/etsy/api-key via fill-madeira-ssm-env (same as amazon/ebay); registry stayed enabled on main; never commit .env
+- a-search etsy re-enable: deploy fills providers/live/etsy/.env from kebab-case SSM /madeira/etsy/api-key (required) + optional shared-secret; registry stays enabled; missing required param names the SSM path and never prints values.
