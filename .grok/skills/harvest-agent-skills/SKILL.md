@@ -585,3 +585,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
 - fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
+- FIX CI on a-search docs/mrb: when fr4197 non-ASCII fails and origin/main already ASCII-clean, one fold under FR #4649; re-run fr4197+pin; DONE FIX; no CI poll
