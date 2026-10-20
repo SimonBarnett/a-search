@@ -6,6 +6,12 @@
 
 Apply with `node scripts/db-migrate.js` (migrator secret; refuses wrong `DB_NAME()`).
 
+**Trusted Windows auth (FR #4548):** set `MSSQL_TRUSTED_CONNECTION=true` plus
+`MSSQL_SERVER` / `MSSQL_DATABASE`. The migrator uses `msnodesqlv8` with
+`MSSQL_ODBC_DRIVER` (default `ODBC Driver 17 for SQL Server`). Optional
+`MSSQL_CONNECTION_STRING` overrides the built ODBC string. Do not rely on the
+msnodesqlv8 default (`SQL Server Native Client 11.0`) --- it is often missing.
+
 ## Scripts
 
 | file | purpose |

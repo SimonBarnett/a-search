@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -18,10 +18,11 @@ No AWS Lambda connects to MSSQL. No inbound ports on walrus.
   -MssqlUser 'a_search_drain' `
   -MssqlPasswordFile 'C:\ai\a-search\walrus\config\mssql.password'
 
-# Trusted connection under a Windows service account (FR #4534).
+# Trusted connection under a Windows service account (FR #4534 / #4548).
 # On a domain controller use WONDERLAND\a-search-drain (local .\account is not possible).
 # Omit -ServicePasswordFile and set the ObjectName password via nssm interactively.
-# Trusted SQL uses msnodesqlv8 + ODBC Driver 17 (not tedious NTLM).
+# Trusted SQL uses msnodesqlv8 + ODBC Driver 17 (not Native Client 11.0 / tedious NTLM).
+# Optional: -MssqlOdbcDriver 'ODBC Driver 18 for SQL Server' (default is Driver 17).
 .\walrus\install\Register-WalrusSqlDrainService.ps1 `
   -SqsDbBackedUrl 'https://sqs.eu-west-2.amazonaws.com/ACCOUNT/a-search-db-backed' `
   -AClubsRoot 'D:\s3\a-clubs' `
@@ -53,6 +54,8 @@ parameters again so hand-set nssm values are not dropped).
 | `MSSQL_DATABASE` | `a_search` or `a_search_sandbox` (never `madeiradb`) |
 | `MSSQL_USER` / `MSSQL_PASSWORD` | SQL auth, **or** |
 | `MSSQL_TRUSTED_CONNECTION=true` | With `-ServiceAccount` ObjectName |
+| `MSSQL_ODBC_DRIVER` | Trusted only (FR #4548). Default `ODBC Driver 17 for SQL Server`. Set by `-MssqlOdbcDriver`. |
+| `MSSQL_CONNECTION_STRING` | Optional full ODBC string override (trusted path); wins over built `Driver=` string |
 
 If any required value is missing at process start, the drain prints
 `walrus-sql-drain missing config: KEY, ...` and exits **before** any
