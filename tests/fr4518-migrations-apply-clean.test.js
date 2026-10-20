@@ -91,7 +91,8 @@ describe('FR #4518 db/migrations apply-clean', () => {
   });
 
   it('runMigrations on empty ledger applies every file once (mock driver)', async () => {
-    const applied = new Set();
+    // FR #4521 driver tracks ledger as Map(name -> sha); Set inject still skips by name.
+    const applied = new Map();
     const ranSql = [];
     const { ran } = await runMigrations({
       database: 'a_search',
@@ -111,5 +112,6 @@ describe('FR #4518 db/migrations apply-clean', () => {
       query: async () => ({}),
     });
     assert.deepEqual(second.ran, []);
+    assert.deepEqual(second.skipped, names);
   });
 });
