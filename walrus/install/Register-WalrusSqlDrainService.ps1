@@ -62,6 +62,10 @@
   Optional password file for -ServiceAccount ObjectName (never echoed). Prefer
   interactive nssm ObjectName when the operator sets the password by hand.
 
+.PARAMETER MssqlOdbcDriver
+  ODBC driver name for trusted msnodesqlv8 (FR #4548). Sets MSSQL_ODBC_DRIVER.
+  Default: ODBC Driver 17 for SQL Server (Native Client 11.0 is often missing).
+
 .PARAMETER AwsSharedCredentialsFile
   Optional path for AWS_SHARED_CREDENTIALS_FILE (e.g. C:\ai\a-search\walrus\aws\credentials).
 
@@ -95,6 +99,7 @@ param(
   [string]$MssqlPasswordFile,
   [string]$ServiceAccount,
   [string]$ServicePasswordFile,
+  [string]$MssqlOdbcDriver = 'ODBC Driver 17 for SQL Server',
   [string]$AwsSharedCredentialsFile,
   [string]$AwsConfigFile,
   [string]$NssmExe,
@@ -171,6 +176,7 @@ function Build-DrainEnvPairs {
     [string]$MssqlUser,
     [string]$MssqlPassword,
     [bool]$TrustedConnection,
+    [string]$MssqlOdbcDriver,
     [string]$AwsSharedCredentialsFile,
     [string]$AwsConfigFile
   )
@@ -190,6 +196,13 @@ function Build-DrainEnvPairs {
   [void]$envPairs.Add("MSSQL_DATABASE=$MssqlDatabase")
   if ($TrustedConnection) {
     [void]$envPairs.Add('MSSQL_TRUSTED_CONNECTION=true')
+    # FR #4548: pin ODBC 17 so msnodesqlv8 does not pick Native Client 11.0.
+    $odbc = if ($MssqlOdbcDriver -and $MssqlOdbcDriver.Trim()) {
+      $MssqlOdbcDriver.Trim()
+    } else {
+      'ODBC Driver 17 for SQL Server'
+    }
+    [void]$envPairs.Add("MSSQL_ODBC_DRIVER=$odbc")
   } else {
     [void]$envPairs.Add("MSSQL_USER=$MssqlUser")
     [void]$envPairs.Add("MSSQL_PASSWORD=$MssqlPassword")
@@ -289,6 +302,7 @@ $envPairs = Build-DrainEnvPairs `
   -MssqlUser $MssqlUser `
   -MssqlPassword $mssqlPassword `
   -TrustedConnection $useTrusted `
+  -MssqlOdbcDriver $MssqlOdbcDriver `
   -AwsSharedCredentialsFile $AwsSharedCredentialsFile `
   -AwsConfigFile $AwsConfigFile
 
