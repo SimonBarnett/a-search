@@ -30,6 +30,7 @@ const {
   BUNDLED_ENV_REQUIRED,
   requiredBundledEnvKeys,
   assertProviderEnvFileKeys,
+  softCheckProviderEnvFileKeys,
 } = require('./provider-env-assert');
 /** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
@@ -725,18 +726,26 @@ class ASearchStack extends cdk.Stack {
       if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
-      // FR #4480 / #4560: enabled live providers must have a .env with required
-      // key names present (never print values). Disabled providers are not staged.
+      // FR #4480 / #4560 / #4650: prefer a .env with required key names (never
+      // print values). Missing credentials soft-deploy: keep Lambda/queue/DLQ,
+      // omit the bundle, worker fail-closes at run time (e.g. kelkoo).
       const providerEnvRoot = this.node.tryGetContext('providerEnvRoot') || '';
       const envFile = providerEnvFilePath(
         repoRoot,
         src.id,
         providerEnvRoot || undefined,
       );
-      assertProviderEnvFileKeys(envFile, src.id);
+      const envCheck = softCheckProviderEnvFileKeys(envFile, src.id);
+      const envReady = envCheck.ok === true;
+      if (!envReady) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[a-search] provider env ${src.id}: missing credentials; deploying fail-closed (resources kept): ${envCheck.message}`,
+        );
+      }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src, {
-        envFile,
+        envFile: envReady ? envFile : undefined,
       });
       const pascal = pascalSource(src.id);
       const envs = /** @type {Array<'live'|'sandbox'>} */ (
@@ -810,7 +819,7 @@ class ASearchStack extends cdk.Stack {
         // Amazon, eBay, and Etsy still copy non-secret public keys plus the
         // fixture/file values used by existing synth pins (FR #4336).
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
-        if (providerKeys && PROVIDER_ENV_FILE[src.id]) {
+        if (providerKeys && PROVIDER_ENV_FILE[src.id] && envReady) {
           const setKeys = wireProviderEnvFromFile(
             worker,
             src.id,
@@ -1783,6 +1792,7 @@ module.exports = {
   readProviderEnvFile,
   requiredBundledEnvKeys,
   assertProviderEnvFileKeys,
+  softCheckProviderEnvFileKeys,
   workerLambdaCodeAssetOptions,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
