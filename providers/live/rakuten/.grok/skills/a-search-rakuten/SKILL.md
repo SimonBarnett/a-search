@@ -60,10 +60,14 @@ Rakuten enforces **rate limits** per application key. Playbook:
 ## Env
 
 See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
-`RAKUTEN_CLIENT_SECRET`, `RAKUTEN_ENDPOINT`, `SQS_RAKUTEN_URL`,
-`S3_RESULTS_BUCKET`.
+`RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_ENDPOINT`,
+`RAKUTEN_LANGUAGE` (default `en_US`), `SQS_RAKUTEN_URL`, `S3_RESULTS_BUCKET`.
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
+
+**FR #4544:** Product Search rejects Lucene-style `-exclude` inside `keyword`
+(`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query param; on
+that ErrorID return empty products and do not file an intake fatal.
 
 ## Tests
 
