@@ -1,5 +1,6 @@
 -- target: a_search
 -- FR-251 / #1365: mdb schema for madeiradb identity (read-only).
+-- FR #4519: dynamic SQL via @sql + sp_executesql; Users.email_address AS email.
 -- Live (a_search): views over MADEIRADB_DATABASE (default madeiradb) via three-part names.
 -- Sandbox (a_search_sandbox): empty tables for anonymised copy (no madeiradb access).
 
@@ -8,7 +9,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'mdb')
 GO
 
 DECLARE @db sysname = DB_NAME();
-DECLARE @madeira sysname = COALESCE(NULLIF(CAST(SERVERPROPERTY('MachineName') AS nvarchar(128)), N''), N'madeiradb');
+DECLARE @madeira sysname = N'madeiradb';
+DECLARE @sql nvarchar(max);
 -- Prefer env-style override via SESSION_CONTEXT if ops set it; else madeiradb.
 IF SESSION_CONTEXT(N'MADEIRADB_DATABASE') IS NOT NULL
   SET @madeira = CONVERT(sysname, SESSION_CONTEXT(N'MADEIRADB_DATABASE'));
@@ -17,15 +19,31 @@ ELSE
 
 IF @db = N'a_search'
 BEGIN
-  -- Live: read-only views (no instead-of triggers).
+  -- Live: read-only views (no instead-of triggers). SELECT only on madeiradb.
   IF OBJECT_ID(N'mdb.Users', N'V') IS NULL
-    EXEC(N'CREATE VIEW mdb.Users AS SELECT user_id, role, permissions, referrer, email FROM ' + QUOTENAME(@madeira) + N'.dbo.Users');
+  BEGIN
+    SET @sql = N'CREATE VIEW mdb.Users AS SELECT user_id, role, permissions, referrer, email_address AS email FROM '
+      + QUOTENAME(@madeira) + N'.dbo.Users';
+    EXEC sys.sp_executesql @sql;
+  END
   IF OBJECT_ID(N'mdb.Partner', N'V') IS NULL
-    EXEC(N'CREATE VIEW mdb.Partner AS SELECT PartnerID, Approved FROM ' + QUOTENAME(@madeira) + N'.dbo.Partner');
+  BEGIN
+    SET @sql = N'CREATE VIEW mdb.Partner AS SELECT PartnerID, Approved FROM '
+      + QUOTENAME(@madeira) + N'.dbo.Partner';
+    EXEC sys.sp_executesql @sql;
+  END
   IF OBJECT_ID(N'mdb.clubscan', N'V') IS NULL
-    EXEC(N'CREATE VIEW mdb.clubscan AS SELECT ClubID, PartnerId, Url, active FROM ' + QUOTENAME(@madeira) + N'.dbo.clubscan');
+  BEGIN
+    SET @sql = N'CREATE VIEW mdb.clubscan AS SELECT ClubID, PartnerId, Url, active FROM '
+      + QUOTENAME(@madeira) + N'.dbo.clubscan';
+    EXEC sys.sp_executesql @sql;
+  END
   IF OBJECT_ID(N'mdb.UserApiKeys', N'V') IS NULL
-    EXEC(N'CREATE VIEW mdb.UserApiKeys AS SELECT user_id, api_key_type FROM ' + QUOTENAME(@madeira) + N'.dbo.UserApiKeys');
+  BEGIN
+    SET @sql = N'CREATE VIEW mdb.UserApiKeys AS SELECT user_id, api_key_type FROM '
+      + QUOTENAME(@madeira) + N'.dbo.UserApiKeys';
+    EXEC sys.sp_executesql @sql;
+  END
 END
 ELSE IF @db = N'a_search_sandbox'
 BEGIN
