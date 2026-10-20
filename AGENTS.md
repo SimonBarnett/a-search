@@ -22,7 +22,8 @@ You are in the **a-search** product root. Per-folder CWDs live under `entry/`,
 ## Read first
 
 1. `.grok/skills/harvest-agent-skills/SKILL.md` — honesty box (home: this repo)
-2. `docs/vision.md`, `docs/add-source.md`, `docs/skillbook-layout.md`
+2. `VISION.md` (root MRB pointer) + `docs/vision.md` (canonical LOCKED pack),
+   `docs/add-source.md`, `docs/skillbook-layout.md`
 3. Folder AGENTS for the CWD you will edit
 
 ## Foundation
