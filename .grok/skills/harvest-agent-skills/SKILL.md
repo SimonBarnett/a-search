@@ -604,3 +604,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sweep all handleAgentSearch fan-out fixtures for SQS_<SOURCE>_LIVE_URL when envVars gate is live (fr4030/fr4265/fr4415/fr4563), not one file at a time.
 - docs/mrb pin new test files need a trailing newline before PASS; pin harvest lesson needles already on main.
 - a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
+- a-search Amazon Creators HTTP 403 AssociateNotEligible is permanent: tag creators_not_eligible, write status IN, complete SQS (isAmazonPermanentVendorFault); bare other 403s stay hard fails.
