@@ -601,3 +601,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - MRB FAIL on ASCII tip: one fix PR from FR tip with ASCII normalize + hostile pin; Refs not second Closes; DONE FAIL; re-queue re-board and DONE FAIL again.
 - After FR #4650 envVars gate, any handleAgentSearch test that expects fan-out must set SQS_<SOURCE>_LIVE_URL (fr4030/#4708 and fr4265).
 - Amazon Creators deploy: mint LwA client_credentials from existing /madeira/amazon access-key+secret-key (amzn1.application-oa2-client / oa2-cs), POST creatorsapi.amazon/catalog/v1/searchItems with x-marketplace; do not require a static AMAZON_CREATORS_CREDENTIAL bearer.
+- Amazon Creators: mint client_credentials from existing /madeira/amazon access+secret; do not require a static AMAZON_CREATORS_CREDENTIAL SSM path.
