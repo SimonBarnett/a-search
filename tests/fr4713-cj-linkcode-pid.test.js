@@ -19,8 +19,8 @@ describe('FR #4713 CJ linkCode(pid) from CJ_WEBSITE_ID', () => {
   it('buildProductsQuery embeds linkCode(pid:) with website id', () => {
     const payload = buildProductsQuery('laptop', 'co-1', '99999');
     assert.match(payload.query, /linkCode\s*\(\s*pid:\s*"99999"\s*\)\s*\{\s*clickUrl\s*\}/);
-    assert.equal(payload.variables.keywords, 'laptop');
-    assert.match(payload.query, /\$keywords:\s*String!/);
+    assert.deepEqual(payload.variables.keywords, ['laptop']);
+    assert.match(payload.query, /\$keywords:\s*\[String!\]!/);
   });
 
   it('assertCjCreds requires CJ_WEBSITE_ID for GraphQL linkCode', () => {
