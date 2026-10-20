@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * docs/mrb-4614: hostile pin for harvest-agent-skills root VISION.md pointer
