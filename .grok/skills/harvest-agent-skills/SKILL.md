@@ -589,3 +589,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - fill-madeira: only require /madeira SSM for registry-enabled providers; missing bundled .env soft-deploys (keep Lambda/queue/DLQ, omit .env, run-time fail-closed); document Kelkoo operator .env (no /madeira/kelkoo)
 - a-search FIX when tip CONFLICTING on secrets-matrix after sibling creators-credential land: keep-both FR #4650 soft-deploy+enabled gate with main creators-credential path; DONE FIX; no CI poll
 - Amazon deploy default Creators; paapi_non_json/creators_non_json write status IN and complete SQS (not transient); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
+- a-search MRB: never self-MRB the docs/mrb-N pin you opened after harvest-lesson PASS; ACK then GIVEUP reason=self-MRB (FR #2604)
