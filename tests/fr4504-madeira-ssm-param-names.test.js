@@ -22,6 +22,7 @@ const EXPECTED_AMAZON = [
   ['/madeira/amazon/associate-tag', 'AMAZON_PARTNER_TAG', true],
   ['/madeira/amazon/host', 'AMAZON_HOST', true],
   ['/madeira/amazon/region', 'AMAZON_REGION', true],
+  ['/madeira/amazon/creators-credential', 'AMAZON_CREATORS_CREDENTIAL', false],
 ];
 
 const EXPECTED_EBAY = [

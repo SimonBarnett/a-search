@@ -10,6 +10,11 @@ const {
   keywordsFromAgentMsg,
   collectExcludeTerms,
 } = require('../../../../shared/search/keywordsFromAgentMsg');
+const {
+  keywordsOnly,
+  normalizeMarketCurrency,
+  ebayMarketplaceFromMarket,
+} = require('../../../../shared/search/cleanSearchQuery');
 
 class EbayCredsError extends Error {
   constructor(message) {
@@ -251,6 +256,9 @@ async function searchEbay(msg, deps) {
     return [];
   }
   const excludeTerms = excludeMatchTerms(msg);
+  // FR #4563: market selects marketplace; strip location/currency residue from q.
+  const { market } = normalizeMarketCurrency(msg || {});
+  const marketplaceId = ebayMarketplaceFromMarket(market, creds.marketplaceId);
 
   const token =
     deps && typeof deps.accessToken === 'string' && deps.accessToken
@@ -269,7 +277,12 @@ async function searchEbay(msg, deps) {
 
   for (const text of texts) {
     if (merged.length >= cap) break;
-    const q = buildEbayBrowseQ(text, excludeTerms);
+    const cleaned = keywordsOnly(
+      text,
+      market || (msg && msg.market),
+      (msg && msg.currency) || '',
+    );
+    const q = buildEbayBrowseQ(cleaned, excludeTerms);
     if (!q) continue;
     const limit = Math.min(cap, cap - merged.length);
     const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=${limit}`;
@@ -278,7 +291,7 @@ async function searchEbay(msg, deps) {
       url,
       headers: {
         Authorization: `Bearer ${token}`,
-        'X-EBAY-C-MARKETPLACE-ID': creds.marketplaceId,
+        'X-EBAY-C-MARKETPLACE-ID': marketplaceId,
         Accept: 'application/json',
       },
     });

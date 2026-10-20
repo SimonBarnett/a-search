@@ -575,7 +575,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Rakuten Product Search: put agent excludes on none (with language), never Lucene -term in keyword; INVALID_CONTEXT_VALUE is client skip not intake fatal
 - Live a-clubs IN/ workers: grantReadWrite is not enough for touchLastmod; wireAclubsInAccess must also grant s3:CopyObject + Get/PutObjectTagging (FR #4545 / #4441).
 - Trusted msnodesqlv8 must set MSSQL_ODBC_DRIVER (default ODBC Driver 17) or MSSQL_CONNECTION_STRING; Native Client 11.0 is often missing on modern Windows hosts
-- CDK Code.fromAsset default IgnoreMode.GIT applies repo .gitignore --- staged providers/live/<id>/.env is stripped from worker zips; use IgnoreMode.DOCKER for worker assets and assert required .env key names before synth (never print values).
+- CDK Code.fromAsset default IgnoreMode.GIT applies repo .gitignore  -  staged providers/live/<id>/.env is stripped from worker zips; use IgnoreMode.DOCKER for worker assets and assert required .env key names before synth (never print values).
 - When changing live search.js keyword build, keep the exact empty-guard pin if (!keywordsFromMsg(msg)) return [] before HTTP (MRB #4456); do not swap to if (!keyword) after keywordsFromAgentMsg.
 - When /search writes search-fanout.json, also sync searches.json searchid (and normalized market/currency) so redqueen does not keep a stale id; handleAgentSearch tests take one opts object with event+headObject (not two args).
 - handleSqsWith429: *_missing_credentials must ERROR-log provider+searchid (no secrets) and write a-clubs status IN with products:[] error:missing_credentials, then ack/delete; never silent success
@@ -583,5 +583,13 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
 - Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
 - a-search: keep canonical LOCKED pack at docs/vision.md; add short root VISION.md so MRB seats that look for VISION.md at repo root can quote IN/a-clubs/DLQ without falling back to issue text
+- When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
 - fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
+- fill-madeira must skip disabled registry sources; only require /madeira SSM for registry-enabled providers; missing bundled .env soft-deploys (keep Lambda/queue/DLQ, omit .env, run-time fail-closed); document Kelkoo operator .env (no /madeira/kelkoo)
+- a-search FIX when tip CONFLICTING on secrets-matrix after sibling creators-credential land: keep-both FR #4650 soft-deploy+enabled gate with main creators-credential path; DONE FIX; no CI poll
+- Amazon deploy default Creators; paapi_non_json/creators_non_json write status IN and complete SQS (not transient); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
+- a-search FIX after Creators default: fr4427 must expect handleSqsWith429 complete on paapi_non_json (not reject+backoff); plain 503 without that code stays transient; pin AMAZON_SEARCH_API=paapi on PA-API unit envs
+- a-search FIX #main: when assigned commit CI red is already fixed on newer main by a merged PR, DONE FIX with that PR URL; do not open a second heal PR
+- After folding main into a docs/mrb pin PR, re-run sibling harvest pins: #4670 fuller fill-madeira tip broke mrb4661 colon-form needle; pin must-skip + registry-enabled SSM + soft-deploys together
+- a-search FIX CONFLICTING on handleSqs/IN writers after FR #4561 lands: keep-both isAmazonNonJsonFault + writeLiveProviderInResult, and both status and error on IN schema/write path; also align mrb4661 pin to fuller fill-madeira tip

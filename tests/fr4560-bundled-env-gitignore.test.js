@@ -33,7 +33,7 @@ describe('FR #4560 bundled .env survives CDK asset pack', () => {
       src,
       /Code\.fromAsset\(\s*workerAssetDir\s*,\s*workerLambdaCodeAssetOptions\(\)/,
     );
-    assert.match(src, /assertProviderEnvFileKeys\(envFile,\s*src\.id\)/);
+    assert.match(src, /softCheckProviderEnvFileKeys\(envFile,\s*src\.id\)/);
   });
 
   it('requiredBundledEnvKeys covers rakuten, cj, kelkoo search secrets', () => {

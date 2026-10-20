@@ -77,23 +77,26 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 Enabled live providers do not use Secrets Manager. Deploy bundles
 `providers/live/<id>/.env` into that worker Lambda. The worker reads the file
 at run time. Amazon, eBay, and Etsy files are filled from kebab-case
-`/madeira/amazon/{access-key,secret-key,associate-tag,host,region}`,
+`/madeira/amazon/{access-key,secret-key,associate-tag,host,region,creators-credential}`,
 `/madeira/ebay/{client-id,client-secret,campaign-id,marketplace-id}`, and
-`/madeira/etsy/{api-key}` SSM parameters (`ebay/refresh-token` and
+`/madeira/etsy/{api-key}` SSM parameters **only when that provider is enabled**
+in `providers/registry.json` (FR #4650; `ebay/refresh-token` and
 `etsy/shared-secret` optional; values are not printed). A missing required
-parameter fails deploy naming the SSM path only. Rakuten reads `RAKUTEN_CLIENT_ID`,
+parameter for an enabled MADEIRA provider fails the fill step naming the SSM
+path only. A missing bundled `.env` for an enabled worker soft-deploys
+(resources kept; run-time fail-closed). Rakuten reads `RAKUTEN_CLIENT_ID`,
 `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`, then exchanges them for a short-lived
 token. `EBAY_ENV` still comes from the stack env (live means production).
 
 | Source | Keys (become env names) | Lambdas |
 |--------|-------------------------|---------|
-| amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` | `a-search-amazon-worker-{live,sandbox}` |
+| amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` (`AMAZON_CREATORS_CREDENTIAL` optional from `/madeira/amazon/creators-credential`, FR #4584) | `a-search-amazon-worker-{live,sandbox}` |
 | ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
 | rakuten | bundled `.env`: `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
 | impact | `IMPACT_CAMPAIGN_ID`, `IMPACT_ACCOUNT_SID`, `IMPACT_AUTH_TOKEN` | workers + impact onboarding live/sandbox |
-| kelkoo | `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
+| kelkoo | bundled `.env` (no `/madeira/kelkoo/*`): `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` from Publisher Center; omit file = soft-deploy fail-closed (FR #4650) | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |
 | skimlinks | `SKIMLINKS_API_KEY`, `SKIMLINKS_PUBLISHER_ID` | `a-search-skimlinks-worker-{live,sandbox}` (FR-168); plain `SKIMLINKS_COUNTRY=uk` |
 | aliexpress | `ALIEXPRESS_API_KEY` | `a-search-aliexpress-worker-{live,sandbox}` (FR-169); plain `ALIEXPRESS_TRACKING_ID=a-search` |
 | shopify | worker | SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STORE_URL | Secrets Manager JSON (`a-search/{env}/providers/shopify/app` + selftest fallback) |

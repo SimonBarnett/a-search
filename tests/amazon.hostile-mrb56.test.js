@@ -28,6 +28,7 @@ describe('MRB #56 hostile: FR-016 amazon scaffold', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
+          AMAZON_SEARCH_API: 'paapi',
           AMAZON_ACCESS_KEY: 'AKIATEST',
           AMAZON_SECRET_KEY: 'secret',
           AMAZON_PARTNER_TAG: 'tag-20',

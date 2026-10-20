@@ -15,6 +15,8 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   products?: object[],
  *   queries?: unknown[],
  *   exclude?: unknown[],
+ *   status?: object,
+ *   error?: string,
  *   putObject: Function,
  *   touchLastmod?: Function,
  *   headObject?: Function,
@@ -30,7 +32,17 @@ async function writeInResultToS3(opts) {
   if (!opts || typeof opts.putObject !== 'function') {
     throw new Error('putObject_required');
   }
-  const body = buildInResult(opts);
+  const body = buildInResult({
+    hostkey: opts.hostkey,
+    guid: opts.guid,
+    searchid: opts.searchid,
+    source: opts.source,
+    products: opts.products,
+    queries: opts.queries,
+    exclude: opts.exclude,
+    status: opts.status,
+    error: opts.error,
+  });
   const Key = inResultKey({
     hostkey: body.hostkey,
     guid: body.guid,
@@ -57,8 +69,29 @@ async function writeInResultToS3(opts) {
       bucket: opts.bucket,
       now: opts.now,
     };
-    await opts.touchLastmod({ Key: `${body.hostkey}/${body.guid}/`, ...s3 });
-    await opts.touchLastmod({ Key: `${body.hostkey}/`, ...s3 });
+    // FR #4559: IN/ JSON is the search result. Marker lastmod rewrite is best-effort ---
+    // a 403/AccessDenied on CopyObject must not throw (else successful searches hit DLQ).
+    const logWarn =
+      typeof opts.log === 'function'
+        ? opts.log
+        : (msg) => {
+            try {
+              console.warn(msg);
+            } catch {
+              // ignore
+            }
+          };
+    for (const markerKey of [
+      `${body.hostkey}/${body.guid}/`,
+      `${body.hostkey}/`,
+    ]) {
+      try {
+        await opts.touchLastmod({ Key: markerKey, ...s3 });
+      } catch (err) {
+        const detail = err && err.message ? String(err.message) : String(err);
+        logWarn(`touchLastmod_best_effort_failed key=${markerKey} ${detail}`);
+      }
+    }
   }
 
   return { Key, body };

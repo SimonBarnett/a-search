@@ -30,6 +30,7 @@ const {
   BUNDLED_ENV_REQUIRED,
   requiredBundledEnvKeys,
   assertProviderEnvFileKeys,
+  softCheckProviderEnvFileKeys,
 } = require('./provider-env-assert');
 /** FR-143: 30-day CloudWatch Logs retention on every Lambda. */
 const LOG_RETENTION = logs.RetentionDays.ONE_MONTH;
@@ -204,6 +205,9 @@ function wireResultsBucketAccess(fn, bucket) {
  * FR #4038 / #4030: live provider workers write a-clubs/{host}/{guid}/IN/*.
  * FR #4545 / #4441: touchLastmod -> rewriteMarkerMetadata uses CopyObject +
  * object tagging; grantReadWrite does not include s3:CopyObject (ebay AccessDenied).
+ * FR #4559: annotated markers (redqueen PutObjectAnnotation) --- CopyObject /
+ * Metadata REPLACE on those keys needs Get/List ObjectAnnotation (same family as
+ * parts-gateway / redqueen annotator). Workers do not Put/Delete annotations.
  * @param {lambda.Function} fn
  * @param {s3.IBucket} bucket
  */
@@ -220,6 +224,8 @@ function wireAclubsInAccess(fn, bucket) {
         's3:CopyObject',
         's3:GetObjectTagging',
         's3:PutObjectTagging',
+        's3:GetObjectAnnotation',
+        's3:ListObjectAnnotations',
       ],
       resources: [objectArn],
     }),
@@ -331,6 +337,8 @@ const PROVIDER_PLAIN_DEFAULTS = {
   amazon: {
     AMAZON_HOST: 'webservices.amazon.co.uk',
     AMAZON_REGION: 'eu-west-1',
+    // FR #4562: deploy default Creators (PA-API 5 returns HTML 503s).
+    AMAZON_SEARCH_API: 'creators',
   },
   ebay: {
     EBAY_MARKETPLACE_ID: 'EBAY_GB',
@@ -720,18 +728,26 @@ class ASearchStack extends cdk.Stack {
       if (isLocalProviderFolder(src.folder) || src.kind === 'local' || !isAwsSearchProvider(src)) {
         continue;
       }
-      // FR #4480 / #4560: enabled live providers must have a .env with required
-      // key names present (never print values). Disabled providers are not staged.
+      // FR #4480 / #4560 / #4650: prefer a .env with required key names (never
+      // print values). Missing credentials soft-deploy: keep Lambda/queue/DLQ,
+      // omit the bundle, worker fail-closes at run time (e.g. kelkoo).
       const providerEnvRoot = this.node.tryGetContext('providerEnvRoot') || '';
       const envFile = providerEnvFilePath(
         repoRoot,
         src.id,
         providerEnvRoot || undefined,
       );
-      assertProviderEnvFileKeys(envFile, src.id);
+      const envCheck = softCheckProviderEnvFileKeys(envFile, src.id);
+      const envReady = envCheck.ok === true;
+      if (!envReady) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[a-search] provider env ${src.id}: missing credentials; deploying fail-closed (resources kept): ${envCheck.message}`,
+        );
+      }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
       const workerAssetDir = stageProviderWorkerLambdaAsset(repoRoot, src, {
-        envFile,
+        envFile: envReady ? envFile : undefined,
       });
       const pascal = pascalSource(src.id);
       const envs = /** @type {Array<'live'|'sandbox'>} */ (
@@ -805,7 +821,7 @@ class ASearchStack extends cdk.Stack {
         // Amazon, eBay, and Etsy still copy non-secret public keys plus the
         // fixture/file values used by existing synth pins (FR #4336).
         const providerKeys = PROVIDER_CREDENTIAL_KEYS[src.id];
-        if (providerKeys && PROVIDER_ENV_FILE[src.id]) {
+        if (providerKeys && PROVIDER_ENV_FILE[src.id] && envReady) {
           const setKeys = wireProviderEnvFromFile(
             worker,
             src.id,
@@ -1778,6 +1794,7 @@ module.exports = {
   readProviderEnvFile,
   requiredBundledEnvKeys,
   assertProviderEnvFileKeys,
+  softCheckProviderEnvFileKeys,
   workerLambdaCodeAssetOptions,
   WORKER_LAMBDA_TIMEOUT_SEC,
   WORKER_QUEUE_VISIBILITY_TIMEOUT_SEC,
