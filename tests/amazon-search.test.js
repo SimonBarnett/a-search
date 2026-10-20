@@ -30,6 +30,7 @@ const baseMsg = {
 
 const credEnv = {
   A_SEARCH_ENV: 'sandbox',
+  AMAZON_SEARCH_API: 'paapi',
   AMAZON_ACCESS_KEY: 'AKIATEST',
   AMAZON_SECRET_KEY: 'secret-test',
   AMAZON_PARTNER_TAG: 'tag-20',
@@ -89,6 +90,7 @@ describe('FR-030 amazon live search client', () => {
         run(baseMsg, {
           env: {
             A_SEARCH_ENV: 'sandbox',
+            AMAZON_SEARCH_API: 'paapi',
             S3_RESULTS_BUCKET: 'b',
           },
           httpRequest: async () => {

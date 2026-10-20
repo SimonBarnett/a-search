@@ -1,10 +1,11 @@
 'use strict';
 
 /**
- * Amazon live provider worker (FR-030 / FR-183).
- * Default: PA-API SearchItems -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
- * When AMAZON_SEARCH_API=creators (or AMAZON_CREATORS_ENABLED), use Creators
- * client instead (FR-181/182). Fail-closed if Creators creds missing while flag on.
+ * Amazon live provider worker (FR-030 / FR-183 / FR #4562).
+ * Default: Creators API -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
+ * Explicit AMAZON_SEARCH_API=paapi keeps PA-API SearchItems.
+ * Fail-closed if Creators creds missing while Creators path is selected.
+ * FR #4562: paapi_non_json / creators_non_json -> status IN, no DLQ burn.
  */
 
 const path = require('node:path');
@@ -16,6 +17,7 @@ const {
 const { writeLiveProviderInResult } = require('../../../../shared/search/writeLiveProviderInResult');
 const { handleSqsWith429 } = require('../../../../shared/search/handleSqsWith429');
 const { attachDefaultS3 } = require('../../../../shared/search/liveWorkerS3');
+const { isAmazonNonJsonFault } = require('../../../../shared/search/backoff429');
 const {
   searchAmazon,
   assertAmazonCreds,
@@ -63,16 +65,10 @@ async function run(msg, deps) {
         : searchAmazon;
   }
 
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
-
   const liveS3 = attachDefaultS3(deps);
-  const written = await writeLiveProviderInResult({
+  const writeOpts = {
     msg,
     source: 'amazon',
-    products,
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
@@ -84,6 +80,51 @@ async function run(msg, deps) {
     getObjectTagging: liveS3.getObjectTagging,
     putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
+  };
+
+  let products;
+  try {
+    products = await searchFn(msg, {
+      env: envVars,
+      httpRequest: deps && deps.httpRequest,
+    });
+  } catch (err) {
+    // FR #4562: non-JSON HTML from Amazon is permanent for this attempt class.
+    // Write status IN (empty products) and complete; do not burn 3x into DLQ.
+    if (isAmazonNonJsonFault(err)) {
+      const status = {
+        code: err.code,
+        httpStatus: err.status,
+        message: err && err.message ? String(err.message) : String(err),
+        bodyPreview:
+          err && err.bodyText != null
+            ? String(err.bodyText).slice(0, 200)
+            : undefined,
+      };
+      const written = await writeLiveProviderInResult({
+        ...writeOpts,
+        products: [],
+        status,
+      });
+      return {
+        ok: true,
+        skipped: 'vendor_non_json',
+        source: 'amazon',
+        searchId: msg.searchId,
+        env: msg.env,
+        products: [],
+        key: written.key,
+        bucket: written.bucket,
+        searchApi: useCreators ? 'creators' : 'paapi',
+        status,
+      };
+    }
+    throw err;
+  }
+
+  const written = await writeLiveProviderInResult({
+    ...writeOpts,
+    products,
   });
 
   return {

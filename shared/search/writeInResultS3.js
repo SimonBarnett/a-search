@@ -15,6 +15,7 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   products?: object[],
  *   queries?: unknown[],
  *   exclude?: unknown[],
+ *   status?: object,
  *   putObject: Function,
  *   touchLastmod?: Function,
  *   headObject?: Function,
@@ -30,7 +31,16 @@ async function writeInResultToS3(opts) {
   if (!opts || typeof opts.putObject !== 'function') {
     throw new Error('putObject_required');
   }
-  const body = buildInResult(opts);
+  const body = buildInResult({
+    hostkey: opts.hostkey,
+    guid: opts.guid,
+    searchid: opts.searchid,
+    source: opts.source,
+    products: opts.products,
+    queries: opts.queries,
+    exclude: opts.exclude,
+    status: opts.status,
+  });
   const Key = inResultKey({
     hostkey: body.hostkey,
     guid: body.guid,

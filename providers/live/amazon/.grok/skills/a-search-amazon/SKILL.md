@@ -20,16 +20,16 @@ description: >
 You are working in **`providers/live/amazon/`** - offline worker for
 registry id `amazon` (`kind: live`, default-on).
 
-## API choice (FR-045 + FR-181)
+## API choice (FR-045 + FR-181 + FR #4562)
 
-LOCKED (Phase 1): Amazon live search uses PA-API SearchItems (shipped in
-FR-030). Associates Creators API remains a **follow-up FR** path when
-credentials/access are available.
+LOCKED (Phase 1): Amazon PA-API SearchItems shipped in FR-030 and remains
+available. Associates Creators API is implemented (FR-182/183).
 
-Decision (LOCKED) / FR-181 coexistence: Creators API runs **behind a feature flag**
-(default off). **PA-API SearchItems remains** the live production path. Creators
-does **not** replace PA-API. Implementation starts at **FR-182** (client + fixtures,
-flagged off). Do not swap clients in this folder without that FR path.
+Decision (LOCKED) / FR-181 coexistence: Creators API runs **behind a feature flag**.
+**PA-API SearchItems remains** available via explicit `AMAZON_SEARCH_API=paapi`.
+**FR #4562** sets the deploy default to Creators (`AMAZON_SEARCH_API=creators`)
+because PA-API 5 returns HTML 503s in production. Non-JSON Amazon faults write
+a status IN file and do not burn three SQS receives into the DLQ.
 
 See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
 [docs/fr/FR-181.md](../../../../../docs/fr/FR-181.md).
@@ -48,12 +48,14 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
 `src/worker.js` exports `run(msg, deps?)`:
 
 1. `assertWorkerEnv` - `message.env` must equal `A_SEARCH_ENV`
-2. Require `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
-3. Signed PA-API `SearchItems` POST (`src/search.js`); injectable `httpRequest` for fixtures
-   - FR-182: optional Creators client `src/creatorsSearch.js` behind `AMAZON_SEARCH_API=creators` (default off)
-   - FR-183: worker selects Creators when `AMAZON_SEARCH_API=creators` (fail-closed on missing Creators creds); else PA-API
+2. Creators path (default, FR #4562): `AMAZON_CREATORS_CREDENTIAL` + `AMAZON_PARTNER_TAG`
+   (fail-closed). PA-API path (`AMAZON_SEARCH_API=paapi`): `AMAZON_ACCESS_KEY`,
+   `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`
+3. Search HTTP (`src/search.js` or `src/creatorsSearch.js`); injectable `httpRequest`
+   - FR-182/183 / #4562: Creators default on; explicit `paapi` keeps PA-API
+   - Non-JSON (`paapi_non_json` / `creators_non_json`): status IN, no DLQ burn
 4. Normalize items (`src/normalize.js`) - `products[]`
-5. `writeResults` - `S3_RESULTS_BUCKET` at `{env}/amazon/{userId}/{catalogId}/{searchId}.json`
+5. `writeLiveProviderInResult` - a-clubs `IN/{searchid}-amazon.json`
 
 Message shape: `searchId`, `userId`, `env`, `q` / `searchterms`, `catalogId`,
 `category`, `subcategory`, `source`.

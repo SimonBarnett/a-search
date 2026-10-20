@@ -178,8 +178,8 @@ async function defaultHttpRequest(signed) {
   try {
     json = text ? JSON.parse(text) : {};
   } catch {
-    // FR #4427: attach status so SQS visibility backoff + intake skip work
-    // when PA-API returns HTML/gateway bodies (common on 503).
+    // FR #4427 / #4562: attach status+code. Non-JSON is not transient
+    // (worker writes status IN; handleSqsWith429 skips DLQ burn).
     const err = new Error(`Amazon PA-API non-JSON response (${res.status})`);
     err.status = res.status;
     err.code = 'paapi_non_json';

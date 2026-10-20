@@ -43,6 +43,7 @@ describe('FR-016 amazon provider scaffold', () => {
       {
         env: {
           A_SEARCH_ENV: 'sandbox',
+          AMAZON_SEARCH_API: 'paapi',
           AMAZON_ACCESS_KEY: 'AKIATEST',
           AMAZON_SECRET_KEY: 'secret',
           AMAZON_PARTNER_TAG: 'tag-20',

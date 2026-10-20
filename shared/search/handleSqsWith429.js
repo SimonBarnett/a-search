@@ -5,7 +5,7 @@
  * On 429: ChangeMessageVisibility (Retry-After), then rethrow so SQS retries.
  */
 
-const { backoffFor429 } = require('./backoff429');
+const { backoffFor429, isAmazonNonJsonFault } = require('./backoff429');
 
 /**
  * @param {unknown} err
@@ -98,6 +98,17 @@ async function handleSqsWith429(opts) {
         results.push({
           ok: false,
           skipped: 'missing_credentials',
+          code: err.code,
+          source: opts.source || '',
+        });
+        continue;
+      }
+      // FR #4562: Amazon non-JSON HTML — complete the batch (worker should
+      // write status IN); do not retry into DLQ or spam intake.
+      if (isAmazonNonJsonFault(err)) {
+        results.push({
+          ok: false,
+          skipped: 'vendor_non_json',
           code: err.code,
           source: opts.source || '',
         });

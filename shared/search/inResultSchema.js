@@ -61,18 +61,21 @@ function validateInResult(raw) {
       ? o.parts
       : [];
 
-  return {
-    ok: true,
-    value: {
-      searchid: String(searchid).trim(),
-      source: String(source).trim().toLowerCase(),
-      hostkey: String(hostkey).trim(),
-      guid: String(guid).trim(),
-      products,
-      queries: Array.isArray(o.queries) ? o.queries : undefined,
-      exclude: Array.isArray(o.exclude) ? o.exclude : undefined,
-    },
+  /** @type {Record<string, unknown>} */
+  const value = {
+    searchid: String(searchid).trim(),
+    source: String(source).trim().toLowerCase(),
+    hostkey: String(hostkey).trim(),
+    guid: String(guid).trim(),
+    products,
+    queries: Array.isArray(o.queries) ? o.queries : undefined,
+    exclude: Array.isArray(o.exclude) ? o.exclude : undefined,
   };
+  // FR #4562: optional vendor status (non-JSON HTML etc.) on the IN body.
+  if (o.status && typeof o.status === 'object' && !Array.isArray(o.status)) {
+    value.status = o.status;
+  }
+  return { ok: true, value };
 }
 
 /**
@@ -85,6 +88,7 @@ function validateInResult(raw) {
  *   products?: object[],
  *   queries?: unknown[],
  *   exclude?: unknown[],
+ *   status?: object,
  * }} opts
  */
 function buildInResult(opts) {
@@ -96,6 +100,7 @@ function buildInResult(opts) {
     products: Array.isArray(opts.products) ? opts.products : [],
     queries: opts.queries,
     exclude: opts.exclude,
+    status: opts.status,
   });
   if (!v.ok) {
     const err = new Error(v.error);

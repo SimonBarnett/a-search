@@ -41,6 +41,7 @@ function resolveInPathFromMsg(msg) {
  *   products?: object[],
  *   queries?: unknown[],
  *   exclude?: unknown[],
+ *   status?: object,
  *   envVars?: Record<string, string|undefined>,
  *   putObject?: Function,
  *   touchLastmod?: Function,
@@ -115,6 +116,8 @@ async function writeLiveProviderInResult(opts) {
     products: Array.isArray(opts.products) ? opts.products : [],
     queries: opts.queries != null ? opts.queries : msg.queries,
     exclude: opts.exclude != null ? opts.exclude : msg.exclude,
+    // FR #4562: optional vendor status (e.g. paapi_non_json) on IN body.
+    status: opts.status,
     putObject,
     touchLastmod: touch,
     headObject,
