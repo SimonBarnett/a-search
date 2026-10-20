@@ -6,6 +6,7 @@
  * FR #4438 / #4561: *_missing_credentials (and other non-retryable provider
  * skips) ack the message, ERROR-log provider+searchid (no secrets), and write
  * a zero-product status IN with error so consumers see the provider did not run.
+ * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query skip.
  */
 
 const { backoffFor429 } = require('./backoff429');
@@ -36,6 +37,19 @@ function isEnvIsolation(err) {
 function isMissingProviderCreds(err) {
   const code = err && typeof err.code === 'string' ? err.code : '';
   return /_missing_credentials$/.test(code);
+}
+
+/**
+ * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query fault.
+ * Skip intake fatal (same class as missing creds); do not DLQ-loop.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isVendorClientSkip(err) {
+  if (isMissingProviderCreds(err)) return true;
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  if (code === 'rakuten_invalid_context') return true;
+  return /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || err || ''));
 }
 
 /**
@@ -232,6 +246,18 @@ async function handleSqsWith429(opts) {
         });
         continue;
       }
+      // FR #4544: vendor client skips (e.g. Rakuten INVALID_CONTEXT_VALUE).
+      if (isVendorClientSkip(err)) {
+        results.push({
+          ok: false,
+          skipped: isMissingProviderCreds(err)
+            ? 'missing_credentials'
+            : 'vendor_client_error',
+          code: err && err.code,
+          source: opts.source || '',
+        });
+        continue;
+      }
       if (
         !transient &&
         !isEnvIsolation(err) &&
@@ -260,6 +286,7 @@ module.exports = {
   isEnvIsolation,
   isMissingProviderCreds,
   isNonRetryableProviderSkip,
+  isVendorClientSkip,
   statusErrorFromSkip,
   reportNonRetryableSkip,
 };
