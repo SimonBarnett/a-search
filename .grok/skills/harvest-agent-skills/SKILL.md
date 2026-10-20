@@ -567,3 +567,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Hostile pins that assert !includes('<<<<<<<') false-positive when a harvest lesson documents rg for conflict markers; match /^<<<<<<<(?: |$)/m (and >>>>) or reword the lesson without the literal marker bytes.
 - FR #4510: etsy deploy key source is kebab-case SSM /madeira/etsy/api-key via fill-madeira-ssm-env (same as amazon/ebay); registry stayed enabled on main; never commit .env
 - walrus SQL drain register: AppEnvironmentExtra must pass every env the drain reads (SQS_DB_BACKED_URL, AWS_REGION, MSSQL_SERVER, SQL auth via password-file or trusted ServiceAccount) as separate nssm KEY=VALUE args; drain assertDrainEnv lists missing keys and exits before ReceiveMessage
+- db/migrations that use @Source/@FeedKey/@Env must be CREATE OR ALTER PROCEDURE (not bare MERGE/UPDATE); pin apply-clean tests that reject bare feed params outside PROCEDURE (FR #4518).
