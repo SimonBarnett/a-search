@@ -34,7 +34,8 @@ describe('FR #4318 query keywords and whole-word exclude', () => {
     }
     assert.equal(doc.queries[0].q, 'trainer kits');
     assert.equal(doc.queries[1].q, 'balsa');
-    assert.equal(doc.market, MARKET);
+    // FR #4563: long UK steering market normalises to GB
+    assert.equal(doc.market, 'GB');
     assert.equal(doc.currency, 'GBP');
     assert.equal(doc.exclude.some((e) => String(e.match).toLowerCase() === 'ic'), false);
     assert.equal(doc.exclude.some((e) => e.match === 'glow engine'), true);
