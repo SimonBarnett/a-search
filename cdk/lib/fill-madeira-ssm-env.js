@@ -19,6 +19,8 @@ const MADEIRA_ENV_PARAMS = {
     ['/madeira/amazon/associate-tag', 'AMAZON_PARTNER_TAG', true],
     ['/madeira/amazon/host', 'AMAZON_HOST', true],
     ['/madeira/amazon/region', 'AMAZON_REGION', true],
+    // FR #4584 / #4562: Creators API credential (optional until PutParameter exists).
+    ['/madeira/amazon/creators-credential', 'AMAZON_CREATORS_CREDENTIAL', false],
   ],
   ebay: [
     ['/madeira/ebay/client-id', 'EBAY_CLIENT_ID', true],
