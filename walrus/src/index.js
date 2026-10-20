@@ -15,7 +15,10 @@
  *   A_SEARCH_ENV / AWS_PROFILE --- optional helpers (profile set by the nssm register script)
  */
 
-const { createDrainRunner } = require('./drainRunner');
+const {
+  createDrainRunner,
+  formatDrainMessageLog,
+} = require('./drainRunner');
 const { createSqsPoll, DEFAULT_WAIT_S } = require('./sqsPoll');
 const { aClubsInKey, aClubsInAbsPath, hostGuidFromMessage } = require('./aClubsInPath');
 const {
@@ -73,6 +76,7 @@ function createWalrusDrain(opts) {
 
   const runner = createDrainRunner({
     queue,
+    log: opts && opts.log,
     jobDeps: {
       aClubsRoot,
       envVars,
@@ -96,8 +100,9 @@ function createWalrusDrain(opts) {
  * }} [opts]
  */
 async function runLoop(opts) {
-  const built = createWalrusDrain(opts);
   const log = (opts && opts.log) || ((line) => console.log(line));
+  // FR #4570: pass log into runner so each message gets one INFO line.
+  const built = createWalrusDrain({ ...(opts || {}), log });
   log(
     JSON.stringify({
       service: 'a-search-walrus-sql-drain',
@@ -135,16 +140,7 @@ async function runLoop(opts) {
       continue;
     }
     if (once && once.stopped) break;
-    if (once && once.ok === false && once.error) {
-      log(
-        JSON.stringify({
-          service: 'a-search-walrus-sql-drain',
-          level: 'warn',
-          error: once.error,
-          outcome: once.outcome || null,
-        }),
-      );
-    }
+    // Per-message INFO is emitted inside processOnce (FR #4570).
   }
   return { loops: i, runner: built.runner };
 }
@@ -192,6 +188,7 @@ if (require.main === module) {
 
 module.exports = {
   createDrainRunner,
+  formatDrainMessageLog,
   createSqsPoll,
   DEFAULT_WAIT_S,
   aClubsInKey,
