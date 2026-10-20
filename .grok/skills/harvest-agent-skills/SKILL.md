@@ -603,3 +603,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon Creators deploy: mint LwA client_credentials from existing /madeira/amazon access-key+secret-key (amzn1.application-oa2-client / oa2-cs), POST creatorsapi.amazon/catalog/v1/searchItems with x-marketplace; do not require a static AMAZON_CREATORS_CREDENTIAL bearer.
 - Sweep all handleAgentSearch fan-out fixtures for SQS_<SOURCE>_LIVE_URL when envVars gate is live (fr4030/fr4265/fr4415/fr4563), not one file at a time.
 - docs/mrb pin new test files need a trailing newline before PASS; pin harvest lesson needles already on main.
+- a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
