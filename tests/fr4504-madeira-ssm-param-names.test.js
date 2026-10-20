@@ -83,25 +83,19 @@ describe('FR #4504 madeira SSM param names', () => {
     assert.equal(ebay.includes('EBAY_REFRESH_TOKEN'), false);
   });
 
-  it('missing required param names the real kebab-case path and never a value', () => {
+  it('missing required param disables provider (no throw) and never leaks a value', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4504-miss-'));
     const sentinel = 'FAKE_SHOULD_NOT_LEAK';
-    assert.throws(
-      () =>
-        fillMadeiraProviderEnv({
-          repoRoot: root,
-          getParameter: () => '',
-        }),
-      (err) => {
-        const message = String(err && err.message);
-        assert.match(
-          message,
-          /missing SSM parameter \/madeira\/amazon\/access-key/,
-        );
-        assert.equal(message.includes(sentinel), false);
-        assert.equal(message.includes('AMAZON_ACCESS_KEY'), false);
-        return true;
-      },
-    );
+    const { written, disabled } = fillMadeiraProviderEnv({
+      repoRoot: root,
+      getParameter: () => '',
+    });
+    assert.equal(written.length, 0);
+    assert.ok(disabled.some((d) => d.id === 'amazon'));
+    const amazon = disabled.find((d) => d.id === 'amazon');
+    assert.ok(amazon.missingKeys.includes('/madeira/amazon/access-key'));
+    const blob = JSON.stringify(disabled);
+    assert.equal(blob.includes(sentinel), false);
+    assert.equal(blob.includes('AMAZON_ACCESS_KEY'), false);
   });
 });

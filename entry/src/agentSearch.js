@@ -12,7 +12,8 @@ const {
   enabled: registryEnabled,
   isAwsSearchProvider,
 } = require('../../providers/loadRegistry');
-const { isDbBackedSource } = require('./dbBackedQueue');
+const { isDbBackedSource, queueEnvForSource } = require('./dbBackedQueue');
+const { resolveQueueUrl } = require('../../providers/resolveQueueUrl');
 const { createSqsSendMessage } = require('./sqsSend');
 const {
   useridFromHostMetadata,
@@ -217,12 +218,29 @@ function resolveFanOutTargets(envName, deps = {}) {
   const load = deps.loadRegistry || loadRegistry;
   const { sources } = load();
   const byId = new Map((sources || []).map((s) => [s.id, s]));
+  const envVars = deps.envVars;
+  const resolve = deps.resolveQueueUrl || resolveQueueUrl;
+  const qEnvFor = deps.queueEnvForSource || queueEnvForSource;
+  const jobEnv = envName === 'sandbox' ? 'sandbox' : 'live';
   const live = [];
   for (const id of enabledFn(envName)) {
     const ent = byId.get(id);
     if (isDbBackedSource(ent)) continue;
     // FR #4451: only awsSearch providers get a per-source queue. SQL sources share sql.
     if (!isAwsSearchProvider(ent)) continue;
+    // FR #4650: when envVars are supplied, skip providers with no queue URL
+    // (credentials missing at deploy => provider off for /search).
+    if (envVars && typeof envVars === 'object') {
+      try {
+        resolve({
+          queueEnv: qEnvFor(ent),
+          env: jobEnv,
+          envVars,
+        });
+      } catch {
+        continue;
+      }
+    }
     live.push(id);
   }
   return [...live, 'sql'];
@@ -307,6 +325,7 @@ async function handleAgentSearch(opts) {
   const queued = resolveFanOutTargets(jobEnv, {
     enabled: io.enabled,
     loadRegistry: io.loadRegistry,
+    envVars: io.env || process.env,
   });
 
   const { market, currency } = normalizeMarketCurrency(body);

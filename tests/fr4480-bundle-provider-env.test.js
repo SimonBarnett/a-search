@@ -111,7 +111,7 @@ describe('FR #4480 bundle provider env', () => {
       '/madeira/ebay/marketplace-id': 'EBAY_GB',
       '/madeira/etsy/api-key': 'FAKE_ETSY_KEY',
     };
-    const written = fillMadeiraProviderEnv({
+    const { written } = fillMadeiraProviderEnv({
       repoRoot: root,
       getParameter: (name) => values[name] || '',
     });
@@ -126,19 +126,18 @@ describe('FR #4480 bundle provider env', () => {
       'utf8',
     );
     assert.match(etsy, /ETSY_API_KEY=FAKE_ETSY_KEY/);
-    assert.throws(
-      () =>
-        fillMadeiraProviderEnv({
-          repoRoot: root,
-          getParameter: () => '',
-        }),
-      (err) => {
-        const message = String(err && err.message);
-        assert.match(message, /missing SSM parameter \/madeira\/amazon\/access-key/);
-        assert.equal(message.includes('FAKE_AK'), false);
-        return true;
-      },
+    const empty = fillMadeiraProviderEnv({
+      repoRoot: root,
+      getParameter: () => '',
+    });
+    assert.equal(empty.written.length, 0);
+    assert.ok(empty.disabled.some((d) => d.id === 'amazon'));
+    assert.ok(
+      empty.disabled
+        .find((d) => d.id === 'amazon')
+        .missingKeys.includes('/madeira/amazon/access-key'),
     );
+    assert.equal(JSON.stringify(empty.disabled).includes('FAKE_AK'), false);
   });
 
   it('synth keeps the rakuten worker and creates no provider secret', () => {

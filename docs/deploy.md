@@ -104,23 +104,24 @@ local workers, awin/impact onboarding - not live marketplace workers.
 `providers/live/<id>/.env` from kebab-case `/madeira/<id>/*` SSM **only for
 providers enabled** in `providers/registry.json` (live or sandbox). Today that
 is amazon, ebay, and etsy when those ids are enabled (e.g. `access-key`,
-`associate-tag`, `client-id`, `api-key`; values are never printed). A disabled
-provider (both envs false) is skipped, so missing `/madeira/etsy/api-key` does
-not block deploy when Etsy is off.
+`associate-tag`, `client-id`, `api-key`; values are never printed). A registry
+row with both envs false is skipped. **Missing `/madeira/*` is never an
+error** --- that provider stays off (no `.env` written) and appears in one
+deploy warning that lists disabled providers and missing path/key names only.
 
 Each enabled live provider's `.env` is then bundled into that worker Lambda.
 The file stays gitignored in git, but the worker asset pack uses
 `IgnoreMode.DOCKER` so CDK does not strip `.env` via the repo `.gitignore`
 (FR #4560). When an enabled provider `.env` is missing required key *names*,
-synth **soft-deploys**: Lambda, queue, and DLQ stay (no delete), the `.env` is
-omitted from the asset, and the worker fail-closes at run time (e.g.
-`kelkoo_missing_credentials`). Values are never printed.
+synth keeps Lambda, queue, and DLQ (no delete) but **does not fan out** from
+`/search` to that provider (provider off). One warning lists every disabled
+provider and why (key names only; never values).
 
 **Kelkoo** has no `/madeira/kelkoo/*` SSM path and no Secrets Manager secret.
 Ops supply `providers/live/kelkoo/.env` (gitignored) from the Kelkoo Publisher
-Center Shopping API JWT (`KELKOO_API_KEY`) plus `KELKOO_PUBLISHER_ID` before
-deploy when search should run. Without that file, the Kelkoo worker still
-deploys fail-closed and keeps its DLQ (FR #4650). Rakuten and CJ use their
+Center Shopping API JWT (`KELKOO_API_KEY`) plus `KELKOO_PUBLISHER_ID` when
+search should run. Without that file, Kelkoo resources stay (DLQ kept) but
+`/search` does not fan out to Kelkoo (FR #4650). Rakuten and CJ use their
 bundled `.env` files the same way (operator secret files on the deploy host).
 
 Do not pass amazonProviderSecretArn or any other ProviderSecretArn. Live search

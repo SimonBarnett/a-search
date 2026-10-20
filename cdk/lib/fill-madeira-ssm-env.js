@@ -4,9 +4,10 @@
  * Deploy step: write amazon, ebay, and etsy provider `.env` files from existing
  * `/madeira/*` SSM parameters, then the stack bundles those files.
  * Parameter values are never printed.
- * FR #4650: only fill/require SSM for providers enabled in providers/registry.json
- * (live or sandbox). Disabled sources are skipped so deploy does not need their params.
- * Kelkoo has no /madeira path - operator supplies providers/live/kelkoo/.env (or soft-deploy).
+ * FR #4650: only fill providers enabled in providers/registry.json (live or sandbox).
+ * Missing `/madeira/*` is never an error --- that provider stays off (no `.env` written)
+ * and is reported in the deploy warning list (key/path names only).
+ * Kelkoo has no /madeira path - operator supplies providers/live/kelkoo/.env or stays off.
  */
 
 const fs = require('node:fs');
@@ -88,7 +89,7 @@ function renderDotEnv(pairs) {
  *   enabledSourceIds?: string[],
  *   registryPath?: string,
  * }} opts
- * @returns {string[]} files written
+ * @returns {{ written: string[], disabled: Array<{ id: string, missingKeys: string[] }> }}
  */
 function fillMadeiraProviderEnv(opts) {
   if (!opts || typeof opts.getParameter !== 'function') {
@@ -97,28 +98,31 @@ function fillMadeiraProviderEnv(opts) {
   const repoRoot = opts.repoRoot;
   const enabledIds = resolveEnabledMadeiraSourceIds(opts);
   const written = [];
+  /** @type {Array<{ id: string, missingKeys: string[] }>} */
+  const disabled = [];
   for (const [sourceId, rows] of Object.entries(MADEIRA_ENV_PARAMS)) {
     if (!enabledIds.has(sourceId)) continue;
     const pairs = [];
+    /** @type {string[]} */
+    const missingKeys = [];
     for (const [paramName, envKey, required] of rows) {
-      let value;
+      let value = '';
       try {
         value = opts.getParameter(paramName);
-      } catch (err) {
-        throw new Error(
-          `provider env ${sourceId}: SSM read failed for ${paramName}`,
-        );
+      } catch {
+        // FR #4650: missing / unreadable SSM is never a deploy error.
+        value = '';
       }
       const text = value == null ? '' : String(value).trim();
       if (!text) {
-        if (required) {
-          throw new Error(
-            `provider env ${sourceId}: missing SSM parameter ${paramName}`,
-          );
-        }
+        if (required) missingKeys.push(paramName);
         continue;
       }
       pairs.push([envKey, text]);
+    }
+    if (missingKeys.length) {
+      disabled.push({ id: sourceId, missingKeys });
+      continue;
     }
     const filePath = path.join(
       repoRoot,
@@ -131,7 +135,20 @@ function fillMadeiraProviderEnv(opts) {
     fs.writeFileSync(filePath, renderDotEnv(pairs), 'utf8');
     written.push(filePath);
   }
-  return written;
+  return { written, disabled };
+}
+
+/**
+ * @param {Array<{ id: string, missingKeys: string[] }>} disabled
+ * @returns {string}
+ */
+function formatDisabledProvidersWarning(disabled) {
+  if (!Array.isArray(disabled) || !disabled.length) return '';
+  const parts = disabled.map((row) => {
+    const keys = (row.missingKeys || []).join(', ');
+    return `${row.id}: missing ${keys}`;
+  });
+  return `[a-search] providers disabled (missing credentials): ${parts.join('; ')}`;
 }
 
 function awsCliGetParameter(name) {
@@ -157,19 +174,24 @@ function awsCliGetParameter(name) {
   } catch (err) {
     const stderr = err && err.stderr ? String(err.stderr) : '';
     if (/ParameterNotFound/i.test(stderr)) return '';
-    throw new Error(`provider env: SSM read failed for ${name}`);
+    // FR #4650: treat other SSM failures as missing (provider off), not deploy fail.
+    return '';
   }
 }
 
 function main() {
   const repoRoot = path.join(__dirname, '..', '..');
-  const files = fillMadeiraProviderEnv({
+  const { written, disabled } = fillMadeiraProviderEnv({
     repoRoot,
     getParameter: awsCliGetParameter,
   });
   process.stdout.write(
-    `filled ${files.length} provider env files from /madeira SSM\n`,
+    `filled ${written.length} provider env files from /madeira SSM\n`,
   );
+  const warn = formatDisabledProvidersWarning(disabled);
+  if (warn) {
+    process.stderr.write(warn + '\n');
+  }
 }
 
 if (require.main === module) {
@@ -181,4 +203,5 @@ module.exports = {
   fillMadeiraProviderEnv,
   renderDotEnv,
   resolveEnabledMadeiraSourceIds,
+  formatDisabledProvidersWarning,
 };

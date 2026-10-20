@@ -124,7 +124,12 @@ describe('FR #4563 searches.json searchid sync with fan-out', () => {
           currency: 'GBP',
         },
       },
-      env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+      // FR #4650: env is passed as envVars; missing SQS_* URL skips the provider.
+      env: {
+        A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+        SQS_EBAY_LIVE_URL: 'https://sqs.example/ebay.fifo',
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+      },
       enabled: () => ['ebay'],
       loadRegistry: () => ({
         sources: [

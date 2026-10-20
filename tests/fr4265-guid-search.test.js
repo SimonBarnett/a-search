@@ -238,7 +238,12 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
             currency: body.currency,
           },
         },
-        env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+        // FR #4650: env is passed as envVars; missing SQS_* URL skips the provider.
+        env: {
+          A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+          SQS_EBAY_LIVE_URL: 'https://sqs.example/ebay.fifo',
+          SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+        },
         headObject: s3.headObject,
         getObject: s3.getObject,
         putObject: s3.putObject,
@@ -313,7 +318,12 @@ describe('FR #4265 /search is idempotent per GUID', () => {
           exclude: [],
         },
       },
-      env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+      // FR #4650: env is passed as envVars; missing SQS_* URL skips the provider.
+      env: {
+        A_SEARCH_AGENT_API_KEY: FAKE_KEY,
+        SQS_EBAY_LIVE_URL: 'https://sqs.example/ebay.fifo',
+        SQS_DB_BACKED_LIVE_URL: 'https://sqs.example/db',
+      },
       headObject: s3.headObject,
       getObject: s3.getObject,
       putObject: s3.putObject,
