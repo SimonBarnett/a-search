@@ -596,3 +596,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search FR: Rakuten daily signup like Awin needs one provider-aware agent entry (cwd a-affiliates/{provider}), not a Rakuten fork of run.js; applications-only records under _applications (no SQL feeds)
 - Reopened FR after soft-deploy: missing credentials must omit fan-out and keep resources, never soft-deploy-on; fill never throws on absent SSM.
 - a-search MRB FR #4650: after handleAgentSearch passes env as envVars, fr4030 fan-out fixtures must set SQS_*_URL or ebay is skipped; land one fix PR into the tip then PASS
+- After MRB FAIL+fix PR, FIX job pushes the fix onto the assigned tip SHA; close the separate fix PR as superseded; DONE FIX PASS with tip URL.
