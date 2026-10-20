@@ -42,7 +42,7 @@ function assertCjCreds(env) {
   const c = readCjCreds(env);
   const missing = [];
   if (!c.token) missing.push('CJ_API_TOKEN');
-  // FR #4713: ads.api.cj.com requires linkCode(pid:) — same id as tracked CJ_WEBSITE_ID.
+  // FR #4713: ads.api.cj.com requires linkCode(pid:) --- same id as tracked CJ_WEBSITE_ID.
   if (!c.websiteId) missing.push('CJ_WEBSITE_ID');
   if (missing.length) {
     throw new CjCredsError(
@@ -62,10 +62,54 @@ function keywordsFromMsg(msg) {
 }
 
 
+/** CJ Product Search: "Too many keywords. Please limit keywords to 10 or fewer". */
+const MAX_CJ_KEYWORDS = 10;
+
+/**
+ * FR #4748: normalize to [String!] with at most MAX_CJ_KEYWORDS whitespace
+ * tokens (CJ counts words across the keywords argument).
+ * @param {string|string[]} keywords
+ * @returns {string[]}
+ */
+function normalizeCjKeywordList(keywords) {
+  let keywordList;
+  if (Array.isArray(keywords)) {
+    keywordList = keywords.map((k) => String(k || '').trim()).filter(Boolean);
+  } else {
+    const one = String(keywords || '').trim();
+    keywordList = one ? [one] : [];
+  }
+  if (!keywordList.length) {
+    throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
+  }
+  // Cap array length, then cap total whitespace-separated tokens.
+  if (keywordList.length > MAX_CJ_KEYWORDS) {
+    keywordList = keywordList.slice(0, MAX_CJ_KEYWORDS);
+  }
+  const tokens = [];
+  for (const item of keywordList) {
+    for (const t of String(item).split(/\s+/).filter(Boolean)) {
+      if (tokens.length >= MAX_CJ_KEYWORDS) break;
+      tokens.push(t);
+    }
+    if (tokens.length >= MAX_CJ_KEYWORDS) break;
+  }
+  if (!tokens.length) {
+    throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
+  }
+  // Keep a single joined element when the caller passed one string (FR #4740
+  // shape); otherwise preserve token array from an explicit list.
+  if (!Array.isArray(keywords)) {
+    return [tokens.join(' ')];
+  }
+  return tokens;
+}
+
 /**
  * Minimal products search query (fields may vary by CJ schema version).
  * FR #4713: linkCode requires pid (publisher website / property ID).
  * FR #4740: products.keywords is [String!] (not String!); send a non-empty array.
+ * FR #4748: at most 10 keyword tokens (CJ HTTP 400 otherwise).
  * @param {string|string[]} keywords
  * @param {string} [companyId]
  * @param {string} websiteId CJ_WEBSITE_ID / GraphQL linkCode pid
@@ -80,16 +124,7 @@ function buildProductsQuery(keywords, companyId, websiteId) {
       'CJ GraphQL credentials missing: CJ_WEBSITE_ID. Set them in providers/live/cj/.env (never commit).',
     );
   }
-  let keywordList;
-  if (Array.isArray(keywords)) {
-    keywordList = keywords.map((k) => String(k || '').trim()).filter(Boolean);
-  } else {
-    const one = String(keywords || '').trim();
-    keywordList = one ? [one] : [];
-  }
-  if (!keywordList.length) {
-    throw new Error('CJ GraphQL keywords must be a non-empty [String!]');
-  }
+  const keywordList = normalizeCjKeywordList(keywords);
   return {
     query: `query ProductSearch($keywords: [String!]!) {
   products(${companyArg}keywords: $keywords, limit: 10) {
@@ -217,6 +252,8 @@ module.exports = {
   readCjCreds,
   CjCredsError,
   buildProductsQuery,
+  normalizeCjKeywordList,
+  MAX_CJ_KEYWORDS,
   keywordsFromMsg,
   DEFAULT_GRAPHQL_URL,
 };
