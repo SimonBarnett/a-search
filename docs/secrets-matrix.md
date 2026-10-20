@@ -76,11 +76,12 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 
 Enabled live providers do not use Secrets Manager. Deploy bundles
 `providers/live/<id>/.env` into that worker Lambda. The worker reads the file
-at run time. Amazon and eBay files are filled from kebab-case
-`/madeira/amazon/{access-key,secret-key,associate-tag,host,region}` and
-`/madeira/ebay/{client-id,client-secret,campaign-id,marketplace-id}` SSM
-parameters (`refresh-token` optional; values are not printed). A missing `.env`
-fails deploy and names the file only. Rakuten reads `RAKUTEN_CLIENT_ID`,
+at run time. Amazon, eBay, and Etsy files are filled from kebab-case
+`/madeira/amazon/{access-key,secret-key,associate-tag,host,region}`,
+`/madeira/ebay/{client-id,client-secret,campaign-id,marketplace-id}`, and
+`/madeira/etsy/{api-key}` SSM parameters (`ebay/refresh-token` and
+`etsy/shared-secret` optional; values are not printed). A missing required
+parameter fails deploy naming the SSM path only. Rakuten reads `RAKUTEN_CLIENT_ID`,
 `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`, then exchanges them for a short-lived
 token. `EBAY_ENV` still comes from the stack env (live means production).
 
@@ -98,7 +99,7 @@ token. `EBAY_ENV` still comes from the stack env (live means production).
 | shopify | worker | SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY, SHOPIFY_ACCESS_TOKEN, SHOPIFY_STORE_URL | Secrets Manager JSON (`a-search/{env}/providers/shopify/app` + selftest fallback) |
 | woocommerce | `WOOCOMMERCE_CONSUMER_KEY`, `WOOCOMMERCE_CONSUMER_SECRET`, `WOOCOMMERCE_STORE_URL` | `a-search-woocommerce-worker-{live,sandbox}` (FR-180) |
 | avantlink | `AVANTLINK_API_KEY`, `AVANTLINK_API_TOKEN`, `AVANTLINK_FEED_TOKEN`, `AVANTLINK_PUBLISHER_ID`, `AVANTLINK_AFFILIATE_ID` | `a-search-avantlink-worker-{live,sandbox}` (FR-177) |
-| etsy | env file: `ETSY_API_KEY` (`ETSY_SHARED_SECRET` optional when the key is `key:secret`) | `a-search-etsy-worker-{live,sandbox}` (FR-170/FR-244 / FR #4439); plain `ETSY_AFFILIATE_NETWORK=rakuten` |
+| etsy | env file from SSM `/madeira/etsy/api-key` -> `ETSY_API_KEY` (`/madeira/etsy/shared-secret` -> `ETSY_SHARED_SECRET` optional) | `a-search-etsy-worker-{live,sandbox}` (FR-170/FR-244 / FR #4439 / FR #4510); plain `ETSY_AFFILIATE_NETWORK=rakuten` |
 | bol | `BOL_API_KEY` | `a-search-bol-worker-{live,sandbox}` (FR-171); plain `BOL_TRACKING_ID=a-search` |
 | partnerize | `PARTNERIZE_API_KEY`, `PARTNERIZE_API_TOKEN`, `PARTNERIZE_FEED_TOKEN`, `PARTNERIZE_PUBLISHER_ID` | `a-search-partnerize-worker-{live,sandbox}` (FR-172) |
 | tradedoubler | `TRADEDOUBLER_API_KEY`, `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_FEED_TOKEN`, `TRADEDOUBLER_AFFILIATE_ID`, `TRADEDOUBLER_PUBLISHER_ID` | `a-search-tradedoubler-worker-{live,sandbox}` (FR-174) |

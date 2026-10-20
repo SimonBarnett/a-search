@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Deploy step: write amazon and ebay provider `.env` files from existing
+ * Deploy step: write amazon, ebay, and etsy provider `.env` files from existing
  * `/madeira/*` SSM parameters, then the stack bundles those files.
  * Parameter values are never printed.
  */
@@ -10,7 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-// Real account paths are kebab-case under /madeira/{amazon,ebay}/ (FR #4504).
+// Real account paths are kebab-case under /madeira/{amazon,ebay,etsy}/ (FR #4504 / FR #4510).
 // Env keys stay SCREAMING_SNAKE for the provider .env; associate-tag -> PARTNER_TAG.
 const MADEIRA_ENV_PARAMS = {
   amazon: [
@@ -27,6 +27,11 @@ const MADEIRA_ENV_PARAMS = {
     ['/madeira/ebay/marketplace-id', 'EBAY_MARKETPLACE_ID', true],
     // Optional: Browse client-credentials does not need it; ParameterNotFound -> skip.
     ['/madeira/ebay/refresh-token', 'EBAY_REFRESH_TOKEN', false],
+  ],
+  // FR #4510: PutParameter SecureString; fill writes providers/live/etsy/.env (gitignored).
+  etsy: [
+    ['/madeira/etsy/api-key', 'ETSY_API_KEY', true],
+    ['/madeira/etsy/shared-secret', 'ETSY_SHARED_SECRET', false],
   ],
 };
 

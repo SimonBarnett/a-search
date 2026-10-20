@@ -100,16 +100,25 @@ local workers, awin/impact onboarding - not live marketplace workers.
 
 ### Provider credentials (FR-138 / FR #4336)
 
-`npm run deploy` first fills `providers/live/amazon/.env` and
-`providers/live/ebay/.env` from the existing kebab-case `/madeira/amazon/*`
-and `/madeira/ebay/*` SSM parameters (e.g. `access-key`, `associate-tag`,
-`client-id`; values are never printed), then bundles each enabled live provider
-`.env` into that provider's Lambda asset. The file stays gitignored. A missing
-file fails the deploy with the path and never prints values. Rakuten,
-Commission Junction, Kelkoo, Skimlinks, and Etsy use the `.env` already in
+`npm run deploy` first fills `providers/live/amazon/.env`,
+`providers/live/ebay/.env`, and `providers/live/etsy/.env` from the existing
+kebab-case `/madeira/amazon/*`, `/madeira/ebay/*`, and `/madeira/etsy/*` SSM
+parameters (e.g. `access-key`, `associate-tag`, `client-id`, `api-key`; values
+are never printed), then bundles each enabled live provider `.env` into that
+provider's Lambda asset. The file stays gitignored. A missing required SSM
+parameter fails the deploy naming the real path and never prints values.
+Rakuten, Commission Junction, Kelkoo, and Skimlinks use the `.env` already in
 `providers/live/<id>/`. Do not pass amazonProviderSecretArn or any other ProviderSecretArn. Live search workers
 are amazon, ebay, rakuten, cj, kelkoo, skimlinks, and etsy. AliExpress and Bol
 stay in the registry turned off. See [secrets-matrix.md](secrets-matrix.md).
+
+Etsy (FR #4510): put the Open API v3 keystring in SSM before deploy:
+
+```bash
+aws ssm put-parameter --name /madeira/etsy/api-key --type SecureString --value 'KEYSTRING' --region eu-west-2
+# optional when the key is not already keystring:shared_secret
+# aws ssm put-parameter --name /madeira/etsy/shared-secret --type SecureString --value 'SECRET' --region eu-west-2
+```
 
 ## 5. cdk deploy
 

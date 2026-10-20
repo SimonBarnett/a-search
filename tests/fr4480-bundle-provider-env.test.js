@@ -97,7 +97,7 @@ describe('FR #4480 bundle provider env', () => {
     assert.equal(target.RAKUTEN_SID, 'FAKE_FROM_FILE');
   });
 
-  it('SSM fill writes amazon and ebay env files and names a missing parameter', () => {
+  it('SSM fill writes amazon, ebay, and etsy env files and names a missing parameter', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4480-ssm-'));
     const values = {
       '/madeira/amazon/access-key': 'FAKE_AK',
@@ -109,17 +109,23 @@ describe('FR #4480 bundle provider env', () => {
       '/madeira/ebay/client-secret': 'FAKE_ES',
       '/madeira/ebay/campaign-id': 'FAKE_CP',
       '/madeira/ebay/marketplace-id': 'EBAY_GB',
+      '/madeira/etsy/api-key': 'FAKE_ETSY_KEY',
     };
     const written = fillMadeiraProviderEnv({
       repoRoot: root,
       getParameter: (name) => values[name] || '',
     });
-    assert.equal(written.length, 2);
+    assert.equal(written.length, 3);
     const amazon = fs.readFileSync(
       path.join(root, 'providers', 'live', 'amazon', '.env'),
       'utf8',
     );
     assert.match(amazon, /AMAZON_ACCESS_KEY=FAKE_AK/);
+    const etsy = fs.readFileSync(
+      path.join(root, 'providers', 'live', 'etsy', '.env'),
+      'utf8',
+    );
+    assert.match(etsy, /ETSY_API_KEY=FAKE_ETSY_KEY/);
     assert.throws(
       () =>
         fillMadeiraProviderEnv({
