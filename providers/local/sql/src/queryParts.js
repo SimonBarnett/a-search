@@ -18,14 +18,42 @@ class SqlMssqlConfigError extends Error {
 }
 
 /**
+ * FR #4534: trusted Windows auth must not use tedious NTLM (crashes in
+ * ntlm-payload.js). Prefer msnodesqlv8 + ODBC trustedConnection.
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @returns {boolean}
+ */
+function isTrustedConnectionEnv(envVars) {
+  const trusted = String((envVars || {}).MSSQL_TRUSTED_CONNECTION || '')
+    .trim()
+    .toLowerCase();
+  return trusted === 'true' || trusted === '1' || trusted === 'yes';
+}
+
+/**
+ * @param {object} config from mssqlConfigFromEnv
+ * @returns {'mssql'|'mssql/msnodesqlv8'}
+ */
+function resolveMssqlRequirePath(config) {
+  if (
+    config &&
+    (config.driver === 'msnodesqlv8' ||
+      (config.options && config.options.trustedConnection === true))
+  ) {
+    return 'mssql/msnodesqlv8';
+  }
+  return 'mssql';
+}
+
+/**
  * @param {Record<string, string|undefined>} envVars
  * @returns {{
  *   server: string,
  *   database: string,
+ *   driver?: string,
  *   user?: string,
  *   password?: string,
- *   options: { encrypt: boolean, trustServerCertificate: boolean },
- *   authentication?: { type: string, options: object },
+ *   options: { encrypt: boolean, trustServerCertificate: boolean, trustedConnection?: boolean },
  * }}
  */
 function mssqlConfigFromEnv(envVars) {
@@ -36,10 +64,7 @@ function mssqlConfigFromEnv(envVars) {
       'MSSQL_SERVER and MSSQL_DATABASE are required for sql queryParts',
     );
   }
-  const trusted = String(envVars.MSSQL_TRUSTED_CONNECTION || '')
-    .trim()
-    .toLowerCase();
-  const useTrusted = trusted === 'true' || trusted === '1' || trusted === 'yes';
+  const useTrusted = isTrustedConnectionEnv(envVars);
   const user = String(envVars.MSSQL_USER || '').trim();
   const password =
     envVars.MSSQL_PASSWORD == null ? '' : String(envVars.MSSQL_PASSWORD);
@@ -57,14 +82,9 @@ function mssqlConfigFromEnv(envVars) {
   };
 
   if (useTrusted) {
-    cfg.authentication = {
-      type: 'ntlm',
-      options: {
-        domain: String(envVars.MSSQL_DOMAIN || '').trim(),
-        userName: user || undefined,
-        password: password || undefined,
-      },
-    };
+    // FR #4534: ODBC trusted connection via msnodesqlv8 (not tedious NTLM).
+    cfg.driver = 'msnodesqlv8';
+    cfg.options.trustedConnection = true;
   } else {
     if (!user) {
       throw new SqlMssqlConfigError(
@@ -172,8 +192,9 @@ WHERE Env = @env
  * @returns {Promise<{ request: Function, close?: Function }>}
  */
 async function defaultConnect(config) {
-  // eslint-disable-next-line global-require
-  const sql = require('mssql');
+  const mod = resolveMssqlRequirePath(config);
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const sql = require(mod);
   const pool = await sql.connect(config);
   return pool;
 }
@@ -207,8 +228,9 @@ async function defaultQueryParts(msg, deps) {
 
   let sqlTypes = deps && deps.sqlTypes;
   if (!sqlTypes) {
-    // eslint-disable-next-line global-require
-    sqlTypes = require('mssql');
+    const mod = resolveMssqlRequirePath(config);
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    sqlTypes = require(mod);
   }
 
   try {
@@ -230,6 +252,8 @@ async function defaultQueryParts(msg, deps) {
 module.exports = {
   SqlMssqlConfigError,
   mssqlConfigFromEnv,
+  isTrustedConnectionEnv,
+  resolveMssqlRequirePath,
   searchTextFromMsg,
   SELECT_SQL,
   defaultQueryParts,

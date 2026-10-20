@@ -49,6 +49,8 @@ function mssqlConfigFromEnv(envVars) {
   };
 
   if (useTrusted) {
+    // FR #4534: msnodesqlv8 ODBC trusted connection (not tedious NTLM).
+    cfg.driver = 'msnodesqlv8';
     cfg.options.trustedConnection = true;
   } else {
     if (!user) {
@@ -93,13 +95,16 @@ function createSqlStore(opts = {}) {
       ? opts.exec
       : async (sqlText, inputs) => {
           if (!pool) {
-            // eslint-disable-next-line global-require
-            const sql = require('mssql');
+            const cfg = mssqlConfigFromEnv(envVars);
+            const mod =
+              cfg.driver === 'msnodesqlv8' ? 'mssql/msnodesqlv8' : 'mssql';
+            // eslint-disable-next-line global-require, import/no-dynamic-require
+            const sql = require(mod);
             const connect =
               typeof opts.connect === 'function'
                 ? opts.connect
-                : async (cfg) => sql.connect(cfg);
-            pool = await connect(mssqlConfigFromEnv(envVars));
+                : async (c) => sql.connect(c);
+            pool = await connect(cfg);
           }
           const req = pool.request();
           if (inputs && typeof inputs === 'object') {

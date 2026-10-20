@@ -115,7 +115,25 @@ async function runLoop(opts) {
   let i = 0;
   while (maxLoops <= 0 || i < maxLoops) {
     i += 1;
-    const once = await built.runner.processOnce();
+    let once;
+    try {
+      // FR #4534: never let a single message crash the long-poll loop.
+      once = await built.runner.processOnce();
+    } catch (err) {
+      log(
+        JSON.stringify({
+          service: 'a-search-walrus-sql-drain',
+          level: 'error',
+          error:
+            err && err.message
+              ? err.message
+              : err && err.code
+                ? err.code
+                : 'processOnce_threw',
+        }),
+      );
+      continue;
+    }
     if (once && once.stopped) break;
     if (once && once.ok === false && once.error) {
       log(

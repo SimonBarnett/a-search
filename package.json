@@ -32,6 +32,9 @@
     "jose": "^5.10.0",
     "mssql": "^11.0.2"
   },
+  "optionalDependencies": {
+    "msnodesqlv8": "^4.5.0"
+  },
   "devDependencies": {
     "aws-cdk": "^2.1144.0",
     "aws-cdk-lib": "^2.272.0",

@@ -54,13 +54,23 @@ function createDrainRunner(opts) {
         await opts.queue.deleteMessage(receipt);
         return { ok: true, outcome };
       }
+      // FR #4534: never delete on failure; release for retry / visibility timeout.
       if (typeof opts.queue.changeVisibility === 'function') {
-        await opts.queue.changeVisibility(receipt, 0);
+        try {
+          await opts.queue.changeVisibility(receipt, 0);
+        } catch {
+          /* leave message to time out */
+        }
       }
       return { ok: false, outcome };
     } catch (err) {
+      // FR #4534: connection/query errors must not crash the process or delete.
       if (typeof opts.queue.changeVisibility === 'function') {
-        await opts.queue.changeVisibility(receipt, 0);
+        try {
+          await opts.queue.changeVisibility(receipt, 0);
+        } catch {
+          /* leave message to time out */
+        }
       }
       return {
         ok: false,
