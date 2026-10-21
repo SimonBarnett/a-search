@@ -610,3 +610,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable), write status IN empty products, complete SQS; do not intake-fatal or DLQ-burn (same class as creators_not_eligible).
 - When an open FR tip writes status IN for a vendor fault after FR #4769, MRB FAIL and land one fix tip that keeps the product keyword fixes but throws into the DLQ (no status IN); close the status-IN head as superseded
 - When FR #4768 fans out Rakuten Product Search per query, update fr4450 (and similar) to assert agent keywords across all productsearch GETs, not /model/i on each single call; expect token + N product calls
+- FIX red after FR product tip: update hostiles for DLQ/no-intake and fan-out empty-guard pins; do not weaken isProviderFaultForDlq to satisfy old intake pins
