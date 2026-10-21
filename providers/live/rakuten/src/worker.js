@@ -3,6 +3,7 @@
 /**
  * Rakuten live provider worker (FR-040).
  * Product Search XML -> normalize -> a-clubs IN/ (writeLiveProviderInResult) (injectable HTTP + putObject).
+ * FR #4768: rakuten_invalid_context -> status IN (not silent empty).
  */
 
 const path = require('node:path');
@@ -21,6 +22,7 @@ const {
   searchRakuten,
   assertRakutenCreds,
   RakutenCredsError,
+  isRakutenInvalidContext,
 } = require('./search');
 
 /**
@@ -45,16 +47,11 @@ async function run(msg, deps) {
     deps && typeof deps.searchRakuten === 'function'
       ? deps.searchRakuten
       : searchRakuten;
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
 
   const liveS3 = attachDefaultS3(deps);
-  const written = await writeLiveProviderInResult({
+  const writeOpts = {
     msg,
     source: 'rakuten',
-    products,
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
@@ -66,6 +63,45 @@ async function run(msg, deps) {
     getObjectTagging: liveS3.getObjectTagging,
     putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
+  };
+
+  let products;
+  try {
+    products = await searchFn(msg, {
+      env: envVars,
+      httpRequest: deps && deps.httpRequest,
+    });
+  } catch (err) {
+    // FR #4768: INVALID_CONTEXT_VALUE after sanitize still diagnosable via status IN.
+    if (isRakutenInvalidContext(err)) {
+      const status = {
+        code: 'rakuten_invalid_context',
+        httpStatus: err.statusCode != null ? err.statusCode : err.status || 400,
+        message: err && err.message ? String(err.message) : String(err),
+      };
+      const written = await writeLiveProviderInResult({
+        ...writeOpts,
+        products: [],
+        status,
+      });
+      return {
+        ok: true,
+        skipped: 'rakuten_invalid_context',
+        source: 'rakuten',
+        searchId: msg.searchId,
+        env: msg.env,
+        products: [],
+        key: written.key,
+        bucket: written.bucket,
+        status,
+      };
+    }
+    throw err;
+  }
+
+  const written = await writeLiveProviderInResult({
+    ...writeOpts,
+    products,
   });
 
   return {

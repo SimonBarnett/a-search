@@ -77,3 +77,10 @@ npm test
 
 - FR-018: `tests/rakuten-scaffold.test.js`
 - FR-040: `tests/rakuten-search.test.js`
+
+## Product Search keywords (FR #4768)
+
+- One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
+- Sanitize keyword tokens: replace hyphens with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
+- Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
+- On INVALID_CONTEXT_VALUE write status `rakuten_invalid_context` into the IN file (not a silent empty products list).

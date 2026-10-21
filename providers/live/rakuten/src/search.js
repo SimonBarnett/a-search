@@ -9,6 +9,7 @@ const { normalizeSearchItems } = require('./normalize');
 const {
   keywordsFromAgentMsg,
   collectExcludeTerms,
+  collectQueryTerms,
 } = require('../../../../shared/search/keywordsFromAgentMsg');
 
 class RakutenCredsError extends Error {
@@ -32,6 +33,74 @@ function isRakutenInvalidContext(err) {
   }
   return /INVALID_CONTEXT_VALUE/i.test(String(err.message || err));
 }
+
+
+/**
+ * FR #4768: Linksynergy rejects hyphenated keyword tokens (761-14, E-flite)
+ * with INVALID_CONTEXT_VALUE. Replace internal hyphens with spaces.
+ * @param {string} keyword
+ * @returns {string}
+ */
+function sanitizeRakutenKeyword(keyword) {
+  const raw = String(keyword || '').trim();
+  if (!raw) return '';
+  return raw
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Stopwords / noise for Rakuten `none` (FR #4768). */
+const RAKUTEN_NONE_STOPWORDS = new Set(
+  [
+    'a', 'an', 'the', 'or', 'as', 'of', 'to', 'in', 'on', 'for', 'and', 'is',
+    'be', 'by', 'at', 'it', 'with', 'from', 'that', 'this', 'are', 'was',
+    'were', 'been', 'but', 'not', 'no', 'nor', 'so', 'if', 'than', 'then',
+    'into', 'over', 'such', 'via', 'per', 'vs', 'vs.', 'etc', 'etc.',
+  ].map((w) => w.toLowerCase()),
+);
+
+/**
+ * FR #4768: Rakuten treats each whitespace token in `none` as an exclusion.
+ * Flatten exclude phrases to significant words only (len>=3, not stopwords).
+ * @param {object|null|undefined} msg
+ * @returns {string} space-joined none param (may be empty)
+ */
+function buildRakutenNone(msg) {
+  const phrases = collectExcludeTerms(msg);
+  const seen = new Set();
+  const out = [];
+  for (const phrase of phrases) {
+    const words = String(phrase || '')
+      .split(/[^A-Za-z0-9]+/)
+      .map((w) => w.trim())
+      .filter(Boolean);
+    for (const w of words) {
+      if (w.length < 3) continue;
+      const key = w.toLowerCase();
+      if (RAKUTEN_NONE_STOPWORDS.has(key)) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(w);
+    }
+  }
+  return out.join(' ');
+}
+
+/**
+ * Non-empty query strings for one Product Search call each (eBay #4446 pattern).
+ * @param {object} msg
+ * @returns {string[]}
+ */
+function queryTextsFromMsg(msg) {
+  const fromQueries = collectQueryTerms(msg);
+  if (fromQueries.length) return fromQueries;
+  if (msg && typeof msg.q === 'string' && msg.q.trim()) {
+    return [msg.q.trim()];
+  }
+  return [];
+}
+
 
 /**
  * @param {Record<string, string|undefined>} [env]
@@ -340,10 +409,11 @@ async function defaultHttpRequest(req) {
  * @returns {Promise<object[]>}
  */
 async function searchRakuten(msg, deps) {
-  // FR #4450 / MRB #4456: empty-guard before HTTP (pin: keywordsFromMsg).
-  if (!keywordsFromMsg(msg)) return [];
-  // FR #4544: Product Search `none` param for excludes — never `-term` in keyword.
-  const keyword = keywordsFromAgentMsg(msg, { excludeStyle: 'none' });
+  // FR #4450 / MRB #4456 / FR #4768: empty-guard; one call per query (not AND-joined).
+  const texts = queryTextsFromMsg(msg)
+    .map((t) => sanitizeRakutenKeyword(t))
+    .filter(Boolean);
+  if (!texts.length) return [];
   const envVars = (deps && deps.env) || process.env;
   const creds = assertRakutenCreds(envVars);
   const httpRequest =
@@ -351,7 +421,8 @@ async function searchRakuten(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
 
-  const none = collectExcludeTerms(msg).join(' ');
+  // FR #4544 + #4768: `none` from significant words only (never Lucene -term in keyword).
+  const none = buildRakutenNone(msg);
   const language =
     String(envVars.RAKUTEN_LANGUAGE || 'en_US').trim() || 'en_US';
   const useCache = httpRequest === defaultHttpRequest;
@@ -361,41 +432,87 @@ async function searchRakuten(msg, deps) {
     Date.now(),
     useCache,
   );
-  const url = productSearchUrl(creds.endpoint, {
-    keyword,
-    none,
-    language,
-    max: 10,
-  });
-  let res;
-  try {
-    res = await httpRequest({
-      method: 'GET',
-      url,
-      headers: {
-        Accept: 'application/xml, text/xml, */*',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  } catch (err) {
-    // FR #4544: empty result, complete the SQS message — do not intake-fatal.
-    if (isRakutenInvalidContext(err)) return [];
-    throw err;
-  }
 
-  const xml =
-    typeof res === 'string'
-      ? res
-      : res && typeof res.body === 'string'
-        ? res.body
-        : '';
-  if (/INVALID_CONTEXT_VALUE/i.test(xml)) return [];
-  const rawItems = parseProductSearchXml(xml);
-  return normalizeSearchItems(rawItems, {
+  const capRaw = Number(msg && msg.maxResults);
+  const cap = Number.isFinite(capRaw) && capRaw > 0 ? Math.min(50, Math.floor(capRaw)) : 10;
+  const merged = [];
+  const seen = new Set();
+  const normOpts = {
     userId: msg && msg.userId,
     env: msg && msg.env,
     envVars,
-  });
+  };
+  let lastInvalidContext = null;
+
+  for (const keyword of texts) {
+    if (merged.length >= cap) break;
+    const url = productSearchUrl(creds.endpoint, {
+      keyword,
+      none,
+      language,
+      max: Math.min(10, cap - merged.length),
+    });
+    let res;
+    try {
+      res = await httpRequest({
+        method: 'GET',
+        url,
+        headers: {
+          Accept: 'application/xml, text/xml, */*',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    } catch (err) {
+      // FR #4544 / #4768: do not intake-fatal; surface status when all queries fail.
+      if (isRakutenInvalidContext(err)) {
+        lastInvalidContext = err;
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[rakuten] INVALID_CONTEXT_VALUE keywordLen=%s noneLen=%s',
+          keyword.length,
+          none.length,
+        );
+        continue;
+      }
+      throw err;
+    }
+
+    const xml =
+      typeof res === 'string'
+        ? res
+        : res && typeof res.body === 'string'
+          ? res.body
+          : '';
+    if (/INVALID_CONTEXT_VALUE/i.test(xml)) {
+      lastInvalidContext = Object.assign(new Error('Rakuten INVALID_CONTEXT_VALUE in body'), {
+        code: 'rakuten_invalid_context',
+        statusCode: 400,
+      });
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[rakuten] INVALID_CONTEXT_VALUE (body) keywordLen=%s noneLen=%s',
+        keyword.length,
+        none.length,
+      );
+      continue;
+    }
+    const rawItems = parseProductSearchXml(xml);
+    const products = normalizeSearchItems(rawItems, normOpts);
+    for (const p of products) {
+      const id = p && p.id != null ? String(p.id) : '';
+      if (id) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+      }
+      merged.push(p);
+      if (merged.length >= cap) break;
+    }
+  }
+
+  if (!merged.length && lastInvalidContext) {
+    throw lastInvalidContext;
+  }
+  return merged;
 }
 
 module.exports = {
@@ -409,6 +526,9 @@ module.exports = {
   parseProductSearchXml,
   keywordsFromMsg,
   isRakutenInvalidContext,
+  sanitizeRakutenKeyword,
+  buildRakutenNone,
+  queryTextsFromMsg,
   DEFAULT_TOKEN_URL,
   DEFAULT_PRODUCT_SEARCH_URL,
 };

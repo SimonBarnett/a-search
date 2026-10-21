@@ -3,7 +3,7 @@
 /**
  * FR #4544: Rakuten Product Search INVALID_CONTEXT_VALUE.
  * Do not put Lucene-style -exclude into keyword; use the API `none` param.
- * On INVALID_CONTEXT_VALUE, return [] (no intake fatal spam).
+ * On INVALID_CONTEXT_VALUE, search throws; worker writes status IN (FR #4768).
  */
 
 const { describe, it } = require('node:test');
@@ -68,41 +68,52 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
         },
       },
     );
-    assert.equal(calls.length, 2);
-    const u = new URL(calls[1].url);
-    assert.equal(u.searchParams.get('keyword'), 'model aircraft servo');
-    assert.equal(u.searchParams.get('none'), 'calendar');
-    assert.equal(u.searchParams.get('language'), 'en_US');
-    assert.doesNotMatch(u.searchParams.get('keyword') || '', /-/);
+    // FR #4768: one Product Search call per query (+ token) = 3 calls.
+    assert.equal(calls.length, 3);
+    const productCalls = calls.filter((c) => !String(c.url || '').includes('/token'));
+    assert.equal(productCalls.length, 2);
+    const keywords = productCalls
+      .map((c) => new URL(c.url).searchParams.get('keyword'))
+      .sort();
+    assert.deepEqual(keywords, ['model aircraft', 'servo']);
+    for (const c of productCalls) {
+      const u = new URL(c.url);
+      assert.equal(u.searchParams.get('none'), 'calendar');
+      assert.equal(u.searchParams.get('language'), 'en_US');
+      assert.doesNotMatch(u.searchParams.get('keyword') || '', /-/);
+    }
   });
 
-  it('INVALID_CONTEXT_VALUE HTTP 400 returns [] and does not file intake', async () => {
+  it('INVALID_CONTEXT_VALUE HTTP 400 throws for worker status IN; SQS does not file intake', async () => {
     resetRakutenTokenCache();
     const reports = [];
-    const products = await searchRakuten(
-      { q: 'shoes', userId: 'U-4544', env: 'live' },
-      {
-        env,
-        httpRequest: async (req) => {
-          if (String(req.url || '').includes('/token')) {
-            return {
-              statusCode: 200,
-              body: JSON.stringify({
-                access_token: 'FAKE_access_token',
-                expires_in: 3600,
-              }),
-            };
-          }
-          const err = new Error(
-            'Rakuten HTTP 400: <result><Errors><ErrorID>INVALID_CONTEXT_VALUE</ErrorID><ErrorText>cannot resolve value from request</ErrorText></Errors></result>',
-          );
-          err.statusCode = 400;
-          err.code = 'rakuten_invalid_context';
-          throw err;
-        },
-      },
+    await assert.rejects(
+      () =>
+        searchRakuten(
+          { q: 'shoes', userId: 'U-4544', env: 'live' },
+          {
+            env,
+            httpRequest: async (req) => {
+              if (String(req.url || '').includes('/token')) {
+                return {
+                  statusCode: 200,
+                  body: JSON.stringify({
+                    access_token: 'FAKE_access_token',
+                    expires_in: 3600,
+                  }),
+                };
+              }
+              const err = new Error(
+                'Rakuten HTTP 400: <result><Errors><ErrorID>INVALID_CONTEXT_VALUE</ErrorID><ErrorText>cannot resolve value from request</ErrorText></Errors></result>',
+              );
+              err.statusCode = 400;
+              err.code = 'rakuten_invalid_context';
+              throw err;
+            },
+          },
+        ),
+      (err) => err && err.code === 'rakuten_invalid_context',
     );
-    assert.deepEqual(products, []);
 
     // Handler path: invalid_context must not reportException (class of FR #4438).
     const { run } = require('../providers/live/rakuten/src/worker');
