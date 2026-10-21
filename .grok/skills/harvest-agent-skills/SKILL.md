@@ -618,3 +618,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Windows Register-AClubsQueueService tests must pass -SearchApiUrl (or -AllowLocalSystem) after FR #4311 or spawn exits 1 with search_api_url_required before the logon assertion
 - keywordsOnly: expand short product codes in parentheses (RTF/BNF) and only drop location-like parentheticals (comma/postcode/co.uk/UK place names)
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
+- FIX CONFLICTING product tip vs main skill: resolve with regex keep-both then rewrite skill section via Python chr(96) backticks --- never embed backticks in PowerShell here-strings
