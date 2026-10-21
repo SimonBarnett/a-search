@@ -3,15 +3,17 @@
 /**
  * FR #4038 / #4030: SQS Lambda entry that never sends HTTP 429 straight to DLQ.
  * On 429: ChangeMessageVisibility (Retry-After), then rethrow so SQS retries.
- * FR #4438 / #4561: *_missing_credentials (and other non-retryable provider
- * skips) ack the message, ERROR-log provider+searchid (no secrets), and write
- * a zero-product status IN with error so consumers see the provider did not run.
- * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query skip.
+ * FR #4438 / #4561: *_missing_credentials ack the message, ERROR-log, and write
+ * a zero-product status IN (config skip at worker — not an API failure).
+ * FR #4769: provider API failures (4xx auth/eligibility/client, permanent
+ * vendor faults, nonRetryable API errors) must NOT write an IN file; log and
+ * throw so SQS retries into the provider DLQ (no intake-fatal spam).
  */
 
 const {
   backoffFor429,
   isAmazonPermanentVendorFault,
+  httpStatusOf,
 } = require('./backoff429');
 const {
   writeLiveProviderInResult,
@@ -43,40 +45,48 @@ function isMissingProviderCreds(err) {
 }
 
 /**
- * FR #4544: Rakuten INVALID_CONTEXT_VALUE is a vendor client/query fault.
- * Skip intake fatal (same class as missing creds); do not DLQ-loop.
  * @param {unknown} err
- * @returns {boolean}
+ * @returns {string}
  */
-function isVendorClientSkip(err) {
-  if (isMissingProviderCreds(err)) return true;
-  const code = err && typeof err.code === 'string' ? err.code : '';
-  if (code === 'rakuten_invalid_context') return true;
-  // FR #4762: CJ not Authorised (often non-JSON 403) — permanent account/token.
-  if (code === 'cj_not_authorised') return true;
-  return /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || err || ''));
+function providerFaultCode(err) {
+  const code = err && typeof err.code === 'string' ? err.code.trim() : '';
+  return code || '';
 }
 
 /**
- * FR #4561: non-retryable provider skips that must ack (delete) the SQS message
- * without intake fatals or DLQ. Missing creds plus err.nonRetryable === true.
+ * FR #4769: API / vendor faults that must reach the DLQ (no status IN, no intake).
+ * Missing credentials stay a config skip (FR #4650 / #4561).
  * @param {unknown} err
  * @returns {boolean}
  */
-function isNonRetryableProviderSkip(err) {
-  if (isMissingProviderCreds(err)) return true;
-  return !!(err && err.nonRetryable === true);
+function isProviderFaultForDlq(err) {
+  if (!err || isMissingProviderCreds(err) || isEnvIsolation(err)) return false;
+  if (isAmazonPermanentVendorFault(err)) return true;
+  const code = providerFaultCode(err);
+  if (
+    code === 'cj_not_authorised' ||
+    code === 'rakuten_invalid_context' ||
+    /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || ''))
+  ) {
+    return true;
+  }
+  if (err && err.nonRetryable === true) return true;
+  const status = httpStatusOf(err);
+  // Non-success HTTP that is not a paced 429/transient gateway retry class.
+  if (Number.isFinite(status) && status >= 400 && !backoffFor429({ err }).is429) {
+    return true;
+  }
+  return false;
 }
 
 /**
- * Status IN `error` value: missing creds collapse to missing_credentials;
- * other non-retryable skips keep their code.
+ * Status IN `error` value for missing-creds config skips only.
  * @param {unknown} err
  * @returns {string}
  */
 function statusErrorFromSkip(err) {
   if (isMissingProviderCreds(err)) return 'missing_credentials';
-  const code = err && typeof err.code === 'string' ? err.code.trim() : '';
+  const code = providerFaultCode(err);
   return code || 'provider_error';
 }
 
@@ -90,6 +100,43 @@ function searchidFromMsg(msg) {
 }
 
 /**
+ * CloudWatch-safe failure log (no secrets).
+ * @param {{
+ *   err: unknown,
+ *   msg?: object,
+ *   source?: string,
+ *   logError?: Function,
+ * }} args
+ */
+function logProviderFailure(args) {
+  const err = args.err;
+  const msg = args.msg || {};
+  const source = String(args.source || msg.source || '').trim().toLowerCase();
+  const searchid = searchidFromMsg(msg);
+  const host = String(msg.hostkey || msg.host || '').trim();
+  const guid = String(msg.guid || '').trim();
+  const code = providerFaultCode(err);
+  const status = httpStatusOf(err);
+  const log =
+    typeof args.logError === 'function' ? args.logError : console.error.bind(console);
+  const parts = [
+    '[a-search]',
+    'ERROR',
+    'provider_failure',
+    'provider=' + (source || 'unknown'),
+    'searchid=' + (searchid || 'unknown'),
+  ];
+  if (host) parts.push('host=' + host);
+  if (guid) parts.push('guid=' + guid);
+  if (Number.isFinite(status)) parts.push('httpStatus=' + status);
+  if (code) parts.push('code=' + code);
+  const message = err && err.message ? String(err.message).slice(0, 300) : String(err);
+  // Strip anything that looks like a bearer/token fragment.
+  parts.push('message=' + message.replace(/Bearer\s+\S+/gi, 'Bearer [redacted]'));
+  log(...parts);
+}
+
+/**
  * @param {{
  *   err: unknown,
  *   msg: object,
@@ -98,17 +145,16 @@ function searchidFromMsg(msg) {
  *   logError?: Function,
  * }} args
  */
-async function reportNonRetryableSkip(args) {
+async function reportMissingCredentialsSkip(args) {
   const err = args.err;
   const msg = args.msg || {};
   const source = String(args.source || msg.source || '').trim().toLowerCase();
   const searchid = searchidFromMsg(msg);
-  const code = err && typeof err.code === 'string' ? err.code : '';
+  const code = providerFaultCode(err);
   const statusError = statusErrorFromSkip(err);
   const log =
     typeof args.logError === 'function' ? args.logError : console.error.bind(console);
 
-  // Never include secrets / tokens / Authorization in the log line.
   log(
     '[a-search]',
     'ERROR',
@@ -144,7 +190,6 @@ async function reportNonRetryableSkip(args) {
     });
     return { logged: true, inWritten: true };
   } catch (writeErr) {
-    // Status IN is best-effort; still ack the message so we do not retry forever.
     log(
       '[a-search]',
       'ERROR',
@@ -155,6 +200,17 @@ async function reportNonRetryableSkip(args) {
     );
     return { logged: true, inWritten: false };
   }
+}
+
+/** @deprecated FR #4769 — only missing_credentials use the skip path. */
+function isNonRetryableProviderSkip(err) {
+  return isMissingProviderCreds(err);
+}
+
+/** @deprecated FR #4769 — vendor client faults go to DLQ. */
+function isVendorClientSkip(err) {
+  if (isMissingProviderCreds(err)) return true;
+  return isProviderFaultForDlq(err);
 }
 
 /**
@@ -216,12 +272,11 @@ async function handleSqsWith429(opts) {
         throw err;
       }
     } catch (err) {
-      // FR #4427: transient vendor HTTP (429/502/503/504) retries via SQS;
-      // do not file intake fatals on every attempt.
+      // FR #4427: transient vendor HTTP (429/502/503/504) uses visibility backoff above; hard faults fall through.
       const transient = backoffFor429({ err }).is429;
-      // FR #4438 / #4561: missing provider creds (and other non-retryable skips)
-      // must not file an intake fatal or fail the SQS batch; log + status IN.
-      if (isNonRetryableProviderSkip(err)) {
+
+      // FR #4438 / #4561: missing provider creds — config skip, not API failure.
+      if (isMissingProviderCreds(err)) {
         let msg = {};
         try {
           if (record && typeof record.body === 'string') {
@@ -233,51 +288,41 @@ async function handleSqsWith429(opts) {
         const source = String(
           opts.source || (msg && msg.source) || '',
         ).trim();
-        await reportNonRetryableSkip({
+        await reportMissingCredentialsSkip({
           err,
           msg,
           source,
           deps,
           logError: opts.logError,
         });
-        const skipped = isMissingProviderCreds(err)
-          ? 'missing_credentials'
-          : statusErrorFromSkip(err);
         results.push({
           ok: false,
-          skipped,
+          skipped: 'missing_credentials',
           code: err && err.code,
           source: source || opts.source || '',
         });
         continue;
       }
-      // FR #4544: vendor client skips (e.g. Rakuten INVALID_CONTEXT_VALUE).
-      if (isVendorClientSkip(err)) {
-        results.push({
-          ok: false,
-          skipped: isMissingProviderCreds(err)
-            ? 'missing_credentials'
-            : 'vendor_client_error',
-          code: err && err.code,
-          source: opts.source || '',
+
+      // FR #4769: API / permanent vendor faults — log, no IN, no intake, throw → DLQ.
+      if (isProviderFaultForDlq(err)) {
+        let msg = {};
+        try {
+          if (record && typeof record.body === 'string') {
+            msg = JSON.parse(record.body);
+          }
+        } catch {
+          msg = {};
+        }
+        logProviderFailure({
+          err,
+          msg,
+          source: opts.source || (msg && msg.source) || '',
+          logError: opts.logError,
         });
-        continue;
+        throw err;
       }
-      // FR #4562 / #4739: Amazon permanent vendor faults - complete the batch
-      // (worker should write status IN); do not retry into DLQ or spam intake.
-      if (isAmazonPermanentVendorFault(err)) {
-        const code = err && typeof err.code === 'string' ? err.code : '';
-        results.push({
-          ok: false,
-          skipped:
-            code === 'creators_not_eligible'
-              ? 'creators_not_eligible'
-              : 'vendor_non_json',
-          code: err.code,
-          source: opts.source || '',
-        });
-        continue;
-      }
+
       if (
         !transient &&
         !isEnvIsolation(err) &&
@@ -307,6 +352,9 @@ module.exports = {
   isMissingProviderCreds,
   isNonRetryableProviderSkip,
   isVendorClientSkip,
+  isProviderFaultForDlq,
   statusErrorFromSkip,
-  reportNonRetryableSkip,
+  logProviderFailure,
+  reportNonRetryableSkip: reportMissingCredentialsSkip,
+  reportMissingCredentialsSkip,
 };

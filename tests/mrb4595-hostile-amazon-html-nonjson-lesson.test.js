@@ -27,8 +27,8 @@ describe('MRB #4595 hostile Amazon HTML non-JSON harvest lesson', () => {
     const i = text.indexOf(needle);
     assert.ok(i >= 0, 'missing Amazon HTML non-JSON lesson');
     const window = text.slice(i, i + 320);
-    assert.match(window, /write status IN/);
-    assert.match(window, /complete SQS/);
+    assert.match(window, /FR #4769 fail into DLQ/);
+    assert.match(window, /no status IN/);
     assert.match(window, /AMAZON_SEARCH_API=creators/);
     assert.match(window, /explicit paapi/);
     assert.match(window, /fill-madeira Creators SSM/);

@@ -123,7 +123,11 @@ describe('FR #4450 live providers agent queries', () => {
   });
 
   it('rakuten searchRakuten uses agent keywords; skips HTTP when empty', async () => {
-    const { searchRakuten } = require('../providers/live/rakuten/src/search');
+    const {
+      searchRakuten,
+      resetRakutenTokenCache,
+    } = require('../providers/live/rakuten/src/search');
+    resetRakutenTokenCache();
     const calls = [];
     const env = {
       RAKUTEN_CLIENT_ID: 'FAKE_rakuten_id',
@@ -139,6 +143,7 @@ describe('FR #4450 live providers agent queries', () => {
     );
     assert.equal(calls.length, 0);
 
+    // FR #4768: one Product Search call per query (not AND-joined keyword).
     await searchRakuten(agentMsg, {
       env,
       httpRequest: async (req) => {
@@ -150,11 +155,17 @@ describe('FR #4450 live providers agent queries', () => {
           };
         }
         const blob = JSON.stringify(req);
-        assert.match(blob, /model/i);
         assert.doesNotMatch(blob, /keyword['\"]?\s*[:=]\s*['\"]\s*['\"]/);
         return { statusCode: 200, body: '<root/>' };
       },
     });
-    assert.equal(calls.length, 2);
+    const productGets = calls.filter(
+      (c) => c && c.method === 'GET' && /productsearch/i.test(String(c.url || '')),
+    );
+    assert.equal(productGets.length, 2);
+    const allUrls = productGets.map((c) => String(c.url || '')).join(' ');
+    assert.match(allUrls, /model/i);
+    assert.match(allUrls, /servo/i);
+    assert.equal(calls.length, 3); // token + 2 product searches
   });
 });

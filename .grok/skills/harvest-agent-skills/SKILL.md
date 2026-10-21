@@ -580,15 +580,15 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When /search writes search-fanout.json, also sync searches.json searchid (and normalized market/currency) so redqueen does not keep a stale id; handleAgentSearch tests take one opts object with event+headObject (not two args).
 - handleSqsWith429: *_missing_credentials must ERROR-log provider+searchid (no secrets) and write a-clubs status IN with products:[] error:missing_credentials, then ack/delete; never silent success
 - After IN/ putObject, wrap touchLastmod in best-effort catch --- CopyObject 403 on annotated markers must not DLQ a successful search; grant Get/List ObjectAnnotation on wireAclubsInAccess, not Put/Delete.
-- When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so SQS completes after a status IN write.
-- Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): write status IN and complete SQS; default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
+- When flipping a provider API default, pin AMAZON_SEARCH_API=paapi (or old path) on every legacy unit env that injects the old client, and exclude vendor_non_json codes from isTransientVendorHttp so FR #4769 sends them to the DLQ (no status IN).
+- Amazon PA-API HTML non-JSON (paapi_non_json/creators_non_json): FR #4769 fail into DLQ (no status IN); default AMAZON_SEARCH_API=creators; explicit paapi keeps PA-API; fill-madeira Creators SSM is a separate follow-up
 - a-search: keep canonical LOCKED pack at docs/vision.md; add short root VISION.md so MRB seats that look for VISION.md at repo root can quote IN/a-clubs/DLQ without falling back to issue text
 - When a harvest tip expands an existing ObjectName bullet with Register-WalrusSqlDrainService + INFO JSON, fold to one fuller tip (do not keep-both duplicate ObjectName lines).
 - fill-madeira: map optional /madeira/amazon/creators-credential -> AMAZON_CREATORS_CREDENTIAL (required=false like ebay refresh-token); document in secrets-matrix; never print SSM values.
 - nssm ObjectName needs username+password together: when -ServicePasswordFile omitted, Register-WalrusSqlDrainService skips ObjectName and prints interactive nssm set; drain emits one INFO JSON line per message (searchid/host/guid/productCount/duration/outcome)
 - fill-madeira must skip disabled registry sources; only require /madeira SSM for registry-enabled providers; missing bundled .env soft-deploys (keep Lambda/queue/DLQ, omit .env, run-time fail-closed); document Kelkoo operator .env (no /madeira/kelkoo)
 - a-search FIX when tip CONFLICTING on secrets-matrix after sibling creators-credential land: keep-both FR #4650 soft-deploy+enabled gate with main creators-credential path; DONE FIX; no CI poll
-- Amazon deploy default Creators; paapi_non_json/creators_non_json write status IN and complete SQS (not transient); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
+- Amazon deploy default Creators; paapi_non_json/creators_non_json are not transient --- FR #4769 DLQ (no status IN); keep FR-045 LOCKED Phase-1 PA-API SearchItems sentence when flipping default.
 - a-search FIX after Creators default: fr4427 must expect handleSqsWith429 complete on paapi_non_json (not reject+backoff); plain 503 without that code stays transient; pin AMAZON_SEARCH_API=paapi on PA-API unit envs
 - a-search FIX #main: when assigned commit CI red is already fixed on newer main by a merged PR, DONE FIX with that PR URL; do not open a second heal PR
 - After folding main into a docs/mrb pin PR, re-run sibling harvest pins: #4670 fuller fill-madeira tip broke mrb4661 colon-form needle; pin must-skip + registry-enabled SSM + soft-deploys together
@@ -604,10 +604,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sweep all handleAgentSearch fan-out fixtures for SQS_<SOURCE>_LIVE_URL when envVars gate is live (fr4030/fr4265/fr4415/fr4563), not one file at a time.
 - docs/mrb pin new test files need a trailing newline before PASS; pin harvest lesson needles already on main.
 - a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
-- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: tag creators_not_eligible (nonRetryable), write status IN empty products, complete SQS; do not intake-fatal or DLQ-burn (same class as paapi_non_json).
+- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: tag creators_not_eligible (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
 - CJ Product Search: after [String!]! keywords, still cap whitespace tokens at 10 or CJ HTTP 400 Too many keywords; keep short phrases as one element.
 - CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone -- a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
-- CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable), write status IN empty products, complete SQS; do not intake-fatal or DLQ-burn (same class as creators_not_eligible).
+- CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
+- Live provider API failures (4xx/5xx/auth/eligibility/parse) must not write empty or status IN files; fail the SQS receive into the provider DLQ (FR #4769). Success with 0 matches still writes an empty-products IN. Missing credentials at fan-out (#4650) stay skipped (not a failure).
 - When an open FR tip writes status IN for a vendor fault after FR #4769, MRB FAIL and land one fix tip that keeps the product keyword fixes but throws into the DLQ (no status IN); close the status-IN head as superseded
 - When FR #4768 fans out Rakuten Product Search per query, update fr4450 (and similar) to assert agent keywords across all productsearch GETs, not /model/i on each single call; expect token + N product calls
 - FIX red after FR product tip: update hostiles for DLQ/no-intake and fan-out empty-guard pins; do not weaken isProviderFaultForDlq to satisfy old intake pins

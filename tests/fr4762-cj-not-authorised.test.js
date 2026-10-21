@@ -91,88 +91,99 @@ describe('FR #4762 CJ not Authorised permanent skip', () => {
     }
   });
 
-  it('worker writes status IN and does not throw', async () => {
+  it('worker throws and does not write IN (FR #4769 DLQ)', async () => {
     const puts = [];
-    const out = await run(
-      {
-        searchId: 'srch_4762',
-        userId: 'U-4762',
-        env: 'sandbox',
-        source: 'cj',
-        q: 'servo',
-        host: 'example.test',
-        guid: 'g-4762',
-      },
-      {
-        env: credEnv,
-        httpRequest: async () => {
-          const err = new Error(`CJ HTTP non-JSON 403: ${body403}`);
-          err.statusCode = 403;
-          err.status = 403;
-          err.code = 'cj_not_authorised';
-          err.nonRetryable = true;
-          throw err;
-        },
-        putObject: async (args) => {
-          puts.push(args);
-          return {};
-        },
-      },
+    await assert.rejects(
+      () =>
+        run(
+          {
+            searchId: 'srch_4762',
+            userId: 'U-4762',
+            env: 'sandbox',
+            source: 'cj',
+            q: 'servo',
+            host: 'example.test',
+            guid: 'g-4762',
+          },
+          {
+            env: credEnv,
+            httpRequest: async () => {
+              const err = new Error(`CJ HTTP non-JSON 403: ${body403}`);
+              err.statusCode = 403;
+              err.status = 403;
+              err.code = 'cj_not_authorised';
+              err.nonRetryable = true;
+              throw err;
+            },
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+          },
+        ),
+      (e) => e && e.code === 'cj_not_authorised',
     );
-    assert.equal(out.ok, true);
-    assert.equal(out.skipped, 'cj_not_authorised');
-    assert.equal(out.products.length, 0);
-    assert.equal(out.status.code, 'cj_not_authorised');
-    assert.ok(puts.length >= 1);
+    assert.equal(puts.length, 0);
   });
 
-  it('handleSqsWith429 completes without intake on cj_not_authorised', async () => {
+  it('handleSqsWith429 throws without intake or IN on cj_not_authorised', async () => {
     const intake = [];
+    const puts = [];
     const err = new Error(`CJ HTTP non-JSON 403: ${body403}`);
     err.statusCode = 403;
     err.code = 'cj_not_authorised';
     err.nonRetryable = true;
 
-    const result = await handleSqsWith429({
-      event: {
-        Records: [
-          {
-            body: JSON.stringify({
-              searchId: 's1',
-              env: 'sandbox',
-              userId: 'U1',
-              source: 'cj',
-            }),
-            receiptHandle: 'rh-1',
+    await assert.rejects(
+      () =>
+        handleSqsWith429({
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({
+                  searchId: 's1',
+                  env: 'sandbox',
+                  userId: 'U1',
+                  source: 'cj',
+                }),
+                receiptHandle: 'rh-1',
+              },
+            ],
           },
-        ],
-      },
-      run: async () => {
-        throw err;
-      },
-      reportException: async (args) => {
-        intake.push(args);
-      },
-      route: 'providers/live/cj/handler',
-      source: 'cj',
-    });
-    assert.equal(result.ok, true);
-    assert.equal(result.results[0].skipped, 'cj_not_authorised');
+          run: async () => {
+            throw err;
+          },
+          deps: {
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+          },
+          reportException: async (args) => {
+            intake.push(args);
+          },
+          route: 'providers/live/cj/handler',
+          source: 'cj',
+        }),
+      (e) => e === err,
+    );
     assert.equal(intake.length, 0);
+    assert.equal(puts.length, 0);
   });
 
-  it('source pins classifyCjHttpFault + worker permanent skip', () => {
+  it('source pins classifyCjHttpFault + DLQ path', () => {
     const search = fs.readFileSync(
       path.join(ROOT, 'providers/live/cj/src/search.js'),
       'utf8',
     );
-    const worker = fs.readFileSync(
-      path.join(ROOT, 'providers/live/cj/src/worker.js'),
+    const handle = fs.readFileSync(
+      path.join(ROOT, 'shared/search/handleSqsWith429.js'),
       'utf8',
     );
     assert.match(search, /classifyCjHttpFault/);
     assert.match(search, /cj_not_authorised/);
     assert.match(search, /not Authori/);
-    assert.match(worker, /cj_not_authorised/);
+    assert.match(handle, /cj_not_authorised/);
+    assert.match(handle, /isProviderFaultForDlq/);
   });
 });

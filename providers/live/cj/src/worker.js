@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * CJ live provider worker (FR-041 / FR #4762).
+ * CJ live provider worker (FR-041 / FR #4762 / FR #4769).
  * GraphQL Product Search -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
- * FR #4762: cj_not_authorised (non-JSON 403) -> status IN, no DLQ / intake burn.
+ * FR #4769: API failures (incl. cj_not_authorised) throw; handleSqsWith429 logs
+ * and fails the receive into the DLQ (no status IN).
  */
 
 const path = require('node:path');
@@ -23,15 +24,6 @@ const {
   assertCjCreds,
   CjCredsError,
 } = require('./search');
-
-/**
- * @param {unknown} err
- * @returns {boolean}
- */
-function isCjPermanentVendorFault(err) {
-  const code = err && typeof err.code === 'string' ? err.code : '';
-  return code === 'cj_not_authorised';
-}
 
 /**
  * @param {object} msg
@@ -70,44 +62,10 @@ async function run(msg, deps) {
     now: deps && deps.now,
   };
 
-  let products;
-  try {
-    products = await searchFn(msg, {
-      env: envVars,
-      httpRequest: deps && deps.httpRequest,
-    });
-  } catch (err) {
-    // FR #4762: CJ not Authorised (often non-JSON 403) is permanent for this
-    // account/token class. Write status IN; do not burn DLQ.
-    if (isCjPermanentVendorFault(err)) {
-      const status = {
-        code: err.code,
-        httpStatus: err.status != null ? err.status : err.statusCode,
-        message: err && err.message ? String(err.message) : String(err),
-        bodyPreview:
-          err && err.bodyText != null
-            ? String(err.bodyText).slice(0, 200)
-            : undefined,
-      };
-      const written = await writeLiveProviderInResult({
-        ...writeOpts,
-        products: [],
-        status,
-      });
-      return {
-        ok: true,
-        skipped: 'cj_not_authorised',
-        source: 'cj',
-        searchId: msg.searchId,
-        env: msg.env,
-        products: [],
-        key: written.key,
-        bucket: written.bucket,
-        status,
-      };
-    }
-    throw err;
-  }
+  const products = await searchFn(msg, {
+    env: envVars,
+    httpRequest: deps && deps.httpRequest,
+  });
 
   const written = await writeLiveProviderInResult({
     ...writeOpts,

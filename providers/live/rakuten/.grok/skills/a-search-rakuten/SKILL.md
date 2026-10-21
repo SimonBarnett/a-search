@@ -23,7 +23,7 @@ Registry id `rakuten` (`kind: live`, default-on).
 
 `src/worker.js` exports `run(msg, deps?)`:
 
-1. `assertWorkerEnv` — `message.env` must equal `A_SEARCH_ENV`
+1. `assertWorkerEnv` --- `message.env` must equal `A_SEARCH_ENV`
 2. Require `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, and `RAKUTEN_SID`
 3. Product Search GET (`src/search.js`) → XML parse → `products[]`
 4. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/rakuten/{userId}/{catalogId}/{searchId}.json`
@@ -33,7 +33,7 @@ Injectable `httpRequest` / `putObject` for fixtures (`fixtures/product-search-ok
 ## XML responses
 
 Rakuten Product Search returns **XML**. Parse with the tag-boundary walker in
-`search.js` (`parseProductSearchXml`) — not a whole-document regex. Map item
+`search.js` (`parseProductSearchXml`) --- not a whole-document regex. Map item
 nodes into the shared `products[]` shape before S3 write. Preserve publisher
 item ids for dedupe.
 
@@ -42,7 +42,7 @@ item ids for dedupe.
 Rakuten enforces **rate limits** per application key. Playbook:
 
 1. Honour `Retry-After` / documented QPS caps.
-2. Exponential backoff on 429 / 503 — never tight-loop a single searchId.
+2. Exponential backoff on 429 / 503 --- never tight-loop a single searchId.
 3. Prefer one outbound search per SQS message; fan-out already parallelises
    sources, not pages inside this worker unless a later FR says otherwise.
 4. Log throttle events without dumping secrets.
@@ -65,9 +65,9 @@ See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
 
-**FR #4544:** Product Search rejects Lucene-style `-exclude` inside `keyword`
-(`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query param; on
-that ErrorID return empty products and do not file an intake fatal.
+**FR #4544 / #4769:** Product Search rejects Lucene-style `-exclude` inside
+`keyword` (`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query
+param; on that ErrorID fail into the Rakuten DLQ (no status IN / no intake).
 
 ## Tests
 
@@ -77,3 +77,10 @@ npm test
 
 - FR-018: `tests/rakuten-scaffold.test.js`
 - FR-040: `tests/rakuten-search.test.js`
+
+## Product Search keywords (FR #4768)
+
+- One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
+- Sanitize keyword tokens: replace hyphens with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
+- Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
+- On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).

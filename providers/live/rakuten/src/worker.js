@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * Rakuten live provider worker (FR-040).
- * Product Search XML -> normalize -> a-clubs IN/ (writeLiveProviderInResult) (injectable HTTP + putObject).
+ * Rakuten live provider worker (FR-040 / FR #4768 / FR #4769).
+ * Product Search XML -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
+ * FR #4768: per-query fan-out, hyphen sanitize, none stopwords (in search.js).
+ * FR #4769: API failures (incl. rakuten_invalid_context) throw into DLQ; no status IN.
  */
 
 const path = require('node:path');
@@ -45,16 +47,11 @@ async function run(msg, deps) {
     deps && typeof deps.searchRakuten === 'function'
       ? deps.searchRakuten
       : searchRakuten;
-  const products = await searchFn(msg, {
-    env: envVars,
-    httpRequest: deps && deps.httpRequest,
-  });
 
   const liveS3 = attachDefaultS3(deps);
-  const written = await writeLiveProviderInResult({
+  const writeOpts = {
     msg,
     source: 'rakuten',
-    products,
     queries: msg.queries,
     exclude: msg.exclude,
     envVars,
@@ -66,6 +63,18 @@ async function run(msg, deps) {
     getObjectTagging: liveS3.getObjectTagging,
     putObjectTagging: liveS3.putObjectTagging,
     now: deps && deps.now,
+  };
+
+  // FR #4769: search throws on rakuten_invalid_context (and other API faults);
+  // handleSqsWith429 logs and fails into the DLQ --- no status IN here.
+  const products = await searchFn(msg, {
+    env: envVars,
+    httpRequest: deps && deps.httpRequest,
+  });
+
+  const written = await writeLiveProviderInResult({
+    ...writeOpts,
+    products,
   });
 
   return {
