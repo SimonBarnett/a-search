@@ -2,9 +2,9 @@
 
 /**
  * FR #4427: Amazon PA-API HTML/non-JSON 503 must carry err.status.
- * FR #4562: coded paapi_non_json / creators_non_json complete the SQS batch
- * (status IN) instead of visibility backoff / DLQ burn; plain 502/503/504
- * without those codes still back off like 429.
+ * FR #4562 / #4769: coded paapi_non_json / creators_non_json are not transient
+ * (no 429 visibility backoff); they throw into the DLQ (no status IN / intake).
+ * Plain 502/503/504 without those codes still back off like 429.
  */
 
 const { describe, it } = require('node:test');
@@ -74,38 +74,48 @@ describe('FR #4427 PA-API non-JSON 503', () => {
     }
   });
 
-  it('handleSqsWith429 completes batch on paapi_non_json (no DLQ burn)', async () => {
+  it('handleSqsWith429 throws on paapi_non_json (FR #4769 DLQ; no intake)', async () => {
     const vis = [];
     const intake = [];
+    const puts = [];
     const err503 = new Error('Amazon PA-API non-JSON response (503)');
     err503.status = 503;
     err503.code = 'paapi_non_json';
 
-    const result = await handleSqsWith429({
-      event: {
-        Records: [
-          {
-            body: JSON.stringify({ searchId: 's1', env: 'sandbox' }),
-            receiptHandle: 'rh-1',
+    await assert.rejects(
+      () =>
+        handleSqsWith429({
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({ searchId: 's1', env: 'sandbox' }),
+                receiptHandle: 'rh-1',
+              },
+            ],
           },
-        ],
-      },
-      run: async () => {
-        throw err503;
-      },
-      changeMessageVisibility: async (args) => {
-        vis.push(args);
-      },
-      reportException: async (args) => {
-        intake.push(args);
-      },
-      route: 'providers/live/amazon/handler',
-      source: 'amazon',
-    });
+          run: async () => {
+            throw err503;
+          },
+          deps: {
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+          },
+          changeMessageVisibility: async (args) => {
+            vis.push(args);
+          },
+          reportException: async (args) => {
+            intake.push(args);
+          },
+          route: 'providers/live/amazon/handler',
+          source: 'amazon',
+        }),
+      (e) => e === err503,
+    );
 
     assert.equal(vis.length, 0, 'non-json must not visibility-backoff');
     assert.equal(intake.length, 0, 'non-json must not file intake fatal');
-    assert.equal(result.results[0].skipped, 'vendor_non_json');
-    assert.equal(result.results[0].code, 'paapi_non_json');
+    assert.equal(puts.length, 0, 'non-json must not write IN');
   });
 });

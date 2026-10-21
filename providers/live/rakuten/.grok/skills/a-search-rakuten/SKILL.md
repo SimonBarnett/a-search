@@ -65,9 +65,9 @@ See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
 
-**FR #4544:** Product Search rejects Lucene-style `-exclude` inside `keyword`
-(`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query param; on
-that ErrorID write status rakuten_invalid_context into the IN file; do not file an intake fatal.
+**FR #4544 / #4769:** Product Search rejects Lucene-style `-exclude` inside
+`keyword` (`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query
+param; on that ErrorID fail into the Rakuten DLQ (no status IN / no intake).
 
 ## Tests
 
@@ -83,4 +83,4 @@ npm test
 - One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
 - Sanitize keyword tokens: replace hyphens with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
 - Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
-- On INVALID_CONTEXT_VALUE write status `rakuten_invalid_context` into the IN file (not a silent empty products list).
+- On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).

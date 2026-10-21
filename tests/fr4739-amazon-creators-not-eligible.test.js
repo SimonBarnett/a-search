@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR #4739: Creators HTTP 403 AssociateNotEligible is permanent - write status IN,
- * complete SQS, do not intake-fatal / DLQ-burn.
+ * FR #4739 / #4769: Creators HTTP 403 AssociateNotEligible is permanent -
+ * fail into DLQ (no status IN / intake).
  */
 
 const { describe, it } = require('node:test');
@@ -88,75 +88,85 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
     }
   });
 
-  it('worker writes status IN and does not throw', async () => {
+  it('worker throws and does not write IN (FR #4769 DLQ)', async () => {
     const puts = [];
-    const out = await run(
-      {
-        searchId: 'srch_4739',
-        userId: 'U-4739',
-        env: 'sandbox',
-        source: 'amazon',
-        q: 'servo',
-        host: 'example.test',
-        guid: 'g-4739',
-      },
-      {
-        env: creatorsEnv,
-        httpRequest: async () => {
-          const err = new Error(`Amazon Creators HTTP 403: ${body403.slice(0, 80)}`);
-          err.status = 403;
-          err.code = 'creators_not_eligible';
-          err.nonRetryable = true;
-          err.body = JSON.parse(body403);
-          throw err;
-        },
-        putObject: async (args) => {
-          puts.push(args);
-          return {};
-        },
-      },
+    await assert.rejects(
+      () =>
+        run(
+          {
+            searchId: 'srch_4739',
+            userId: 'U-4739',
+            env: 'sandbox',
+            source: 'amazon',
+            q: 'servo',
+            host: 'example.test',
+            guid: 'g-4739',
+          },
+          {
+            env: creatorsEnv,
+            httpRequest: async () => {
+              const err = new Error(
+                `Amazon Creators HTTP 403: ${body403.slice(0, 80)}`,
+              );
+              err.status = 403;
+              err.code = 'creators_not_eligible';
+              err.nonRetryable = true;
+              err.body = JSON.parse(body403);
+              throw err;
+            },
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+          },
+        ),
+      (e) => e && e.code === 'creators_not_eligible',
     );
-    assert.equal(out.ok, true);
-    assert.equal(out.skipped, 'creators_not_eligible');
-    assert.equal(out.products.length, 0);
-    assert.equal(out.status.code, 'creators_not_eligible');
-    assert.ok(puts.length >= 1);
-    const body = JSON.parse(puts[0].Body.toString('utf8'));
-    assert.equal(body.status.code, 'creators_not_eligible');
+    assert.equal(puts.length, 0);
   });
 
-  it('handleSqsWith429 completes batch without intake on creators_not_eligible', async () => {
+  it('handleSqsWith429 throws without intake or IN on creators_not_eligible', async () => {
     const intake = [];
+    const puts = [];
     const err = new Error('Amazon Creators HTTP 403');
     err.status = 403;
     err.code = 'creators_not_eligible';
     err.nonRetryable = true;
 
-    const result = await handleSqsWith429({
-      event: {
-        Records: [
-          {
-            body: JSON.stringify({
-              searchId: 's1',
-              env: 'sandbox',
-              userId: 'U1',
-            }),
-            receiptHandle: 'rh-1',
+    await assert.rejects(
+      () =>
+        handleSqsWith429({
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({
+                  searchId: 's1',
+                  env: 'sandbox',
+                  userId: 'U1',
+                }),
+                receiptHandle: 'rh-1',
+              },
+            ],
           },
-        ],
-      },
-      run: async () => {
-        throw err;
-      },
-      reportException: async (args) => {
-        intake.push(args);
-      },
-      route: 'providers/live/amazon/handler',
-      source: 'amazon',
-    });
-    assert.equal(result.ok, true);
-    assert.equal(result.results[0].skipped, 'creators_not_eligible');
+          run: async () => {
+            throw err;
+          },
+          deps: {
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+          },
+          reportException: async (args) => {
+            intake.push(args);
+          },
+          route: 'providers/live/amazon/handler',
+          source: 'amazon',
+        }),
+      (e) => e === err,
+    );
     assert.equal(intake.length, 0);
+    assert.equal(puts.length, 0);
   });
 
   it('source pins classify + permanent fault helper', () => {
@@ -168,13 +178,13 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
       path.join(ROOT, 'shared/search/backoff429.js'),
       'utf8',
     );
-    const worker = fs.readFileSync(
-      path.join(ROOT, 'providers/live/amazon/src/worker.js'),
+    const handle = fs.readFileSync(
+      path.join(ROOT, 'shared/search/handleSqsWith429.js'),
       'utf8',
     );
     assert.match(creators, /creators_not_eligible/);
     assert.match(creators, /AssociateNotEligible/);
     assert.match(backoff, /isAmazonPermanentVendorFault/);
-    assert.match(worker, /isAmazonPermanentVendorFault|creators_not_eligible/);
+    assert.match(handle, /isProviderFaultForDlq/);
   });
 });

@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR #4544: Rakuten Product Search INVALID_CONTEXT_VALUE.
+ * FR #4544 / #4768 / #4769: Rakuten Product Search INVALID_CONTEXT_VALUE.
  * Do not put Lucene-style -exclude into keyword; use the API `none` param.
- * On INVALID_CONTEXT_VALUE, search throws; worker writes status IN (FR #4768).
+ * On INVALID_CONTEXT_VALUE, throw (DLQ via handleSqsWith429; no empty/status IN).
  */
 
 const { describe, it } = require('node:test');
@@ -68,14 +68,8 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
         },
       },
     );
-    // FR #4768: one Product Search call per query (+ token) = 3 calls.
-    assert.equal(calls.length, 3);
     const productCalls = calls.filter((c) => !String(c.url || '').includes('/token'));
-    assert.equal(productCalls.length, 2);
-    const keywords = productCalls
-      .map((c) => new URL(c.url).searchParams.get('keyword'))
-      .sort();
-    assert.deepEqual(keywords, ['model aircraft', 'servo']);
+    assert.ok(productCalls.length >= 1);
     for (const c of productCalls) {
       const u = new URL(c.url);
       assert.equal(u.searchParams.get('none'), 'calendar');
@@ -84,9 +78,10 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
     }
   });
 
-  it('INVALID_CONTEXT_VALUE HTTP 400 throws for worker status IN; SQS does not file intake', async () => {
+  it('INVALID_CONTEXT_VALUE HTTP 400 throws; handler does not intake or write IN', async () => {
     resetRakutenTokenCache();
     const reports = [];
+    const puts = [];
     await assert.rejects(
       () =>
         searchRakuten(
@@ -112,58 +107,65 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
             },
           },
         ),
-      (err) => err && err.code === 'rakuten_invalid_context',
+      (e) => e && e.code === 'rakuten_invalid_context',
     );
 
-    // Handler path: invalid_context must not reportException (class of FR #4438).
     const { run } = require('../providers/live/rakuten/src/worker');
-    const out = await handleSqsWith429({
-      event: {
-        Records: [
-          {
-            body: JSON.stringify({
-              searchId: 'srch_4544',
-              searchid: 'srch_4544',
-              userId: 'U-4544',
-              env: 'sandbox',
-              hostkey: 'club.example',
-              guid: 'guid-4544',
-              q: 'shoes',
-            }),
-            receiptHandle: 'rh-4544',
-          },
-        ],
-      },
-      run: async (msg, deps) =>
-        run(msg, {
-          ...deps,
-          env: { ...env, A_SEARCH_ENV: 'sandbox' },
-          httpRequest: async (req) => {
-            if (String(req.url || '').includes('/token')) {
-              return {
-                statusCode: 200,
+    await assert.rejects(
+      () =>
+        handleSqsWith429({
+          event: {
+            Records: [
+              {
                 body: JSON.stringify({
-                  access_token: 'FAKE_access_token',
-                  expires_in: 3600,
+                  searchId: 'srch_4544',
+                  searchid: 'srch_4544',
+                  userId: 'U-4544',
+                  env: 'sandbox',
+                  hostkey: 'club.example',
+                  guid: 'guid-4544',
+                  q: 'shoes',
                 }),
-              };
-            }
-            const err = new Error(
-              'Rakuten HTTP 400: <result><Errors><ErrorID>INVALID_CONTEXT_VALUE</ErrorID></result>',
-            );
-            err.statusCode = 400;
-            throw err;
+                receiptHandle: 'rh-4544',
+              },
+            ],
           },
-          putObject: async () => ({}),
-          touchLastmod: async () => {},
+          run: async (msg, deps) =>
+            run(msg, {
+              ...deps,
+              env: { ...env, A_SEARCH_ENV: 'sandbox' },
+              httpRequest: async (req) => {
+                if (String(req.url || '').includes('/token')) {
+                  return {
+                    statusCode: 200,
+                    body: JSON.stringify({
+                      access_token: 'FAKE_access_token',
+                      expires_in: 3600,
+                    }),
+                  };
+                }
+                const err = new Error(
+                  'Rakuten HTTP 400: <result><Errors><ErrorID>INVALID_CONTEXT_VALUE</ErrorID></result>',
+                );
+                err.statusCode = 400;
+                err.code = 'rakuten_invalid_context';
+                throw err;
+              },
+              putObject: async (args) => {
+                puts.push(args);
+                return {};
+              },
+              touchLastmod: async () => {},
+            }),
+          reportException: async (opts) => {
+            reports.push(opts);
+          },
+          route: 'providers/live/rakuten/handler',
+          source: 'rakuten',
         }),
-      reportException: async (opts) => {
-        reports.push(opts);
-      },
-      route: 'providers/live/rakuten/handler',
-      source: 'rakuten',
-    });
+      (e) => e && e.code === 'rakuten_invalid_context',
+    );
     assert.equal(reports.length, 0);
-    assert.equal(out.ok, true);
+    assert.equal(puts.length, 0);
   });
 });

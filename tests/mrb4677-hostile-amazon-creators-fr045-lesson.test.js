@@ -26,8 +26,8 @@ describe('MRB #4677 hostile Amazon Creators default + FR-045 lesson', () => {
     const i = text.indexOf(needle);
     assert.ok(i >= 0, 'missing Amazon Creators default lesson');
     const window = text.slice(i, i + 280);
-    assert.match(window, /write status IN/);
-    assert.match(window, /complete SQS/);
+    assert.match(window, /FR #4769 DLQ/);
+    assert.match(window, /no status IN/);
     assert.match(window, /not transient/);
     assert.match(window, /FR-045 LOCKED/);
     assert.match(window, /PA-API SearchItems/);

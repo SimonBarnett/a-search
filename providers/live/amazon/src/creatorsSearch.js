@@ -435,7 +435,7 @@ async function defaultCreatorsHttpRequest(req) {
     json = text ? JSON.parse(text) : {};
   } catch {
     // FR #4427 / #4562: same status attach as PA-API non-JSON path
-    // (non-retryable; worker writes status IN).
+    // (non-retryable; FR #4769 fail into DLQ, no status IN).
     const err = new Error(`Amazon Creators non-JSON response (${res.status})`);
     err.status = res.status;
     err.code = 'creators_non_json';

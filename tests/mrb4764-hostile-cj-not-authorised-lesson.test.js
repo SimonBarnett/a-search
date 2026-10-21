@@ -19,7 +19,7 @@ const SKILL = path.join(
 );
 
 describe('docs/mrb-4764 CJ cj_not_authorised harvest lesson', () => {
-  it('pins non-JSON 403 Authorised -> status IN, no DLQ/intake', () => {
+  it('pins non-JSON 403 Authorised -> DLQ (FR #4769), no status IN/intake', () => {
     const raw = fs.readFileSync(SKILL);
     assert.notEqual(raw[0], 0xef, 'no UTF-8 BOM');
     const src = raw.toString('utf8');
@@ -28,10 +28,9 @@ describe('docs/mrb-4764 CJ cj_not_authorised harvest lesson', () => {
       .find((l) => l.includes('cj_not_authorised') && l.includes('Authorised'));
     assert.ok(line, 'cj_not_authorised lesson present');
     assert.match(line, /non-JSON 403/);
-    assert.match(line, /status IN empty products/);
-    assert.match(line, /complete SQS/);
-    assert.match(line, /do not intake-fatal or DLQ-burn/);
-    assert.match(line, /creators_not_eligible/);
+    assert.match(line, /FR #4769 fail into DLQ/);
+    assert.match(line, /no status IN/);
+    assert.match(line, /no intake/);
     for (const ch of line) {
       assert.ok(ch.charCodeAt(0) < 128, `non-ASCII: U+${ch.charCodeAt(0).toString(16)}`);
     }

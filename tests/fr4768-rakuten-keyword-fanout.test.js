@@ -107,46 +107,41 @@ describe('FR #4768 Rakuten keyword fan-out / none / status', () => {
     assert.deepEqual(keywords, ['sofa', 'bed', 'chair']);
   });
 
-  it('INVALID_CONTEXT writes status into IN (not silent empty)', async () => {
+  it('INVALID_CONTEXT throws (FR #4769 DLQ; not silent empty or status IN)', async () => {
     resetRakutenTokenCache();
-    let written;
-    const out = await run(
-      {
-        searchId: 'srch_4768',
-        searchid: 'srch_4768',
-        userId: 'U1',
-        env: 'sandbox',
-        hostkey: 'club.example',
-        guid: 'guid-4768',
-        q: 'shoes',
-      },
-      {
-        env,
-        httpRequest: async (req) => {
-          if (String(req.url || '').includes('/token')) return tokenOk();
-          const err = new Error(
-            'Rakuten HTTP 400: <ErrorID>INVALID_CONTEXT_VALUE</ErrorID>',
-          );
-          err.statusCode = 400;
-          err.code = 'rakuten_invalid_context';
-          throw err;
-        },
-        putObject: async (args) => {
-          written = args;
-          return {};
-        },
-        touchLastmod: async () => {},
-      },
+    const puts = [];
+    await assert.rejects(
+      () =>
+        run(
+          {
+            searchId: 'srch_4768',
+            searchid: 'srch_4768',
+            userId: 'U1',
+            env: 'sandbox',
+            hostkey: 'club.example',
+            guid: 'guid-4768',
+            q: 'shoes',
+          },
+          {
+            env,
+            httpRequest: async (req) => {
+              if (String(req.url || '').includes('/token')) return tokenOk();
+              const err = new Error(
+                'Rakuten HTTP 400: <ErrorID>INVALID_CONTEXT_VALUE</ErrorID>',
+              );
+              err.statusCode = 400;
+              err.code = 'rakuten_invalid_context';
+              throw err;
+            },
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+            touchLastmod: async () => {},
+          },
+        ),
+      (e) => e && e.code === 'rakuten_invalid_context',
     );
-    assert.equal(out.ok, true);
-    assert.ok(written && written.Body);
-    const body =
-      typeof written.Body === 'string'
-        ? JSON.parse(written.Body)
-        : JSON.parse(Buffer.from(written.Body).toString('utf8'));
-    assert.deepEqual(body.products || [], []);
-    assert.ok(body.status);
-    assert.equal(body.status.code, 'rakuten_invalid_context');
-    assert.equal(body.status.httpStatus, 400);
+    assert.equal(puts.length, 0);
   });
 });

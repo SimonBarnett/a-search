@@ -463,9 +463,14 @@ async function searchRakuten(msg, deps) {
         },
       });
     } catch (err) {
-      // FR #4544 / #4768: do not intake-fatal; surface status when all queries fail.
+      // FR #4768 / #4769: skip this query on INVALID_CONTEXT; throw if all fail (DLQ).
       if (isRakutenInvalidContext(err)) {
         lastInvalidContext = err;
+        if (lastInvalidContext && typeof lastInvalidContext === 'object') {
+          lastInvalidContext.code =
+            lastInvalidContext.code || 'rakuten_invalid_context';
+          lastInvalidContext.nonRetryable = true;
+        }
         // eslint-disable-next-line no-console
         console.warn(
           '[rakuten] INVALID_CONTEXT_VALUE keywordLen=%s noneLen=%s',
@@ -487,6 +492,7 @@ async function searchRakuten(msg, deps) {
       lastInvalidContext = Object.assign(new Error('Rakuten INVALID_CONTEXT_VALUE in body'), {
         code: 'rakuten_invalid_context',
         statusCode: 400,
+        nonRetryable: true,
       });
       // eslint-disable-next-line no-console
       console.warn(

@@ -31,7 +31,8 @@ describe('MRB #4586 hostile AMAZON_SEARCH_API default-flip harvest lesson', () =
     assert.match(window, /legacy unit env/);
     assert.match(window, /isTransientVendorHttp/);
     assert.match(window, /vendor_non_json/);
-    assert.match(window, /status IN/);
+    assert.match(window, /FR #4769/);
+    assert.match(window, /DLQ/);
     assert.doesNotMatch(window, /\u2014/);
     const raw = fs.readFileSync(skill);
     assert.equal(raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf, false);

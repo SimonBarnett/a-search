@@ -179,7 +179,7 @@ async function defaultHttpRequest(signed) {
     json = text ? JSON.parse(text) : {};
   } catch {
     // FR #4427 / #4562: attach status+code. Non-JSON is not transient
-    // (worker writes status IN; handleSqsWith429 skips DLQ burn).
+    // (FR #4769: handleSqsWith429 logs and fails into DLQ; no status IN).
     const err = new Error(`Amazon PA-API non-JSON response (${res.status})`);
     err.status = res.status;
     err.code = 'paapi_non_json';

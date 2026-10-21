@@ -32,8 +32,8 @@ function isHttp429(err) {
 }
 
 /**
- * FR #4562: Amazon PA-API / Creators non-JSON HTML bodies are permanent for
- * this attempt class - do not burn three SQS receives into the DLQ.
+ * FR #4562 / #4769: Amazon PA-API / Creators non-JSON HTML bodies are permanent
+ * vendor faults (not 429 backoff). handleSqsWith429 logs and fails into DLQ.
  * @param {unknown} err
  * @returns {boolean}
  */
@@ -43,8 +43,8 @@ function isAmazonNonJsonFault(err) {
 }
 
 /**
- * FR #4562 / #4739: permanent Amazon vendor faults (non-JSON HTML or Creators
- * AssociateNotEligible). Worker writes status IN; SQS completes; no intake spam.
+ * FR #4562 / #4739 / #4769: permanent Amazon vendor faults (non-JSON HTML or
+ * Creators AssociateNotEligible). Not transient; DLQ path (no status IN).
  * @param {unknown} err
  * @returns {boolean}
  */
