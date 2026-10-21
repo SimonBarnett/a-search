@@ -13,6 +13,32 @@ function escapeRegExp(text) {
 }
 
 /**
+ * FR #4788: keep short product codes in parentheses (RTF, BNF, PNP, kit);
+ * drop location / TLD blobs (Lathom, Ormskirk, L40 4BA; .co.uk).
+ * @param {string} inner
+ * @returns {string} replacement (spaces around kept tokens)
+ */
+function parentheticalToKeywords(inner) {
+  const s = String(inner || '').trim();
+  if (!s) return ' ';
+  // Location / TLD blobs: commas, postcodes, co.uk, named UK places.
+  if (
+    /[,;]/.test(s) ||
+    /\.co\.uk/i.test(s) ||
+    /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i.test(s) ||
+    /united\s+kingdom|\buk\b|lathom|ormskirk|england|scotland|wales/i.test(s)
+  ) {
+    return ' ';
+  }
+  // Short product codes / compact tokens: (RTF), (BNF), (PNP), (kit), (ARF)
+  if (/^[A-Za-z0-9][A-Za-z0-9/+.-]{0,15}$/.test(s)) {
+    return ` ${s} `;
+  }
+  // Unknown longer parentheticals stay out of q (same as pre-#4788 drop).
+  return ' ';
+}
+
+/**
  * @param {string} text
  * @param {string} [market]
  * @param {string} [currency]
@@ -20,8 +46,8 @@ function escapeRegExp(text) {
  */
 function keywordsOnly(text, market, currency) {
   let q = String(text || '');
-  // Drop parenthetical location / TLD hints: (Lathom, Ormskirk, L40 4BA; .co.uk)
-  q = q.replace(/\([^)]*\)/g, ' ');
+  // FR #4563 / #4788: location parentheticals out; short product codes kept.
+  q = q.replace(/\(([^)]*)\)/g, (_, inner) => parentheticalToKeywords(inner));
   for (const phrase of [market, currency]) {
     const p = String(phrase || '').trim();
     if (p.length < 2) continue;
@@ -112,6 +138,7 @@ function ebayMarketplaceFromMarket(market, fallback) {
 
 module.exports = {
   keywordsOnly,
+  parentheticalToKeywords,
   normalizeMarketCurrency,
   ebayMarketplaceFromMarket,
   escapeRegExp,

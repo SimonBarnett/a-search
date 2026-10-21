@@ -104,6 +104,9 @@ describe('FR #4231 reviewer service logon', () => {
           pwFile,
           '-GrokCli',
           path.join(tmp, 'grok.exe'),
+          // FR #4794 / #4311: SearchApiUrl required unless -AllowLocalSystem
+          '-SearchApiUrl',
+          'https://example.test/a-search',
         ],
         { encoding: 'utf8', timeout: 60_000 },
       );
@@ -168,12 +171,16 @@ describe('FR #4231 reviewer service logon', () => {
           path.join(tmp, 'AdminProfile'),
           '-HomePath',
           path.join(tmp, 'AdminHome'),
+          // FR #4794: clear search_api_url_required so reviewer_logon_required is reached
+          '-SearchApiUrl',
+          'https://example.test/a-search',
         ],
         { encoding: 'utf8', timeout: 60_000 },
       );
       assert.notEqual(r.status, 0, 'must refuse LocalSystem + GrokCli');
       const text = `${r.stdout || ''}\n${r.stderr || ''}`;
       assert.match(text, /reviewer_logon_required|DPAPI|AllowLocalSystem/i);
+      assert.doesNotMatch(text, /search_api_url_required/);
 
       try {
         fs.rmSync(tmp, { recursive: true, force: true });
