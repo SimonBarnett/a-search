@@ -78,9 +78,10 @@ npm test
 - FR-018: `tests/rakuten-scaffold.test.js`
 - FR-040: `tests/rakuten-search.test.js`
 
-## Product Search keywords (FR #4768)
+## Product Search keywords (FR #4768 / #4780)
 
 - One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
-- Sanitize keyword tokens: replace hyphens with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
+- Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation `( ) , ; .` with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
+- Strip market/location/currency residue via `keywordsOnly` (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in `keyword`.
 - Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
 - On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).

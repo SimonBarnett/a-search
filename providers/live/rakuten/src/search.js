@@ -11,6 +11,10 @@ const {
   collectExcludeTerms,
   collectQueryTerms,
 } = require('../../../../shared/search/keywordsFromAgentMsg');
+const {
+  keywordsOnly,
+  normalizeMarketCurrency,
+} = require('../../../../shared/search/cleanSearchQuery');
 
 class RakutenCredsError extends Error {
   constructor(message) {
@@ -36,8 +40,9 @@ function isRakutenInvalidContext(err) {
 
 
 /**
- * FR #4768: Linksynergy rejects hyphenated keyword tokens (761-14, E-flite)
- * with INVALID_CONTEXT_VALUE. Replace internal hyphens with spaces.
+ * FR #4768 / #4780: Linksynergy rejects hyphenated tokens and punctuation
+ * `( ) , ; .` (and similar) in `keyword` with INVALID_CONTEXT_VALUE.
+ * Replace hyphens/punctuation with spaces; collapse whitespace.
  * @param {string} keyword
  * @returns {string}
  */
@@ -46,6 +51,8 @@ function sanitizeRakutenKeyword(keyword) {
   if (!raw) return '';
   return raw
     .replace(/-/g, ' ')
+    // FR #4780: probe on redqueen — stripping ( ) , ; . turns 400 into 200.
+    .replace(/[()[\]{},;.:'"!?/\\`]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -89,16 +96,28 @@ function buildRakutenNone(msg) {
 
 /**
  * Non-empty query strings for one Product Search call each (eBay #4446 pattern).
+ * FR #4780 / #4563: strip market/location/currency residue before sanitize.
  * @param {object} msg
  * @returns {string[]}
  */
 function queryTextsFromMsg(msg) {
   const fromQueries = collectQueryTerms(msg);
-  if (fromQueries.length) return fromQueries;
-  if (msg && typeof msg.q === 'string' && msg.q.trim()) {
-    return [msg.q.trim()];
-  }
-  return [];
+  const raw =
+    fromQueries.length > 0
+      ? fromQueries
+      : msg && typeof msg.q === 'string' && msg.q.trim()
+        ? [msg.q.trim()]
+        : [];
+  if (!raw.length) return [];
+  const { market, currency } = normalizeMarketCurrency(msg || {});
+  const stripMarket =
+    market || (msg && msg.market != null ? String(msg.market) : '');
+  const stripCurrency =
+    currency || (msg && msg.currency != null ? String(msg.currency) : '');
+  return raw
+    .map((t) => keywordsOnly(t, stripMarket, stripCurrency))
+    .map((t) => sanitizeRakutenKeyword(t))
+    .filter(Boolean);
 }
 
 
