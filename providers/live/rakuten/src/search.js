@@ -378,8 +378,13 @@ async function searchRakuten(msg, deps) {
       },
     });
   } catch (err) {
-    // FR #4544: empty result, complete the SQS message — do not intake-fatal.
-    if (isRakutenInvalidContext(err)) return [];
+    // FR #4769: INVALID_CONTEXT_VALUE is an API failure -> DLQ (no empty IN).
+    if (isRakutenInvalidContext(err)) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      e.code = e.code || 'rakuten_invalid_context';
+      e.nonRetryable = true;
+      throw e;
+    }
     throw err;
   }
 
@@ -389,7 +394,15 @@ async function searchRakuten(msg, deps) {
       : res && typeof res.body === 'string'
         ? res.body
         : '';
-  if (/INVALID_CONTEXT_VALUE/i.test(xml)) return [];
+  if (/INVALID_CONTEXT_VALUE/i.test(xml)) {
+    const e = new Error(
+      'Rakuten Product Search INVALID_CONTEXT_VALUE in response body',
+    );
+    e.code = 'rakuten_invalid_context';
+    e.nonRetryable = true;
+    e.statusCode = 400;
+    throw e;
+  }
   const rawItems = parseProductSearchXml(xml);
   return normalizeSearchItems(rawItems, {
     userId: msg && msg.userId,

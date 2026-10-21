@@ -42,13 +42,14 @@ describe('FR #4561 IN schema status error field', () => {
 });
 
 describe('FR #4561 missing_credentials visibility', () => {
-  it('recognises non-retryable skip class', () => {
+  it('recognises missing_credentials skip class (FR #4769: other nonRetryable -> DLQ)', () => {
     assert.equal(isMissingProviderCreds(credsErr('cj_missing_credentials')), true);
     assert.equal(isNonRetryableProviderSkip(credsErr('kelkoo_missing_credentials')), true);
     const marked = new Error('vendor');
     marked.code = 'vendor_bad_request';
     marked.nonRetryable = true;
-    assert.equal(isNonRetryableProviderSkip(marked), true);
+    // API faults are no longer an ack/skip class (FR #4769).
+    assert.equal(isNonRetryableProviderSkip(marked), false);
     assert.equal(isNonRetryableProviderSkip(new Error('boom')), false);
   });
 
@@ -112,42 +113,42 @@ describe('FR #4561 missing_credentials visibility', () => {
     assert.equal(body.searchid, 'srch_677ea35b21e320ef2f63');
   });
 
-  it('nonRetryable provider error writes status IN with that error code', async () => {
+  it('nonRetryable provider API error throws to DLQ without IN (FR #4769)', async () => {
     const puts = [];
     const err = new Error('bad context');
     err.code = 'invalid_context';
     err.nonRetryable = true;
-    const out = await handleSqsWith429({
-      event: {
-        Records: [
-          {
-            body: JSON.stringify({
-              searchid: 'srch_x',
-              hostkey: 'host1',
-              guid: 'g1',
-            }),
-            receiptHandle: 'rh-x',
+    await assert.rejects(
+      () =>
+        handleSqsWith429({
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({
+                  searchid: 'srch_x',
+                  hostkey: 'host1',
+                  guid: 'g1',
+                }),
+                receiptHandle: 'rh-x',
+              },
+            ],
           },
-        ],
-      },
-      run: async () => {
-        throw err;
-      },
-      deps: {
-        putObject: async (args) => {
-          puts.push(args);
-          return {};
-        },
-        touchLastmod: async () => {},
-      },
-      logError: () => {},
-      source: 'kelkoo',
-    });
-    assert.equal(out.ok, true);
-    assert.equal(out.results[0].skipped, 'invalid_context');
-    const body = JSON.parse(Buffer.from(puts[0].Body).toString('utf8'));
-    assert.equal(body.error, 'invalid_context');
-    assert.deepEqual(body.products, []);
+          run: async () => {
+            throw err;
+          },
+          deps: {
+            putObject: async (args) => {
+              puts.push(args);
+              return {};
+            },
+            touchLastmod: async () => {},
+          },
+          logError: () => {},
+          source: 'kelkoo',
+        }),
+      (e) => e === err,
+    );
+    assert.equal(puts.length, 0);
   });
 
   it('still acks when IN path incomplete (log only)', async () => {

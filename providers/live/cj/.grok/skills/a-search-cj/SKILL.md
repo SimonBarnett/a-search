@@ -52,7 +52,7 @@ Missing token → `CjCredsError` / `cj_missing_credentials`.
 | Symptom | Check |
 |---------|--------|
 | 401 | Token revoked / wrong header |
-| non-JSON 403 `You are not Authorised...` (FR #4762) | Token/property not allowed for Product Search; worker writes status IN (`cj_not_authorised`), no DLQ/intake burn |
+| non-JSON 403 `You are not Authorised...` (FR #4762 / #4769) | Token/property not allowed for Product Search; fail into CJ DLQ (`cj_not_authorised`), no status IN / no intake |
 | GraphQL errors[] | Query fields / permissions |
 | env_mismatch | `message.env` !== `A_SEARCH_ENV` |
 
