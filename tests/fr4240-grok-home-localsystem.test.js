@@ -93,6 +93,9 @@ describe('FR #4240 GrokHome LocalSystem reviewer mode', () => {
           grokCli,
           '-GrokHome',
           grokHome,
+          // FR #4794 / #4311: SearchApiUrl required unless -AllowLocalSystem
+          '-SearchApiUrl',
+          'https://example.test/a-search',
           '-WhatIf',
         ],
         { encoding: 'utf8', timeout: 60_000 },
@@ -155,6 +158,9 @@ describe('FR #4240 GrokHome LocalSystem reviewer mode', () => {
           grokCli,
           '-GrokHome',
           grokHome,
+          // FR #4794 / #4311: SearchApiUrl required unless -AllowLocalSystem
+          '-SearchApiUrl',
+          'https://example.test/a-search',
         ],
         { encoding: 'utf8', timeout: 90_000 },
       );
