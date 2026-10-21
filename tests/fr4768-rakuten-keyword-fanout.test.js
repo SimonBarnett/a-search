@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const {
   searchRakuten,
   sanitizeRakutenKeyword,
-  buildRakutenNone,
+  excludeTermsFromMsg,
   resetRakutenTokenCache,
 } = require('../providers/live/rakuten/src/search');
 const { run } = require('../providers/live/rakuten/src/worker');
@@ -41,8 +41,9 @@ describe('FR #4768 Rakuten keyword fan-out / none / status', () => {
     assert.doesNotMatch(sanitizeRakutenKeyword('VOLANTEXRC Sport Cub S2 761-14'), /\d-\d/);
   });
 
-  it('buildRakutenNone drops stopwords, short tokens, and phrase fragments', () => {
-    const none = buildRakutenNone({
+  it('excludeTermsFromMsg keeps full phrases; drops short tokens (FR #4781)', () => {
+    // FR #4781 superseded stopword-flatten `none`: keep phrases for client filter.
+    const terms = excludeTermsFromMsg({
       exclude: [
         { match: 'title:calendar' },
         'boat as the product intent',
@@ -51,16 +52,11 @@ describe('FR #4768 Rakuten keyword fan-out / none / status', () => {
         'ab',
       ],
     });
-    const parts = none.split(/\s+/).filter(Boolean);
-    assert.ok(parts.includes('calendar'));
-    assert.ok(!parts.includes('as'));
-    assert.ok(!parts.includes('the'));
-    assert.ok(!parts.includes('or'));
-    assert.ok(!parts.includes('A'));
-    assert.ok(!parts.includes('B'));
-    assert.ok(!parts.includes('a'));
-    assert.ok(!parts.some((p) => p.length < 3));
-    assert.ok(!none.includes('boat as the product intent'));
+    assert.ok(terms.includes('calendar'));
+    assert.ok(terms.includes('boat as the product intent'));
+    assert.ok(terms.includes('BMFA A or B test courses'));
+    assert.ok(!terms.includes('x'));
+    assert.ok(!terms.includes('ab'));
   });
 
   it('hyphenated query never reaches the Product Search URL raw', async () => {

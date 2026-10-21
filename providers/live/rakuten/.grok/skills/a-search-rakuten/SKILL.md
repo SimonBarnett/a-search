@@ -65,9 +65,12 @@ See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
 
-**FR #4544 / #4769:** Product Search rejects Lucene-style `-exclude` inside
-`keyword` (`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query
-param; on that ErrorID fail into the Rakuten DLQ (no status IN / no intake).
+**FR #4544 / #4769 / #4781:** Product Search rejects Lucene-style `-exclude`
+inside `keyword` (`INVALID_CONTEXT_VALUE`). Do **not** send the Linksynergy
+`none` query param --- long worker-built `none` strings return the whole
+advertiser catalogue (FR #4781). Apply agent excludes client-side on product
+title. On INVALID_CONTEXT_VALUE fail into the Rakuten DLQ (no status IN / no
+intake).
 
 ## Tests
 
@@ -77,10 +80,11 @@ npm test
 
 - FR-018: `tests/rakuten-scaffold.test.js`
 - FR-040: `tests/rakuten-search.test.js`
+- FR #4781: `tests/fr4781-rakuten-drop-none-client-exclude.test.js`
 
-## Product Search keywords (FR #4768)
+## Product Search keywords (FR #4768 / #4781)
 
 - One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
 - Sanitize keyword tokens: replace hyphens with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
-- Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
+- Never send `none`; keep full exclude phrases (len>=3) and filter matching titles locally.
 - On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).

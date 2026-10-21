@@ -50,41 +50,52 @@ function sanitizeRakutenKeyword(keyword) {
     .trim();
 }
 
-/** Stopwords / noise for Rakuten `none` (FR #4768). */
-const RAKUTEN_NONE_STOPWORDS = new Set(
-  [
-    'a', 'an', 'the', 'or', 'as', 'of', 'to', 'in', 'on', 'for', 'and', 'is',
-    'be', 'by', 'at', 'it', 'with', 'from', 'that', 'this', 'are', 'was',
-    'were', 'been', 'but', 'not', 'no', 'nor', 'so', 'if', 'than', 'then',
-    'into', 'over', 'such', 'via', 'per', 'vs', 'vs.', 'etc', 'etc.',
-  ].map((w) => w.toLowerCase()),
-);
-
 /**
- * FR #4768: Rakuten treats each whitespace token in `none` as an exclusion.
- * Flatten exclude phrases to significant words only (len>=3, not stopwords).
+ * FR #4781: Linksynergy `none` with a long worker-built string returns the
+ * whole advertiser catalogue (widens, does not narrow). Do not send `none`.
+ * Keep full exclude phrases (len>=3) for client-side title filtering.
  * @param {object|null|undefined} msg
- * @returns {string} space-joined none param (may be empty)
+ * @returns {string[]}
  */
-function buildRakutenNone(msg) {
-  const phrases = collectExcludeTerms(msg);
+function excludeTermsFromMsg(msg) {
   const seen = new Set();
   const out = [];
-  for (const phrase of phrases) {
-    const words = String(phrase || '')
-      .split(/[^A-Za-z0-9]+/)
-      .map((w) => w.trim())
-      .filter(Boolean);
-    for (const w of words) {
-      if (w.length < 3) continue;
-      const key = w.toLowerCase();
-      if (RAKUTEN_NONE_STOPWORDS.has(key)) continue;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(w);
-    }
+  for (const phrase of collectExcludeTerms(msg)) {
+    const t = String(phrase || '').trim();
+    if (t.length < 3) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
   }
-  return out.join(' ');
+  return out;
+}
+
+/**
+ * @param {{ title?: string }|null|undefined} product
+ * @param {string[]} excludeTerms
+ * @returns {boolean}
+ */
+function productExcludedByTerms(product, excludeTerms) {
+  if (!product || !Array.isArray(excludeTerms) || !excludeTerms.length) {
+    return false;
+  }
+  const title = String(product.title || '').toLowerCase();
+  if (!title) return false;
+  for (const term of excludeTerms) {
+    const needle = String(term || '').trim().toLowerCase();
+    if (needle.length >= 3 && title.includes(needle)) return true;
+  }
+  return false;
+}
+
+/**
+ * @deprecated FR #4781 — `none` is never sent; use excludeTermsFromMsg.
+ * @param {object|null|undefined} msg
+ * @returns {string} always empty
+ */
+function buildRakutenNone(_msg) {
+  return '';
 }
 
 /**
@@ -167,8 +178,9 @@ function resetRakutenTokenCache() {
  * Build Product Search URL.
  * @param {string} endpoint
  * @param {string|{ keyword?: string, none?: string, language?: string, max?: number }} keywordOrOpts
- *   string = keyword only (legacy). Object form: FR #4544 uses `none` for excludes
- *   (never Lucene `-term` inside keyword) and `language` (default en_US).
+ *   string = keyword only (legacy). Object form: keyword + language (default en_US).
+ *   FR #4781: do not rely on `none` (Linksynergy widens); searchRakuten never sends it.
+ *   `none` remains only for low-level URL unit tests.
  */
 function productSearchUrl(endpoint, keywordOrOpts) {
   const raw = String(endpoint || DEFAULT_PRODUCT_SEARCH_URL).trim();
@@ -262,7 +274,7 @@ async function fetchRakutenAccessToken(creds, httpRequest, now, useCache) {
 
 function keywordsFromMsg(msg) {
   // FR #4450 / #4446: shared export keeps minus-style for agent contract tests.
-  // searchRakuten itself uses excludeStyle none + `none` query param (FR #4544).
+  // searchRakuten applies excludes client-side (FR #4781); never Lucene -term in keyword.
   return keywordsFromAgentMsg(msg);
 }
 
@@ -421,8 +433,9 @@ async function searchRakuten(msg, deps) {
       ? deps.httpRequest
       : defaultHttpRequest;
 
-  // FR #4544 + #4768: `none` from significant words only (never Lucene -term in keyword).
-  const none = buildRakutenNone(msg);
+  // FR #4781: never send `none` (widens catalogue); filter excludes on title locally.
+  // FR #4544: never put Lucene -term in keyword.
+  const excludeTerms = excludeTermsFromMsg(msg);
   const language =
     String(envVars.RAKUTEN_LANGUAGE || 'en_US').trim() || 'en_US';
   const useCache = httpRequest === defaultHttpRequest;
@@ -448,7 +461,6 @@ async function searchRakuten(msg, deps) {
     if (merged.length >= cap) break;
     const url = productSearchUrl(creds.endpoint, {
       keyword,
-      none,
       language,
       max: Math.min(10, cap - merged.length),
     });
@@ -473,9 +485,9 @@ async function searchRakuten(msg, deps) {
         }
         // eslint-disable-next-line no-console
         console.warn(
-          '[rakuten] INVALID_CONTEXT_VALUE keywordLen=%s noneLen=%s',
+          '[rakuten] INVALID_CONTEXT_VALUE keywordLen=%s excludeCount=%s',
           keyword.length,
-          none.length,
+          excludeTerms.length,
         );
         continue;
       }
@@ -496,15 +508,16 @@ async function searchRakuten(msg, deps) {
       });
       // eslint-disable-next-line no-console
       console.warn(
-        '[rakuten] INVALID_CONTEXT_VALUE (body) keywordLen=%s noneLen=%s',
+        '[rakuten] INVALID_CONTEXT_VALUE (body) keywordLen=%s excludeCount=%s',
         keyword.length,
-        none.length,
+        excludeTerms.length,
       );
       continue;
     }
     const rawItems = parseProductSearchXml(xml);
     const products = normalizeSearchItems(rawItems, normOpts);
     for (const p of products) {
+      if (productExcludedByTerms(p, excludeTerms)) continue;
       const id = p && p.id != null ? String(p.id) : '';
       if (id) {
         if (seen.has(id)) continue;
@@ -534,6 +547,8 @@ module.exports = {
   isRakutenInvalidContext,
   sanitizeRakutenKeyword,
   buildRakutenNone,
+  excludeTermsFromMsg,
+  productExcludedByTerms,
   queryTextsFromMsg,
   DEFAULT_TOKEN_URL,
   DEFAULT_PRODUCT_SEARCH_URL,
