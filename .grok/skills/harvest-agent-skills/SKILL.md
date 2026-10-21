@@ -616,3 +616,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Non-retryable live-provider faults must SendMessage to the sibling DLQ and DeleteMessage on first failure (SQS_QUEUE_URL + SQS_DLQ_URL + grantSendMessages); do not rely on maxReceiveCount 3 / visibility timeout to reach the DLQ
 - docs/mrb hostile tip behind main: fold once then add additive fan-out pins; open #4781 none-catalogue is acceptable drift not FAIL for a punctuation PR
 - keywordsOnly: expand short product codes in parentheses (RTF/BNF) and only drop location-like parentheticals (comma/postcode/co.uk/UK place names)
+- docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
