@@ -17,10 +17,13 @@ search contract for Club Madeira / a-search.
 - Live providers write a-clubs results under `a-clubs/{host}/{guid}/IN/`
   (`IN/{searchid}-{source}.json`) via `writeLiveProviderInResult` (FR #4038).
 - Paced SQS consumers (`batchSize: 1`, reserved concurrency 1) back off on
-  real **429**; provider API failures (4xx auth/eligibility/client, permanent
-  vendor faults, 5xx) must **not** write an IN file --- they fail the receive
-  into the provider **DLQ** with a clear CloudWatch log (FR #4769). A successful
-  call that returns 0 matches still writes an empty-products IN.
+  real **429** / gateway 5xx; provider API failures must **not** write an IN
+  file (FR #4769). Non-retryable / permanent client faults
+  (`creators_not_eligible`, `rakuten_invalid_context`, `cj_not_authorised`,
+  other `nonRetryable` 4xx) **SendMessage to the provider DLQ and delete the
+  source message on the first failure** (FR #4782) --- do not wait for
+  maxReceiveCount. A successful call that returns 0 matches still writes an
+  empty-products IN.
 - Per-source secrets stay isolated; fatals intake to `SimonBarnett/a-search`.
 
 See Success rows S1-S20, Architecture, and Environments in `docs/vision.md`.
