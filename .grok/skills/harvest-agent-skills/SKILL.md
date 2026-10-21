@@ -609,3 +609,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone -- a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
 - CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
 - Live provider API failures (4xx/5xx/auth/eligibility/parse) must not write empty or status IN files; fail the SQS receive into the provider DLQ (FR #4769). Success with 0 matches still writes an empty-products IN. Missing credentials at fan-out (#4650) stay skipped (not a failure).
+- When an open FR tip writes status IN for a vendor fault after FR #4769, MRB FAIL and land one fix tip that keeps the product keyword fixes but throws into the DLQ (no status IN); close the status-IN head as superseded
