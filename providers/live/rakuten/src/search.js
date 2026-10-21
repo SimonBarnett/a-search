@@ -269,7 +269,7 @@ function keywordsFromMsg(msg) {
 
 /**
  * Extract text content of the first matching child tag (case-insensitive).
- * Walks by tag boundaries — not a whole-document regex.
+ * Walks by tag boundaries --- not a whole-document regex.
  * @param {string} block
  * @param {string} tag
  */
@@ -383,7 +383,7 @@ async function defaultHttpRequest(req) {
               `Rakuten HTTP ${res.statusCode}: ${text.slice(0, 300)}`,
             );
             err.statusCode = res.statusCode;
-            // FR #4544: vendor client error — do not treat as code fatal.
+            // FR #4544: vendor client error --- do not treat as code fatal.
             if (/INVALID_CONTEXT_VALUE/i.test(text)) {
               err.code = 'rakuten_invalid_context';
             }
