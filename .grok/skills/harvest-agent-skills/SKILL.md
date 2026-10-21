@@ -614,3 +614,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX red after FR product tip: update hostiles for DLQ/no-intake and fan-out empty-guard pins; do not weaken isProviderFaultForDlq to satisfy old intake pins
 - Rakuten fan-out must run keywordsOnly (FR #4563) before Product Search: hyphen sanitize alone leaves ( ) , ; . and UK market blobs that Linksynergy rejects with INVALID_CONTEXT_VALUE
 - Non-retryable live-provider faults must SendMessage to the sibling DLQ and DeleteMessage on first failure (SQS_QUEUE_URL + SQS_DLQ_URL + grantSendMessages); do not rely on maxReceiveCount 3 / visibility timeout to reach the DLQ
+- keywordsOnly: expand short product codes in parentheses (RTF/BNF) and only drop location-like parentheticals (comma/postcode/co.uk/UK place names)
