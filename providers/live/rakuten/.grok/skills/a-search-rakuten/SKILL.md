@@ -65,9 +65,12 @@ See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
 
 Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
 
-**FR #4544 / #4769:** Product Search rejects Lucene-style `-exclude` inside
-`keyword` (`INVALID_CONTEXT_VALUE`). Put agent excludes on the `none` query
-param; on that ErrorID fail into the Rakuten DLQ (no status IN / no intake).
+**FR #4544 / #4769 / #4781:** Product Search rejects Lucene-style `-exclude`
+inside `keyword` (`INVALID_CONTEXT_VALUE`). Do **not** send the Linksynergy
+`none` query param --- long worker-built `none` strings return the whole
+advertiser catalogue (FR #4781). Apply agent excludes client-side on product
+title. On INVALID_CONTEXT_VALUE fail into the Rakuten DLQ (no status IN / no
+intake).
 
 ## Tests
 
@@ -77,11 +80,21 @@ npm test
 
 - FR-018: `tests/rakuten-scaffold.test.js`
 - FR-040: `tests/rakuten-search.test.js`
+- FR #4781: `tests/fr4781-rakuten-drop-none-client-exclude.test.js`
 
+<<<<<<< HEAD
 ## Product Search keywords (FR #4768 / #4780 / #4788)
 
 - One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
 - Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation `( ) , ; .` with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
 - Strip market/location/currency residue via `keywordsOnly` (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in `keyword`. Short product codes in parentheses (`(RTF)`, `(BNF)`) are kept (FR #4788); location blobs are still dropped.
 - Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
+=======
+## Product Search keywords (FR #4768 / #4780 / #4781)
+
+- One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
+- Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation `( ) , ; .` with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
+- Strip market/location/currency residue via `keywordsOnly` (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in `keyword`.
+- Never send `none` (FR #4781: long `none` returns the whole catalogue); keep full exclude phrases (len>=3) and filter matching titles locally.
+>>>>>>> origin/main
 - On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).
