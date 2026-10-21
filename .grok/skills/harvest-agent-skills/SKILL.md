@@ -612,3 +612,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When an open FR tip writes status IN for a vendor fault after FR #4769, MRB FAIL and land one fix tip that keeps the product keyword fixes but throws into the DLQ (no status IN); close the status-IN head as superseded
 - When FR #4768 fans out Rakuten Product Search per query, update fr4450 (and similar) to assert agent keywords across all productsearch GETs, not /model/i on each single call; expect token + N product calls
 - FIX red after FR product tip: update hostiles for DLQ/no-intake and fan-out empty-guard pins; do not weaken isProviderFaultForDlq to satisfy old intake pins
+- Rakuten fan-out must run keywordsOnly (FR #4563) before Product Search: hyphen sanitize alone leaves ( ) , ; . and UK market blobs that Linksynergy rejects with INVALID_CONTEXT_VALUE
+- Non-retryable live-provider faults must SendMessage to the sibling DLQ and DeleteMessage on first failure (SQS_QUEUE_URL + SQS_DLQ_URL + grantSendMessages); do not rely on maxReceiveCount 3 / visibility timeout to reach the DLQ
