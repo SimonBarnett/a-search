@@ -272,6 +272,7 @@ async function handleSqsWith429(opts) {
         throw err;
       }
     } catch (err) {
+      // FR #4427: transient vendor HTTP (429/502/503/504) uses visibility backoff above; hard faults fall through.
       const transient = backoffFor429({ err }).is429;
 
       // FR #4438 / #4561: missing provider creds — config skip, not API failure.

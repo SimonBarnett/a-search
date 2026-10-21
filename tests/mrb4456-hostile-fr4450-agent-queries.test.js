@@ -49,10 +49,15 @@ describe('MRB #4456 hostile FR #4450 agent queries', () => {
         /keywordsFromAgentMsg/,
         `${id} must import shared keywordsFromAgentMsg`,
       );
-      // Empty keywords must short-circuit (ebay uses queryTextsFromMsg length).
-      if (id === 'ebay') {
+      // Empty keywords must short-circuit.
+      // ebay / rakuten fan-out (FR #4450 / #4768) use queryTextsFromMsg length.
+      if (id === 'ebay' || id === 'rakuten') {
         assert.match(src, /queryTextsFromMsg/);
-        assert.match(src, /if\s*\(\s*!texts\.length\s*\)/);
+        assert.match(
+          src,
+          /if\s*\(\s*!texts\.length\s*\)/,
+          `${id} must return [] before HTTP when keywords empty`,
+        );
       } else {
         assert.match(
           src,

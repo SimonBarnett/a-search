@@ -54,9 +54,12 @@ describe('docs/mrb-4429 hostile FR #4427', () => {
     }
   });
 
-  it('handleSqsWith429 still reports intake on hard 500', async () => {
+  it('handleSqsWith429 hard 500 goes to DLQ without intake (FR #4769)', async () => {
+    // FR #4427: hard 500 is not transient backoff. FR #4769: provider API faults
+    // log + throw to DLQ without intake-fatal spam (supersedes prior intake pin).
     const vis = [];
     const intake = [];
+    const logs = [];
     const err500 = new Error('Amazon PA-API HTTP 500: boom');
     err500.status = 500;
 
@@ -80,6 +83,9 @@ describe('docs/mrb-4429 hostile FR #4427', () => {
           reportException: async (args) => {
             intake.push(args);
           },
+          logError: (...parts) => {
+            logs.push(parts.join(' '));
+          },
           route: 'providers/live/amazon/handler',
           source: 'amazon',
         }),
@@ -87,7 +93,8 @@ describe('docs/mrb-4429 hostile FR #4427', () => {
     );
 
     assert.equal(vis.length, 0, 'hard 500 must not get 429-style visibility backoff');
-    assert.equal(intake.length, 1, 'hard 500 must still file intake');
+    assert.equal(intake.length, 0, 'hard 500 must not file intake (FR #4769 DLQ path)');
+    assert.ok(logs.some((l) => /provider_failure/.test(l)));
     assert.equal(isTransientVendorHttp(err500), false);
     assert.equal(backoffFor429({ err: err500 }).is429, false);
   });
