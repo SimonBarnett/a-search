@@ -847,6 +847,10 @@ class ASearchStack extends cdk.Stack {
           sqsOpts.maxConcurrency = maxConcurrency;
         }
         worker.addEventSource(new SqsEventSource(queue, sqsOpts));
+        // FR #4782: nonRetryable faults SendMessage to DLQ + DeleteMessage (first fail).
+        worker.addEnvironment('SQS_QUEUE_URL', queue.queueUrl);
+        worker.addEnvironment('SQS_DLQ_URL', dlq.queueUrl);
+        dlq.grantSendMessages(worker);
 
         new cdk.CfnOutput(this, `${pascal}${envPascal}QueueUrl`, {
           value: queue.queueUrl,
