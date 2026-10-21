@@ -608,3 +608,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CJ Product Search: after [String!]! keywords, still cap whitespace tokens at 10 or CJ HTTP 400 Too many keywords; keep short phrases as one element.
 - CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone -- a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
 - CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable), write status IN empty products, complete SQS; do not intake-fatal or DLQ-burn (same class as creators_not_eligible).
+- When an open FR tip writes status IN for a vendor fault after FR #4769, MRB FAIL and land one fix tip that keeps the product keyword fixes but throws into the DLQ (no status IN); close the status-IN head as superseded
