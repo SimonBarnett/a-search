@@ -615,3 +615,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Rakuten fan-out must run keywordsOnly (FR #4563) before Product Search: hyphen sanitize alone leaves ( ) , ; . and UK market blobs that Linksynergy rejects with INVALID_CONTEXT_VALUE
 - Non-retryable live-provider faults must SendMessage to the sibling DLQ and DeleteMessage on first failure (SQS_QUEUE_URL + SQS_DLQ_URL + grantSendMessages); do not rely on maxReceiveCount 3 / visibility timeout to reach the DLQ
 - docs/mrb hostile tip behind main: fold once then add additive fan-out pins; open #4781 none-catalogue is acceptable drift not FAIL for a punctuation PR
+- Harvest twin keywordsOnly RTF lessons: merge earlier cleaner tip after keep-both fold; FAIL-close later twin; pin contiguous phrase on docs/mrb-N
