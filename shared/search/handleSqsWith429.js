@@ -5,14 +5,17 @@
  * On 429: ChangeMessageVisibility (Retry-After), then rethrow so SQS retries.
  * FR #4438 / #4561: *_missing_credentials ack the message, ERROR-log, and write
  * a zero-product status IN (config skip at worker — not an API failure).
- * FR #4769: provider API failures (4xx auth/eligibility/client, permanent
- * vendor faults, nonRetryable API errors) must NOT write an IN file; log and
- * throw so SQS retries into the provider DLQ (no intake-fatal spam).
+ * FR #4769: provider API failures must NOT write an IN file; log and fail into
+ * the provider DLQ (no intake-fatal spam).
+ * FR #4782: nonRetryable / permanent client faults SendMessage to the DLQ and
+ * DeleteMessage on the first failure (do not burn maxReceiveCount 3 / ~18 min).
+ * Retryable 429 / 502-504 keep throw + visibility backoff.
  */
 
 const {
   backoffFor429,
   isAmazonPermanentVendorFault,
+  isTransientVendorHttp,
   httpStatusOf,
 } = require('./backoff429');
 const {
@@ -77,6 +80,169 @@ function isProviderFaultForDlq(err) {
     return true;
   }
   return false;
+}
+
+/**
+ * FR #4782: faults that must hit the DLQ on the first receive (no SQS redrive wait).
+ * Transient 429/502/503/504 stay on the throw + visibility path.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isImmediateDlqFault(err) {
+  if (!isProviderFaultForDlq(err)) return false;
+  if (isTransientVendorHttp(err)) return false;
+  if (err && err.nonRetryable === true) return true;
+  if (isAmazonPermanentVendorFault(err)) return true;
+  const code = providerFaultCode(err);
+  if (
+    code === 'cj_not_authorised' ||
+    code === 'rakuten_invalid_context' ||
+    /INVALID_CONTEXT_VALUE/i.test(String((err && err.message) || ''))
+  ) {
+    return true;
+  }
+  const status = httpStatusOf(err);
+  // Client 4xx (auth/eligibility/bad request) are final; hard 5xx keep redrive.
+  return Number.isFinite(status) && status >= 400 && status < 500;
+}
+
+/**
+ * @param {object} record
+ * @returns {string}
+ */
+function messageGroupIdFromRecord(record) {
+  const attrs = (record && record.attributes) || {};
+  const g = attrs.MessageGroupId || attrs.messageGroupId;
+  if (g != null && String(g).trim()) return String(g).trim();
+  return 'provider';
+}
+
+/**
+ * Move a poison message to the sibling DLQ and delete it from the source queue.
+ * @param {{
+ *   record: object,
+ *   err: unknown,
+ *   msg?: object,
+ *   source?: string,
+ *   sendMessage: Function,
+ *   deleteMessage: Function,
+ *   queueUrl: string,
+ *   dlqUrl: string,
+ * }} args
+ */
+async function moveMessageToDlq(args) {
+  const record = args.record || {};
+  const err = args.err;
+  const msg = args.msg || {};
+  const source = String(args.source || msg.source || '').trim() || 'unknown';
+  const code = providerFaultCode(err) || 'provider_error';
+  const status = httpStatusOf(err);
+  const searchid = searchidFromMsg(msg) || 'unknown';
+  const body =
+    typeof record.body === 'string' && record.body
+      ? record.body
+      : JSON.stringify(msg || {});
+  const dedupe = [
+    source,
+    searchid,
+    code,
+    String(Date.now()),
+    String(Math.floor(Math.random() * 1e9)),
+  ].join('-');
+  const messageAttributes = {
+    ErrorCode: { DataType: 'String', StringValue: String(code).slice(0, 256) },
+    Provider: { DataType: 'String', StringValue: String(source).slice(0, 256) },
+    SearchId: {
+      DataType: 'String',
+      StringValue: String(searchid).slice(0, 256),
+    },
+  };
+  if (Number.isFinite(status)) {
+    messageAttributes.HttpStatus = {
+      DataType: 'Number',
+      StringValue: String(status),
+    };
+  }
+  await args.sendMessage({
+    QueueUrl: args.dlqUrl,
+    MessageBody: body,
+    MessageGroupId: messageGroupIdFromRecord(record),
+    MessageDeduplicationId: dedupe.slice(0, 128),
+    MessageAttributes: messageAttributes,
+  });
+  await args.deleteMessage({
+    QueueUrl: args.queueUrl,
+    ReceiptHandle: record.receiptHandle,
+  });
+}
+
+/**
+ * Lazy AWS SDK SQS SendMessage / DeleteMessage when not injected (Lambda).
+ * @returns {{ sendMessage: Function, deleteMessage: Function }}
+ */
+function buildDefaultSqsFns() {
+  let client;
+  function getClient() {
+    if (!client) {
+      const { SQSClient } = require('@aws-sdk/client-sqs');
+      client = new SQSClient({});
+    }
+    return client;
+  }
+  return {
+    sendMessage: async (input) => {
+      const { SendMessageCommand } = require('@aws-sdk/client-sqs');
+      return getClient().send(new SendMessageCommand(input));
+    },
+    deleteMessage: async (input) => {
+      const { DeleteMessageCommand } = require('@aws-sdk/client-sqs');
+      return getClient().send(new DeleteMessageCommand(input));
+    },
+  };
+}
+
+/**
+ * @param {object} opts
+ * @param {object} record
+ * @returns {{ sendMessage: Function, deleteMessage: Function, queueUrl: string, dlqUrl: string }|null}
+ */
+function resolveImmediateDlqDeps(opts, record) {
+  const deps = (opts && opts.deps) || {};
+  const env =
+    (deps.env && typeof deps.env === 'object' ? deps.env : null) || process.env;
+  const queueUrl = String(
+    opts.queueUrl || deps.queueUrl || env.SQS_QUEUE_URL || '',
+  ).trim();
+  const dlqUrl = String(
+    opts.dlqUrl || deps.dlqUrl || env.SQS_DLQ_URL || '',
+  ).trim();
+  if (
+    !queueUrl ||
+    !dlqUrl ||
+    !record ||
+    typeof record.receiptHandle !== 'string' ||
+    !record.receiptHandle
+  ) {
+    return null;
+  }
+  let sendMessage =
+    typeof opts.sendMessage === 'function'
+      ? opts.sendMessage
+      : typeof deps.sendMessage === 'function'
+        ? deps.sendMessage
+        : null;
+  let deleteMessage =
+    typeof opts.deleteMessage === 'function'
+      ? opts.deleteMessage
+      : typeof deps.deleteMessage === 'function'
+        ? deps.deleteMessage
+        : null;
+  if (!sendMessage || !deleteMessage) {
+    const built = buildDefaultSqsFns();
+    sendMessage = sendMessage || built.sendMessage;
+    deleteMessage = deleteMessage || built.deleteMessage;
+  }
+  return { sendMessage, deleteMessage, queueUrl, dlqUrl };
 }
 
 /**
@@ -304,7 +470,9 @@ async function handleSqsWith429(opts) {
         continue;
       }
 
-      // FR #4769: API / permanent vendor faults — log, no IN, no intake, throw → DLQ.
+      // FR #4769 / #4782: API faults — log, no IN, no intake.
+      // Immediate DLQ (send+delete) for nonRetryable/permanent client faults;
+      // else throw so SQS redrive / visibility backoff can finish the job.
       if (isProviderFaultForDlq(err)) {
         let msg = {};
         try {
@@ -314,12 +482,37 @@ async function handleSqsWith429(opts) {
         } catch {
           msg = {};
         }
+        const source = String(
+          opts.source || (msg && msg.source) || '',
+        ).trim();
         logProviderFailure({
           err,
           msg,
-          source: opts.source || (msg && msg.source) || '',
+          source,
           logError: opts.logError,
         });
+        if (isImmediateDlqFault(err)) {
+          const dlqDeps = resolveImmediateDlqDeps(opts, record);
+          if (dlqDeps) {
+            await moveMessageToDlq({
+              record,
+              err,
+              msg,
+              source,
+              sendMessage: dlqDeps.sendMessage,
+              deleteMessage: dlqDeps.deleteMessage,
+              queueUrl: dlqDeps.queueUrl,
+              dlqUrl: dlqDeps.dlqUrl,
+            });
+            results.push({
+              ok: false,
+              deadLettered: true,
+              code: providerFaultCode(err) || err.code,
+              source: source || opts.source || '',
+            });
+            continue;
+          }
+        }
         throw err;
       }
 
@@ -353,6 +546,8 @@ module.exports = {
   isNonRetryableProviderSkip,
   isVendorClientSkip,
   isProviderFaultForDlq,
+  isImmediateDlqFault,
+  moveMessageToDlq,
   statusErrorFromSkip,
   logProviderFailure,
   reportNonRetryableSkip: reportMissingCredentialsSkip,
