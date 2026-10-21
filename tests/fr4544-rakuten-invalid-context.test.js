@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * FR #4544 / #4768 / #4769: Rakuten Product Search INVALID_CONTEXT_VALUE.
- * Do not put Lucene-style -exclude into keyword; use the API `none` param.
+ * FR #4544 / #4768 / #4769 / #4781: Rakuten Product Search INVALID_CONTEXT_VALUE.
+ * Do not put Lucene-style -exclude into keyword. FR #4781: do not send `none`
+ * (Linksynergy widens); excludes are filtered client-side on title.
  * On INVALID_CONTEXT_VALUE, throw (DLQ via handleSqsWith429; no empty/status IN).
  */
 
@@ -41,7 +42,8 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
     assert.doesNotMatch(u.search, /-calendar/);
   });
 
-  it('searchRakuten sends none for agent exclude and does not put -term in keyword', async () => {
+  it('searchRakuten omits none for agent exclude and does not put -term in keyword', async () => {
+    // FR #4781: `none` widens the catalogue; excludes are client-side only.
     resetRakutenTokenCache();
     const calls = [];
     await searchRakuten(
@@ -72,7 +74,7 @@ describe('FR #4544 Rakuten INVALID_CONTEXT_VALUE', () => {
     assert.ok(productCalls.length >= 1);
     for (const c of productCalls) {
       const u = new URL(c.url);
-      assert.equal(u.searchParams.get('none'), 'calendar');
+      assert.equal(u.searchParams.has('none'), false);
       assert.equal(u.searchParams.get('language'), 'en_US');
       assert.doesNotMatch(u.searchParams.get('keyword') || '', /-/);
     }
