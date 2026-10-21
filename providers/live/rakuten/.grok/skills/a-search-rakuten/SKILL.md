@@ -82,19 +82,12 @@ npm test
 - FR-040: `tests/rakuten-search.test.js`
 - FR #4781: `tests/fr4781-rakuten-drop-none-client-exclude.test.js`
 
-<<<<<<< HEAD
-## Product Search keywords (FR #4768 / #4780 / #4788)
+## Product Search keywords (FR #4768 / #4780 / #4781 / #4788)
 
 - One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
-- Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation `( ) , ; .` with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
-- Strip market/location/currency residue via `keywordsOnly` (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in `keyword`. Short product codes in parentheses (`(RTF)`, `(BNF)`) are kept (FR #4788); location blobs are still dropped.
-- Build `none` from significant words only (len>=3, drop stopwords); do not flatten multi-word exclude phrases as-is.
-=======
-## Product Search keywords (FR #4768 / #4780 / #4781)
-
-- One Product Search HTTP call per agent query (eBay #4446 pattern); merge/dedupe; respect maxResults (default 10).
-- Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation `( ) , ; .` with spaces (never send raw `a-b` / `761-14` --- INVALID_CONTEXT_VALUE).
-- Strip market/location/currency residue via `keywordsOnly` (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in `keyword`.
-- Never send `none` (FR #4781: long `none` returns the whole catalogue); keep full exclude phrases (len>=3) and filter matching titles locally.
->>>>>>> origin/main
+- Sanitize keyword tokens: replace hyphens and Linksynergy-rejected punctuation ( ) , ; . with spaces (never send raw -b / 761-14 --- INVALID_CONTEXT_VALUE).
+- Strip market/location/currency residue via keywordsOnly (FR #4563) before each Product Search call --- parenthetical towns/postcodes and GBP/UK must not ride in keyword. Short product codes in parentheses ((RTF), (BNF)) are kept (FR #4788); location blobs are still dropped.
+- Never send 
+one (FR #4781: long 
+one returns the whole catalogue); keep full exclude phrases (len>=3) and filter matching titles locally.
 - On INVALID_CONTEXT_VALUE throw `rakuten_invalid_context` into the DLQ (FR #4769; not a silent empty products list or status IN).
