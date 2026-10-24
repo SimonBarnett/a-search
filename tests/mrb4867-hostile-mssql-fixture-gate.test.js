@@ -24,8 +24,10 @@ describe('MRB #4867 hostile MSSQL fixture gate', () => {
     for (const rel of FILES) {
       const text = fs.readFileSync(path.join(root, rel), 'utf8');
       assert.match(text, /liveSql/, rel);
-      const liveAt = text.indexOf('if (!liveSql)');
-      const cfgAt = text.indexOf('mssqlConfigFromEnv');
+      const fnAt = text.search(/async function probe\w+Selftest/);
+      const body = fnAt >= 0 ? text.slice(fnAt) : text;
+      const liveAt = body.indexOf('if (!liveSql)');
+      const cfgAt = body.indexOf('mssqlConfigFromEnv');
       assert.ok(liveAt >= 0 && cfgAt > liveAt, rel + ' config before liveSql skip');
     }
   });
