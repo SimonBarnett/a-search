@@ -112,6 +112,10 @@ Fixture-only probes (no injectable `httpRequest`) prove client wiring from
 recorded fixtures and **must not** require vendor secrets on the entry box
 (FR #4850-#4853). `*_missing_credentials` is only for the live HTTP path.
 
+Local MSSQL / feed probes must not require `MSSQL_*` or feed tokens on the
+entry box (FR #4854-#4856). `*_mssql_missing_config` is only for the live
+`connect` path.
+
 ## Intake on fail (CAST IRON)
 
 When a provider probe **fails**, the selftest **files intake** via the

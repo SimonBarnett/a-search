@@ -54,8 +54,10 @@ skipping soft-deleted rows (`DeletedAt IS NULL`).
 3. `normalizePart` — `MerchantProductId` → `id`, `Title` → `title`, etc.
 4. `writeResults` — S3 at canonical key (injectable `putObject`)
 
-Missing `MSSQL_SERVER` / `MSSQL_DATABASE` (and user unless trusted) →
-`AwinMssqlConfigError` (`awin_mssql_missing_config`) — never silent `[]`.
+Missing `MSSQL_SERVER` / `MSSQL_DATABASE` (and user unless trusted) on a live
+`connect` search -> `AwinMssqlConfigError` (`awin_mssql_missing_config`) --- never silent
+`[]`. Fixture-only `/selftest` (no `connect`) does not require entry SQL or
+feed secrets (FR #4854).
 
 Message shape matches entry fan-out payload (`searchId`, `userId`, `env`,
 `q` / `searchterms`, `catalogId`, `category`, `subcategory`, `source`).

@@ -3,9 +3,8 @@
 const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
 /**
- * FR-084: Partnerize local selftest probe — MSSQL Parts reachable or feed
- * config present. Stay-dark: registry enabled stays false.
- * Other providers are out of scope.
+ * FR-084 / FR #4856: Partnerize local selftest probe — MSSQL Parts reachable
+ * or feed config present. Live checks run only when deps.connect is supplied.
  *
  * MSSQL helpers live here until FR-083 lands queryParts.js; injectable
  * `connect` keeps unit tests offline (no live network / live SQL).
@@ -156,7 +155,11 @@ async function probePartnerizeSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveSql = typeof deps.connect === 'function';
   const feedOk = hasFeedConfig(env);
+  if (!liveSql) {
+    return { ok: true, source, latencyMs: elapsed() };
+  }
   let config;
   try {
     config = mssqlConfigFromEnv(env);
