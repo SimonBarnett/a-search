@@ -619,3 +619,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - keywordsOnly: expand short product codes in parentheses (RTF/BNF) and only drop location-like parentheticals (comma/postcode/co.uk/UK place names)
 - Linksynergy none with long exclude strings widens to whole catalogue --- omit none and filter titles locally; retarget fr4544/fr4768 pins that expected none on the URL
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
+- UAT #0: before VISION verify, gh issue list --state open must be empty of non-excluded issues; open bug/feature-request => NACK UAT owner/repo#0 immediately (Jeeves withdraws); never stamp FAIL/PASS or release while blockers remain
