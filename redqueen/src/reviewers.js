@@ -14,6 +14,17 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
+const {
+  HOST_SCHEMA,
+  PAGE_SCHEMA,
+  HOST_SKELETON,
+  PAGE_SKELETON,
+  parseReviewJson,
+  validateHostAnnotation,
+  validatePageAnnotation,
+  liftHostReview,
+  liftPageReview,
+} = require('./annotationSchemas');
 
 /** FR #4236: grok review must not block the event loop (spawnSync starved S3/SQS). */
 const REVIEWER_TIMEOUT_MS = 120000;
@@ -271,24 +282,18 @@ async function tryCursorCli(opts) {
  * @param {string} model
  */
 function coerceReview(text, model) {
-  const trimmed = String(text || '').trim();
-  try {
-    const start = trimmed.indexOf('{');
-    const end = trimmed.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      const obj = JSON.parse(trimmed.slice(start, end + 1));
-      if (obj && typeof obj === 'object') {
-        return { ...obj, model: obj.model || model, usable: true };
-      }
-    }
-  } catch {
-    // fall through
+  const parsed = parseReviewJson(text);
+  if (!parsed.ok) {
+    return {
+      model,
+      usable: false,
+      schema_invalid: true,
+      detail: 'not_json',
+      errors: parsed.errors,
+      summary: '',
+    };
   }
-  return {
-    summary: trimmed.slice(0, 4000),
-    model,
-    usable: true,
-  };
+  return { ...parsed.value, model: parsed.value.model || model, usable: true };
 }
 
 /** FR #4251: page summary this close to the host brief is a copy, not a page review. */
@@ -356,19 +361,29 @@ function isNarrationSummary(summary) {
 
 function isCompleteHostBrief(review) {
   if (!review || typeof review !== 'object') return false;
+  if (isNarrationSummary(review.summary) || isNarrationSummary(review.about)) return false;
+  if (review.schema === HOST_SCHEMA) return validateHostAnnotation(review).ok;
   const club = String(review.club || '').trim();
-  const audience = String(review.audience || '').trim();
-  const aff = String(review.affiliateOpportunities || '').trim();
+  const audience =
+    typeof review.audience === 'string'
+      ? review.audience.trim()
+      : String((review.audience && review.audience.summary) || '').trim();
+  const aff =
+    typeof review.affiliateOpportunities === 'string'
+      ? review.affiliateOpportunities.trim()
+      : Array.isArray(review.affiliate_opportunities) && review.affiliate_opportunities.length
+        ? 'ok'
+        : '';
   if (!club || !audience || !aff) return false;
-  if (isNarrationSummary(review.summary)) return false;
   return true;
 }
 
 function isCompleteGuidReview(review) {
   if (!review || typeof review !== 'object') return false;
-  const summary = String(review.summary || '').trim();
+  if (review.schema === PAGE_SCHEMA) return validatePageAnnotation(review).ok;
+  const summary = String(review.summary || review.page_purpose || '').trim();
   if (!summary || isNarrationSummary(summary)) return false;
-  const steering = review.steering;
+  const steering = review.steering || review.selection;
   if (steering == null) return false;
   if (typeof steering === 'string') return steering.trim().length > 0;
   if (typeof steering === 'object') return Object.keys(steering).length > 0;
@@ -410,7 +425,12 @@ function hostReviewPrompt(input) {
     'EXTRA_PAGES_BEGIN',
     formatExtraPages(input.extraPages),
     'EXTRA_PAGES_END',
-    'Return JSON: {summary, club, audience, affiliateOpportunities, categories[], notes}',
+    'Return only this JSON object (aclubs.host.v1). No prose. Fill every required field.',
+    'about 40-600 chars: club niche, region, governing body. No addresses, hours or site credits.',
+    'description 40-400 chars: site-wide affiliate targeting. keywords 5-20. exclusions: product types that never fit.',
+    'identity_terms: club names, aliases, town, postcode — denylist for page fields, never searches.',
+    'market must be ISO codes only (country GB, currency GBP, locale en-GB). Never free-text market.',
+    JSON.stringify(HOST_SKELETON),
   ].join('\n');
 }
 
@@ -439,7 +459,12 @@ function guidReviewPrompt(input) {
     'PAGE_TEXT_BEGIN',
     pageSlice,
     'PAGE_TEXT_END',
-    'Return JSON: {summary, intent, suggestedQueries[], steering}',
+    'Return only this JSON object (aclubs.page.v1). No prose. Fill every required field.',
+    'Describe ONLY this URI. Do not copy host about, keywords, exclusions or identity_terms.',
+    'page_purpose/page_description must be what this page covers that other site pages do not.',
+    'search_queries[].q is keyword-only: no location, market, currency or club identity.',
+    'selection is the IN/ parts-selection brief for this GUID only.',
+    JSON.stringify(PAGE_SKELETON),
   ].join('\n');
 }
 
@@ -472,17 +497,24 @@ async function reviewWithGrokThenCursor(input) {
       summary: '',
     };
   }
-  const prompt = input.kind === 'host' ? hostReviewPrompt(input) : guidReviewPrompt(input);
+  const basePrompt = input.kind === 'host' ? hostReviewPrompt(input) : guidReviewPrompt(input);
 
-  const grok = await Promise.resolve(tryGrok({ prompt }));
-  if (grok.ok) {
-    return coerceReview(grok.text, 'grok');
-  }
-  if (grok.detail === 'grok_exhausted' || grok.detail === 'grok_not_found') {
-    const cursor = await Promise.resolve(tryCursor({ prompt }));
-    if (cursor.ok) {
-      return coerceReview(cursor.text, 'cursor');
+  async function runOnce(prompt) {
+    const grok = await Promise.resolve(tryGrok({ prompt }));
+    if (grok.ok) return coerceReview(grok.text, 'grok');
+    if (grok.detail === 'grok_exhausted' || grok.detail === 'grok_not_found') {
+      const cursor = await Promise.resolve(tryCursor({ prompt }));
+      if (cursor.ok) return coerceReview(cursor.text, 'cursor');
+      return {
+        model: 'stub',
+        usable: false,
+        unavailable: true,
+        detail: `grok:${grok.detail};cursor:${cursor.detail}`,
+        summary: '',
+      };
     }
+    const cursor = await Promise.resolve(tryCursor({ prompt }));
+    if (cursor.ok) return coerceReview(cursor.text, 'cursor');
     return {
       model: 'stub',
       usable: false,
@@ -491,19 +523,41 @@ async function reviewWithGrokThenCursor(input) {
       summary: '',
     };
   }
-  // Other grok failures: still try Cursor once (standing rule: Cursor when Grok exhausted;
-  // also when Grok binary missing already handled; for exit errors try Cursor as fallback).
-  const cursor = await Promise.resolve(tryCursor({ prompt }));
-  if (cursor.ok) {
-    return coerceReview(cursor.text, 'cursor');
+
+  function schemaErrors(review) {
+    if (!review || review.usable === false) {
+      return review && review.errors ? review.errors : ['unusable'];
+    }
+    if (input.kind === 'host') {
+      const lifted = liftHostReview(review, { host: input.host });
+      return validateHostAnnotation(lifted).errors;
+    }
+    const lifted = liftPageReview(review, {
+      guid: input.guid,
+      uri: input.uri || '/',
+      pageHead: input.pageHead,
+    });
+    return validatePageAnnotation(lifted).errors;
   }
-  return {
-    model: 'stub',
-    usable: false,
-    unavailable: true,
-    detail: `grok:${grok.detail};cursor:${cursor.detail}`,
-    summary: '',
-  };
+
+  let review = await runOnce(basePrompt);
+  let errs = schemaErrors(review);
+  if (errs.length) {
+    review = await runOnce(
+      `${basePrompt}\nVALIDATOR_ERRORS_BEGIN\n${errs.join('\n')}\nVALIDATOR_ERRORS_END\nReturn only valid JSON.`,
+    );
+    errs = schemaErrors(review);
+    if (errs.length && review && review.usable) {
+      review = {
+        ...review,
+        usable: false,
+        schema_invalid: true,
+        errors: errs,
+        detail: input.kind === 'host' ? 'host_schema_invalid' : 'page_schema_invalid',
+      };
+    }
+  }
+  return review;
 }
 
 async function defaultReviewHost(input) {
@@ -535,4 +589,6 @@ module.exports = {
   defaultReviewHost,
   defaultReviewGuid,
   coerceReview,
+  HOST_SCHEMA,
+  PAGE_SCHEMA,
 };

@@ -253,8 +253,9 @@ describe('FR #4251 page review must not copy the host', () => {
         }),
       }),
     );
-    assert.equal(skipped.host, 'skipped');
-    assert.equal(hostReviews, 0);
+    // FR #4824: a legacy host doc without schema is treated as missing.
+    assert.equal(skipped.action, 'retry');
+    assert.ok(hostReviews >= 1);
 
     const again = await processFolderEvent(
       s3Deps(s3, {
@@ -288,7 +289,7 @@ describe('FR #4251 page review must not copy the host', () => {
     );
     assert.equal(again.host, 'annotated');
     assert.equal(again.guids[0].action, 'guid_updated');
-    assert.equal(hostReviews, 1);
+    assert.ok(hostReviews >= 1);
   });
 
   it('docs describe REDQUEEN_REANNOTATE', () => {

@@ -15,6 +15,7 @@ const {
   keywordsOnly,
   normalizeMarketCurrency,
 } = require('../../shared/search/cleanSearchQuery');
+const { PAGE_SCHEMA } = require('./annotationSchemas');
 function searchesObjectKey(hostkey, guid) {
   const host = String(hostkey).replace(/\/+$/, '');
   const id = String(guid).trim().toLowerCase();
@@ -129,21 +130,32 @@ function buildSearchesDoc(input) {
   const existing = input.existing && typeof input.existing === 'object' ? input.existing : {};
   const now = input.now || new Date().toISOString();
   const cap = queryCap(!!input.fullTier);
-  const suggested = asQueryRows(review.suggestedQueries);
-  const include = asQueryRows(steering.include || steering.includeTerms || steering.queries);
-  let queries = boundQueries([...suggested, ...include], cap);
-  if (!queries.length) {
-    const intent = review.intent ? String(review.intent).trim() : '';
-    const summary = review.summary ? String(review.summary).trim() : '';
-    const seed = intent || (summary.split(/[.\n]/)[0] || '').trim();
-    queries = boundQueries(asQueryRows(seed ? [seed] : []), cap);
+  const page = input.page && input.page.schema === PAGE_SCHEMA ? input.page : null;
+  const host = input.host && typeof input.host === 'object' ? input.host : null;
+  let queries;
+  if (page) {
+    const fromPage = asQueryRows(page.search_queries);
+    const models = ((page.selection && page.selection.models) || []).map((m) =>
+      [m.brand, m.model, m.sku].filter(Boolean).join(' '),
+    );
+    const types = (page.selection && page.selection.product_types) || [];
+    queries = boundQueries([...fromPage, ...asQueryRows(models), ...asQueryRows(types)], cap);
+  } else {
+    const suggested = asQueryRows(review.suggestedQueries);
+    const include = asQueryRows(steering.include || steering.includeTerms || steering.queries);
+    queries = boundQueries([...suggested, ...include], cap);
+    if (!queries.length) {
+      const intent = review.intent ? String(review.intent).trim() : '';
+      const summary = review.summary ? String(review.summary).trim() : '';
+      const seed = intent || (summary.split(/[.\n]/)[0] || '').trim();
+      queries = boundQueries(asQueryRows(seed ? [seed] : []), cap);
+    }
   }
-  // FR #4563: prefer steering; fall back to existing; normalize long UK strings → GB/GBP.
+  const hostMarket = host && host.market ? host.market : {};
   const { market, currency } = normalizeMarketCurrency({
-    market: steering.market || existing.market || '',
-    currency: steering.currency || existing.currency || '',
+    market: hostMarket.country || steering.market || existing.market || '',
+    currency: hostMarket.currency || steering.currency || existing.currency || '',
   });
-  // Also strip location baked into q when market was only in the query text.
   const stripMarket = market || String(steering.market || existing.market || '');
   const stripCurrency = currency || String(steering.currency || existing.currency || '');
   queries = queries
@@ -154,10 +166,26 @@ function buildSearchesDoc(input) {
     }))
     .filter((q) => q.q)
     .slice(0, cap);
-  const exclude = mergeExclude(existing.exclude, steeringExclude(steering, now)).filter(
+  const extraEx = [];
+  if (host && Array.isArray(host.exclusions)) {
+    for (const match of host.exclusions) {
+      if (String(match || '').trim().length >= 3) {
+        extraEx.push({ match: String(match).trim(), reason: 'host', at: now });
+      }
+    }
+  }
+  if (page && page.selection && Array.isArray(page.selection.page_exclusions)) {
+    for (const match of page.selection.page_exclusions) {
+      if (String(match || '').trim().length >= 3) {
+        extraEx.push({ match: String(match).trim(), reason: 'page', at: now });
+      }
+    }
+  }
+  extraEx.push(...steeringExclude(steering, now));
+  const exclude = mergeExclude(existing.exclude, extraEx).filter(
     (row) => row && (row.partId || (row.match && String(row.match).trim().length >= 3)),
   );
-  const doc = { queries, exclude };
+  const doc = { queries, exclude, annotationSchema: PAGE_SCHEMA };
   if (market) doc.market = market;
   if (currency) doc.currency = currency;
   if (existing.searchid) doc.searchid = String(existing.searchid);
@@ -185,12 +213,15 @@ async function publishGuidSearch(opts) {
   const key = searchesObjectKey(opts.hostkey, opts.guid);
   const existing = (await readJsonObject(opts, key)) || { queries: [], exclude: [] };
   if (existing.searchid) {
-    return {
-      ok: true,
-      searchid: String(existing.searchid),
-      idempotent: true,
-      wrote: false,
-    };
+    const schemaOk = existing.annotationSchema === PAGE_SCHEMA;
+    if (schemaOk || opts.repostExisting || !opts.page) {
+      return {
+        ok: true,
+        searchid: String(existing.searchid),
+        idempotent: true,
+        wrote: false,
+      };
+    }
   }
   // FR #4311: annotated GUID already has queries and no searchid. POST that
   // file once. Do not rebuild queries from a new review.
