@@ -28,6 +28,9 @@ Registry id `rakuten` (`kind: live`, default-on).
 3. Product Search GET (`src/search.js`) → XML parse → `products[]`
 4. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/rakuten/{userId}/{catalogId}/{searchId}.json`
 
+FR #4823: write a-clubs IN/ only when `products.length >= 1`; 0 matches log
+`provider_done products=0` (no IN, no DLQ).
+
 Injectable `httpRequest` / `putObject` for fixtures (`fixtures/product-search-ok.xml`).
 
 ## XML responses

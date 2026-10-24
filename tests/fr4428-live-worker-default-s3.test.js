@@ -35,7 +35,10 @@ const PROVIDERS = [
   {
     id: 'cj',
     worker: 'providers/live/cj/src/worker.js',
-    env: { CJ_API_TOKEN: 'EXAMPLE_TOKEN' },
+    env: {
+      CJ_API_TOKEN: 'EXAMPLE_TOKEN',
+      CJ_WEBSITE_ID: 'EXAMPLE_SITE',
+    },
   },
   {
     id: 'ebay',
@@ -117,6 +120,17 @@ function stubSdk() {
   };
 }
 
+function fixtureProduct() {
+  return {
+    id: 'p-fr4428',
+    title: 'Fixture part',
+    url: 'https://example.test/p/4428',
+    price: 9.99,
+    currency: 'GBP',
+    source: 'test',
+  };
+}
+
 function stubSearch(workerRel) {
   const searchPath = require.resolve(
     path.join(root, workerRel.replace(/worker\.js$/, 'search.js')),
@@ -125,12 +139,32 @@ function stubSearch(workerRel) {
   const stub = { ...real };
   for (const key of Object.keys(real)) {
     if (typeof real[key] === 'function' && key.startsWith('search')) {
-      stub[key] = async () => ({});
+      // FR #4823: empty products skip IN/; this suite still needs a PutObject.
+      stub[key] = async () => [fixtureProduct()];
     }
   }
   require.cache[searchPath].exports = stub;
   return () => {
     require.cache[searchPath].exports = real;
+  };
+}
+
+function stubNormalizeIfPresent(workerRel) {
+  let nPath;
+  try {
+    nPath = require.resolve(
+      path.join(root, workerRel.replace(/worker\.js$/, 'normalize.js')),
+    );
+  } catch {
+    return () => {};
+  }
+  const real = require(nPath);
+  require.cache[nPath].exports = {
+    ...real,
+    normalizeSearchResponse: () => [fixtureProduct()],
+  };
+  return () => {
+    require.cache[nPath].exports = real;
   };
 }
 
@@ -187,6 +221,7 @@ describe('FR #4428 live workers default S3 from Lambda context', () => {
     it(provider.id + ' handler(event, context) puts IN/ without putObject_required', async () => {
       Object.assign(process.env, provider.env);
       const restoreSearch = stubSearch(provider.worker);
+      const restoreNormalize = stubNormalizeIfPresent(provider.worker);
       const { handler } = loadWorker(provider.worker);
       sdk = stubSdk();
       try {
@@ -205,6 +240,7 @@ describe('FR #4428 live workers default S3 from Lambda context', () => {
       } finally {
         sdk.restore();
         restoreSearch();
+        restoreNormalize();
       }
     });
   }
@@ -240,7 +276,7 @@ describe('FR #4428 live workers default S3 from Lambda context', () => {
           copyObject: async () => ({}),
           getObjectTagging: async () => ({ TagSet: [] }),
           putObjectTagging: async () => ({}),
-          searchEbay: async () => [],
+          searchEbay: async () => [fixtureProduct()],
         },
       );
       assert.equal(result.ok, true);

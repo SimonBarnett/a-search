@@ -20,6 +20,7 @@ const {
   guidMarkerKey,
 } = require('./aClubsKeys');
 const { requireHostFromOrigin } = require('./originHost');
+const { filterPartsByPage } = require('../../redqueen/src/pageSelect');
 
 class PartsError extends Error {
   /**
@@ -51,6 +52,21 @@ function parseNonNegInt(raw, fallback) {
  * @param {unknown} body
  * @returns {object[]}
  */
+function parseAnnotationBody(resp) {
+  if (!resp) return null;
+  let body = resp.AnnotationPayload != null ? resp.AnnotationPayload : resp.Body;
+  if (body && typeof body.transformToString === 'function') {
+    return null;
+  }
+  try {
+    const text = Buffer.isBuffer(body) ? body.toString('utf8') : String(body || '');
+    const obj = JSON.parse(text);
+    return obj && typeof obj === 'object' ? obj : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseLiveBody(body) {
   if (body == null) return [];
   let text;
@@ -247,9 +263,35 @@ async function pagePartsAclubs(opts) {
     getObject: opts.getObject,
   });
 
+  let pageAnn = null;
+  let hostAnn = null;
+  if (typeof opts.getObjectAnnotation === 'function') {
+    try {
+      const pa = await opts.getObjectAnnotation({
+        Key: guidKey,
+        AnnotationName: 'annotation',
+      });
+      pageAnn = parseAnnotationBody(pa);
+    } catch {
+      pageAnn = null;
+    }
+    try {
+      const ha = await opts.getObjectAnnotation({
+        Key: hostMarkerKey(host),
+        AnnotationName: 'annotation',
+      });
+      hostAnn = parseAnnotationBody(ha);
+    } catch {
+      hostAnn = null;
+    }
+  }
+
   // When init is 0 and IN/ has candidates, promote into live.json and setInit.
   if (init === 0 && inCandidates.length > 0) {
-    live = live.concat(inCandidates);
+    const selected = pageAnn
+      ? filterPartsByPage(inCandidates, { page: pageAnn, host: hostAnn })
+      : inCandidates;
+    live = live.concat(selected);
     const Body = Buffer.from(`${JSON.stringify(live, null, 2)}\n`, 'utf8');
     await opts.putObject({
       Key: liveKey,

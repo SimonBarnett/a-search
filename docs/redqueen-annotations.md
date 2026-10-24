@@ -25,7 +25,7 @@ For the host marker, then each GUID folder marker:
 |-------|--------|
 | no `annotated=1` | write object annotations, set `annotated=1`, set `lastupdate` and `lastmod` to the same ISO UTC timestamp |
 | `annotated=1` and `lastmod` > `lastupdate` | regenerate annotations, refresh `lastupdate` (= `lastmod`) |
-| `annotated=1` and `lastmod` <= `lastupdate` | skip, unless `REDQUEEN_REANNOTATE=1` |
+| `annotated=1` and `lastmod` <= `lastupdate` | skip, unless `REDQUEEN_REANNOTATE=1` or the stored annotation has no `aclubs.host.v1` / `aclubs.page.v1` schema (FR #4824) |
 
 ## Re-annotate (FR #4251)
 
@@ -34,6 +34,14 @@ Set `REDQUEEN_REANNOTATE=1` for one console run of `node redqueen/src/run.js`
 `annotated=1` and `lastmod` <= `lastupdate`. Unset it after that pass so the
 poll loop does not rewrite the same markers on every tick. The host marker
 must still be on the folder-events queue (replay the host message).
+
+Host `annotation` is `aclubs.host.v1` (about, description, keywords, audience,
+affiliate_opportunities, exclusions, identity_terms, market ISO codes).
+GUID `annotation` is `aclubs.page.v1`, a parts-selection brief for that URI's
+IN/ folder. The model must return only that JSON; invalid JSON is retried
+once and then the message is not written (`action: retry`). Page fields must
+not repeat host about/keywords/identity (FR #4824). Legacy docs without
+`schema` are treated as missing.
 
 Host `annotation` is an affiliate brief: club specifics, audience, and
 affiliate opportunities. Those three fields must be non-empty, and `summary`

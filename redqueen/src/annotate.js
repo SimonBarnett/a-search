@@ -17,6 +17,18 @@ const {
   isCompleteHostBrief,
   isCompleteGuidReview,
 } = require('./reviewers');
+const {
+  HOST_SCHEMA,
+  PAGE_SCHEMA,
+  validateHostAnnotation,
+  validatePageAnnotation,
+  liftHostReview,
+  liftPageReview,
+  hasCurrentHostSchema,
+  hasCurrentPageSchema,
+  steeringFromPage,
+} = require('./annotationSchemas');
+const { pageOverlapsHost } = require('./pageOverlap');
 const { fetchPageText, clubPageUrl } = require('./fetchPage');
 const { publishGuidSearch, localPostSearchAck, guidSearchState } = require('./guidSearch');
 
@@ -55,6 +67,10 @@ function annotationNeed(md, flags) {
   const meta = md || {};
   if (String(meta.annotated || '') !== '1') return 'create';
   if (flags && flags.reannotate) return 'update';
+  const stored = flags && flags.stored;
+  if (flags && flags.expectSchema) {
+    if (!stored || stored.schema !== flags.expectSchema) return 'update';
+  }
   const lastmod = String(meta.lastmod || '').trim();
   const lastupdate = String(meta.lastupdate || '').trim();
   if (!lastupdate) return 'update';
@@ -214,13 +230,19 @@ async function processFolderEvent(opts) {
     }
     if (state === 'repost') anyRepost = true;
   }
+  let storedHostAnn = await getNamedAnnotationJson(opts, markerKey, 'annotation');
   // FR #4827: a host whose lastmod is newer than lastupdate is reviewed even
   // when GUIDs only need a search repost. A fresh host stays on the repost path
   // (FR #4311), including REDQUEEN_REANNOTATE.
-  const hostAnnNeed = annotationNeed(hostMd, { reannotate: Boolean(opts.reannotate) });
+  const hostAnnNeed = annotationNeed(hostMd, {
+    reannotate: Boolean(opts.reannotate),
+    stored: storedHostAnn,
+    expectSchema: HOST_SCHEMA,
+  });
   const hostNeed = searchRepostOnly && !markerContentStale(hostMd) ? 'skip' : hostAnnNeed;
 
   let hostAnnDoc = null;
+  let hostLegacy = null;
 
   if (hostNeed !== 'skip') {
     const hostUrl = clubPageUrl(event.host);
@@ -251,38 +273,55 @@ async function processFolderEvent(opts) {
         text: String(extra.text || '').slice(0, 4000),
       });
     }
+    const hostInput = {
+      host: event.host,
+      hostkey: event.hostkey,
+      pageText: hostPage.text,
+      pageHead: hostPage.head,
+      pageUrl: hostUrl,
+      extraPages,
+    };
     let review;
     try {
-      review = await reviewHost({
-        host: event.host,
-        hostkey: event.hostkey,
-        pageText: hostPage.text,
-        pageHead: hostPage.head,
-        pageUrl: hostUrl,
-        extraPages,
-      });
+      review = await reviewHost(hostInput);
     } catch (err) {
       const detail = (err && err.message) || 'host_review_failed';
       return { action: 'retry', detail: `host_review_failed:${detail}` };
     }
     if (!isUsableReview(review) || !isCompleteHostBrief(review)) {
+      try {
+        review = await reviewHost({
+          ...hostInput,
+          validatorErrors: (review && review.errors) || ['host_brief_incomplete'],
+        });
+      } catch {
+        /* keep first */
+      }
+    }
+    if (!isUsableReview(review) || !isCompleteHostBrief(review)) {
       return {
         action: 'retry',
         detail: !isUsableReview(review)
-          ? `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`
+          ? (review && review.schema_invalid
+            ? 'host_schema_invalid'
+            : `host_reviewer_unavailable:${(review && review.detail) || 'stub'}`)
           : 'host_brief_incomplete',
       };
     }
-    hostAnnDoc = {
+    hostAnnDoc = liftHostReview(review, {
       host: event.host,
       reviewedAt: now,
       model: review.model,
+    });
+    const hostOk = validateHostAnnotation(hostAnnDoc);
+    if (!hostOk.ok) {
+      return { action: 'retry', detail: 'host_schema_invalid' };
+    }
+    hostLegacy = {
       summary: review.summary || '',
       club: review.club || '',
-      audience: review.audience || '',
+      audience: review.audience,
       affiliateOpportunities: review.affiliateOpportunities || '',
-      categories: Array.isArray(review.categories) ? review.categories : [],
-      notes: review.notes || '',
     };
     await putNamedAnnotation(opts, markerKey, 'annotation', hostAnnDoc);
     await putMarkerMetadata(opts, markerKey, hostMd, {
@@ -302,9 +341,12 @@ async function processFolderEvent(opts) {
       });
     }
   } else {
-    hostAnnDoc = await getNamedAnnotationJson(opts, markerKey, 'annotation');
+    hostAnnDoc = storedHostAnn;
     if (!hostAnnDoc) {
       return { action: 'retry', detail: 'host_annotations_missing' };
+    }
+    if (!hasCurrentHostSchema(hostAnnDoc) && !searchRepostOnly) {
+      return { action: 'retry', detail: 'host_schema_invalid' };
     }
   }
 
@@ -316,6 +358,7 @@ async function processFolderEvent(opts) {
       event,
       guid,
       hostAnn: hostAnnDoc,
+      hostLegacy,
       reviewGuid,
       now,
     });
@@ -330,7 +373,7 @@ async function processFolderEvent(opts) {
 }
 
 async function annotateOneGuid(args) {
-  const { opts, event, guid, hostAnn, reviewGuid, now } = args;
+  const { opts, event, guid, hostAnn, hostLegacy, reviewGuid, now } = args;
   const markerKey = guidMarkerKeyFromHostkey(event.hostkey, guid);
   const markerHead = await headOrNull(opts, markerKey);
   if (!markerHead) {
@@ -365,7 +408,12 @@ async function annotateOneGuid(args) {
       }
     }
   }
-  const need = annotationNeed(guidMd, { reannotate: Boolean(opts.reannotate) });
+  const storedGuidAnn = await getNamedAnnotationJson(opts, markerKey, 'annotation');
+  const need = annotationNeed(guidMd, {
+    reannotate: Boolean(opts.reannotate),
+    stored: storedGuidAnn,
+    expectSchema: PAGE_SCHEMA,
+  });
   if (need === 'skip') {
     const ann = await getNamedAnnotationJson(opts, markerKey, 'annotation');
     if (!ann) return { action: 'noop', detail: 'guid_unchanged' };
@@ -377,6 +425,8 @@ async function annotateOneGuid(args) {
         guid,
         review: ann,
         steering: steering || undefined,
+        page: hasCurrentPageSchema(ann) ? ann : undefined,
+        host: hasCurrentHostSchema(hostAnn) ? hostAnn : undefined,
         metadata: guidMd,
         now,
         postSearch: opts.postSearch || localPostSearchAck(),
@@ -406,18 +456,39 @@ async function annotateOneGuid(args) {
     };
   }
 
+  if (!hasCurrentHostSchema(hostAnn) && !validateHostAnnotation(liftHostReview(hostAnn, { host: event.host })).ok) {
+    return { action: 'retry', detail: 'host_schema_invalid' };
+  }
+  const hostDoc = hasCurrentHostSchema(hostAnn)
+    ? hostAnn
+    : liftHostReview(hostAnn, { host: event.host, reviewedAt: now, model: hostAnn.model });
+
+  const guidInput = {
+    host: event.host,
+    hostkey: event.hostkey,
+    guid,
+    uri,
+    hostAnnotations: {
+      ...hostDoc,
+      summary: (hostLegacy && hostLegacy.summary) || hostDoc.about || '',
+      club: (hostLegacy && hostLegacy.club) || hostDoc.about || '',
+      audience:
+        (hostLegacy && typeof hostLegacy.audience === 'string' && hostLegacy.audience) ||
+        (hostDoc.audience && hostDoc.audience.summary) ||
+        '',
+      affiliateOpportunities:
+        (hostLegacy && hostLegacy.affiliateOpportunities) ||
+        ((hostDoc.affiliate_opportunities || [])[0] &&
+          hostDoc.affiliate_opportunities[0].category) ||
+        '',
+    },
+    pageText: guidPage.text,
+    pageHead: guidPage.head,
+    pageUrl,
+  };
   let review;
   try {
-    review = await reviewGuid({
-      host: event.host,
-      hostkey: event.hostkey,
-      guid,
-      uri,
-      hostAnnotations: hostAnn,
-      pageText: guidPage.text,
-      pageHead: guidPage.head,
-      pageUrl,
-    });
+    review = await reviewGuid(guidInput);
   } catch (err) {
     return {
       action: 'retry',
@@ -425,33 +496,68 @@ async function annotateOneGuid(args) {
     };
   }
   if (!isUsableReview(review) || !isCompleteGuidReview(review)) {
+    try {
+      review = await reviewGuid({
+        ...guidInput,
+        validatorErrors: (review && review.errors) || ['page_schema_invalid'],
+      });
+    } catch {
+      /* keep first */
+    }
+  }
+  if (!isUsableReview(review) || !isCompleteGuidReview(review)) {
     return {
       action: 'retry',
       detail: !isUsableReview(review)
-        ? `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`
-        : 'guid_review_incomplete',
+        ? (review && review.schema_invalid
+          ? 'page_schema_invalid'
+          : `guid_reviewer_unavailable:${(review && review.detail) || 'stub'}`)
+        : 'page_schema_invalid',
     };
   }
-  if (annotationsTooSimilar(review.summary, hostBriefText(hostAnn))) {
+
+  const pageDoc = liftPageReview(review, {
+    guid,
+    uri: uri || '/',
+    annotatedAt: now,
+    model: review.model,
+    pageHead: guidPage.head,
+  });
+  const pageOk = validatePageAnnotation(pageDoc);
+  if (!pageOk.ok) {
+    return { action: 'retry', detail: 'page_schema_invalid' };
+  }
+
+  const siblings = [];
+  const otherGuids = await listGuidIds(opts, event.hostkey);
+  for (const other of otherGuids) {
+    if (other === guid) continue;
+    const otherAnn = await getNamedAnnotationJson(
+      opts,
+      guidMarkerKeyFromHostkey(event.hostkey, other),
+      'annotation',
+    );
+    if (otherAnn && hasCurrentPageSchema(otherAnn)) {
+      siblings.push({ uri: otherAnn.uri, page: otherAnn });
+    }
+  }
+  const overlap = pageOverlapsHost(pageDoc, hostDoc, { siblings });
+  pageDoc.selection.page_exclusions = overlap.page_exclusions;
+  if (!overlap.ok) {
+    return { action: 'retry', detail: 'page_repeats_host' };
+  }
+  if (
+    review.summary &&
+    annotationsTooSimilar(review.summary, hostBriefText(hostAnn) || hostDoc.about)
+  ) {
     return { action: 'retry', detail: 'page_repeats_host' };
   }
 
-  const annDoc = {
-    uri,
-    annotatedAt: now,
-    model: review.model,
-    summary: review.summary || '',
-    intent: review.intent || '',
-    suggestedQueries: Array.isArray(review.suggestedQueries)
-      ? review.suggestedQueries
-      : [],
-  };
-  const wanted = [{ name: 'annotation', payload: annDoc }];
-  await putNamedAnnotation(opts, markerKey, 'annotation', annDoc);
-  if (review.steering != null) {
-    await putNamedAnnotation(opts, markerKey, 'steering', review.steering);
-    wanted.push({ name: 'steering', payload: review.steering });
-  }
+  const steering = review.steering != null ? review.steering : steeringFromPage(pageDoc);
+  const wanted = [{ name: 'annotation', payload: pageDoc }];
+  await putNamedAnnotation(opts, markerKey, 'annotation', pageDoc);
+  await putNamedAnnotation(opts, markerKey, 'steering', steering);
+  wanted.push({ name: 'steering', payload: steering });
 
   await putMarkerMetadata(opts, markerKey, guidMd, {
     annotated: '1',
@@ -478,7 +584,9 @@ async function annotateOneGuid(args) {
       hostkey: event.hostkey,
       guid,
       review,
-      steering: review.steering,
+      steering,
+      host: hostDoc,
+      page: pageDoc,
       metadata: { ...guidMd, annotated: '1' },
       now,
       postSearch: opts.postSearch || localPostSearchAck(),

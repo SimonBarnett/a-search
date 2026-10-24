@@ -2,8 +2,7 @@
 
 /**
  * FR #4561: *_missing_credentials must ERROR-log (provider + searchid, no secrets),
- * write a zero-product status IN with error: "missing_credentials", and still
- * ack/delete the SQS message (no retry / no DLQ).
+ * ERROR-log and ack/delete the SQS message (no retry / no DLQ). FR #4823: no status IN.
  */
 
 const { describe, it } = require('node:test');
@@ -53,7 +52,7 @@ describe('FR #4561 missing_credentials visibility', () => {
     assert.equal(isNonRetryableProviderSkip(new Error('boom')), false);
   });
 
-  it('ERROR-logs provider+searchid, writes status IN, acks message', async () => {
+  it('ERROR-logs provider+searchid, no status IN, acks message (FR #4823)', async () => {
     const logs = [];
     /** @type {Array<{Key:string,Body:Buffer}>} */
     const puts = [];
@@ -104,13 +103,7 @@ describe('FR #4561 missing_credentials visibility', () => {
     assert.match(logs[0], /cj_missing_credentials/);
     assert.doesNotMatch(logs[0], /password|secret|Bearer|api[_-]?key=/i);
 
-    assert.equal(puts.length, 1);
-    assert.match(puts[0].Key, /mmfc\.example\/widget-guid-1\/IN\/srch_677ea35b21e320ef2f63-cj\.json/);
-    const body = JSON.parse(Buffer.from(puts[0].Body).toString('utf8'));
-    assert.equal(body.error, 'missing_credentials');
-    assert.deepEqual(body.products, []);
-    assert.equal(body.source, 'cj');
-    assert.equal(body.searchid, 'srch_677ea35b21e320ef2f63');
+    assert.equal(puts.length, 0);
   });
 
   it('nonRetryable provider API error throws to DLQ without IN (FR #4769)', async () => {
