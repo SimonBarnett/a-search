@@ -157,12 +157,19 @@ async function runDrainJob(msg, deps) {
     touchLastmod: deps && deps.touchLastmod,
   });
 
-  // Ensure IN file exists even if a stub worker skipped PutObject.
-  if (!result || !result.key) {
+  // FR #4823 / MRB #4831: do not synthesize empty IN files.
+  if (result && result.key) {
+    // worker wrote IN
+  } else if (
+    result &&
+    Array.isArray(result.products) &&
+    result.products.length > 0 &&
+    !result.key
+  ) {
     writeAClubsIn({
       root: aClubsRoot,
       msg: writeMsg,
-      products: (result && result.products) || [],
+      products: result.products,
     });
   }
 
