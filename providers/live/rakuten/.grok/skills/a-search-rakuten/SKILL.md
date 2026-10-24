@@ -66,7 +66,7 @@ See `.env.example`: `A_SEARCH_ENV`, `RAKUTEN_CLIENT_ID`,
 `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_ENDPOINT`,
 `RAKUTEN_LANGUAGE` (default `en_US`), `SQS_RAKUTEN_URL`, `S3_RESULTS_BUCKET`.
 
-Missing application key → `RakutenCredsError` / `rakuten_missing_credentials`.
+Missing application key on a live HTTP search → `RakutenCredsError` / `rakuten_missing_credentials`. Fixture-only `/selftest` (no `httpRequest`) does not require entry secrets (FR #4850).
 
 **FR #4544 / #4769 / #4781:** Product Search rejects Lucene-style `-exclude`
 inside `keyword` (`INVALID_CONTEXT_VALUE`). Do **not** send the Linksynergy

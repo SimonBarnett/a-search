@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * FR-059j: Awin local selftest probe -- MSSQL Parts reachable or feed config present.
- * Other providers are out of scope.
+ * FR-059j / FR #4854: Awin local selftest probe -- MSSQL Parts reachable
+ * or feed config present. Live MSSQL/feed checks run only when deps.connect
+ * is supplied; entry fixture /selftest must not require SQL secrets.
  */
 
 const {
@@ -76,7 +77,11 @@ async function probeAwinSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveSql = typeof deps.connect === 'function';
   const feedOk = hasFeedConfig(env);
+  if (!liveSql) {
+    return { ok: true, source, latencyMs: elapsed() };
+  }
   let config;
   try {
     config = mssqlConfigFromEnv(env);
