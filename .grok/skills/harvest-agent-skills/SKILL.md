@@ -630,3 +630,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4827 register tests: skip powershell.exe parse/WhatIf when process.platform is not win32; Linux CI has no WinPS 5.1.
 - Sibling PRs stacked on FR #4827 need the same Linux skip for powershell.exe; cherry-pick the FIX commit onto each open head.
 - CONFLICTING a-search FR vs later schema work: one origin/main fold must keep shouldPostSearch/hash quiet-path AND PAGE_SCHEMA rebuild; do not drop either side.
+- Entry /selftest fixture probes must not require provider secrets on the entry Lambda (vision S2). Require creds only when the probe will call the vendor HTTP API.
