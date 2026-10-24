@@ -634,3 +634,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Entry /selftest fixture probes must not require provider secrets on the entry Lambda (vision S2). Require creds only when the probe will call the vendor HTTP API.
 - Repo UAT: run live smoke-deploy against SearchApiUrl before cutting v0.1.0; FIFO SendMessage needs MessageGroupId; consolidate per-provider selftest intake twins to one packaging FR
 - When entry /selftest requires a live provider search.js, stage the same ../../../../worker/lib helpers the worker zip already ships (FR #4414); requiredEntryAssetPaths must list normalizeProduct.js.
+- MSSQL /selftest fixture probes must skip mssqlConfigFromEnv unless connect is injected so entry stays green without madeiradb secrets.
