@@ -381,7 +381,11 @@ function moneyFields(money) {
   if (money.displayAmount != null) {
     const raw = String(money.displayAmount).trim();
     // UK/US style: strip currency letters/symbols; keep digits and one dot.
+    // MRB #4809: bare currency text (e.g. "GBP") must not become price 0 via Number("").
     const cleaned = raw.replace(/[^0-9.]/g, '');
+    if (!cleaned || !/[0-9]/.test(cleaned)) {
+      return { price: undefined, currency };
+    }
     const n = Number(cleaned);
     if (Number.isFinite(n)) return { price: n, currency };
   }
