@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-059h: Rakuten selftest probe — credential check + recorded fixture path
+ * FR-059h / FR #4850: Rakuten selftest probe — recorded fixture path
  * (or injectable HTTP) proving Product Search client wiring works.
- * Other providers are out of scope.
+ * Live credentials are required only when deps.httpRequest is supplied.
  */
 
 const fs = require('node:fs');
@@ -53,8 +53,11 @@ async function probeRakutenSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveHttp = typeof deps.httpRequest === 'function';
   try {
-    assertRakutenCreds(env);
+    if (liveHttp) {
+      assertRakutenCreds(env);
+    }
   } catch (err) {
     const code =
       err && typeof err === 'object' && err.code

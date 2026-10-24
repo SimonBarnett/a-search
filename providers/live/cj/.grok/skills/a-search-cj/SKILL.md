@@ -48,7 +48,7 @@ See `.env.example`: `A_SEARCH_ENV`, `CJ_API_TOKEN`, `CJ_GRAPHQL_URL`,
 `CJ_WEBSITE_ID` (required for `linkCode(pid:)` / FR #4713), optional
 `CJ_COMPANY_ID`, `SQS_CJ_URL`, `S3_RESULTS_BUCKET`.
 
-Missing token → `CjCredsError` / `cj_missing_credentials`.
+Missing token on a live HTTP search → `CjCredsError` / `cj_missing_credentials`. Fixture-only `/selftest` (no `httpRequest`) does not require entry secrets (FR #4851).
 
 ## Failures
 

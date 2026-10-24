@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-066: Kelkoo selftest probe — credential check + recorded fixture path
+ * FR-066 / FR #4852: Kelkoo selftest probe — recorded fixture path
  * (or injectable HTTP) proving Shopping API client wiring works.
- * Enabled via FR-167; fixture selftest remains the offline pin.
+ * Live credentials are required only when deps.httpRequest is supplied.
  */
 
 const fs = require('node:fs');
@@ -54,8 +54,11 @@ async function probeKelkooSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveHttp = typeof deps.httpRequest === 'function';
   try {
-    assertKelkooCreds(env);
+    if (liveHttp) {
+      assertKelkooCreds(env);
+    }
   } catch (err) {
     const code =
       err && typeof err === 'object' && err.code

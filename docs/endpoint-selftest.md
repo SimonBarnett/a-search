@@ -108,9 +108,15 @@ The response **must** list provider status (at least `id` + `ok`) for every
 source checked. Agents use this table to decide which workers to trust before
 a catalogue enrich.
 
+<<<<<<< HEAD
 Local MSSQL / feed probes must not require `MSSQL_*` or feed tokens on the
 entry box (FR #4854-#4856). `*_mssql_missing_config` is only for the live
 `connect` path.
+=======
+Fixture-only probes (no injectable `httpRequest`) prove client wiring from
+recorded fixtures and **must not** require vendor secrets on the entry box
+(FR #4850-#4853). `*_missing_credentials` is only for the live HTTP path.
+>>>>>>> origin/main
 
 ## Intake on fail (CAST IRON)
 
@@ -129,6 +135,11 @@ eBay (FR #4849): the default recorded-fixture probe does **not** require
 that injects `httpRequest` still fail-closes with `ebay_missing_credentials`
 and does not call the vendor. Worker missing creds stay a job skip
 (`*_missing_credentials`), not an entry selftest FR.
+
+Impact (FR #4855): entry `/selftest` does **not** require `MSSQL_*` when no
+`connect` hook is injected. An injected `connect` still fail-closes with
+`impact_mssql_missing_config` (or `mssql_unreachable`) so unit tests keep the
+reachability contract.
 
 Auth/validation failures on the selftest request itself (**401** / **400**)
 do **not** file intake.
