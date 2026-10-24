@@ -7,13 +7,16 @@
  */
 
 const {
-  SQSClient,
-  SendMessageCommand,
-} = require('@aws-sdk/client-sqs');
-const {
   parseChangeEvent,
   isHostOrGuidMarkerKey,
 } = require('../../shared/aClubs/changeEvents');
+
+function defaultSendMessage() {
+  // Lazy: unit tests inject sendMessage and must not require the SDK at load.
+  const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+  const client = new SQSClient({});
+  return (input) => client.send(new SendMessageCommand(input));
+}
 
 /**
  * @param {unknown} event
@@ -65,10 +68,7 @@ async function enqueueAClubsChange(event, deps) {
   const send =
     deps && typeof deps.sendMessage === 'function'
       ? deps.sendMessage
-      : (() => {
-          const client = new SQSClient({});
-          return (input) => client.send(new SendMessageCommand(input));
-        })();
+      : defaultSendMessage();
 
   await send({
     QueueUrl: queueUrl,
