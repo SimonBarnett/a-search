@@ -621,3 +621,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
 - Amazon Creators client: when porting madeira paapi.js, keep hybrid searchItems+getItems for ASINs missing offer price, parse offersV2 displayAmount when amount absent, and stamp tracked /dp/{ASIN} when detailPageURL is omitted
 - Amazon Creators moneyFields: after stripping non-digits from displayAmount, require at least one digit or return undefined price (bare GBP must not Number("") -> 0)
+- Amazon Creators live path: UK token URL + www.amazon.co.uk marketplace regardless of AMAZON_HOST/REGION leftovers; mint LwA only; ignore AMAZON_CREATORS_CREDENTIAL (FR #4816 / MRB #4817)
