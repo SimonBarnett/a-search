@@ -59,6 +59,8 @@ See `.env.example`: `A_SEARCH_ENV`, `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`,
 `S3_RESULTS_BUCKET`.
 
 Missing client id/secret → `EbayCredsError` / `ebay_missing_credentials`.
+Entry `/selftest` fixture probe does not need those keys (FR #4849); HTTP
+probes and the worker still fail closed.
 
 ## Failures
 
