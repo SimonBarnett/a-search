@@ -126,6 +126,11 @@ that injects `httpRequest` still fail-closes with `ebay_missing_credentials`
 and does not call the vendor. Worker missing creds stay a job skip
 (`*_missing_credentials`), not an entry selftest FR.
 
+Impact (FR #4855): entry `/selftest` does **not** require `MSSQL_*` when no
+`connect` hook is injected. An injected `connect` still fail-closes with
+`impact_mssql_missing_config` (or `mssql_unreachable`) so unit tests keep the
+reachability contract.
+
 Auth/validation failures on the selftest request itself (**401** / **400**)
 do **not** file intake.
 
