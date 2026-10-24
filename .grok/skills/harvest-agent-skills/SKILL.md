@@ -619,3 +619,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - keywordsOnly: expand short product codes in parentheses (RTF/BNF) and only drop location-like parentheticals (comma/postcode/co.uk/UK place names)
 - Linksynergy none with long exclude strings widens to whole catalogue --- omit none and filter titles locally; retarget fr4544/fr4768 pins that expected none on the URL
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
+- Amazon Creators moneyFields: require a digit in cleaned displayAmount so currency-only strings do not Number("") to price 0 (MRB #4809 / #4811)
