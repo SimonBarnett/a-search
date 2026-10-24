@@ -631,3 +631,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sibling PRs stacked on FR #4827 need the same Linux skip for powershell.exe; cherry-pick the FIX commit onto each open head.
 - CONFLICTING a-search FR vs later schema work: one origin/main fold must keep shouldPostSearch/hash quiet-path AND PAGE_SCHEMA rebuild; do not drop either side.
 - FIFO SendMessage: if QueueUrl ends in .fifo always set MessageGroupId (default payload.source); do not wait for payload.messageGroupId. Standard queues still omit FIFO attrs (FR #4411).
+- When entry /selftest requires a live provider search.js, stage the same ../../../../worker/lib helpers the worker zip already ships (FR #4414); requiredEntryAssetPaths must list normalizeProduct.js.
