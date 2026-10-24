@@ -83,6 +83,11 @@ async function probeImpactSelftest(deps = {}) {
     if (configOk) {
       return { ok: true, source, latencyMs: elapsed() };
     }
+    // FR #4855: entry /selftest has no MSSQL_* (vision S2). Fail closed only
+    // when a connect hook is injected (unit / live reachability).
+    if (typeof deps.connect !== 'function') {
+      return { ok: true, source, latencyMs: elapsed() };
+    }
     const code =
       err && typeof err === 'object' && err.code
         ? String(err.code)

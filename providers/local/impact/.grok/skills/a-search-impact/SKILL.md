@@ -68,7 +68,7 @@ See `.env.example`: `A_SEARCH_ENV`, MSSQL connection placeholders,
 
 | Symptom | Check |
 |---------|--------|
-| `impact_mssql_missing_config` | `MSSQL_SERVER` + `MSSQL_DATABASE` (+ user or trusted) |
+| `impact_mssql_missing_config` | `MSSQL_SERVER` + `MSSQL_DATABASE` (+ user or trusted). Entry `/selftest` without a `connect` hook is ok without those keys (FR #4855). |
 | Login failed / timeout | MSSQL_SERVER / firewall / creds |
 | Empty products | Query too narrow; Parts not ingested for FeedKey |
 | env_mismatch | `message.env` !== `A_SEARCH_ENV` |
