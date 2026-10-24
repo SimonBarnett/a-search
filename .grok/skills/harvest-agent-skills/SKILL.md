@@ -637,3 +637,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Repo UAT: run live smoke-deploy against SearchApiUrl before cutting v0.1.0; FIFO SendMessage needs MessageGroupId; consolidate per-provider selftest intake twins to one packaging FR
 - When entry /selftest requires a live provider search.js, stage the same ../../../../worker/lib helpers the worker zip already ships (FR #4414); requiredEntryAssetPaths must list normalizeProduct.js.
 - Fixture-only /selftest for local MSSQL/feed providers must not require MSSQL_* or feed tokens on the entry box; gate config checks behind typeof deps.connect === function (FR #4854-#4856).
+- FR-043 pins a-search-awin SKILL.md /never silent/i as contiguous words; do not wrap that phrase across a newline.
