@@ -14,6 +14,7 @@
     "deploy": "node cdk/lib/fill-madeira-ssm-env.js && npm run stage-entry && npx --no-install cdk deploy --app \"node cdk/bin/a-search.js\" ASearchStack -c requireDeployEnv=true",
     "deploy:parts-gateway": "npm run stage-parts-gateway && npx --no-install cdk deploy --app \"node cdk/bin/parts-gateway.js\" APartsGateway -c requireDeployEnv=true",
     "smoke-deploy": "node scripts/smoke-deploy.js",
+    "smoke-selftest": "node scripts/smoke-selftest.js",
     "stage-entry": "node scripts/stage-entry-lambda-asset.js",
     "stage-parts-gateway": "node scripts/stage-parts-gateway-lambda-asset.js",
     "stage-maintainer": "node scripts/stage-maintainer-lambda-asset.js",
