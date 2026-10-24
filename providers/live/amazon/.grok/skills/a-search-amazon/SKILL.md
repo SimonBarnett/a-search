@@ -105,7 +105,7 @@ soak; never log secret values.
 | Symptom | Action |
 |---------|--------|
 | HTTP **429** / ThrottlingException | Exponential backoff; do **not** tight-loop the queue |
-| Burst of empty results | Check Keywords; still write JSON (`products: []`) |
+| Burst of empty results | Check Keywords; FR #4823: no IN file (log `provider_done products=0`) |
 | 401/403 | Keys, partner tag, marketplace/host mismatch |
 
 Recorded fixture: `fixtures/search-items-ok.json` (used by

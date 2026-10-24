@@ -40,6 +40,9 @@ Partial rows without id+title are skipped (no throw). Stay-dark.
 
 `src/worker.js` `run(msg, deps)` -- `assertWorkerEnv` -> `assertBolCreds` -> `searchBol` -> `normalizeSearchResponse` -> `writeLiveProviderInResult` (a-clubs IN/; legacy `writeResults` fallback). Injectable `httpRequest` / `putObject` / search / normalize. Optional `handler` for SQS Records. Stay-dark.
 
+FR #4823: write IN/ only when `products.length >= 1`; 0 matches log
+`provider_done products=0` (no IN, no DLQ).
+
 ## Selftest + pacing (FR-082)
 
 `src/selftestProbe.js` -- credential check + fixture (or injectable HTTP);

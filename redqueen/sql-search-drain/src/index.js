@@ -27,12 +27,16 @@ const {
  * @param {string} root
  */
 function writeSqlInResult(opts, root) {
+  const products = opts.products || [];
+  if (!Array.isArray(products) || products.length === 0) {
+    return { skipped: 'no_products', key: null };
+  }
   const body = buildInResult({
     searchid: opts.searchid,
     source: 'sql',
     hostkey: opts.hostkey,
     guid: opts.guid,
-    products: opts.products || [],
+    products,
     queries: opts.queries,
     exclude: opts.exclude,
   });

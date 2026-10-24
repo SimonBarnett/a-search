@@ -18,7 +18,7 @@ provider APIs do not rate-block the account.
 | Per source / per env | Live and sandbox queues stay separate (`docs/environments.md`). Pacing is **per queue** — sandbox must not share live concurrency budget. |
 | Back off on throttle | On 407 / 429 / provider "blocked" responses: use `shared/pacing/throttleBackoff.js` (`backoffOnHttpThrottle`) — sleep `Retry-After` (or default), then throw `ProviderThrottleError` so SQS can retry. Do **not** tight-loop HTTP in-process. |
 | Transient vendor HTTP (FR #4427) | Amazon PA-API / Creators HTML gateway **502/503/504** use `shared/search/backoff429.isTransientVendorHttp` + `handleSqsWith429` visibility backoff and skip intake spam on those SQS retries. Hard **500** responses still call intake. |
-| Provider API failures (FR #4769) | Non-success API responses (incl. Amazon `paapi_non_json` / `creators_not_eligible`, CJ `cj_not_authorised`, Rakuten `INVALID_CONTEXT_VALUE`, other 4xx/5xx) write **no** IN file; the Lambda fails so SQS retries into the provider DLQ. Real **429** still backs off. Success with 0 matches still writes an empty-products IN. |
+| Provider API failures (FR #4769) | Non-success API responses (incl. Amazon `paapi_non_json` / `creators_not_eligible`, CJ `cj_not_authorised`, Rakuten `INVALID_CONTEXT_VALUE`, other 4xx/5xx) write **no** IN file; the Lambda fails so SQS retries into the provider DLQ. Real **429** still backs off. Success with 0 matches writes **no** IN (FR #4823: INFO `provider_done ... products=0`, message acked). |
 | Fail-when | Sustained 407/429 from a provider after deploy, or workers configured with high `batchSize` / unbounded concurrency against a rate-limited API. |
 
 ## Operator knobs

@@ -34,6 +34,9 @@ Partial offers without `offerId`+`title` are skipped (no throw).
 `src/worker.js` — `run(msg)` / `handler`: `assertWorkerEnv` → `searchKelkoo` →
 `normalizeSearchResponse` → `writeResults` (injectable HTTP + putObject).
 
+FR #4823: write a-clubs IN/ only when `products.length >= 1`; 0 matches log
+`provider_done products=0` (no IN, no DLQ).
+
 ## Selftest + pacing (FR-066)
 
 `src/selftestProbe.js` — credential check + fixture (or injectable HTTP);

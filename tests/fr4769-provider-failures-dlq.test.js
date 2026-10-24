@@ -2,7 +2,7 @@
 
 /**
  * FR #4769: provider API failures must not write IN files; they fail into the
- * DLQ (Lambda throw + SQS maxReceiveCount). Success with 0 products still writes IN.
+ * DLQ (Lambda throw + SQS maxReceiveCount). Success with 0 products writes no IN (FR #4823).
  */
 
 const { describe, it } = require('node:test');
@@ -249,15 +249,17 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
     );
   });
 
-  it('200 with 0 products still writes IN', async () => {
+  it('200 with 0 products writes no IN, no DLQ, ok:true (FR #4823)', async () => {
     const puts = [];
     const out = await runCj(
       {
         searchId: 'srch_empty',
+        searchid: 'srch_empty',
         userId: 'U1',
         env: 'sandbox',
         source: 'cj',
         q: 'zzzz-no-match-4769',
+        hostkey: 'example.test',
         host: 'example.test',
         guid: 'g-empty',
       },
@@ -273,13 +275,11 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
     );
     assert.equal(out.ok, true);
     assert.deepEqual(out.products, []);
-    assert.ok(puts.length >= 1);
-    const body = JSON.parse(Buffer.from(puts[0].Body).toString('utf8'));
-    assert.deepEqual(body.products, []);
-    assert.ok(!body.status && !body.error);
+    assert.equal(out.key, null);
+    assert.equal(puts.length, 0);
   });
 
-  it('missing_credentials still acks with status IN (not a failure)', async () => {
+  it('missing_credentials still acks without status IN (FR #4823)', async () => {
     const puts = [];
     const err = new Error('no key');
     err.code = 'cj_missing_credentials';
@@ -311,6 +311,6 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
     });
     assert.equal(result.ok, true);
     assert.equal(result.results[0].skipped, 'missing_credentials');
-    assert.equal(puts.length, 1);
+    assert.equal(puts.length, 0);
   });
 });
