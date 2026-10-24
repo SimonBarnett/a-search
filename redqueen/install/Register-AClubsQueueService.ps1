@@ -3,6 +3,10 @@
 .SYNOPSIS
   Register the redqueen a-clubs queue drain as a Windows service via nssm (FR #4147 / #4164 / #4231 / #4240).
 
+  FR #4827: the replacement service name is a-annotator (exe a-annotator.exe), installed
+  together with a-sqlsearch by walrus\install\Register-ASearchWalrusServices.ps1.
+  This script remains for the legacy service name a-search-aclubs-queue (node redqueen\src\run.js).
+
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-aclubs-queue" with nssm wrapping
   `node redqueen\src\run.js` from InstallRoot (default C:\ai\a-search).

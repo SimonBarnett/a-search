@@ -179,7 +179,19 @@ async function main(opts) {
   return { exited: 0 };
 }
 
+function sqlSearchVersion() {
+  try {
+    return require('../../package.json').version || '0.1.0';
+  } catch {
+    return '0.1.0';
+  }
+}
+
 if (require.main === module) {
+  if (process.argv.indexOf('--version') !== -1) {
+    process.stdout.write(`a-sqlsearch ${sqlSearchVersion()}\n`);
+    process.exit(0);
+  }
   main().catch((err) => {
     console.error(err);
     process.exit(1);
@@ -210,4 +222,5 @@ module.exports = {
   runLoop,
   createTouchLastmodFs,
   main,
+  sqlSearchVersion,
 };

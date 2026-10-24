@@ -5,10 +5,12 @@
  *
  * Env:
  *   A_CLUBS_FOLDER_EVENTS_QUEUE_URL  (required)
+ *   A_CLUBS_CHANGES_QUEUE_URL        (optional second long-poll: EventBridge a-clubs-changes)
  *   A_CLUBS_BUCKET                   (default a-clubs)
  *   AWS_REGION                       (default eu-west-2)
  *   AWS_PROFILE                      (default a-search-redqueen-annotator)
- *   REDQUEEN_POLL_MS                 (default 5000)
+ *   REDQUEEN_POLL_MS                 (error backoff only; default 5000. Empty long-poll does not sleep)
+ *   REDQUEEN_SWEEP_MS                (stale-marker sweep; default 900000)
  *   REDQUEEN_ON_NEW_FOLDER           (optional path to .js hook module exporting onNewFolder)
  *   REDQUEEN_LOG_FILE                (optional rotating log path)
  *   REDQUEEN_REANNOTATE              (1/true/yes: rewrite markers even when already annotated)
@@ -20,9 +22,12 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { drainOnce } = require('./drain');
+const { drainDual } = require('./drain');
 const { defaultReviewHost, defaultReviewGuid } = require('./reviewers');
 const { createHttpPostSearch } = require('./guidSearch');
+const { runStaleSweep } = require('./staleSweep');
+
+const DEFAULT_SWEEP_MS = 900000;
 
 function logLine(obj) {
   const line = JSON.stringify({ ts: new Date().toISOString(), ...obj });
@@ -92,6 +97,16 @@ async function buildAwsDeps() {
 
   const s3 = new S3Client({ region, maxAttempts: 5 });
   const sqs = new SQSClient({ region, maxAttempts: 5 });
+  const selfEtags = new Map();
+  const changesQueueUrl = process.env.A_CLUBS_CHANGES_QUEUE_URL || '';
+
+  function noteEtag(key, etag) {
+    if (!key || !etag) return;
+    selfEtags.set(
+      String(key),
+      String(etag).replace(/^W\//i, '').replace(/"/g, '').trim().toLowerCase(),
+    );
+  }
 
   /** PutObjectAnnotation may be missing on older SDKs --- fall back to CLI. */
   async function putObjectAnnotation(input) {
@@ -235,7 +250,9 @@ async function buildAwsDeps() {
 
   return {
     queueUrl,
+    changesQueueUrl,
     bucket,
+    selfEtags,
     receiveMessage: (input) => sqs.send(new ReceiveMessageCommand(input)),
     deleteMessage: (input) => sqs.send(new DeleteMessageCommand(input)),
     changeMessageVisibility: (input) =>
@@ -244,12 +261,15 @@ async function buildAwsDeps() {
       s3.send(new HeadObjectCommand({ Bucket: bucket, ...input })),
     getObject: (input) =>
       s3.send(new GetObjectCommand({ Bucket: bucket, ...input })),
-    putObject: (input) =>
-      s3.send(new PutObjectCommand({ Bucket: bucket, ...input })),
+    putObject: async (input) => {
+      const resp = await s3.send(new PutObjectCommand({ Bucket: bucket, ...input }));
+      noteEtag(input && input.Key, resp && resp.ETag);
+      return resp;
+    },
     listObjectsV2: (input) =>
       s3.send(new ListObjectsV2Command({ Bucket: bucket, ...input })),
-    copyObject: (input) =>
-      s3.send(
+    copyObject: async (input) => {
+      const resp = await s3.send(
         new CopyObjectCommand({
           Bucket: bucket,
           CopySource: input.CopySource || `${bucket}/${input.Key}`,
@@ -257,7 +277,11 @@ async function buildAwsDeps() {
           Metadata: input.Metadata,
           MetadataDirective: input.MetadataDirective || 'REPLACE',
         }),
-      ),
+      );
+      const etag = resp && ((resp.CopyObjectResult && resp.CopyObjectResult.ETag) || resp.ETag);
+      noteEtag(input && input.Key, etag);
+      return resp;
+    },
     putObjectAnnotation,
     getObjectAnnotation,
     listObjectAnnotations,
@@ -269,38 +293,106 @@ async function buildAwsDeps() {
   };
 }
 
+/**
+ * Startup sweep, then dual long-poll. No extra sleep after an empty receive.
+ * REDQUEEN_POLL_MS is only the backoff after a thrown error.
+ * @param {object} deps
+ * @param {{
+ *   drain?: Function,
+ *   sweep?: Function,
+ *   sleep?: (ms: number) => Promise<void>,
+ *   now?: () => number,
+ *   sweepMs?: number,
+ *   errorSleepMs?: number,
+ *   maxLoops?: number,
+ *   log?: (obj: object) => void,
+ * }} [hooks]
+ */
+async function serviceLoop(deps, hooks) {
+  const h = hooks || {};
+  const drain = h.drain || drainDual;
+  const sweep = h.sweep || runStaleSweep;
+  const sleep = h.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const now = h.now || Date.now;
+  const sweepMs = h.sweepMs != null
+    ? Number(h.sweepMs)
+    : Number(process.env.REDQUEEN_SWEEP_MS || DEFAULT_SWEEP_MS);
+  const errorSleepMs = h.errorSleepMs != null
+    ? Number(h.errorSleepMs)
+    : Number(process.env.REDQUEEN_POLL_MS || 5000);
+  const log = h.log || logLine;
+  const maxLoops = h.maxLoops;
+
+  try {
+    await sweep(deps);
+  } catch (err) {
+    log({ ok: false, event: 'sweep', error: String((err && err.message) || err) });
+  }
+  let lastSweep = now();
+  let i = 0;
+  while (maxLoops == null || i < maxLoops) {
+    i += 1;
+    try {
+      const result = await drain(deps);
+      if (result && result.processed > 0) log({ ok: true, ...result });
+    } catch (err) {
+      log({ ok: false, error: String((err && err.message) || err) });
+      await sleep(errorSleepMs);
+      continue;
+    }
+    if (now() - lastSweep >= sweepMs) {
+      try {
+        await sweep(deps);
+      } catch (err) {
+        log({ ok: false, event: 'sweep', error: String((err && err.message) || err) });
+      }
+      lastSweep = now();
+    }
+  }
+  return { loops: i };
+}
+
 async function main() {
   const deps = await buildAwsDeps();
-  const pollMs = Number(process.env.REDQUEEN_POLL_MS || 5000);
   logLine({
     ok: true,
     event: 'start',
     profile: process.env.AWS_PROFILE || '(keys)',
     bucket: process.env.A_CLUBS_BUCKET || 'a-clubs',
+    changesQueue: Boolean(deps.changesQueueUrl),
+    sweepMs: Number(process.env.REDQUEEN_SWEEP_MS || DEFAULT_SWEEP_MS),
     searchConfigured: Boolean(
       process.env.A_SEARCH_API_URL &&
         (process.env.A_SEARCH_AGENT_API_KEY || process.env.A_SEARCH_AGENT_API_KEY_FILE),
     ),
   });
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    try {
-      const result = await drainOnce(deps);
-      if (result.processed > 0) {
-        logLine({ ok: true, ...result });
-      }
-    } catch (err) {
-      logLine({ ok: false, error: String(err && err.message || err) });
-    }
-    await new Promise((r) => setTimeout(r, pollMs));
+  await serviceLoop(deps, { log: logLine });
+}
+
+function annotatorVersion() {
+  try {
+    return require('../../package.json').version || '0.1.0';
+  } catch {
+    return '0.1.0';
   }
 }
 
 if (require.main === module) {
+  if (process.argv.indexOf('--version') !== -1) {
+    process.stdout.write(`a-annotator ${annotatorVersion()}\n`);
+    process.exit(0);
+  }
   main().catch((err) => {
     logLine({ ok: false, fatal: String(err && err.message || err) });
     process.exit(1);
   });
 }
 
-module.exports = { buildAwsDeps, main, loadOnNewFolderHook };
+module.exports = {
+  buildAwsDeps,
+  main,
+  loadOnNewFolderHook,
+  serviceLoop,
+  annotatorVersion,
+  DEFAULT_SWEEP_MS,
+};

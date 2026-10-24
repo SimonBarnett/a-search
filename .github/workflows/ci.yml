@@ -134,3 +134,37 @@ jobs:
       - name: Synth
         if: needs.classify.outputs.heavy == 'true' && steps.need_synth.outputs.synth == 'true'
         run: npm run synth
+
+  # FR #4827: Node SEA Windows exes. Linux runners download the matching win-x64 node.exe.
+  build-sea:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Version smoke (entries, before the exe inject)
+        run: |
+          node scripts/sea/annotator-entry.js --version
+          node scripts/sea/sqlsearch-entry.js --version
+
+      - name: Build SEA exes
+        run: node scripts/build-a-search-sea.js --smoke
+
+      - name: Upload a-annotator.exe and a-sqlsearch.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: a-search-sea-windows
+          path: |
+            dist/sea/a-annotator.exe
+            dist/sea/a-sqlsearch.exe
+          if-no-files-found: error

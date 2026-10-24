@@ -79,6 +79,20 @@ function annotationNeed(md, flags) {
 }
 
 /**
+ * FR #4827: a real edit bumped lastmod after the last annotation.
+ * Missing lastupdate is not enough — FR #4311 reposts those without a new review.
+ * REDQUEEN_REANNOTATE stays a search repost, not a second reviewer call.
+ * @param {Record<string, string>|undefined} md
+ * @returns {boolean}
+ */
+function markerContentStale(md) {
+  const meta = md || {};
+  const lastmod = String(meta.lastmod || '').trim();
+  const lastupdate = String(meta.lastupdate || '').trim();
+  return !!(lastmod && lastupdate && lastmod > lastupdate);
+}
+
+/**
  * @param {object} opts
  * @param {string} Key
  * @param {string} name
@@ -217,13 +231,15 @@ async function processFolderEvent(opts) {
     if (state === 'repost') anyRepost = true;
   }
   let storedHostAnn = await getNamedAnnotationJson(opts, markerKey, 'annotation');
-  const hostNeed = searchRepostOnly
-    ? 'skip'
-    : annotationNeed(hostMd, {
-      reannotate: Boolean(opts.reannotate),
-      stored: storedHostAnn,
-      expectSchema: HOST_SCHEMA,
-    });
+  // FR #4827: a host whose lastmod is newer than lastupdate is reviewed even
+  // when GUIDs only need a search repost. A fresh host stays on the repost path
+  // (FR #4311), including REDQUEEN_REANNOTATE.
+  const hostAnnNeed = annotationNeed(hostMd, {
+    reannotate: Boolean(opts.reannotate),
+    stored: storedHostAnn,
+    expectSchema: HOST_SCHEMA,
+  });
+  const hostNeed = searchRepostOnly && !markerContentStale(hostMd) ? 'skip' : hostAnnNeed;
 
   let hostAnnDoc = null;
   let hostLegacy = null;
@@ -364,7 +380,9 @@ async function annotateOneGuid(args) {
     return { action: 'skip', detail: 'guid_marker_missing' };
   }
   const guidMd = (markerHead.Metadata || markerHead.metadata) || {};
-  if (String(guidMd.annotated || '') === '1') {
+  if (String(guidMd.annotated || '') === '1' && !markerContentStale(guidMd)) {
+    // Fresh marker: repost /search (missing searchid or hash mismatch).
+    // lastmod > lastupdate falls through and re-reviews the page.
     try {
       const published = await publishGuidSearch({
         ...opts,
