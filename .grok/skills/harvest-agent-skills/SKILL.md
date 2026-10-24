@@ -631,4 +631,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sibling PRs stacked on FR #4827 need the same Linux skip for powershell.exe; cherry-pick the FIX commit onto each open head.
 - CONFLICTING a-search FR vs later schema work: one origin/main fold must keep shouldPostSearch/hash quiet-path AND PAGE_SCHEMA rebuild; do not drop either side.
 - FIFO SendMessage: if QueueUrl ends in .fifo always set MessageGroupId (default payload.source); do not wait for payload.messageGroupId. Standard queues still omit FIFO attrs (FR #4411).
+- Entry /selftest fixture probes must not require provider secrets on the entry Lambda (vision S2). Require creds only when the probe will call the vendor HTTP API.
 - Repo UAT: run live smoke-deploy against SearchApiUrl before cutting v0.1.0; FIFO SendMessage needs MessageGroupId; consolidate per-provider selftest intake twins to one packaging FR
