@@ -639,3 +639,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX on an already MERGED green product tip: ACK, confirm merge plus Closes, comment, DONE FIX with the assigned PR URL; do not open a new branch.
 - Fixture-only /selftest for local MSSQL/feed providers must not require MSSQL_* or feed tokens on the entry box; gate config checks behind typeof deps.connect === function (FR #4854-#4856).
 - FR-043 pins a-search-awin SKILL.md /never silent/i as contiguous words; do not wrap that phrase across a newline.
+- UAT S19 FR that adds smoke-selftest (mocked GET+POST, fail-closed unset JWT/URL) may PASS with ACCEPTABLE drift: live SearchApiUrl probe stays needs_human on the deploy host.
