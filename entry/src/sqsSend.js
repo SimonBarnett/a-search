@@ -84,10 +84,13 @@ function createSqsSendMessage(opts = {}) {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(payload),
     };
-    // FR #4030 / #4411: FIFO MessageGroupId + MessageDeduplicationId only when
-    // QueueUrl is FIFO. Standard queues (sql → a-search-db-backed) reject them.
-    if (payload.messageGroupId && isFifoQueueUrl(queueUrl)) {
-      input.MessageGroupId = String(payload.messageGroupId);
+    // FR #4030 / #4411 / #4847: FIFO MessageGroupId + MessageDeduplicationId
+    // only when QueueUrl is FIFO. Standard queues (sql → a-search-db-backed)
+    // reject them. POST /search fan-out (buildPayload) does not set
+    // messageGroupId — default to the source id so AWS does not return
+    // MissingParameter MessageGroupId.
+    if (isFifoQueueUrl(queueUrl)) {
+      input.MessageGroupId = String(payload.messageGroupId || sourceId);
       const dedupe =
         payload.messageDeduplicationId ||
         `${payload.searchid || payload.searchId || ''}-${sourceId}-${Date.now()}`;
