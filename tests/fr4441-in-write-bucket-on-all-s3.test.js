@@ -94,7 +94,15 @@ describe('FR #4441 Bucket on every IN/ S3 call', () => {
     await writeLiveProviderInResult({
       msg: MSG,
       source: 'amazon',
-      products: [],
+      products: [
+        {
+          id: 'asin-4441',
+          title: 'bucket probe',
+          url: 'https://example.test/p',
+          price: 1,
+          currency: 'GBP',
+        },
+      ],
       envVars: { A_CLUBS_BUCKET: 'a-clubs' },
       putObject: async (a) => {
         assert.equal(a.Bucket, 'a-clubs');

@@ -41,6 +41,9 @@ Fail closed when affiliate ids missing (never emit raw listing URL).
 `searchEtsy` -> `normalizeSearchResponse` -> `writeLiveProviderInResult` (a-clubs IN/;
 legacy `writeResults` fallback).
 
+FR #4823: write IN/ only when `products.length >= 1`; 0 matches log
+`provider_done products=0` (no IN, no DLQ).
+
 ## Selftest + pacing (FR-078)
 
 `src/selftestProbe.js` -- credential check (distinct `missing_shared_secret`) +

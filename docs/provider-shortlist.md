@@ -8,6 +8,11 @@ flags without code edits. Loader: `providers/loadRegistry.js` -> `enabled(env)`.
 Kinds: **live** (remote search API on each SQS job) vs **local** (owned part
 data / feed ingest - Awin-style).
 
+**Live IN contract (FR #4823):** write `a-clubs/{host}/{guid}/IN/{searchid}-{source}.json`
+only when the search returns **at least one product**. Zero products = INFO log
+(`provider_done ... products=0`) only (no IN, no DLQ). Provider API failures
+still fail into the per-source DLQ (FR #4769 / #4782).
+
 Legacy reference: Amazon PA-API, eBay Browse, Awin-as-local (`MerchantProducts`).
 ShareASale is **not** a candidate (merged into Awin; API gone Oct 2025).
 

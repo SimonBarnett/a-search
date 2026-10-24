@@ -144,4 +144,33 @@ describe('FR #4446 eBay agent queries', () => {
     assert.match(decodeURIComponent(urls[0]), /q=headphones/);
     assert.equal(keywordsFromMsg({ q: 'headphones' }), 'headphones');
   });
+
+  it('worker with no usable query writes no IN (FR #4823)', async () => {
+    const { run } = require('../providers/live/ebay/src/worker');
+    const puts = [];
+    const out = await run(
+      {
+        searchId: 'srch_4446_empty',
+        searchid: 'srch_4446_empty',
+        hostkey: 'shop.example',
+        guid: 'g-4446',
+        env: 'sandbox',
+        queries: [],
+        exclude: [{ match: 'fuel' }],
+      },
+      {
+        env: Object.assign({}, credEnv, { A_SEARCH_ENV: 'sandbox', A_CLUBS_BUCKET: 'a-clubs' }),
+        searchEbay: async () => [],
+        putObject: async (args) => {
+          puts.push(args);
+          return {};
+        },
+        touchLastmod: async () => {},
+      },
+    );
+    assert.equal(out.ok, true);
+    assert.deepEqual(out.products, []);
+    assert.equal(out.key, null);
+    assert.equal(puts.length, 0);
+  });
 });
