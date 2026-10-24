@@ -289,6 +289,8 @@ async function publishGuidSearch(opts) {
   });
   const postExisting = shouldPostSearch({ doc: existing, markerMeta });
   const schemaOk = existing.annotationSchema === PAGE_SCHEMA;
+  // searchid + matching hash (or no stored hash yet) stays quiet unless the
+  // stored searches.json is missing PAGE_SCHEMA and a new page review is present.
   if (
     existing.searchid &&
     !postExisting &&
