@@ -54,6 +54,8 @@ function parsePs1(rel) {
   assert.equal(r.status, 0, r.stdout + r.stderr);
 }
 
+const winPs = process.platform === 'win32';
+
 describe('FR #4827 SEA scripts and version', () => {
   it('build script uses esbuild, sea-config, postject, and downloads win node off Windows', () => {
     const src = read('scripts/build-a-search-sea.js');
@@ -106,8 +108,10 @@ describe('FR #4827 register script', () => {
   const rel = 'walrus/install/Register-ASearchWalrusServices.ps1';
 
   it('parses on Windows PowerShell 5.1 and names both services', () => {
-    parsePs1(rel);
-    parsePs1('scripts/Enable-AClubsEventBridge.ps1');
+    if (winPs) {
+      parsePs1(rel);
+      parsePs1('scripts/Enable-AClubsEventBridge.ps1');
+    }
     const src = read(rel);
     assert.match(src, /#Requires -Version 5\.1/);
     assert.match(src, /a-annotator/);
@@ -128,7 +132,10 @@ describe('FR #4827 register script', () => {
     assert.match(legacySql, /Register-ASearchWalrusServices\.ps1/);
   });
 
-  it('WhatIf masks secrets and removes the legacy sql drain', () => {
+  it(
+    'WhatIf masks secrets and removes the legacy sql drain',
+    { skip: winPs ? false : 'Windows PowerShell only (CI is Linux)' },
+    () => {
     const tmp = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'fr4827-'));
     const secret = path.join(tmp, 'sql.password');
     fs.writeFileSync(secret, 'FAKE_PASSWORD_NOT_A_SECRET\n', 'utf8');
@@ -176,7 +183,8 @@ describe('FR #4827 register script', () => {
     assert.match(out, /MSSQL_PASSWORD=\*\*\*/);
     assert.equal(out.includes('FAKE_PASSWORD_NOT_A_SECRET'), false);
     fs.rmSync(tmp, { recursive: true, force: true });
-  });
+    },
+  );
 });
 
 describe('FR #4827 CDK pins', () => {
