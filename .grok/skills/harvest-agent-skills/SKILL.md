@@ -626,3 +626,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Node SEA prep of the AWS SDK bundle Zone-OOMs on the default heap; spawn node --experimental-sea-config with NODE_OPTIONS --max-old-space-size=4096. PowerShell 5.1 rejects "$code:$text"; write "${code}". Reannotate stays a searches.json repost; only lastmod greater than lastupdate re-reviews.
 - EventBridge on imported a-clubs is Enable-AClubsEventBridge.ps1 not CDK; dual-poll WaitTimeSeconds 20 with no post-empty sleep; searcheshash avoids mass repost when searchid exists without hash (FR #4827).
 - Disk-capacity via-intake on a-search is GIVEUP not a product PR; file bobiverse Clear/SeatDisk FR for dead-pid a-search worktree reclaim; prefer E: job trees (FR #4945).
+- EventBridge suffix slash over-matches; route marker Object Created through a filter Lambda that keeps only hostkey/ and hostkey/uuid/ before a-clubs-changes
