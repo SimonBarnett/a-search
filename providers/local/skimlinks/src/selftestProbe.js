@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-070 / FR-168: Skimlinks selftest probe - credential check + recorded fixture path
+ * FR-070 / FR-168 / FR #4853: Skimlinks selftest probe - recorded fixture path
  * (or injectable HTTP) proving Product API client wiring works.
- * Registry enabled true (FR-168); fixture path remains the offline green pin.
+ * Live credentials are required only when deps.httpRequest is supplied.
  */
 
 const fs = require('node:fs');
@@ -56,8 +56,11 @@ async function probeSkimlinksSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveHttp = typeof deps.httpRequest === 'function';
   try {
-    assertSkimlinksCreds(env);
+    if (liveHttp) {
+      assertSkimlinksCreds(env);
+    }
   } catch (err) {
     const code =
       err && typeof err === 'object' && err.code

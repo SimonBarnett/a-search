@@ -39,7 +39,7 @@ FR #4823: write a-clubs IN/ only when `products.length >= 1`; 0 matches log
 
 ## Selftest + pacing (FR-066)
 
-`src/selftestProbe.js` — credential check + fixture (or injectable HTTP);
+`src/selftestProbe.js` — fixture (or injectable HTTP); live creds only when `httpRequest` is supplied (FR #4852);
 returns `{ ok, source, latencyMs, error? }` for `/selftest`.
 Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
 is a later FR while stay-dark).

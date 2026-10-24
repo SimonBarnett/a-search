@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR-059i: CJ selftest probe — credential check + recorded fixture path
+ * FR-059i / FR #4851: CJ selftest probe — recorded fixture path
  * (or injectable HTTP) proving GraphQL client wiring works.
- * Other providers are out of scope.
+ * Live credentials are required only when deps.httpRequest is supplied.
  */
 
 const fs = require('node:fs');
@@ -57,8 +57,11 @@ async function probeCjSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveHttp = typeof deps.httpRequest === 'function';
   try {
-    assertCjCreds(env);
+    if (liveHttp) {
+      assertCjCreds(env);
+    }
   } catch (err) {
     const code =
       err && typeof err === 'object' && err.code
