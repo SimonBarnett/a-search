@@ -28,8 +28,9 @@ Decision (LOCKED): Creators API runs **behind a feature flag**.
 **FR #4562** sets deploy default to Creators (`AMAZON_SEARCH_API=creators`).
 **FR #4807** madeira parity: Creators `getItems` price force, `displayAmount`
 parse, ASIN `/dp/` URL when `detailPageURL` absent (LwA creds as madeira
-`paapi.js`). Implementation: **FR-182+** / FR #4562 / #4807. See
-[docs/fr/FR-181.md](fr/FR-181.md).
+`paapi.js`). **FR #4816:** UK token URL and `www.amazon.co.uk` always (not from
+`AMAZON_HOST`/`AMAZON_REGION`); LwA mint only. Implementation: **FR-182+** /
+FR #4562 / #4807 / #4816. See [docs/fr/FR-181.md](fr/FR-181.md).
 
 
 ## Market hold - GBP / UK (LOCKED 2026-10-14)

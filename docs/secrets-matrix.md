@@ -77,7 +77,9 @@ awin/impact onboarding Lambdas) --- moving on-box under FR-3948 sibling FRs.
 Enabled live providers do not use Secrets Manager. Deploy bundles
 `providers/live/<id>/.env` into that worker Lambda. The worker reads the file
 at run time. Amazon, eBay, and Etsy files are filled from kebab-case
-`/madeira/amazon/{access-key,secret-key,associate-tag,host,region,creators-credential}`,
+`/madeira/amazon/{access-key,secret-key,associate-tag,host,region}`
+(fill reads those parameters in the `/madeira/aws-region` region, bootstrap
+`AWS_REGION` or `eu-west-2`; FR #4816; `creators-credential` is not mapped),
 `/madeira/ebay/{client-id,client-secret,campaign-id,marketplace-id}`, and
 `/madeira/etsy/{api-key}` SSM parameters **only when that provider is enabled**
 in `providers/registry.json` (FR #4650; `ebay/refresh-token` and
@@ -91,7 +93,7 @@ comes from the stack env (live means production).
 
 | Source | Keys (become env names) | Lambdas |
 |--------|-------------------------|---------|
-| amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` (Creators LwA from access/secret, FR #4721; `AMAZON_CREATORS_CREDENTIAL` optional bearer override from `/madeira/amazon/creators-credential`, FR #4584) | `a-search-amazon-worker-{live,sandbox}` |
+| amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` (Creators LwA from access/secret, FR #4721 / #4816; host/region are PA-API leftovers and do not pick Creators token URL or marketplace). If the madeira Lambda (`madeira-sqs-affiliate`) has `AMAZON_*` env overrides, those working values must also be in SSM -- compare names and lengths only, never print values. | `a-search-amazon-worker-{live,sandbox}` |
 | ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
 | rakuten | bundled `.env`: `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
 | cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |

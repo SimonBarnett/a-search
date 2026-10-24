@@ -23,6 +23,8 @@ const creatorsEnv = {
   A_SEARCH_ENV: 'sandbox',
   A_CLUBS_BUCKET: 'test-a-clubs',
   AMAZON_SEARCH_API: 'creators',
+  AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+  AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
   AMAZON_CREATORS_CREDENTIAL: 'FAKE_creators_cred',
   AMAZON_CREATORS_MARKETPLACE: 'www.amazon.co.uk',
   AMAZON_PARTNER_TAG: 'fake-tag-21',
@@ -160,7 +162,11 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
           },
           {
             env: creatorsEnv,
-            httpRequest: async () => {
+            sleep: async () => {},
+            httpRequest: async (req) => {
+              if (String(req.url).includes('/auth/o2/token')) {
+                return { access_token: 'FAKE_MINTED', expires_in: 3600 };
+              }
               const err = new Error('Amazon Creators HTTP 403');
               err.status = 403;
               err.code = 'creators_not_eligible';

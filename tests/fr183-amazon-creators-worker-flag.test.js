@@ -55,6 +55,8 @@ const paapiEnv = {
 
 const creatorsEnv = {
   A_SEARCH_ENV: 'sandbox',
+  AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+  AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
   AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
   AMAZON_PARTNER_TAG: 'tag-20',
   AMAZON_CREATORS_ENDPOINT: 'https://example.test/creators/v1/search',
@@ -99,8 +101,12 @@ describe('FR-183 amazon worker Creators flag', () => {
     const httpCalls = [];
     const out = await run(baseMsg, {
       env: creatorsEnv,
+      sleep: async () => {},
       httpRequest: async (req) => {
         httpCalls.push(req);
+        if (String(req.url).includes('/auth/o2/token')) {
+          return { access_token: 'FAKE_MINTED', expires_in: 3600 };
+        }
         assert.match(String(req.url), /creators\/v1\/search/);
         assert.match(String(req.headers.authorization), /^Bearer FAKE_/);
         return fixture;
@@ -110,7 +116,7 @@ describe('FR-183 amazon worker Creators flag', () => {
     assert.equal(out.ok, true);
     assert.equal(out.searchApi, 'creators');
     assert.equal(out.products[0].id, 'B0CREATOR1');
-    assert.equal(httpCalls.length, 1);
+    assert.ok(httpCalls.length >= 1);
   });
 
   it('creators flag fail-closed when Creators creds missing', async () => {

@@ -85,6 +85,8 @@ async function run(msg, deps) {
   const products = await searchFn(msg, {
     env: envVars,
     httpRequest: deps && deps.httpRequest,
+    sleep: deps && deps.sleep,
+    creatorsCredential: deps && deps.creatorsCredential,
   });
 
   const written = await writeLiveProviderInResult({

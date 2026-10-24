@@ -106,6 +106,8 @@ describe('FR-185 Creators tracked-link parity', () => {
     const credEnv = {
       A_SEARCH_ENV: 'sandbox',
       AMAZON_SEARCH_API: 'creators',
+      AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+      AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
       AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
       AMAZON_PARTNER_TAG: 'tag-20',
       AMAZON_CREATORS_ENDPOINT: 'https://example.test/creators/v1/search',
@@ -122,7 +124,13 @@ describe('FR-185 Creators tracked-link parity', () => {
       },
       {
         env: credEnv,
-        httpRequest: async () => fixture,
+        sleep: async () => {},
+        httpRequest: async (req) => {
+          if (String(req.url).includes('/auth/o2/token')) {
+            return { access_token: 'FAKE_MINTED', expires_in: 3600 };
+          }
+          return fixture;
+        },
         putObject: async () => ({ ETag: '"x"' }),
       },
     );

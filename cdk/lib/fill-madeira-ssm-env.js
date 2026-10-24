@@ -23,8 +23,6 @@ const MADEIRA_ENV_PARAMS = {
     ['/madeira/amazon/associate-tag', 'AMAZON_PARTNER_TAG', true],
     ['/madeira/amazon/host', 'AMAZON_HOST', true],
     ['/madeira/amazon/region', 'AMAZON_REGION', true],
-    // FR #4584 / #4562: Creators API credential (optional until PutParameter exists).
-    ['/madeira/amazon/creators-credential', 'AMAZON_CREATORS_CREDENTIAL', false],
   ],
   ebay: [
     ['/madeira/ebay/client-id', 'EBAY_CLIENT_ID', true],
@@ -71,6 +69,38 @@ function resolveEnabledMadeiraSourceIds(opts) {
   return enabled;
 }
 
+function isMadeiraPlaceholder(value) {
+  return String(value || '').trim().toUpperCase() === 'CHANGE_ME';
+}
+
+/**
+ * madeira getAwsRegion: bootstrap AWS_REGION || eu-west-2, then
+ * /madeira/aws-region override (FR #4816).
+ * @param {{
+ *   getParameter?: (name: string) => string|null|undefined,
+ *   env?: Record<string, string|undefined>,
+ * }} [opts]
+ * @returns {string}
+ */
+function resolveMadeiraSsmRegion(opts) {
+  const env = (opts && opts.env) || process.env;
+  const bootstrap =
+    (env.AWS_REGION && String(env.AWS_REGION).trim()) ||
+    (env.AWS_DEFAULT_REGION && String(env.AWS_DEFAULT_REGION).trim()) ||
+    'eu-west-2';
+  const getter = opts && typeof opts.getParameter === 'function' ? opts.getParameter : null;
+  if (!getter) return bootstrap;
+  let override = '';
+  try {
+    override = getter('/madeira/aws-region');
+  } catch {
+    override = '';
+  }
+  const text = override == null ? '' : String(override).trim();
+  if (!text || isMadeiraPlaceholder(text)) return bootstrap;
+  return text;
+}
+
 function renderDotEnv(pairs) {
   const lines = [
     '# Generated at deploy from /madeira/* SSM. Gitignored. Do not commit.',
@@ -114,7 +144,7 @@ function fillMadeiraProviderEnv(opts) {
         value = '';
       }
       const text = value == null ? '' : String(value).trim();
-      if (!text) {
+      if (!text || isMadeiraPlaceholder(text)) {
         if (required) missingKeys.push(paramName);
         continue;
       }
@@ -151,7 +181,21 @@ function formatDisabledProvidersWarning(disabled) {
   return `[a-search] providers disabled (missing credentials): ${parts.join('; ')}`;
 }
 
-function awsCliGetParameter(name) {
+function awsCliGetParameter(name, region) {
+  const ssmRegion =
+    region ||
+    resolveMadeiraSsmRegion({
+      getParameter: (n) => {
+        if (n === '/madeira/aws-region') {
+          return awsCliGetParameterOnce('/madeira/aws-region', process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2');
+        }
+        return '';
+      },
+    });
+  return awsCliGetParameterOnce(name, ssmRegion);
+}
+
+function awsCliGetParameterOnce(name, region) {
   try {
     const out = execFileSync(
       'aws',
@@ -166,7 +210,7 @@ function awsCliGetParameter(name) {
         '--output',
         'text',
         '--region',
-        process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2',
+        region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2',
       ],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     );
@@ -204,4 +248,6 @@ module.exports = {
   renderDotEnv,
   resolveEnabledMadeiraSourceIds,
   formatDisabledProvidersWarning,
+  resolveMadeiraSsmRegion,
+  isMadeiraPlaceholder,
 };
