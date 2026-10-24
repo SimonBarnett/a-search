@@ -108,15 +108,13 @@ The response **must** list provider status (at least `id` + `ok`) for every
 source checked. Agents use this table to decide which workers to trust before
 a catalogue enrich.
 
-<<<<<<< HEAD
-Local MSSQL / feed probes must not require `MSSQL_*` or feed tokens on the
-entry box (FR #4854-#4856). `*_mssql_missing_config` is only for the live
-`connect` path.
-=======
 Fixture-only probes (no injectable `httpRequest`) prove client wiring from
 recorded fixtures and **must not** require vendor secrets on the entry box
 (FR #4850-#4853). `*_missing_credentials` is only for the live HTTP path.
->>>>>>> origin/main
+
+Local MSSQL / feed probes must not require `MSSQL_*` or feed tokens on the
+entry box (FR #4854-#4856). `*_mssql_missing_config` is only for the live
+`connect` path.
 
 ## Intake on fail (CAST IRON)
 
