@@ -85,13 +85,13 @@ class PartsGatewayStack extends cdk.Stack {
     });
     changesQueue.grantConsumeMessages(redqueenUser);
 
-    const changeSuffixes = [
+    // Direct EventBridge → SQS for precise file suffixes (no Lambda hop).
+    const changeFileSuffixes = [
       { id: 'AClubsChangesWidgetJson', ruleName: 'a-clubs-changes-widget-json', suffix: 'widget.json' },
       { id: 'AClubsChangesSearchesJson', ruleName: 'a-clubs-changes-searches-json', suffix: 'searches.json' },
-      { id: 'AClubsChangesMarkers', ruleName: 'a-clubs-changes-markers', suffix: '/' },
     ];
-    for (let i = 0; i < changeSuffixes.length; i += 1) {
-      const spec = changeSuffixes[i];
+    for (let i = 0; i < changeFileSuffixes.length; i += 1) {
+      const spec = changeFileSuffixes[i];
       new events.Rule(this, spec.id, {
         ruleName: spec.ruleName,
         description: `FR #4827 Object Created suffix ${spec.suffix} -> a-clubs-changes`,
@@ -106,6 +106,39 @@ class PartsGatewayStack extends cdk.Stack {
         targets: [new targets.SqsQueue(changesQueue)],
       });
     }
+
+    // FR #4833: suffix `/` over-matches folder-like keys. Enqueue Lambda keeps
+    // only host marker `{host}/` and GUID marker `{host}/{uuid}/`.
+    const markerEnqueueFn = new lambda.Function(this, 'AClubsMarkerEnqueueFunction', {
+      functionName: 'a-search-aclubs-marker-enqueue',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'parts-gateway/src/enqueueAClubsChange.handler',
+      code: lambda.Code.fromAsset(assetDir),
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: {
+        A_CLUBS_CHANGES_QUEUE_URL: changesQueue.queueUrl,
+      },
+      logGroup: new logs.LogGroup(this, 'AClubsMarkerEnqueueLogGroup', {
+        retention: logs.RetentionDays.TWO_WEEKS,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+    });
+    changesQueue.grantSendMessages(markerEnqueueFn);
+    new events.Rule(this, 'AClubsChangesMarkers', {
+      ruleName: 'a-clubs-changes-markers',
+      description:
+        'FR #4833 Object Created suffix / -> marker enqueue Lambda (host/GUID only)',
+      eventPattern: {
+        source: ['aws.s3'],
+        detailType: ['Object Created'],
+        detail: {
+          bucket: { name: [A_CLUBS_BUCKET] },
+          object: { key: [{ suffix: '/' }] },
+        },
+      },
+      targets: [new targets.LambdaFunction(markerEnqueueFn)],
+    });
 
     // FR #4122: object annotations on folder markers (Put/Get/List/DeleteObjectAnnotation).
     // FR #4827: CopyObject so marker metadata REPLACE is allowed on the annotator user.
