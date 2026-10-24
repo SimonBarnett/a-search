@@ -623,3 +623,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon Creators moneyFields: after stripping non-digits from displayAmount, require at least one digit or return undefined price (bare GBP must not Number("") -> 0)
 - Amazon Creators live: do not derive token URL or marketplace from AMAZON_HOST/REGION leftovers; mint LwA only; fill /madeira/amazon/* from /madeira/aws-region and treat CHANGE_ME as missing
 - After FR #4816 ignores AMAZON_CREATORS_CREDENTIAL, Creators fixture pins that mock fetch 503 must set deps.creatorsCredential so the call hits searchItems not the token URL
+- Node SEA prep of the AWS SDK bundle Zone-OOMs on the default heap; spawn node --experimental-sea-config with NODE_OPTIONS --max-old-space-size=4096. PowerShell 5.1 rejects "$code:$text"; write "${code}". Reannotate stays a searches.json repost; only lastmod greater than lastupdate re-reviews.
