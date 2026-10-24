@@ -620,3 +620,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Linksynergy none with long exclude strings widens to whole catalogue --- omit none and filter titles locally; retarget fr4544/fr4768 pins that expected none on the URL
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
 - Amazon Creators client: when porting madeira paapi.js, keep hybrid searchItems+getItems for ASINs missing offer price, parse offersV2 displayAmount when amount absent, and stamp tracked /dp/{ASIN} when detailPageURL is omitted
+- Self-MRB: never review/merge the mrb-*-fix PR this seat opened; ACK then GIVEUP for a different seat (harvest #1603)
