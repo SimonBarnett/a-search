@@ -36,7 +36,7 @@ Registry folder `providers/local/skimlinks`. Enabled: live=false, sandbox=false
 
 ## Selftest + pacing (FR-070)
 
-`src/selftestProbe.js` — credential check + fixture (or injectable HTTP);
+`src/selftestProbe.js` — fixture (or injectable HTTP); live creds only when `httpRequest` is supplied (FR #4853);
 returns `{ ok, source, latencyMs, error? }` for `/selftest`.
 Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
 is a later FR while stay-dark).

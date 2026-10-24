@@ -556,6 +556,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Only registry awsSearch providers (amazon, ebay) get AWS queues and Lambdas; affiliates and merchants are searched by the walrus SQL drain. Do not cdk-deploy a teardown without Simon.
 - When an FR says only skimlinks leaves AWS, keep the other live keyword APIs enabled with awsSearch, and set skimlinks kind local under providers/local so the folder matches kind.
 - a-search FIX when test-and-synth fails fr149 hostile b<128 on docs/deploy.md: replace U+2014 with ASCII hyphen, keep UTF-8 no BOM; fold main if a sibling already landed the same ASCII row; do not self-MRB after synchronize (FR #4604)
+- Fixture-only /selftest probes must not require vendor secrets on the entry box; gate assert*Creds behind typeof deps.httpRequest === 'function' (FR #4850-#4853).
 - Rakuten Advertising Product Search is GET https://api.linksynergy.com/productsearch/1.0 with a Bearer token from RAKUTEN_PRODUCT_SEARCH_TOKEN; never put the token on the URL; missing token is rakuten_missing_credentials (FR #4438 intake-skip suffix).
 - A local-folder move of an HTTP provider makes FR-119 require classifyMssqlConnectError in its selftestProbe. Skip that probe; do not pretend an HTTP fixture check connects to MSSQL.
 - When skimlinks moves to kind local class affiliate, set shared/links/networkParams.js skimlinks class and the docs/tracked-links.md row to affiliate in the same commit or fr248 strictEquals getSourceClass to the registry.

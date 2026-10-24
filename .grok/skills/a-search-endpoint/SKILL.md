@@ -182,6 +182,7 @@ Or `POST /selftest` with JSON `{ "sandbox", "sources?" }`.
 | Auth | Same Bearer JWT; **`userId` from JWT only** |
 | Env | `sandbox: true` -> sandbox; omit/false -> live |
 | 200 body | `providers[]` with `id` + `ok` (+ optional `error`); `failed`; `intakeFiled` |
+| Fixture probes | No vendor secrets on entry (FR #4850–#4853); `*_missing_credentials` only with `httpRequest` |
 | Intake on fail | Each failed provider probe files intake with **`repo=SimonBarnett/a-search`** (redacted, deduped) |
 | 401/400 | No intake |
 
