@@ -15,6 +15,7 @@ const path = require('node:path');
 const { assertWidgetGuid, widgetDir, widgetFile } = require('./widgetPath');
 const { isFullTier, readSearches } = require('./agentWidgetContext');
 const { readLiveArray } = require('./parts');
+const { filterPartsByPage } = require('../../redqueen/src/pageSelect');
 
 const LIVE_PART_CAP_FREE = 10;
 const LIVE_PART_CAP_FULL = 500;
@@ -159,9 +160,10 @@ function mergeParts(live, incoming, exclude) {
  * @param {number} cap
  * @returns {object[]}
  */
-function selectWithinCap(parts, cap) {
+function selectWithinCap(parts, cap, ctx) {
   const n = Math.max(0, Number(cap) || 0);
-  const list = (parts || []).slice();
+  const filtered = filterPartsByPage(parts || [], ctx || {});
+  const list = filtered.slice();
   list.sort((a, b) => {
     const sa = Number.isFinite(Number(a && a.score)) ? Number(a.score) : 0;
     const sb = Number.isFinite(Number(b && b.score)) ? Number(b.score) : 0;
@@ -201,6 +203,16 @@ function readInArray(abs) {
  * @param {string} abs
  * @param {object[]} parts
  */
+function readJsonIfPresent(abs) {
+  try {
+    if (!fs.existsSync(abs)) return null;
+    const raw = JSON.parse(fs.readFileSync(abs, 'utf8'));
+    return raw && typeof raw === 'object' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 function writeLive(abs, parts) {
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.writeFileSync(abs, `${JSON.stringify(parts, null, 2)}\n`, 'utf8');
@@ -402,8 +414,10 @@ function runIngestPass(opts) {
   }
 
   const exclude = readSearches(searchesAbs).exclude;
+  const page = opts.pageAnnotation || readJsonIfPresent(path.join(dirAbs, 'annotation.json'));
+  const host = opts.hostAnnotation || readJsonIfPresent(path.join(path.dirname(dirAbs), 'annotation.json'));
   const merged = mergeParts(liveBefore, mapped, exclude);
-  const nextLive = selectWithinCap(merged, cap);
+  const nextLive = selectWithinCap(merged, cap, { page, host });
   writeLive(liveAbs, nextLive);
 
   for (const abs of claimed) {
@@ -457,6 +471,7 @@ module.exports = {
   writeLive,
   writeInSearchFile,
   listReadyInFiles,
+  readJsonIfPresent,
   inDirAbs,
   assertSearchId,
 };
