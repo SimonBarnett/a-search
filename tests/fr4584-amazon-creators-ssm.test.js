@@ -30,16 +30,14 @@ const REQUIRED_AMAZON = {
 };
 
 describe('FR #4584 amazon creators-credential SSM', () => {
-  it('MADEIRA_ENV_PARAMS maps creators-credential optionally', () => {
+  it('FR #4816: MADEIRA_ENV_PARAMS no longer maps creators-credential', () => {
     const row = MADEIRA_ENV_PARAMS.amazon.find(
       (r) => r[1] === 'AMAZON_CREATORS_CREDENTIAL',
     );
-    assert.ok(row, 'missing AMAZON_CREATORS_CREDENTIAL row');
-    assert.equal(row[0], '/madeira/amazon/creators-credential');
-    assert.equal(row[2], false);
+    assert.equal(row, undefined);
   });
 
-  it('writes AMAZON_CREATORS_CREDENTIAL when SSM value present', () => {
+  it('FR #4816: SSM creators-credential is ignored (not written to .env)', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fr4584-creators-'));
     fillMadeiraProviderEnv({
       repoRoot: root,
@@ -54,8 +52,8 @@ describe('FR #4584 amazon creators-credential SSM', () => {
       path.join(root, 'providers', 'live', 'amazon', '.env'),
       'utf8',
     );
-    assert.match(amazon, /AMAZON_CREATORS_CREDENTIAL=FAKE_CREATORS_CRED/);
-    assert.equal(amazon.includes('FAKE_CREATORS_CRED\n') || amazon.includes('FAKE_CREATORS_CRED'), true);
+    assert.equal(amazon.includes('AMAZON_CREATORS_CREDENTIAL'), false);
+    assert.match(amazon, /AMAZON_ACCESS_KEY=FAKE_AK/);
   });
 
   it('omits AMAZON_CREATORS_CREDENTIAL when SSM param missing', () => {

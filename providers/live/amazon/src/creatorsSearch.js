@@ -6,9 +6,9 @@
  * Deploy mints a Login-with-Amazon (LwA) access token via client_credentials
  * using AMAZON_ACCESS_KEY + AMAZON_SECRET_KEY (SSM /madeira/amazon/access-key
  * + secret-key), then POSTs https://creatorsapi.amazon/catalog/v1/searchItems
- * with Bearer + x-marketplace (UK: www.amazon.co.uk). Optional
- * AMAZON_CREATORS_CREDENTIAL overrides the bearer for fixtures only.
- * HTTP is injectable for recorded fixtures (no live network in pins).
+ * with Bearer + x-marketplace (UK: www.amazon.co.uk). FR #4816: live path
+ * always mints LwA (env AMAZON_CREATORS_CREDENTIAL ignored); deps.creatorsCredential
+ * remains for fixtures only. HTTP is injectable (no live network in pins).
  */
 
 const {
@@ -101,12 +101,8 @@ function resolveCreatorsMarketplace(env) {
       ? String(e.AMAZON_CREATORS_MARKETPLACE).trim()
       : '';
   if (explicit) return explicit;
-  const host = e.AMAZON_HOST != null ? String(e.AMAZON_HOST).toLowerCase() : '';
-  if (host.includes('amazon.com') && !host.includes('amazon.co.uk')) {
-    return 'www.amazon.com';
-  }
-  if (host.includes('amazon.de')) return 'www.amazon.de';
-  if (host.includes('amazon.fr')) return 'www.amazon.fr';
+  // FR #4816: madeira paapi.js hard-codes www.amazon.co.uk. Do not derive
+  // marketplace from AMAZON_HOST (PA-API leftover).
   return DEFAULT_MARKETPLACE;
 }
 
@@ -117,16 +113,26 @@ function resolveCreatorsTokenUrl(env) {
       ? String(e.AMAZON_CREATORS_TOKEN_URL).trim()
       : '';
   if (explicit) return explicit;
-  const region =
-    e.AMAZON_REGION != null ? String(e.AMAZON_REGION).toLowerCase() : '';
-  const host = e.AMAZON_HOST != null ? String(e.AMAZON_HOST).toLowerCase() : '';
-  if (
-    region.startsWith('us-') ||
-    (host.includes('amazon.com') && !host.includes('amazon.co.uk'))
-  ) {
-    return DEFAULT_TOKEN_URL_NA;
-  }
+  // FR #4816: madeira always POSTs api.amazon.co.uk. Do not derive from
+  // AMAZON_REGION / AMAZON_HOST (PA-API leftovers).
   return DEFAULT_TOKEN_URL_EU;
+}
+
+/**
+ * madeira: replace * with space and collapse whitespace.
+ * @param {string} raw
+ * @returns {string}
+ */
+function cleanCreatorsKeywords(raw) {
+  return String(raw || '')
+    .replace(/\*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function creatorsMaxPages(env) {
+  const n = parseInt(String((env && env.PAAPI_MAX_PAGES) || '5'), 10);
+  return Number.isFinite(n) && n > 0 ? n : 5;
 }
 
 /**
@@ -138,12 +144,13 @@ function readCreatorsCreds(env) {
     e.AMAZON_ACCESS_KEY != null ? String(e.AMAZON_ACCESS_KEY).trim() : '';
   const secretKey =
     e.AMAZON_SECRET_KEY != null ? String(e.AMAZON_SECRET_KEY).trim() : '';
-  const credential =
-    e.AMAZON_CREATORS_CREDENTIAL != null
-      ? String(e.AMAZON_CREATORS_CREDENTIAL).trim()
-      : '';
-  const partnerTag =
-    e.AMAZON_PARTNER_TAG != null ? String(e.AMAZON_PARTNER_TAG).trim() : '';
+  const partnerTagRaw =
+    e.AMAZON_PARTNER_TAG != null
+      ? String(e.AMAZON_PARTNER_TAG).trim()
+      : e.AMAZON_ASSOCIATE_TAG != null
+        ? String(e.AMAZON_ASSOCIATE_TAG).trim()
+        : '';
+  const partnerTag = partnerTagRaw;
   const endpoint =
     e.AMAZON_CREATORS_ENDPOINT != null &&
     String(e.AMAZON_CREATORS_ENDPOINT).trim()
@@ -154,7 +161,7 @@ function readCreatorsCreds(env) {
   return {
     accessKey,
     secretKey,
-    credential,
+    credential: '',
     partnerTag,
     endpoint,
     marketplace,
@@ -169,14 +176,11 @@ function assertCreatorsCreds(env) {
   const c = readCreatorsCreds(env);
   const missing = [];
   if (!c.partnerTag) missing.push('AMAZON_PARTNER_TAG');
-  if (!c.credential && (!c.accessKey || !c.secretKey)) {
-    if (!c.accessKey) missing.push('AMAZON_ACCESS_KEY');
-    if (!c.secretKey) missing.push('AMAZON_SECRET_KEY');
-    if (!c.credential) missing.push('AMAZON_CREATORS_CREDENTIAL');
-  }
+  if (!c.accessKey) missing.push('AMAZON_ACCESS_KEY');
+  if (!c.secretKey) missing.push('AMAZON_SECRET_KEY');
   if (missing.length) {
     throw new AmazonCreatorsCredsError(
-      `Amazon Creators credentials missing: ${missing.join(', ')}. Set AMAZON_ACCESS_KEY + AMAZON_SECRET_KEY (LwA) or AMAZON_CREATORS_CREDENTIAL override in providers/live/amazon/.env (never commit real secrets).`,
+      `Amazon Creators credentials missing: ${missing.join(', ')}. Set AMAZON_ACCESS_KEY + AMAZON_SECRET_KEY (LwA) and AMAZON_PARTNER_TAG or AMAZON_ASSOCIATE_TAG (madeira /madeira/amazon/*; never commit real secrets).`,
     );
   }
   return c;
@@ -259,7 +263,7 @@ function resolveGetItemsEndpoint(searchEndpoint) {
 }
 
 function buildCreatorsSearchRequest(msg, creds) {
-  const keywords = keywordsFromMsg(msg);
+  const keywords = cleanCreatorsKeywords(keywordsFromMsg(msg));
   const accessToken = String(
     creds.accessToken || creds.credential || '',
   ).trim();
@@ -268,7 +272,7 @@ function buildCreatorsSearchRequest(msg, creds) {
     keywords: keywords || ' ',
     partnerTag: creds.partnerTag,
     marketplace,
-    itemPage: 1,
+    itemPage: creds.itemPage != null ? Number(creds.itemPage) || 1 : 1,
     resources: CREATORS_ITEM_RESOURCES.slice(),
   });
   return {
@@ -660,6 +664,31 @@ async function enrichCreatorsPricesViaGetItems(items, creds, httpRequest) {
   }
 }
 
+function extractCreatorsItemList(json) {
+  const root = json && typeof json === 'object' ? json : {};
+  if (root.searchResult && Array.isArray(root.searchResult.items)) {
+    return root.searchResult.items;
+  }
+  if (root.itemsResult && Array.isArray(root.itemsResult.items)) {
+    return root.itemsResult.items;
+  }
+  if (Array.isArray(root.items)) return root.items;
+  if (Array.isArray(root.results)) return root.results;
+  return [];
+}
+
+function logCreatorsNon2xx(shape) {
+  const payload = {
+    tokenUrl: shape.tokenUrl,
+    endpoint: shape.endpoint,
+    marketplace: shape.marketplace,
+    partnerTag: shape.partnerTag,
+    bearerSource: shape.bearerSource,
+    status: shape.status,
+  };
+  console.error('[a-search] amazon creators fault', JSON.stringify(payload));
+}
+
 async function searchAmazonCreators(msg, deps) {
   const env = (deps && deps.env) || process.env;
   const creds = assertCreatorsCreds(env);
@@ -667,10 +696,20 @@ async function searchAmazonCreators(msg, deps) {
     deps && typeof deps.httpRequest === 'function'
       ? deps.httpRequest
       : defaultCreatorsHttpRequest;
+  const sleep =
+    deps && typeof deps.sleep === 'function'
+      ? deps.sleep
+      : (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  let accessToken = creds.credential;
+  let bearerSource = 'lwa';
+  let accessToken =
+    deps && deps.creatorsCredential
+      ? String(deps.creatorsCredential).trim()
+      : '';
+  if (accessToken) bearerSource = 'override';
   if (!accessToken) {
     accessToken = await mintCreatorsAccessToken(creds, httpRequest);
+    bearerSource = 'lwa';
   }
 
   const credsWithToken = {
@@ -678,30 +717,68 @@ async function searchAmazonCreators(msg, deps) {
     accessToken,
     getItemsEndpoint: resolveGetItemsEndpoint(creds.endpoint),
   };
-  const request = buildCreatorsSearchRequest(msg, credsWithToken);
-  const json = await httpRequest(request);
 
-  const root = json && typeof json === 'object' ? json : {};
-  const items =
-    root.searchResult && Array.isArray(root.searchResult.items)
-      ? root.searchResult.items
-      : root.itemsResult && Array.isArray(root.itemsResult.items)
-        ? root.itemsResult.items
-        : Array.isArray(root.items)
-          ? root.items
-          : Array.isArray(root.results)
-            ? root.results
-            : null;
+  const wrapHttp = async (req) => {
+    try {
+      return await httpRequest(req);
+    } catch (err) {
+      const status =
+        err && (err.status != null || err.statusCode != null)
+          ? err.status != null
+            ? err.status
+            : err.statusCode
+          : undefined;
+      logCreatorsNon2xx({
+        tokenUrl: creds.tokenUrl,
+        endpoint: creds.endpoint,
+        marketplace: creds.marketplace,
+        partnerTag: creds.partnerTag,
+        bearerSource,
+        status,
+      });
+      throw err;
+    }
+  };
 
-  if (items) {
-    await enrichCreatorsPricesViaGetItems(items, credsWithToken, httpRequest);
+  const allItems = [];
+  const maxPages = creatorsMaxPages(env);
+  for (let page = 1; page <= maxPages; ) {
+    const request = buildCreatorsSearchRequest(msg, {
+      ...credsWithToken,
+      itemPage: page,
+    });
+    try {
+      const json = await wrapHttp(request);
+      const items = extractCreatorsItemList(json);
+      allItems.push(...items);
+      if (items.length < 10) break;
+      page += 1;
+      if (page <= maxPages) await sleep(1100);
+    } catch (err) {
+      const status = err && err.status != null ? err.status : err && err.statusCode;
+      if (status === 429) {
+        await sleep(2000);
+        continue;
+      }
+      if (status === 401) {
+        clearCreatorsTokenCache();
+      }
+      throw err;
+    }
   }
 
-  return normalizeCreatorsResponse(json, {
-    userId: msg && msg.userId,
-    env: msg && msg.env,
-    envVars: env,
-  });
+  if (allItems.length) {
+    await enrichCreatorsPricesViaGetItems(allItems, credsWithToken, wrapHttp);
+  }
+
+  return normalizeCreatorsResponse(
+    { searchResult: { items: allItems } },
+    {
+      userId: msg && msg.userId,
+      env: msg && msg.env,
+      envVars: env,
+    },
+  );
 }
 
 module.exports = {
@@ -730,4 +807,5 @@ module.exports = {
   DEFAULT_GET_ITEMS_ENDPOINT,
   DEFAULT_TOKEN_URL_EU,
   CREATORS_ITEM_RESOURCES,
+  cleanCreatorsKeywords,
 };

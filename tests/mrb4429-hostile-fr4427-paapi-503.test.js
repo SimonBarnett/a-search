@@ -29,8 +29,10 @@ describe('docs/mrb-4429 hostile FR #4427', () => {
       status: 503,
       text: async () => '<html>Service Unavailable</html>',
     });
+    // FR #4816: env AMAZON_CREATORS_CREDENTIAL ignored; use deps.creatorsCredential for fixture.
     const creatorsEnv = {
-      AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
+      AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+      AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
       AMAZON_PARTNER_TAG: 'tag-20',
       AMAZON_CREATORS_ENDPOINT: 'https://example.test/creators/v1/search',
       AMAZON_SEARCH_API: 'creators',
@@ -40,7 +42,10 @@ describe('docs/mrb-4429 hostile FR #4427', () => {
         () =>
           searchAmazonCreators(
             { q: 'boots', userId: 'U1', env: 'sandbox', searchId: 's1' },
-            { env: creatorsEnv },
+            {
+              env: creatorsEnv,
+              creatorsCredential: 'FAKE_CREATORS_CREDENTIAL',
+            },
           ),
         (err) => {
           assert.match(String(err && err.message), /Creators non-JSON response \(503\)/);

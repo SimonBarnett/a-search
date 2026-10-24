@@ -40,7 +40,8 @@ const baseMsg = {
 
 const creatorsEnv = {
   A_SEARCH_ENV: 'sandbox',
-  AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
+  AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+  AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
   AMAZON_PARTNER_TAG: 'tag-20',
   AMAZON_CREATORS_ENDPOINT: 'https://example.test/creators/v1/search',
   AMAZON_SEARCH_API: 'creators',
@@ -68,16 +69,18 @@ describe('FR-182 Amazon Creators client', () => {
     assert.equal(isCreatorsSearchEnabled({ AMAZON_CREATORS_ENABLED: '0' }), false);
   });
 
-  it('assertCreatorsCreds requires partner tag + (access/secret or credential override)', () => {
+  it('assertCreatorsCreds requires partner tag + access/secret (FR #4816 LwA)', () => {
     assert.throws(
       () => assertCreatorsCreds({ AMAZON_PARTNER_TAG: 'tag-20' }),
       (err) => err instanceof AmazonCreatorsCredsError,
     );
-    assert.doesNotThrow(() =>
-      assertCreatorsCreds({
-        AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
-        AMAZON_PARTNER_TAG: 'tag-20',
-      }),
+    assert.throws(
+      () =>
+        assertCreatorsCreds({
+          AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
+          AMAZON_PARTNER_TAG: 'tag-20',
+        }),
+      (err) => err instanceof AmazonCreatorsCredsError,
     );
     assert.doesNotThrow(() =>
       assertCreatorsCreds({
@@ -93,8 +96,12 @@ describe('FR-182 Amazon Creators client', () => {
     const httpCalls = [];
     const products = await searchAmazonCreators(baseMsg, {
       env: creatorsEnv,
+      sleep: async () => {},
       httpRequest: async (req) => {
         httpCalls.push(req);
+        if (String(req.url).includes('/auth/o2/token')) {
+          return { access_token: 'FAKE_MINTED', expires_in: 3600 };
+        }
         assert.equal(req.method, 'POST');
         assert.match(req.url, /creators\/v1\/search/);
         assert.match(String(req.headers.authorization), /^Bearer FAKE_/);
@@ -104,7 +111,7 @@ describe('FR-182 Amazon Creators client', () => {
         return fixture;
       },
     });
-    assert.equal(httpCalls.length, 1);
+    assert.ok(httpCalls.length >= 1);
     assert.equal(products.length, 2);
     assert.equal(products[0].id, 'B0CREATOR1');
     assert.equal(products[0].title, 'Creators Fixture Wireless Headphones');

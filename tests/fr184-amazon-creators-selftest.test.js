@@ -27,6 +27,8 @@ const paapiEnv = {
 };
 
 const creatorsEnv = {
+  AMAZON_ACCESS_KEY: 'FAKE_CLIENT_ID',
+  AMAZON_SECRET_KEY: 'FAKE_CLIENT_SECRET',
   AMAZON_CREATORS_CREDENTIAL: 'FAKE_CREATORS_CREDENTIAL',
   AMAZON_PARTNER_TAG: 'tag-20',
   AMAZON_CREATORS_ENDPOINT: 'https://example.test/creators/v1/search',

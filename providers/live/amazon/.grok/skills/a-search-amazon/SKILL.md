@@ -58,6 +58,10 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
    - FR #4807 madeira parity: Creators `searchItems` then `getItems` for ASINs
      missing offer price; `displayAmount` parse; ASIN `/dp/` URL when
      `detailPageURL` absent (same LwA creds as madeira `paapi.js`)
+   - FR #4816: live Creators call matches madeira `paapi.js` -- UK token URL and
+     `www.amazon.co.uk` (not derived from `AMAZON_HOST`/`AMAZON_REGION`); always
+     mint LwA from access/secret (env `AMAZON_CREATORS_CREDENTIAL` ignored);
+     `PAAPI_MAX_PAGES` paging, 429 back-off, 401 token-cache clear
    - Permanent vendor faults (`paapi_non_json` / `creators_non_json` /
      `creators_not_eligible` AssociateNotEligible): fail into DLQ, no status IN
      / no intake (FR #4769 supersedes #4562 / #4739 status-IN path)
