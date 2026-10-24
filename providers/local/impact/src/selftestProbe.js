@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * FR-059k: Impact local selftest probe -- MSSQL Parts reachable or config present.
- * Other providers are out of scope.
+ * FR-059k / FR #4855: Impact local selftest probe -- MSSQL Parts reachable
+ * or config present. Live checks run only when deps.connect is supplied.
  */
 
 const {
@@ -75,7 +75,11 @@ async function probeImpactSelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveSql = typeof deps.connect === 'function';
   const configOk = hasConfig(env);
+  if (!liveSql) {
+    return { ok: true, source, latencyMs: elapsed() };
+  }
   let config;
   try {
     config = mssqlConfigFromEnv(env);

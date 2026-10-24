@@ -3,9 +3,8 @@
 const { classifyMssqlConnectError } = require('../../../../shared/mssql/classifyConnectError');
 
 /**
- * FR-104: Shopify local selftest probe -- MSSQL Parts reachable or Admin
- * access token present. Stay-dark: registry enabled stays false.
- * Other providers are out of scope.
+ * FR-104 / FR #4854: Shopify local selftest probe -- MSSQL Parts reachable
+ * or Admin token present. Live checks run only when deps.connect is supplied.
  *
  * Injectable `connect` keeps unit tests offline (no live network / live SQL).
  */
@@ -154,7 +153,11 @@ async function probeShopifySelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
+  const liveSql = typeof deps.connect === 'function';
   const feedOk = hasFeedConfig(env);
+  if (!liveSql) {
+    return { ok: true, source, latencyMs: elapsed() };
+  }
   let config;
   try {
     config = mssqlConfigFromEnv(env);

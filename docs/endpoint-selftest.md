@@ -108,6 +108,10 @@ The response **must** list provider status (at least `id` + `ok`) for every
 source checked. Agents use this table to decide which workers to trust before
 a catalogue enrich.
 
+Local MSSQL / feed probes must not require `MSSQL_*` or feed tokens on the
+entry box (FR #4854-#4856). `*_mssql_missing_config` is only for the live
+`connect` path.
+
 ## Intake on fail (CAST IRON)
 
 When a provider probe **fails**, the selftest **files intake** via the
