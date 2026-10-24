@@ -620,3 +620,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Linksynergy none with long exclude strings widens to whole catalogue --- omit none and filter titles locally; retarget fr4544/fr4768 pins that expected none on the URL
 - docs/mrb after product tip merged: fold main once, add phrase-exclude pin, PASS @ tip SHA with --auto; productSearchUrl may still accept none for unit tests
 - Amazon Creators client: when porting madeira paapi.js, keep hybrid searchItems+getItems for ASINs missing offer price, parse offersV2 displayAmount when amount absent, and stamp tracked /dp/{ASIN} when detailPageURL is omitted
+- FAIL-supersede skip / harvest-lesson PASS: madeira Creators hybrid getItems/displayAmount/dp URL already folded via PR #4810; do not re-tip
