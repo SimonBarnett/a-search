@@ -26,7 +26,10 @@ they do not unlock a silent client swap.
 Decision (LOCKED): Creators API runs **behind a feature flag**.
 **PA-API SearchItems remains** available via explicit `AMAZON_SEARCH_API=paapi`.
 **FR #4562** sets deploy default to Creators (`AMAZON_SEARCH_API=creators`).
-Implementation: **FR-182+** / FR #4562. See [docs/fr/FR-181.md](fr/FR-181.md).
+**FR #4807** madeira parity: Creators `getItems` price force, `displayAmount`
+parse, ASIN `/dp/` URL when `detailPageURL` absent (LwA creds as madeira
+`paapi.js`). Implementation: **FR-182+** / FR #4562 / #4807. See
+[docs/fr/FR-181.md](fr/FR-181.md).
 
 
 ## Market hold - GBP / UK (LOCKED 2026-10-14)

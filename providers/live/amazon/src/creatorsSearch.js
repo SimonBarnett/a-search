@@ -21,11 +21,21 @@ const { keywordsFromMsg } = require('./search');
 
 const DEFAULT_CREATORS_ENDPOINT =
   'https://creatorsapi.amazon/catalog/v1/searchItems';
+const DEFAULT_GET_ITEMS_ENDPOINT =
+  'https://creatorsapi.amazon/catalog/v1/getItems';
 const DEFAULT_TOKEN_URL_EU = 'https://api.amazon.co.uk/auth/o2/token';
 const DEFAULT_TOKEN_URL_NA = 'https://api.amazon.com/auth/o2/token';
 const DEFAULT_MARKETPLACE = 'www.amazon.co.uk';
 const CREATORS_SCOPE = 'creatorsapi::default';
 const TOKEN_SKEW_MS = 60_000;
+const GET_ITEMS_BATCH = 10;
+/** Resources shared by searchItems + getItems (madeira paapi.js parity, FR #4807). */
+const CREATORS_ITEM_RESOURCES = [
+  'images.primary.medium',
+  'itemInfo.title',
+  'offersV2.listings.price',
+  'itemInfo.byLineInfo',
+];
 
 /** @type {{ accessToken: string, expiresAt: number }} */
 let _tokenCache = { accessToken: '', expiresAt: 0 };
@@ -240,6 +250,14 @@ async function mintCreatorsAccessToken(creds, httpRequest) {
  * @param {object} msg
  * @param {object} creds - readCreatorsCreds + accessToken (or credential)
  */
+function resolveGetItemsEndpoint(searchEndpoint) {
+  const ep = String(searchEndpoint || DEFAULT_CREATORS_ENDPOINT).trim();
+  if (/\/searchItems\/?$/i.test(ep)) {
+    return ep.replace(/\/searchItems\/?$/i, '/getItems');
+  }
+  return DEFAULT_GET_ITEMS_ENDPOINT;
+}
+
 function buildCreatorsSearchRequest(msg, creds) {
   const keywords = keywordsFromMsg(msg);
   const accessToken = String(
@@ -250,11 +268,8 @@ function buildCreatorsSearchRequest(msg, creds) {
     keywords: keywords || ' ',
     partnerTag: creds.partnerTag,
     marketplace,
-    resources: [
-      'images.primary.small',
-      'itemInfo.title',
-      'offersV2.listings.price',
-    ],
+    itemPage: 1,
+    resources: CREATORS_ITEM_RESOURCES.slice(),
   });
   return {
     method: 'POST',
@@ -267,6 +282,54 @@ function buildCreatorsSearchRequest(msg, creds) {
     },
     body,
   };
+}
+
+/**
+ * madeira paapi.js GetItems body (asinList) — credentials proven on that shape.
+ * @param {string[]} asins
+ * @param {object} creds
+ */
+function buildCreatorsGetItemsRequest(asins, creds) {
+  const accessToken = String(
+    creds.accessToken || creds.credential || '',
+  ).trim();
+  const marketplace = creds.marketplace || DEFAULT_MARKETPLACE;
+  const endpoint =
+    creds.getItemsEndpoint || resolveGetItemsEndpoint(creds.endpoint);
+  const body = JSON.stringify({
+    asinList: asins,
+    partnerTag: creds.partnerTag,
+    marketplace,
+    resources: CREATORS_ITEM_RESOURCES.slice(),
+  });
+  return {
+    method: 'POST',
+    url: endpoint,
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
+      accept: 'application/json',
+      'x-marketplace': marketplace,
+    },
+    body,
+  };
+}
+
+/**
+ * Absolute /dp/ASIN URL for a marketplace host (madeira builds affiliate_url
+ * from ASIN when Creators omits detailPageURL).
+ * @param {string} asin
+ * @param {string} [marketplace]
+ * @returns {string}
+ */
+function detailUrlForAsin(asin, marketplace) {
+  const id = String(asin || '').trim();
+  if (!id) return '';
+  const host = String(marketplace || DEFAULT_MARKETPLACE)
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
+  return `https://${host || DEFAULT_MARKETPLACE}/dp/${id}`;
 }
 
 function pickTitle(item) {
@@ -286,19 +349,66 @@ function pickImage(item) {
   if (!item || typeof item !== 'object') return undefined;
   if (item.imageUrl != null) return String(item.imageUrl);
   const primary = item.images && item.images.primary;
+  // Prefer medium (madeira / Creators sample) then small / bare url.
+  if (primary && primary.medium && primary.medium.url) {
+    return String(primary.medium.url);
+  }
   if (primary && primary.small && primary.small.url) {
     return String(primary.small.url);
   }
-  if (primary && primary.medium && primary.medium.url) {
-    return String(primary.medium.url);
+  if (primary && primary.large && primary.large.url) {
+    return String(primary.large.url);
   }
   if (primary && primary.url) return String(primary.url);
   return undefined;
 }
 
+/**
+ * Parse Creators/PA money: prefer numeric amount, else displayAmount ("£29.99").
+ * @param {object|null|undefined} money
+ * @returns {{ price: number|undefined, currency: string|undefined }}
+ */
+function moneyFields(money) {
+  if (!money || typeof money !== 'object') {
+    return { price: undefined, currency: undefined };
+  }
+  const currency =
+    money.currency != null ? String(money.currency) : undefined;
+  if (money.amount != null && String(money.amount).trim() !== '') {
+    const n = Number(money.amount);
+    if (Number.isFinite(n)) return { price: n, currency };
+  }
+  if (money.displayAmount != null) {
+    const raw = String(money.displayAmount).trim();
+    // UK/US style: strip currency letters/symbols; keep digits and one dot.
+    const cleaned = raw.replace(/[^0-9.]/g, '');
+    const n = Number(cleaned);
+    if (Number.isFinite(n)) return { price: n, currency };
+  }
+  return { price: undefined, currency };
+}
+
 function pickPrice(item) {
   if (!item || typeof item !== 'object') {
     return { price: undefined, currency: undefined };
+  }
+  if (item.forcedPrice != null && typeof item.forcedPrice !== 'object') {
+    const n = Number(item.forcedPrice);
+    if (Number.isFinite(n)) {
+      return {
+        price: n,
+        currency: item.currency != null ? String(item.currency) : undefined,
+      };
+    }
+    const fromDisplay = moneyFields({ displayAmount: item.forcedPrice });
+    if (fromDisplay.price != null) {
+      return {
+        price: fromDisplay.price,
+        currency:
+          fromDisplay.currency ||
+          (item.currency != null ? String(item.currency) : undefined),
+      };
+    }
   }
   if (item.price != null && typeof item.price !== 'object') {
     return {
@@ -312,16 +422,56 @@ function pickPrice(item) {
     item.offersV2.listings[0];
   const money =
     listing && listing.price && (listing.price.money || listing.price);
-  if (money && money.amount != null) {
-    return {
-      price: Number(money.amount),
-      currency: money.currency != null ? String(money.currency) : undefined,
-    };
-  }
+  const parsed = moneyFields(money);
+  if (parsed.price != null) return parsed;
   return {
     price: undefined,
     currency: item.currency != null ? String(item.currency) : undefined,
   };
+}
+
+function itemHasOfferPrice(item) {
+  const { price } = pickPrice(item);
+  return price != null && Number.isFinite(price);
+}
+
+/**
+ * Merge GetItems offer/price onto searchItems rows missing price (madeira hybrid).
+ * @param {object[]} items
+ * @param {object} getJson
+ */
+function mergeGetItemsPrices(items, getJson) {
+  const root = getJson && typeof getJson === 'object' ? getJson : {};
+  const got =
+    root.getItemsResult && Array.isArray(root.getItemsResult.items)
+      ? root.getItemsResult.items
+      : root.itemsResult && Array.isArray(root.itemsResult.items)
+        ? root.itemsResult.items
+        : Array.isArray(root.items)
+          ? root.items
+          : [];
+  for (const getItem of got) {
+    if (!getItem || getItem.asin == null) continue;
+    const asin = String(getItem.asin);
+    const original = items.find(
+      (i) => i && i.asin != null && String(i.asin) === asin,
+    );
+    if (!original) continue;
+    const { price, currency } = pickPrice(getItem);
+    if (price != null && Number.isFinite(price)) {
+      original.forcedPrice = price;
+      if (currency) original.currency = currency;
+    }
+    if (
+      getItem.offersV2 &&
+      (!original.offersV2 || !itemHasOfferPrice(original))
+    ) {
+      original.offersV2 = getItem.offersV2;
+    }
+    if (!original.detailPageURL && !original.detailPageUrl && getItem.detailPageURL) {
+      original.detailPageURL = getItem.detailPageURL;
+    }
+  }
 }
 
 /**
@@ -368,9 +518,19 @@ function normalizeCreatorsItem(item, track) {
   const { price, currency } = pickPrice(item);
 
   let url;
-  const detail = String(
+  let detail = String(
     item.detailPageURL || item.detailPageUrl || item.url || item.link || '',
   ).trim();
+  // madeira paapi.js always builds https://{marketplace}/dp/{asin}?tag=...
+  // when Creators omits detailPageURL (FR #4807).
+  if (!detail && id) {
+    const marketplace =
+      (track &&
+        track.envVars &&
+        resolveCreatorsMarketplace(track.envVars)) ||
+      DEFAULT_MARKETPLACE;
+    detail = detailUrlForAsin(id, marketplace);
+  }
   if (detail) {
     if (!track || typeof track !== 'object') {
       throw new TrackedUrlError(
@@ -466,6 +626,36 @@ async function defaultCreatorsHttpRequest(req) {
  * }} [deps]
  * @returns {Promise<object[]>} products
  */
+/**
+ * After searchItems, force prices via GetItems for ASINs missing offer data
+ * (madeira-sqs-affiliate/routes/paapi.js hybrid — FR #4807).
+ * @param {object[]} items
+ * @param {object} creds
+ * @param {(req: object) => Promise<object>} httpRequest
+ */
+async function enrichCreatorsPricesViaGetItems(items, creds, httpRequest) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  const need = items.filter(
+    (item) =>
+      item &&
+      item.asin != null &&
+      String(item.asin).trim() !== '' &&
+      !itemHasOfferPrice(item),
+  );
+  if (need.length === 0) return;
+
+  for (let i = 0; i < need.length; i += GET_ITEMS_BATCH) {
+    const batch = need.slice(i, i + GET_ITEMS_BATCH).map((it) => String(it.asin));
+    try {
+      const req = buildCreatorsGetItemsRequest(batch, creds);
+      const json = await httpRequest(req);
+      mergeGetItemsPrices(items, json);
+    } catch {
+      // madeira logs and continues; searchItems rows still usable without price
+    }
+  }
+}
+
 async function searchAmazonCreators(msg, deps) {
   const env = (deps && deps.env) || process.env;
   const creds = assertCreatorsCreds(env);
@@ -479,11 +669,30 @@ async function searchAmazonCreators(msg, deps) {
     accessToken = await mintCreatorsAccessToken(creds, httpRequest);
   }
 
-  const request = buildCreatorsSearchRequest(msg, {
+  const credsWithToken = {
     ...creds,
     accessToken,
-  });
+    getItemsEndpoint: resolveGetItemsEndpoint(creds.endpoint),
+  };
+  const request = buildCreatorsSearchRequest(msg, credsWithToken);
   const json = await httpRequest(request);
+
+  const root = json && typeof json === 'object' ? json : {};
+  const items =
+    root.searchResult && Array.isArray(root.searchResult.items)
+      ? root.searchResult.items
+      : root.itemsResult && Array.isArray(root.itemsResult.items)
+        ? root.itemsResult.items
+        : Array.isArray(root.items)
+          ? root.items
+          : Array.isArray(root.results)
+            ? root.results
+            : null;
+
+  if (items) {
+    await enrichCreatorsPricesViaGetItems(items, credsWithToken, httpRequest);
+  }
+
   return normalizeCreatorsResponse(json, {
     userId: msg && msg.userId,
     env: msg && msg.env,
@@ -499,13 +708,22 @@ module.exports = {
   AmazonCreatorsCredsError,
   AmazonCreatorsHttpError,
   buildCreatorsSearchRequest,
+  buildCreatorsGetItemsRequest,
   normalizeCreatorsResponse,
   readCreatorsCreds,
   mintCreatorsAccessToken,
   resolveCreatorsTokenUrl,
   resolveCreatorsMarketplace,
+  resolveGetItemsEndpoint,
   clearCreatorsTokenCache,
   classifyCreatorsHttpFault,
+  pickPrice,
+  pickImage,
+  detailUrlForAsin,
+  moneyFields,
+  mergeGetItemsPrices,
   DEFAULT_CREATORS_ENDPOINT,
+  DEFAULT_GET_ITEMS_ENDPOINT,
   DEFAULT_TOKEN_URL_EU,
+  CREATORS_ITEM_RESOURCES,
 };

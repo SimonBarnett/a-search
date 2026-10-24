@@ -55,10 +55,13 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
    (`AMAZON_SEARCH_API=paapi`): same access/secret/partnerTag keys
 3. Search HTTP (`src/search.js` or `src/creatorsSearch.js`); injectable `httpRequest`
    - FR-182/183 / #4562: Creators default on; explicit `paapi` keeps PA-API
+   - FR #4807 madeira parity: Creators `searchItems` then `getItems` for ASINs
+     missing offer price; `displayAmount` parse; ASIN `/dp/` URL when
+     `detailPageURL` absent (same LwA creds as madeira `paapi.js`)
    - Permanent vendor faults (`paapi_non_json` / `creators_non_json` /
      `creators_not_eligible` AssociateNotEligible): fail into DLQ, no status IN
      / no intake (FR #4769 supersedes #4562 / #4739 status-IN path)
-4. Normalize items (`src/normalize.js`) - `products[]`
+4. Normalize items (`src/normalize.js` / Creators normalize in `creatorsSearch.js`) - `products[]`
 5. `writeLiveProviderInResult` - a-clubs `IN/{searchid}-amazon.json`
 
 Message shape: `searchId`, `userId`, `env`, `q` / `searchterms`, `catalogId`,
