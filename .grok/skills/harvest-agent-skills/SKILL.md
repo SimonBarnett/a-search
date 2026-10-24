@@ -622,3 +622,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon Creators client: when porting madeira paapi.js, keep hybrid searchItems+getItems for ASINs missing offer price, parse offersV2 displayAmount when amount absent, and stamp tracked /dp/{ASIN} when detailPageURL is omitted
 - Amazon Creators moneyFields: after stripping non-digits from displayAmount, require at least one digit or return undefined price (bare GBP must not Number("") -> 0)
 - Amazon Creators live: do not derive token URL or marketplace from AMAZON_HOST/REGION leftovers; mint LwA only; fill /madeira/amazon/* from /madeira/aws-region and treat CHANGE_ME as missing
+- Self-MRB: never review/merge the docs/mrb-N PR this seat opened; ACK then GIVEUP for a different seat
