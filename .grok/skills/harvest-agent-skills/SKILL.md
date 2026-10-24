@@ -630,3 +630,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4827 register tests: skip powershell.exe parse/WhatIf when process.platform is not win32; Linux CI has no WinPS 5.1.
 - Sibling PRs stacked on FR #4827 need the same Linux skip for powershell.exe; cherry-pick the FIX commit onto each open head.
 - CONFLICTING a-search FR vs later schema work: one origin/main fold must keep shouldPostSearch/hash quiet-path AND PAGE_SCHEMA rebuild; do not drop either side.
+- FIFO SendMessage: if QueueUrl ends in .fifo always set MessageGroupId (default payload.source); do not wait for payload.messageGroupId. Standard queues still omit FIFO attrs (FR #4411).
