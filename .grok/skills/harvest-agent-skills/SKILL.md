@@ -627,3 +627,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - EventBridge on imported a-clubs is Enable-AClubsEventBridge.ps1 not CDK; dual-poll WaitTimeSeconds 20 with no post-empty sleep; searcheshash avoids mass repost when searchid exists without hash (FR #4827).
 - Disk-capacity via-intake on a-search is GIVEUP not a product PR; file bobiverse Clear/SeatDisk FR for dead-pid a-search worktree reclaim; prefer E: job trees (FR #4945).
 - EventBridge suffix slash over-matches; route marker Object Created through a filter Lambda that keeps only hostkey/ and hostkey/uuid/ before a-clubs-changes
+- FR #4827 register tests: skip powershell.exe parse/WhatIf when process.platform is not win32; Linux CI has no WinPS 5.1.
