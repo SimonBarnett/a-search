@@ -13,7 +13,7 @@ Both exes accept `--version` and exit 0 without AWS or SQL. Build them with `npm
 
 ## Queues
 
-`a-annotator` long-polls with `WaitTimeSeconds` 20 and does not sleep again after an empty receive. Set `A_CLUBS_CHANGES_QUEUE_URL` for the second queue. EventBridge rules on bucket `a-clubs` send Object Created for `widget.json`, `searches.json`, and keys ending in `/` to `a-clubs-changes` (DLQ `a-clubs-changes-dlq`).
+`a-annotator` long-polls with `WaitTimeSeconds` 20 and does not sleep again after an empty receive. Set `A_CLUBS_CHANGES_QUEUE_URL` for the second queue. EventBridge rules on bucket `a-clubs` send Object Created for `widget.json` and `searches.json` straight to `a-clubs-changes` (DLQ `a-clubs-changes-dlq`). Keys ending in `/` go to Lambda `a-search-aclubs-marker-enqueue` (FR #4833), which enqueues only host markers `{hostkey}/` and GUID markers `{hostkey}/{uuid}/` --- deep folder keys are dropped before SQS.
 
 Keys under `IN/` and `search-fanout.json` are skipped. The annotator remembers the ETag of its own PutObject and CopyObject and drops those events.
 

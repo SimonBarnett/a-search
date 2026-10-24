@@ -69,6 +69,24 @@ function hostGuidFromKey(key) {
   return guid ? { hostkey, guid } : { hostkey };
 }
 
+const GUID_SEGMENT_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/**
+ * FR #4833: true only for host marker `{hostkey}/` or GUID marker `{hostkey}/{uuid}/`.
+ * Deep folder keys ending in `/` (e.g. `{host}/{guid}/subdir/`) are not markers.
+ * @param {unknown} key
+ * @returns {boolean}
+ */
+function isHostOrGuidMarkerKey(key) {
+  const decoded = decodeKey(key);
+  if (!decoded || !decoded.endsWith('/')) return false;
+  if (isExcludedKey(decoded)) return false;
+  const parts = decoded.split('/').filter((p) => p.length > 0);
+  if (parts.length === 1) return true;
+  if (parts.length === 2 && GUID_SEGMENT_RE.test(parts[1])) return true;
+  return false;
+}
+
 /**
  * @param {string} key
  * @param {string} [explicit]
@@ -77,7 +95,9 @@ function hostGuidFromKey(key) {
 function kindFromKey(key, explicit) {
   if (explicit && KINDS.has(explicit)) return /** @type {'marker'|'widget'|'searches'|'other'} */ (explicit);
   const decoded = decodeKey(key);
-  if (decoded.endsWith('/')) return 'marker';
+  if (decoded.endsWith('/')) {
+    return isHostOrGuidMarkerKey(decoded) ? 'marker' : 'other';
+  }
   const base = decoded.split('/').pop() || '';
   const lower = base.toLowerCase();
   if (lower === 'widget.json') return 'widget';
@@ -191,6 +211,7 @@ module.exports = {
   decodeKey,
   normEtag,
   isExcludedKey,
+  isHostOrGuidMarkerKey,
   parseChangeEvent,
   hostGuidFromKey,
   kindFromKey,
