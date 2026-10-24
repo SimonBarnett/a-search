@@ -6,9 +6,9 @@
  * Deploy mints a Login-with-Amazon (LwA) access token via client_credentials
  * using AMAZON_ACCESS_KEY + AMAZON_SECRET_KEY (SSM /madeira/amazon/access-key
  * + secret-key), then POSTs https://creatorsapi.amazon/catalog/v1/searchItems
- * with Bearer + x-marketplace (UK: www.amazon.co.uk). Optional
- * AMAZON_CREATORS_CREDENTIAL overrides the bearer for fixtures only.
- * HTTP is injectable for recorded fixtures (no live network in pins).
+ * with Bearer + x-marketplace (UK: www.amazon.co.uk). FR #4816: live path
+ * always mints LwA (env AMAZON_CREATORS_CREDENTIAL ignored); deps.creatorsCredential
+ * remains for fixtures only. HTTP is injectable (no live network in pins).
  */
 
 const {
