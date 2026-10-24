@@ -57,19 +57,24 @@ async function probeEbaySelftest(deps = {}) {
     return Number.isFinite(ms) && ms >= 0 ? ms : 0;
   };
 
-  try {
-    assertEbayCreds(env);
-  } catch (err) {
-    const code =
-      err && typeof err === 'object' && err.code
-        ? String(err.code)
-        : 'ebay_missing_credentials';
-    return {
-      ok: false,
-      source,
-      latencyMs: elapsed(),
-      error: code,
-    };
+  // FR #4849: entry /selftest uses the fixture path and does not hold EBAY_*
+  // (vision S2). Require creds only when this probe will call the vendor.
+  const liveHttp = typeof deps.httpRequest === 'function';
+  if (liveHttp) {
+    try {
+      assertEbayCreds(env);
+    } catch (err) {
+      const code =
+        err && typeof err === 'object' && err.code
+          ? String(err.code)
+          : 'ebay_missing_credentials';
+      return {
+        ok: false,
+        source,
+        latencyMs: elapsed(),
+        error: code,
+      };
+    }
   }
 
   try {

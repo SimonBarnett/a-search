@@ -17,6 +17,7 @@
  *   providers/resolveQueueUrl.js
  *   providers/<kind>/<id>/src/**   enabled selftest probes (FR-152)
  *   shared/**              intake/reportException + selftest/ + rest
+ *   worker/lib/**          normalizeProduct (FR #4848; amazon search requires it)
  *
  * No .env / secrets. Optional: copies @aws-sdk/* (+ @smithy + @aws/lambda-invoke-store)
  * from repo node_modules when present (enqueue / S3 deps; FR-4409).
@@ -92,6 +93,19 @@ function stageEntryLambdaAsset(repoRoot, opts) {
   if (fs.existsSync(shopsDir)) {
     fs.rmSync(shopsDir, { recursive: true, force: true });
   }
+
+  // FR #4848: amazon (and others) require ../../../../worker/lib/normalizeProduct
+  // from providers/.../src/normalize.js loaded by selftestProbe -> search.js.
+  const workerLibSrc = path.join(root, 'worker', 'lib');
+  if (!fs.existsSync(workerLibSrc)) {
+    throw new Error(
+      `stage-entry-lambda-asset: missing ${workerLibSrc} (FR #4848)`,
+    );
+  }
+  fs.mkdirSync(path.join(outDir, 'worker'), { recursive: true });
+  fs.cpSync(workerLibSrc, path.join(outDir, 'worker', 'lib'), {
+    recursive: true,
+  });
 
   // FR-152: stage enabled provider src (+ fixtures) for selftestProbe requires.
   const selftestSources = enabledSelftestSources(root);
@@ -188,6 +202,8 @@ function stageEntryLambdaAsset(repoRoot, opts) {
         fr415: 'shared/intake/reportException',
         fr151: 'node_modules/jose',
         fr4409: 'node_modules/@aws/lambda-invoke-store',
+        fr4848: 'worker/lib/normalizeProduct',
+        workerLib: true,
         selftestProbes: stagedProbeIds,
       },
       null,
@@ -220,6 +236,7 @@ function requiredEntryAssetPaths() {
     'shared/intake/reportException.js',
     'shared/intake/redact.js',
     'shared/selftest/orchestrator.js',
+    'worker/lib/normalizeProduct.js',
     'node_modules/jose/package.json',
   ];
 }
