@@ -120,6 +120,12 @@ bobiverse intake webhook:
   connection strings (`shared/intake/redact.js`)
 - Deduplicate per `provider|env|error` so a flapping probe does not spam
 
+eBay (FR #4849): the default recorded-fixture probe does **not** require
+`EBAY_*` on the entry Lambda (entry must not hold provider secrets). A probe
+that injects `httpRequest` still fail-closes with `ebay_missing_credentials`
+and does not call the vendor. Worker missing creds stay a job skip
+(`*_missing_credentials`), not an entry selftest FR.
+
 Auth/validation failures on the selftest request itself (**401** / **400**)
 do **not** file intake.
 
