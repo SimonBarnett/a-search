@@ -330,42 +330,8 @@ async function reportMissingCredentialsSkip(args) {
     code ? 'code=' + code : '',
   );
 
-  const pathParts = resolveInPathFromMsg(msg);
-  const deps = args.deps || {};
-  if (!pathParts || !source || typeof deps.putObject !== 'function') {
-    return { logged: true, inWritten: false };
-  }
-
-  try {
-    await writeLiveProviderInResult({
-      msg,
-      source,
-      products: [],
-      error: statusError,
-      queries: msg.queries,
-      exclude: msg.exclude,
-      envVars: deps.env || process.env,
-      putObject: deps.putObject,
-      touchLastmod: deps.touchLastmod,
-      headObject: deps.headObject,
-      getObject: deps.getObject,
-      copyObject: deps.copyObject,
-      getObjectTagging: deps.getObjectTagging,
-      putObjectTagging: deps.putObjectTagging,
-      now: deps.now,
-    });
-    return { logged: true, inWritten: true };
-  } catch (writeErr) {
-    log(
-      '[a-search]',
-      'ERROR',
-      'status_in_write_failed',
-      'provider=' + (source || 'unknown'),
-      'searchid=' + (searchid || 'unknown'),
-      writeErr && writeErr.message ? String(writeErr.message) : String(writeErr),
-    );
-    return { logged: true, inWritten: false };
-  }
+  // FR #4823: missing_credentials acks with ERROR log only; no zero-product status IN.
+  return { logged: true, inWritten: false };
 }
 
 /** @deprecated FR #4769 — only missing_credentials use the skip path. */

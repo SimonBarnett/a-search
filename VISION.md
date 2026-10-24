@@ -22,8 +22,8 @@ search contract for Club Madeira / a-search.
   (`creators_not_eligible`, `rakuten_invalid_context`, `cj_not_authorised`,
   other `nonRetryable` 4xx) **SendMessage to the provider DLQ and delete the
   source message on the first failure** (FR #4782) --- do not wait for
-  maxReceiveCount. A successful call that returns 0 matches still writes an
-  empty-products IN.
+  maxReceiveCount. A successful call that returns 0 matches writes **no** IN file
+  (FR #4823: log `provider_done ... products=0`, ack normally).
 - Per-source secrets stay isolated; fatals intake to `SimonBarnett/a-search`.
 
 See Success rows S1-S20, Architecture, and Environments in `docs/vision.md`.

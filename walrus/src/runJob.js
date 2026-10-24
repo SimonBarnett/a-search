@@ -157,7 +157,7 @@ async function runDrainJob(msg, deps) {
     touchLastmod: deps && deps.touchLastmod,
   });
 
-  // FR #4823 / MRB #4831: do not synthesize empty IN files.
+  // FR #4823 / MRB #4831: do not synthesize empty IN files; only workers with products write IN/.
   if (result && result.key) {
     // worker wrote IN
   } else if (

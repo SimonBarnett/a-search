@@ -20,6 +20,9 @@ const {
   validateInResult,
 } = require('../../../../shared/search/inResultSchema');
 const {
+  logProviderDoneZero,
+} = require('../../../../shared/search/writeLiveProviderInResult');
+const {
   defaultQueryParts,
   SqlMssqlConfigError,
 } = require('./queryParts');
@@ -122,6 +125,20 @@ async function run(msg, deps) {
     const err = new Error(validated.error || 'invalid_in_result');
     err.code = validated.error || 'invalid_in_result';
     throw err;
+  }
+
+  if (products.length === 0) {
+    logProviderDoneZero({ msg, source: 'sql' });
+    return {
+      ok: true,
+      source: 'sql',
+      searchId: `${searchid}-sql`,
+      searchid,
+      env: msg.env,
+      products,
+      key: null,
+      body,
+    };
   }
 
   const Key = inResultKey({

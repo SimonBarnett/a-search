@@ -29,6 +29,9 @@ Registry id `cj` (`kind: live`, default-on).
 4. Normalize `data.products.resultList` → `products[]`
 5. `writeResults` → `S3_RESULTS_BUCKET` at `{env}/cj/{userId}/{catalogId}/{searchId}.json`
 
+FR #4823: write a-clubs IN/ only when `products.length >= 1`; 0 matches log
+`provider_done products=0` (no IN, no DLQ).
+
 Fixture: `fixtures/products-ok.json` (`tests/cj-search.test.js`).
 
 ## GraphQL endpoint

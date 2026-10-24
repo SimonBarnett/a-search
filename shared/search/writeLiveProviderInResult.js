@@ -2,7 +2,8 @@
 
 /**
  * FR #4038 / #4030: live provider workers write a-clubs IN/ when hostkey+guid present.
- * Legacy SQS msgs (userId/catalogId/searchId only) still use writeResults.
+ * FR #4823: skip IN/ (and legacy results put) when products.length === 0; log only.
+ * Legacy SQS msgs (userId/catalogId/searchId only) still use writeResults when products exist.
  */
 
 const { writeInResultToS3 } = require('./writeInResultS3');
@@ -26,6 +27,36 @@ function resolveAClubsBucket(envVars) {
  * @param {object} msg
  * @returns {{ hostkey: string, guid: string, searchid: string }|null}
  */
+/**
+ * @param {{ msg: object, source: string, logInfo?: Function }} opts
+ */
+function logProviderDoneZero(opts) {
+  const msg = opts.msg || {};
+  const pathParts = resolveInPathFromMsg(msg);
+  const source = String(opts.source || '').trim().toLowerCase();
+  const searchid = pathParts
+    ? pathParts.searchid
+    : String((msg.searchid != null ? msg.searchid : msg.searchId) || '').trim();
+  const host = pathParts
+    ? pathParts.hostkey
+    : String((msg.hostkey || msg.host) || '').trim();
+  const guid = pathParts
+    ? pathParts.guid
+    : String((msg.guid || msg.widgetGuid) || '').trim();
+  const log =
+    typeof opts.logInfo === 'function' ? opts.logInfo : console.log.bind(console);
+  log(
+    '[a-search]',
+    'INFO',
+    'provider_done',
+    'source=' + source,
+    'searchid=' + searchid,
+    'host=' + host,
+    'guid=' + guid,
+    'products=0',
+  );
+}
+
 function resolveInPathFromMsg(msg) {
   const hostkey = String((msg && (msg.hostkey || msg.host)) || '').trim();
   const guid = String((msg && (msg.guid || msg.widgetGuid)) || '').trim();
@@ -61,6 +92,19 @@ async function writeLiveProviderInResult(opts) {
   const envVars = opts.envVars || process.env;
   const msg = opts.msg;
   const pathParts = resolveInPathFromMsg(msg);
+  const products = Array.isArray(opts.products) ? opts.products : [];
+
+  if (products.length === 0) {
+    logProviderDoneZero({ msg, source: opts.source, logInfo: opts.logInfo });
+    const bucket = pathParts ? resolveAClubsBucket(envVars) : null;
+    return {
+      bucket,
+      key: null,
+      body: null,
+      legacyResults: !pathParts,
+      skipped: 'no_products',
+    };
+  }
 
   // Legacy fan-out / unit fixtures without hostkey+guid keep results-bucket write.
   if (!pathParts) {
@@ -70,7 +114,7 @@ async function writeLiveProviderInResult(opts) {
       userId: msg.userId,
       catalogId: msg.catalogId,
       searchId: msg.searchId || msg.searchid,
-      products: Array.isArray(opts.products) ? opts.products : [],
+      products,
       envVars,
       putObject: opts.putObject,
       getObject: opts.getObject,
@@ -114,7 +158,7 @@ async function writeLiveProviderInResult(opts) {
     guid: pathParts.guid,
     searchid: pathParts.searchid,
     source: String(opts.source).trim().toLowerCase(),
-    products: Array.isArray(opts.products) ? opts.products : [],
+    products,
     queries: opts.queries != null ? opts.queries : msg.queries,
     exclude: opts.exclude != null ? opts.exclude : msg.exclude,
     // FR #4562: optional vendor status (e.g. paapi_non_json) on IN body.
@@ -142,6 +186,7 @@ async function writeLiveProviderInResult(opts) {
 
 module.exports = {
   writeLiveProviderInResult,
+  logProviderDoneZero,
   resolveAClubsBucket,
   resolveInPathFromMsg,
 };

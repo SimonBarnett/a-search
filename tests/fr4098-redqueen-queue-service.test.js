@@ -125,7 +125,8 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     });
     const hostDoc = JSON.parse(hostAnn.AnnotationPayload.toString('utf8'));
     assert.equal(hostDoc.model, 'test-host');
-    assert.equal(hostDoc.summary, 'Parts shop');
+    assert.equal(hostDoc.schema, 'aclubs.host.v1');
+    assert.match(String(hostDoc.about || hostDoc.description), /Parts/);
 
     const guidAnn = await s3.getObjectAnnotation({
       Key: guidMarkerKey(host, GUID),
@@ -133,7 +134,8 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     });
     const guidDoc = JSON.parse(guidAnn.AnnotationPayload.toString('utf8'));
     assert.equal(guidDoc.uri, '/products/brakes');
-    assert.deepEqual(guidDoc.suggestedQueries, ['brake pads']);
+    assert.equal(guidDoc.schema, 'aclubs.page.v1');
+    assert.ok((guidDoc.search_queries || []).some((q) => /brake/.test(q.q)));
 
     const steer = await s3.getObjectAnnotation({
       Key: guidMarkerKey(host, GUID),
@@ -208,7 +210,19 @@ describe('FR #4098 object annotations (no sidecars)', () => {
     await s3.putObjectAnnotation({
       Key: hostMarkerKey(host),
       AnnotationName: 'annotation',
-      AnnotationPayload: JSON.stringify({ host, summary: 'H', model: 'prev' }),
+      AnnotationPayload: JSON.stringify({
+        schema: 'aclubs.host.v1',
+        host,
+        about: 'Parts club that sells brakes and fluid to members at the patch.',
+        description: 'Site-wide shop for brake pads, fluid and weekend club nights.',
+        keywords: ['brakes', 'pads', 'fluid', 'club', 'shop'],
+        audience: { summary: 'members who buy brakes', segments: ['diy'] },
+        affiliate_opportunities: [{ category: 'brakes', brands: [], hook: 'track day' }],
+        exclusions: [],
+        identity_terms: [],
+        market: { country: 'GB', currency: 'GBP', locale: 'en-GB' },
+        model: 'prev',
+      }),
     });
     await s3.putObject({
       Key: guidMarkerKey(host, GUID),
@@ -219,6 +233,46 @@ describe('FR #4098 object annotations (no sidecars)', () => {
         lastmod: ts,
         lastupdate: ts,
       },
+    });
+    await s3.putObjectAnnotation({
+      Key: guidMarkerKey(host, GUID),
+      AnnotationName: 'annotation',
+      AnnotationPayload: JSON.stringify({
+        schema: 'aclubs.page.v1',
+        guid: GUID,
+        uri: '/z',
+        evidence: { title: 'Z', meta_description: '', meta_keywords: '', h1: [] },
+        page_title: 'Z',
+        page_purpose: 'This page is only the brake-pad SKU list for one category.',
+        page_keywords: ['brake pads', 'oem fluid', 'caliper'],
+        page_description: 'A short list of brake pads and fluid SKUs for this URI only.',
+        selection: {
+          product_types: ['brake pad'],
+          categories: [],
+          must_have: [],
+          nice_to_have: [],
+          brands: [],
+          models: [],
+          size: {},
+          price_band: { currency: 'GBP', min: 0, max: 0 },
+          page_exclusions: [],
+          ranking_hints: [],
+        },
+        search_queries: [{ q: 'brake pads oem', intent: 'page', maxResults: 10 }],
+        model: 'prev',
+      }),
+    });
+    await s3.putObject({
+      Key: `${host}/${GUID}/searches.json`,
+      Body: Buffer.from(
+        `${JSON.stringify({
+          queries: [{ q: 'brake pads oem', intent: 'page', maxResults: 10 }],
+          exclude: [],
+          searchid: 'srch_keep',
+          annotationSchema: 'aclubs.page.v1',
+        })}\n`,
+      ),
+      ContentType: 'application/json',
     });
     let hostReviews = 0;
     let guidReviews = 0;
