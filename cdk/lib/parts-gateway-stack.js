@@ -15,6 +15,8 @@ const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const iam = require('aws-cdk-lib/aws-iam');
 const logs = require('aws-cdk-lib/aws-logs');
 const sqs = require('aws-cdk-lib/aws-sqs');
+const events = require('aws-cdk-lib/aws-events');
+const targets = require('aws-cdk-lib/aws-events-targets');
 const {
   stagePartsGatewayLambdaAsset,
 } = require('../../scripts/stage-parts-gateway-lambda-asset');
@@ -22,6 +24,10 @@ const {
 const A_CLUBS_BUCKET = 'a-clubs';
 const FOLDER_EVENTS_QUEUE_NAME = 'a-clubs-new-folders.fifo';
 const FOLDER_EVENTS_DLQ_NAME = 'a-clubs-new-folders-dlq.fifo';
+/** FR #4827: EventBridge object-created events (widget.json, searches.json, markers). */
+const CHANGES_QUEUE_NAME = 'a-clubs-changes';
+const CHANGES_DLQ_NAME = 'a-clubs-changes-dlq';
+const CHANGES_VISIBILITY_SEC = 180;
 /** Lambda timeout 15s; visibility must exceed timeout. */
 const FOLDER_EVENTS_VISIBILITY_SEC = 90;
 
@@ -61,13 +67,55 @@ class PartsGatewayStack extends cdk.Stack {
       userName: 'a-search-redqueen-annotator',
     });
     folderEventsQueue.grantConsumeMessages(redqueenUser);
+
+    // FR #4827: standard queue for a-clubs object-created events. Not FIFO.
+    const changesDlq = new sqs.Queue(this, 'AClubsChangesDlq', {
+      queueName: CHANGES_DLQ_NAME,
+      retentionPeriod: cdk.Duration.days(14),
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    const changesQueue = new sqs.Queue(this, 'AClubsChangesQueue', {
+      queueName: CHANGES_QUEUE_NAME,
+      visibilityTimeout: cdk.Duration.seconds(CHANGES_VISIBILITY_SEC),
+      deadLetterQueue: {
+        queue: changesDlq,
+        maxReceiveCount: 5,
+      },
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+    });
+    changesQueue.grantConsumeMessages(redqueenUser);
+
+    const changeSuffixes = [
+      { id: 'AClubsChangesWidgetJson', ruleName: 'a-clubs-changes-widget-json', suffix: 'widget.json' },
+      { id: 'AClubsChangesSearchesJson', ruleName: 'a-clubs-changes-searches-json', suffix: 'searches.json' },
+      { id: 'AClubsChangesMarkers', ruleName: 'a-clubs-changes-markers', suffix: '/' },
+    ];
+    for (let i = 0; i < changeSuffixes.length; i += 1) {
+      const spec = changeSuffixes[i];
+      new events.Rule(this, spec.id, {
+        ruleName: spec.ruleName,
+        description: `FR #4827 Object Created suffix ${spec.suffix} -> a-clubs-changes`,
+        eventPattern: {
+          source: ['aws.s3'],
+          detailType: ['Object Created'],
+          detail: {
+            bucket: { name: [A_CLUBS_BUCKET] },
+            object: { key: [{ suffix: spec.suffix }] },
+          },
+        },
+        targets: [new targets.SqsQueue(changesQueue)],
+      });
+    }
+
     // FR #4122: object annotations on folder markers (Put/Get/List/DeleteObjectAnnotation).
+    // FR #4827: CopyObject so marker metadata REPLACE is allowed on the annotator user.
     redqueenUser.addToPolicy(
       new iam.PolicyStatement({
         sid: 'RedqueenAClubsAnnotate',
         actions: [
           's3:GetObject',
           's3:PutObject',
+          's3:CopyObject',
           's3:ListBucket',
           's3:GetObjectTagging',
           's3:PutObjectTagging',
@@ -174,6 +222,16 @@ class PartsGatewayStack extends cdk.Stack {
       description: 'DLQ for a-clubs-new-folders.fifo',
     });
 
+    new cdk.CfnOutput(this, 'AClubsChangesQueueUrl', {
+      value: changesQueue.queueUrl,
+      description: 'FR #4827 SQS a-clubs-changes (EventBridge Object Created)',
+    });
+
+    new cdk.CfnOutput(this, 'AClubsChangesDlqUrl', {
+      value: changesDlq.queueUrl,
+      description: 'DLQ for a-clubs-changes',
+    });
+
     new cdk.CfnOutput(this, 'RedqueenAnnotatorUserName', {
       value: redqueenUser.userName,
       description:
@@ -188,4 +246,7 @@ module.exports = {
   FOLDER_EVENTS_QUEUE_NAME,
   FOLDER_EVENTS_DLQ_NAME,
   FOLDER_EVENTS_VISIBILITY_SEC,
+  CHANGES_QUEUE_NAME,
+  CHANGES_DLQ_NAME,
+  CHANGES_VISIBILITY_SEC,
 };

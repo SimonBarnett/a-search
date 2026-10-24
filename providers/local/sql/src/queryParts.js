@@ -192,10 +192,23 @@ WHERE Env = @env
  * @param {object} config
  * @returns {Promise<{ request: Function, close?: Function }>}
  */
-async function defaultConnect(config) {
+/**
+ * Static branches so esbuild can bundle pure-JS mssql into the SEA exe.
+ * msnodesqlv8 stays a literal require (native addon, shipped beside the exe).
+ * @param {object} config
+ */
+function loadMssqlModule(config) {
   const mod = resolveMssqlRequirePath(config);
-  // eslint-disable-next-line global-require, import/no-dynamic-require
-  const sql = require(mod);
+  if (mod === 'mssql/msnodesqlv8') {
+    // eslint-disable-next-line global-require
+    return require('mssql/msnodesqlv8');
+  }
+  // eslint-disable-next-line global-require
+  return require('mssql');
+}
+
+async function defaultConnect(config) {
+  const sql = loadMssqlModule(config);
   const pool = await sql.connect(config);
   return pool;
 }
@@ -229,9 +242,7 @@ async function defaultQueryParts(msg, deps) {
 
   let sqlTypes = deps && deps.sqlTypes;
   if (!sqlTypes) {
-    const mod = resolveMssqlRequirePath(config);
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    sqlTypes = require(mod);
+    sqlTypes = loadMssqlModule(config);
   }
 
   try {
@@ -255,6 +266,7 @@ module.exports = {
   mssqlConfigFromEnv,
   isTrustedConnectionEnv,
   resolveMssqlRequirePath,
+  loadMssqlModule,
   searchTextFromMsg,
   SELECT_SQL,
   defaultQueryParts,

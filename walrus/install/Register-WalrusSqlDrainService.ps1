@@ -3,6 +3,11 @@
 .SYNOPSIS
   Register the walrus SQL SQS drain as a Windows service via nssm (FR #4447 / #4511).
 
+  FR #4827: the replacement service name is a-sqlsearch (exe a-sqlsearch.exe). The annotator
+  service is a-annotator (exe a-annotator.exe). Both are installed by
+  walrus\install\Register-ASearchWalrusServices.ps1, which also removes a-search-walrus-sql-drain.
+  This script remains for the legacy service name a-search-walrus-sql-drain (node walrus\src\index.js).
+
 .DESCRIPTION
   Idempotent: installs/updates service "a-search-walrus-sql-drain" with nssm wrapping
   `node walrus\src\index.js` from InstallRoot (default C:\ai\a-search).

@@ -1,4 +1,5 @@
 node_modules/
+dist/sea/
 .env
 .env.*
 !.env.example

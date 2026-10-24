@@ -22,7 +22,8 @@
     "deploy:affiliates": "npm run stage-affiliates && npx --no-install cdk deploy --app \"node cdk/bin/affiliates.js\" AAffiliates -c requireDeployEnv=true",
     "stage-merchants": "node scripts/stage-merchants-lambda-asset.js",
     "synth:merchants": "npm run stage-merchants && npx --no-install cdk synth --app \"node cdk/bin/merchants.js\" --quiet",
-    "deploy:merchants": "npm run stage-merchants && npx --no-install cdk deploy --app \"node cdk/bin/merchants.js\" AMerchants -c requireDeployEnv=true"
+    "deploy:merchants": "npm run stage-merchants && npx --no-install cdk deploy --app \"node cdk/bin/merchants.js\" AMerchants -c requireDeployEnv=true",
+    "build:sea": "node scripts/build-a-search-sea.js"
   },
   "dependencies": {
     "@a-search/shared": "file:shared",
@@ -38,6 +39,8 @@
   "devDependencies": {
     "aws-cdk": "^2.1144.0",
     "aws-cdk-lib": "^2.272.0",
-    "constructs": "^10.8.1"
+    "constructs": "^10.8.1",
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6"
   }
 }

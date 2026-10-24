@@ -15,6 +15,11 @@ const {
   keywordsOnly,
   normalizeMarketCurrency,
 } = require('../../shared/search/cleanSearchQuery');
+const {
+  searchesContentHash,
+  shouldPostSearch,
+} = require('../../shared/aClubs/searchesHash');
+
 function searchesObjectKey(hostkey, guid) {
   const host = String(hostkey).replace(/\/+$/, '');
   const id = String(guid).trim().toLowerCase();
@@ -164,17 +169,72 @@ function buildSearchesDoc(input) {
   return { doc, cap };
 }
 
+function normEtag(etag) {
+  return String(etag == null ? '' : etag)
+    .replace(/^W\//i, '')
+    .replace(/"/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function rememberEtag(opts, key, etag) {
+  if (!etag || !opts || !opts.selfEtags || typeof opts.selfEtags.set !== 'function') return;
+  opts.selfEtags.set(String(key), normEtag(etag));
+}
+
 async function writeSearches(opts, key, doc) {
   if (typeof opts.putObject !== 'function') {
     const err = new Error('searches_write_failed');
     err.code = 'searches_write_failed';
     throw err;
   }
-  await opts.putObject({
+  const resp = await opts.putObject({
     Key: key,
     Body: Buffer.from(`${JSON.stringify(doc, null, 2)}\n`, 'utf8'),
     ContentType: 'application/json',
   });
+  rememberEtag(opts, key, resp && resp.ETag);
+}
+
+/**
+ * Store searcheshash on the GUID marker so the next edit can be compared.
+ * Failures are ignored: the POST already succeeded.
+ * @param {object} opts
+ * @param {string} hostkey
+ * @param {string} guid
+ * @param {string} hash
+ */
+async function writeMarkerSearchesHash(opts, hostkey, guid, hash) {
+  if (!hash || typeof opts.copyObject !== 'function' || typeof opts.headObject !== 'function') {
+    return;
+  }
+  const Key = `${String(hostkey).replace(/\/+$/, '')}/${String(guid).toLowerCase()}/`;
+  let prev = {};
+  try {
+    const head = await opts.headObject({ Key });
+    prev = (head && (head.Metadata || head.metadata)) || {};
+  } catch {
+    return;
+  }
+  const Metadata = {};
+  const names = Object.keys(prev);
+  for (let i = 0; i < names.length; i += 1) {
+    Metadata[names[i]] = String(prev[names[i]]);
+  }
+  Metadata.searcheshash = hash;
+  const bucket = opts.bucket || process.env.A_CLUBS_BUCKET || 'a-clubs';
+  try {
+    const resp = await opts.copyObject({
+      Key,
+      CopySource: `${bucket}/${Key}`,
+      Metadata,
+      MetadataDirective: 'REPLACE',
+    });
+    const etag = resp && ((resp.CopyObjectResult && resp.CopyObjectResult.ETag) || resp.ETag);
+    rememberEtag(opts, Key, etag);
+  } catch {
+    // hash is still returned to the caller
+  }
 }
 
 /**
@@ -184,17 +244,38 @@ async function writeSearches(opts, key, doc) {
 async function publishGuidSearch(opts) {
   const key = searchesObjectKey(opts.hostkey, opts.guid);
   const existing = (await readJsonObject(opts, key)) || { queries: [], exclude: [] };
-  if (existing.searchid) {
+  let markerMeta = opts.metadata || opts.markerMeta;
+  if (!markerMeta && typeof opts.headObject === 'function' && opts.hostkey && opts.guid) {
+    const markerKey = `${String(opts.hostkey).replace(/\/+$/, '')}/${String(opts.guid).toLowerCase()}/`;
+    try {
+      const head = await opts.headObject({ Key: markerKey });
+      markerMeta = (head && (head.Metadata || head.metadata)) || {};
+    } catch {
+      markerMeta = {};
+    }
+  }
+  if (!markerMeta) markerMeta = {};
+  const existingHash = searchesContentHash({
+    queries: Array.isArray(existing.queries) ? existing.queries : [],
+    exclude: Array.isArray(existing.exclude) ? existing.exclude : [],
+  });
+  const postExisting = shouldPostSearch({ doc: existing, markerMeta });
+  // searchid + matching hash (or no stored hash yet) stays quiet.
+  // A stored hash that differs falls through and POSTs even with a searchid.
+  // A caller passing review (re-annotate) may still rebuild below.
+  if (existing.searchid && !postExisting && (opts.repostExisting || !opts.review)) {
     return {
       ok: true,
       searchid: String(existing.searchid),
       idempotent: true,
       wrote: false,
+      searcheshash: existingHash,
     };
   }
   // FR #4311: annotated GUID already has queries and no searchid. POST that
   // file once. Do not rebuild queries from a new review.
-  if (opts.repostExisting) {
+  // FR #4827: hash mismatch with a searchid takes the same path.
+  if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
     const queries = Array.isArray(existing.queries) ? existing.queries : [];
     if (!queries.length) {
       const err = new Error('searches_missing');
@@ -213,13 +294,16 @@ async function publishGuidSearch(opts) {
     const doc = { queries, exclude, searchid: posted.searchid };
     if (existing.market) doc.market = String(existing.market);
     if (existing.currency) doc.currency = String(existing.currency);
+    const postedHash = searchesContentHash({ queries, exclude });
     await writeSearches(opts, key, doc);
+    await writeMarkerSearchesHash(opts, opts.hostkey, opts.guid, postedHash);
     return {
       ok: true,
       searchid: posted.searchid,
       idempotent: !!posted.idempotent,
       wrote: true,
       reposted: true,
+      searcheshash: postedHash,
     };
   }
   const { doc, cap } = buildSearchesDoc({
@@ -239,6 +323,16 @@ async function publishGuidSearch(opts) {
     err.code = 'searches_over_cap';
     throw err;
   }
+  const newHash = searchesContentHash({ queries: doc.queries, exclude: doc.exclude });
+  if (existing.searchid && newHash === existingHash && !postExisting) {
+    return {
+      ok: true,
+      searchid: String(existing.searchid),
+      idempotent: true,
+      wrote: false,
+      searcheshash: newHash,
+    };
+  }
   await writeSearches(opts, key, doc);
   const posted = await postSearchBody(opts, {
     hostkey: opts.hostkey,
@@ -250,7 +344,14 @@ async function publishGuidSearch(opts) {
   });
   doc.searchid = posted.searchid;
   await writeSearches(opts, key, doc);
-  return { ok: true, searchid: posted.searchid, idempotent: !!posted.idempotent, wrote: true };
+  await writeMarkerSearchesHash(opts, opts.hostkey, opts.guid, newHash);
+  return {
+    ok: true,
+    searchid: posted.searchid,
+    idempotent: !!posted.idempotent,
+    wrote: true,
+    searcheshash: newHash,
+  };
 }
 
 async function postSearchBody(opts, body) {
@@ -286,7 +387,11 @@ async function postSearchBody(opts, body) {
 /** 'idempotent' | 'repost' | 'missing' for an existing searches.json. */
 async function guidSearchState(opts, hostkey, guid) {
   const existing = await readJsonObject(opts, searchesObjectKey(hostkey, guid));
-  if (existing && existing.searchid) return 'idempotent';
+  if (existing && existing.searchid) {
+    const meta = (opts && (opts.markerMeta || opts.metadata)) || {};
+    if (shouldPostSearch({ doc: existing, markerMeta: meta })) return 'repost';
+    return 'idempotent';
+  }
   if (existing && Array.isArray(existing.queries) && existing.queries.length) return 'repost';
   return 'missing';
 }
@@ -373,4 +478,7 @@ module.exports = {
   localPostSearchAck,
   createHttpPostSearch,
   isFullTierMeta,
+  searchesContentHash,
+  shouldPostSearch,
+  writeMarkerSearchesHash,
 };

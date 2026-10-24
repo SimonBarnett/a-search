@@ -11,6 +11,45 @@ const { createAClubsPutObject, writeAClubsIn } = require('./writeAClubsIn');
 const { hostGuidFromMessage } = require('./aClubsInPath');
 
 /**
+ * FR #4827: static requires so the SEA bundle includes every local provider.
+ * Dynamic path loads are invisible to esbuild and missing inside a SEA blob.
+ */
+const LOCAL_WORKER_LOADERS = {
+  admitad: () => require('../../providers/local/admitad/src/worker'),
+  avantlink: () => require('../../providers/local/avantlink/src/worker'),
+  awin: () => require('../../providers/local/awin/src/worker'),
+  bigcommerce: () => require('../../providers/local/bigcommerce/src/worker'),
+  ecwid: () => require('../../providers/local/ecwid/src/worker'),
+  flexoffers: () => require('../../providers/local/flexoffers/src/worker'),
+  impact: () => require('../../providers/local/impact/src/worker'),
+  magento: () => require('../../providers/local/magento/src/worker'),
+  partnerize: () => require('../../providers/local/partnerize/src/worker'),
+  shopify: () => require('../../providers/local/shopify/src/worker'),
+  skimlinks: () => require('../../providers/local/skimlinks/src/worker'),
+  sql: () => require('../../providers/local/sql/src/worker'),
+  squarespace: () => require('../../providers/local/squarespace/src/worker'),
+  tradedoubler: () => require('../../providers/local/tradedoubler/src/worker'),
+  webgains: () => require('../../providers/local/webgains/src/worker'),
+  wix: () => require('../../providers/local/wix/src/worker'),
+  woocommerce: () => require('../../providers/local/woocommerce/src/worker'),
+};
+
+/**
+ * @param {string} source
+ * @returns {{ run: Function }}
+ */
+function loadLocalWorker(source) {
+  const id = String(source || '').trim().toLowerCase();
+  const loader = LOCAL_WORKER_LOADERS[id];
+  if (!loader) {
+    const err = new Error(`local_worker_missing:${id}`);
+    err.code = 'local_worker_missing';
+    throw err;
+  }
+  return loader();
+}
+
+/**
  * @param {string} source
  * @param {string} [repoRoot]
  * @returns {string}
@@ -84,7 +123,7 @@ async function runDrainJob(msg, deps) {
   const loadWorker =
     deps && typeof deps.loadWorker === 'function'
       ? deps.loadWorker
-      : (id) => require(localWorkerPath(id, deps && deps.repoRoot));
+      : loadLocalWorker;
 
   const worker = loadWorker(source);
   if (!worker || typeof worker.run !== 'function') {
@@ -139,4 +178,6 @@ module.exports = {
   localWorkerPath,
   isMaintainerJob,
   runDrainJob,
+  loadLocalWorker,
+  LOCAL_WORKER_LOADERS,
 };
