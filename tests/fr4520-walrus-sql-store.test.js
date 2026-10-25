@@ -124,7 +124,7 @@ function createStubExec() {
           Availability: s.Availability,
           ContentHash: s.ContentHash,
           DeletedAt: null,
-          LastSeenRunId: s.RunId,
+          LastSeenRunId: s.RunId != null ? s.RunId : inputs.RunId,
         };
         if (!prev || prev.DeletedAt) inserted += 1;
         else if (prev.ContentHash !== s.ContentHash) updated += 1;
