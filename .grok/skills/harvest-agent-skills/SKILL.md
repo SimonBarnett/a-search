@@ -658,3 +658,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
 - MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
 - Awin productdata may be gzip even when the marker says compression=none; sniff 1f8b/504b before treating the body as plain CSV.
+- Loaders that bypass walrus/import/cli.js leave LastSeenRunId NULL; DeleteMissing must require LastSeenRunId IS NOT NULL so a later run cannot wipe the batch.
