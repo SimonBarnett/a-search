@@ -233,6 +233,16 @@ describe('FR #4931 runDaily wiring', () => {
         }
         return { Metadata: { ...o.Metadata } };
       },
+      putObject: async ({ Key, Metadata, IfNoneMatch }) => {
+        if (IfNoneMatch === '*' && objects.has(Key)) {
+          const err = new Error('PreconditionFailed');
+          err.name = 'PreconditionFailed';
+          err.$metadata = { httpStatusCode: 412 };
+          throw err;
+        }
+        objects.set(Key, { Metadata: { ...(Metadata || {}) } });
+        return {};
+      },
     };
   }
 
@@ -290,7 +300,30 @@ describe('FR #4931 runDaily wiring', () => {
     assert.deepEqual(downloads, ['mid1']);
   });
 
-  it('fails with needs_defaultage when no tier set', async () => {
+  it('missing _root self-heals defaultage=7 and continues', async () => {
+    objects.set('awin/', { Metadata: { enabled: '1' } });
+    objects.set('awin/mid1/', {
+      Metadata: { enabled: '1', lastdownload: '' },
+    });
+    const logs = [];
+    const downloads = [];
+    await runDaily({
+      s3: memoryS3(),
+      bucket: 'a-affiliates',
+      now: NOW,
+      log: (m) => logs.push(String(m)),
+      downloadOne: async (args) => {
+        downloads.push(args.affiliateId);
+        return { ok: true, status: 'ok', provider: 'awin', affiliateId: 'mid1' };
+      },
+    });
+    assert.deepEqual(downloads, ['mid1']);
+    assert.equal(objects.get('_root/').Metadata.defaultage, '7');
+    assert.ok(logs.some((m) => m.includes('self_heal')));
+  });
+
+  it('existing invalid _root is not overwritten and throws needs_defaultage', async () => {
+    objects.set('_root/', { Metadata: { defaultage: '0' } });
     objects.set('awin/', { Metadata: { enabled: '1' } });
     objects.set('awin/mid1/', {
       Metadata: { enabled: '1', lastdownload: '' },
@@ -306,6 +339,7 @@ describe('FR #4931 runDaily wiring', () => {
         }),
       (err) => err && err.code === 'needs_defaultage',
     );
+    assert.equal(objects.get('_root/').Metadata.defaultage, '0');
   });
 
   it('empty lastdownload is due when defaultage present', async () => {

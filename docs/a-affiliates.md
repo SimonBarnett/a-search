@@ -9,9 +9,11 @@ and **affiliate feed** downloads. Deployed as standalone CDK stack `AAffiliates`
 
 v1 uses a **Node 20 Lambda** (15 min timeout, EventBridge `rate(1 day)`). The
 job skips affiliates fresher than shared `defaultage` (merchant >
-provider > `_root/`; clock is `lastdownload`; FR #4931). Missing all tiers
-fails with `needs_defaultage`. Fargate is a documented follow-up if feeds
-exceed Lambda time or ephemeral storage limits.
+provider > `_root/`; clock is `lastdownload`; FR #4931). Missing `_root/`
+self-heals with `defaultage=7` (create-only). Existing `_root/` with
+invalid `defaultage` fails with `needs_defaultage` (no overwrite). Fargate
+is a documented follow-up if feeds exceed Lambda time or ephemeral storage
+limits.
 
 ## Bucket
 
@@ -72,7 +74,7 @@ Everything an agent needs to log into that network:
 
 | Key | Notes |
 |-----|--------|
-| `defaultage` | Bucket-wide default age in whole days (required unless every merchant/provider sets its own). Shared resolver: `shared/defaultAge.js`. |
+| `defaultage` | Bucket-wide default age in whole days. Missing `_root/` object is created once with `7`. Existing invalid value is never overwritten (`needs_defaultage`). Shared resolver: `shared/defaultAge.js`. |
 
 If the combined user-metadata payload exceeds ~2 KiB, put overflow JSON at
 `{provider}/provider.json` (same secret rules). Helpers expose

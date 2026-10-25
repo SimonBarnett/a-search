@@ -3,7 +3,8 @@
 /**
  * FR #4195 / #4931: daily orchestration --- enabled providers/affiliates whose
  * lastdownload is missing/unparseable or age (UTC days) >= shared defaultage
- * (merchant > provider > _root/). Missing all tiers throws needs_defaultage.
+ * (merchant > provider > _root/). Missing `_root/` self-heals defaultage=7;
+ * existing invalid `_root/` throws needs_defaultage (FR #4931 12:49).
  * Paginate listObjectsV2. Skip the `_root/` config marker as a provider.
  */
 
@@ -13,6 +14,7 @@ const {
   resolveDefaultAge,
   isDueByLastDownload,
   NeedsDefaultAgeError,
+  ensureRootDefaultAge,
 } = require('../../shared/defaultAge');
 
 /** Bucket-root config marker; never treated as a provider slug. */
@@ -67,13 +69,8 @@ async function listProviderSlugs(s3, bucket) {
  * @param {string} bucket
  * @returns {Promise<Record<string, string>>}
  */
-async function loadRootMeta(s3, bucket) {
-  try {
-    const head = await s3.headObject({ Bucket: bucket, Key: ROOT_MARKER_KEY });
-    return coerceStringMap(head.Metadata);
-  } catch {
-    return Object.create(null);
-  }
+async function loadRootMeta(s3, bucket, log) {
+  return ensureRootDefaultAge(s3, bucket, { log, rootKey: ROOT_MARKER_KEY });
 }
 
 /**
@@ -130,7 +127,7 @@ async function runDaily(opts) {
   const downloadOne =
     typeof opts.downloadOne === 'function' ? opts.downloadOne : defaultDownloadOne;
 
-  const rootMeta = await loadRootMeta(s3, bucket);
+  const rootMeta = await loadRootMeta(s3, bucket, log);
   const providers = await listProviderSlugs(s3, bucket);
   /** @type {object[]} */
   const results = [];
