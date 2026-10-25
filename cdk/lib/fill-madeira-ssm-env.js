@@ -169,14 +169,16 @@ function fillMadeiraProviderEnv(opts) {
 }
 
 /**
- * @param {Array<{ id: string, missingKeys: string[] }>} disabled
+ * @param {Array<{ id: string, missingKeys?: string[], filePath?: string, message?: string }>} disabled
  * @returns {string}
  */
 function formatDisabledProvidersWarning(disabled) {
   if (!Array.isArray(disabled) || !disabled.length) return '';
   const parts = disabled.map((row) => {
+    if (row.message) return `${row.id}: ${row.message}`;
     const keys = (row.missingKeys || []).join(', ');
-    return `${row.id}: missing ${keys}`;
+    const fileBit = row.filePath ? ` file ${row.filePath}` : '';
+    return `${row.id}: missing ${keys}${fileBit}`;
   });
   return `[a-search] providers disabled (missing credentials): ${parts.join('; ')}`;
 }

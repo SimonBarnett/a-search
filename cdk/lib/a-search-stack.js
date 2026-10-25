@@ -272,7 +272,7 @@ const PROVIDER_CREDENTIAL_KEYS = {
     'IMPACT_ACCOUNT_SID',
     'IMPACT_AUTH_TOKEN',
   ],
-  // FR-167: enable kelkoo (Secrets Manager JSON keys)
+  // Kelkoo: bundled providers/live/kelkoo/.env (no Secrets Manager / SSM)
   kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
   // FR-168: skimlinks enabled -> FR-138 secret wiring
   skimlinks: ['SKIMLINKS_API_KEY', 'SKIMLINKS_PUBLISHER_ID'],
@@ -745,9 +745,12 @@ class ASearchStack extends cdk.Stack {
       const envCheck = softCheckProviderEnvFileKeys(envFile, src.id);
       const envReady = envCheck.ok === true;
       if (!envReady) {
+        // FR #5058: keep file path + softCheck message for the synth warning.
         credentialDisabled.push({
           id: src.id,
           missingKeys: envCheck.missingKeys || [],
+          filePath: envFile,
+          message: envCheck.message || '',
         });
       }
       // FR-444: stage provider src + shared/ so ../../../../shared/* resolves in Lambda
@@ -886,9 +889,12 @@ class ASearchStack extends cdk.Stack {
       }
     }
     if (credentialDisabled.length) {
+      // FR #5058: name missing file and keys (never values).
       const parts = credentialDisabled.map((row) => {
+        if (row.message) return `${row.id}: ${row.message}`;
         const keys = (row.missingKeys || []).join(', ');
-        return `${row.id}: missing ${keys}`;
+        const fileBit = row.filePath ? ` file ${row.filePath}` : '';
+        return `${row.id}: missing ${keys}${fileBit}`;
       });
       // eslint-disable-next-line no-console
       console.warn(
