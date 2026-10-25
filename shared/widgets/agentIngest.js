@@ -15,7 +15,7 @@ const path = require('node:path');
 const { assertWidgetGuid, widgetDir, widgetFile } = require('./widgetPath');
 const { isFullTier, readSearches } = require('./agentWidgetContext');
 const { readLiveArray } = require('./parts');
-const { filterPartsByPage } = require('../../redqueen/src/pageSelect');
+const { filterPartsByPage } = require('./pageSelect');
 
 const LIVE_PART_CAP_FREE = 10;
 const LIVE_PART_CAP_FULL = 500;

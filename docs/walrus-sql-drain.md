@@ -5,6 +5,14 @@ runs the SELECT-only `providers/local/sql` worker against the a-search database
 on **walrus**, and writes `a-clubs/{host}/{guid}/IN/sql.json` (overwritten each search).
 No AWS Lambda connects to MSSQL. No inbound ports on walrus.
 
+## Runtime layout (FR #5022)
+
+The Node drain process loads `walrus/src`, `providers/local/sql`, `shared/`,
+and `worker/lib`. Page selection (`filterPartsByPage`) lives in
+`shared/widgets/pageSelect.js`. `shared/widgets/promoteInToLive.js` requires
+that shared module, so the drain does **not** need `redqueen/src` on the box.
+`redqueen/src/pageSelect.js` is a thin re-export for older callers.
+
 FR #4827 / #4997: the SEA package `a-sqlsearch.exe` is the intended replacement,
 but trusted SQL needs `msnodesqlv8` loaded via `createRequire(process.execPath)`
 from `node_modules` beside the exe. Until
