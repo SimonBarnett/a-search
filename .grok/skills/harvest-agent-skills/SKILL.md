@@ -683,3 +683,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Walrus Parts full-text: FREETEXTTABLE ranked match; bind NVarChar(4000) not nvarchar(max); keep multi-word excludes as one quoted CONTAINS phrase.
 - After FR #5022, walrus SQL drain deploy manifest must omit redqueen/src and assert shared/widgets/pageSelect.js; fold main before DONE FIX when tip still requires redqueen pageSelect.
 - SQL FREETEXT: stripAnnotatorLocationCurrency before @q; honour queries[].maxResults capped by A_SEARCH_SQL_TOP; filter ft.RANK >= A_SEARCH_SQL_MIN_RANK (default 50); keep product parentheticals.
+- SQL Parts match: admit only via CONTAINS exact brand/model gates (extractBrandModelGateTokens); FREETEXT/RANK orders gated rows never admits; no gate tokens => return [] without SELECT
