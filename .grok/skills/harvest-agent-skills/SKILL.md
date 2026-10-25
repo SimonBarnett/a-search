@@ -659,10 +659,10 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
 - MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
 - Awin productdata may be gzip even when the marker says compression=none; sniff 1f8b/504b before treating the body as plain CSV.
+- Affiliate age is defaultage (merchant > provider > _root); self-heal missing _root only (create-only defaultage=7); never overwrite an existing invalid root.
 - Affiliates schedule: shared/defaultAge.js merchant>provider>_root/ positive int; due on lastdownload age UTC; fail needs_defaultage (no silent 7); leave live refreshdays ignored; skip _root as provider slug
 - FR #4943 import-failure MRB: require POST /bob/v1/intake with dedupe_key (not GitHub Issues API alone); assemble secret-shaped test fixtures via fakeSecrets.js (FR #3304); wire tools/dbimport catch paths too
 - Walrus import failures: deterministic GitHub issue per sha256(provider|feedKey|errorCode) with import-fp marker; comment not twin; outbox when A_SEARCH_GH_TOKEN missing or GH down; never silent sandbox MSSQL_DATABASE default
-- Affiliate age is defaultage (merchant > provider > _root); self-heal missing _root only (create-only defaultage=7); never overwrite an existing invalid root.
 - FR #4941 aw_product_id key: parseAwin MerchantSku must also flow through DbImportSql.ps1 and sql.js bulk ColumnMappings and MERGE INSERT/UPDATE
 - sqlStore MERGE stub must set LastSeenRunId from inputs.RunId when staging insert has no RunId, or soft-delete stays 0 after FR #4942.
 - Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
