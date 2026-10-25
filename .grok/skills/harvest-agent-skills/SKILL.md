@@ -668,3 +668,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
 - FIX after MRB FAIL on FR#4943: land GG fixture fix then switch reportImportFailure to POST /bob/v1/intake (dedupe_key); guard tools/dbimport/reportFailure.js with require.main; wire Invoke-FolderDbImport catch fail-soft
 - schema_drift listing every expectedColumns name on awin/*.csv is leftover gzip (1f8b); gunzip in parseAndMapFeed, do not remap columns.
+- a-search UAT S1: if SearchApiUrl and smoke JWT are unset, ACK then GIVEUP needs_human with a deploy-host checklist; never invent POST /search 200.
+- a-sqlsearch IN file is always sql.json (overwrite). Match with CONTAINSTABLE on Title/Description; TOP from A_SEARCH_SQL_TOP (500); empty queries must not scan Parts.

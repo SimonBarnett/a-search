@@ -114,7 +114,7 @@ rules. Writers bump GUID and host `lastmod` (#3968) via
 (webhook → SQS). It long-polls over outbound HTTPS only (no inbound ports), runs
 the database search against the a-search DB on **walrus** over the LAN (**never
 madeiradb** — madeiradb stays SELECT-only via `mdb.*` views), and writes
-`a-clubs/{hostkey}/{guid}/IN/{searchid}-sql.json` in the common IN/ format onto
+`a-clubs/{hostkey}/{guid}/IN/sql.json` in the common IN/ format onto
 the drive mapped to the a-search S3 bucket. The message is deleted only after a
 successful write.
 
