@@ -640,6 +640,36 @@ async function handleSqsWith429(opts) {
         throw err;
       }
 
+      // FR #4917: transient 429/502-504 are not isProviderFaultForDlq, but on the
+      // final receive SQS will redrive to the DLQ with no Lambda code. Write
+      // DONE=dlq here so hasresults can still complete.
+      if (transient) {
+        const maxReceive =
+          Number(opts.maxReceiveCount) > 0
+            ? Math.floor(Number(opts.maxReceiveCount))
+            : DEFAULT_MAX_RECEIVE_COUNT;
+        if (receiveCountFromRecord(record) >= maxReceive) {
+          let msg = {};
+          try {
+            if (record && typeof record.body === 'string') {
+              msg = JSON.parse(record.body);
+            }
+          } catch {
+            msg = {};
+          }
+          const source = String(
+            opts.source || (msg && msg.source) || '',
+          ).trim();
+          const s3 = resolveDoneS3Deps(opts);
+          await recordDlqDone({
+            ...s3,
+            msg,
+            source,
+            logError: opts.logError,
+          });
+        }
+      }
+
       if (
         !transient &&
         !isEnvIsolation(err) &&
