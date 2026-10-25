@@ -7,6 +7,9 @@
  */
 
 const { applyTrustedMssqlOdbc } = require('../../../../shared/mssql/trustedOdbc');
+const {
+  loadMssqlModule: loadMssqlFromDisk,
+} = require('../../../../shared/mssql/loadMssql');
 
 class SqlMssqlConfigError extends Error {
   /**
@@ -258,18 +261,16 @@ ORDER BY ft.[RANK] DESC
  * @returns {Promise<{ request: Function, close?: Function }>}
  */
 /**
- * Static branches so esbuild can bundle pure-JS mssql into the SEA exe.
- * msnodesqlv8 stays a literal require (native addon, shipped beside the exe).
+ * Static mssql require stays for SEA esbuild bundling; msnodesqlv8 loads from
+ * disk beside the exe via createRequire(process.execPath) when running as SEA
+ * (FR #4997). Plain require('mssql/msnodesqlv8') fails inside SEA with
+ * ERR_UNKNOWN_BUILTIN_MODULE even when node_modules sits beside the exe.
  * @param {object} config
+ * @param {Parameters<typeof loadMssqlFromDisk>[1]} [loadOpts]
  */
-function loadMssqlModule(config) {
+function loadMssqlModule(config, loadOpts) {
   const mod = resolveMssqlRequirePath(config);
-  if (mod === 'mssql/msnodesqlv8') {
-    // eslint-disable-next-line global-require
-    return require('mssql/msnodesqlv8');
-  }
-  // eslint-disable-next-line global-require
-  return require('mssql');
+  return loadMssqlFromDisk(mod, loadOpts);
 }
 
 async function defaultConnect(config) {

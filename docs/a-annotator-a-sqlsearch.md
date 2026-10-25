@@ -10,7 +10,20 @@ FR #4827 packages the on-prem drains as Node single-executable applications and 
 
 All three exes accept `--version` and exit 0 without AWS or SQL. Build them with `npm run build:sea` (`node scripts/build-a-search-sea.js`). On Linux the script downloads the Windows `node.exe` that matches the local Node version, then runs esbuild, `node --experimental-sea-config`, and postject. `--smoke` checks the SEA fuse and, on Windows, runs `--version`.
 
-`msnodesqlv8` is a native addon. It is not inside the blob. Trusted SQL still needs that addon beside the exe (or use SQL auth via pure-JS `mssql`, which is bundled). grok is not bundled; walrus still needs `grok.exe` for reviews.
+`msnodesqlv8` is a native addon. It is not inside the blob. Trusted SQL still needs `node_modules/msnodesqlv8` (and `mssql`) **beside the exe**, and the SEA runtime must load it with `module.createRequire(process.execPath)` (FR #4997). Plain `require('mssql/msnodesqlv8')` inside a SEA fails with `ERR_UNKNOWN_BUILTIN_MODULE` even when the folder sits next to the exe. SQL auth via pure-JS `mssql` stays bundled. grok is not bundled; walrus still needs `grok.exe` for reviews.
+
+Prove trusted SQL from the built exe before cutting over:
+
+```powershell
+# Beside dist\sea\a-sqlsearch.exe: copy or junction node_modules\msnodesqlv8 (+ mssql).
+$env:MSSQL_TRUSTED_CONNECTION = 'true'
+$env:MSSQL_SERVER = 'walrus\ASEARCH'
+$env:MSSQL_DATABASE = 'a_search'
+$env:MSSQL_ODBC_DRIVER = 'ODBC Driver 17 for SQL Server'
+node scripts/smoke-a-sqlsearch-trusted-select.js --exe dist\sea\a-sqlsearch.exe
+```
+
+Only after that smoke passes, register with `-ReplaceLegacySqlDrain`. Until then, keep `a-search-walrus-sql-drain` (node) running.
 
 ## Queues
 
@@ -44,7 +57,7 @@ Every POST `/search` fans out again (FR #4916 / Simon 2026-10-25): the per-GUID 
 
 ## Install
 
-One script registers all three services with nssm (`SERVICE_AUTO_START`, `AppExit Default Restart`, rotating logs). It removes the legacy service `a-search-walrus-sql-drain` when that service is present. `-Unregister` removes `a-annotator`, `a-sqlsearch`, `a-searches`, and the legacy SQL drain name. Re-running is idempotent. Passwords come from files and are masked in `-WhatIf` output.
+One script registers all three services with nssm (`SERVICE_AUTO_START`, `AppExit Default Restart`, rotating logs). By default it **keeps** the legacy service `a-search-walrus-sql-drain` (FR #4997). Pass `-ReplaceLegacySqlDrain` only after the trusted SELECT smoke from `a-sqlsearch.exe` succeeds. `-Unregister` removes `a-annotator`, `a-sqlsearch`, `a-searches`, and the legacy SQL drain name. Re-running is idempotent. Passwords come from files and are masked in `-WhatIf` output.
 
 ```powershell
 .\walrus\install\Register-ASearchWalrusServices.ps1 `

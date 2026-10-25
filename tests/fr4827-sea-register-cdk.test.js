@@ -140,7 +140,7 @@ describe('FR #4827 register script', () => {
   });
 
   it(
-    'WhatIf masks secrets and removes the legacy sql drain',
+    'WhatIf masks secrets and keeps the legacy sql drain by default (FR #4997)',
     { skip: winPs ? false : 'Windows PowerShell only (CI is Linux)' },
     () => {
     const tmp = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'fr4827-'));
@@ -186,7 +186,7 @@ describe('FR #4827 register script', () => {
     assert.match(out, /a-sqlsearch/);
     assert.match(out, /SERVICE_AUTO_START/);
     assert.match(out, /AppRotateFiles/);
-    assert.match(out, /a-search-walrus-sql-drain/);
+    assert.match(out, /Keeping a-search-walrus-sql-drain/);
     assert.match(out, /MSSQL_PASSWORD=\*\*\*/);
     assert.equal(out.includes('FAKE_PASSWORD_NOT_A_SECRET'), false);
     fs.rmSync(tmp, { recursive: true, force: true });

@@ -5,8 +5,11 @@
 
 .DESCRIPTION
   Idempotent installer for the SEA exes. SERVICE_AUTO_START, restart on failure,
-  rotating logs under InstallRoot\logs. Removes legacy service a-search-walrus-sql-drain
-  when it is installed. -Unregister removes a-annotator, a-sqlsearch, a-searches, and that legacy name.
+  rotating logs under InstallRoot\logs. Keeps the working legacy service
+  a-search-walrus-sql-drain by default (FR #4997: a-sqlsearch SEA cannot load
+  msnodesqlv8 until createRequire is proven). Pass -ReplaceLegacySqlDrain only
+  after a trusted SELECT smoke from the built exe succeeds. -Unregister removes
+  a-annotator, a-sqlsearch, a-searches, and that legacy name.
   Compatible with Windows PowerShell 5.1. Never prints passwords or API keys.
 
 .PARAMETER InstallRoot
@@ -92,6 +95,11 @@
 .PARAMETER WhatIf
   Print nssm commands with secrets masked. Do not change the machine.
 
+.PARAMETER ReplaceLegacySqlDrain
+  When set, stop and remove a-search-walrus-sql-drain after registering a-sqlsearch.
+  Default is off (FR #4997): leave the node-based drain running until the SEA exe
+  is proven with a trusted-connection SELECT.
+
 .PARAMETER Unregister
   Stop and remove a-annotator, a-sqlsearch, a-searches, and a-search-walrus-sql-drain.
 #>
@@ -130,6 +138,7 @@ param(
   [string]$GrokHome,
   [string]$SweepMs = '900000',
   [Alias('DryRun')][switch]$WhatIf,
+  [switch]$ReplaceLegacySqlDrain,
   [switch]$Unregister
 )
 
@@ -263,8 +272,13 @@ if (-not $DryRun) {
   New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 }
 
-# Legacy node service on this box is replaced by a-sqlsearch.
-Remove-NssmService -Nssm $nssm -Name $LegacySqlService
+# FR #4997: do not delete the working node drain until a-sqlsearch is proven.
+if ($ReplaceLegacySqlDrain) {
+  Write-Host "ReplaceLegacySqlDrain: removing $LegacySqlService"
+  Remove-NssmService -Nssm $nssm -Name $LegacySqlService
+} else {
+  Write-Host "Keeping $LegacySqlService (pass -ReplaceLegacySqlDrain only after a-sqlsearch trusted SELECT smoke)"
+}
 
 $annEnv = New-Object System.Collections.Generic.List[string]
 Add-Env $annEnv 'AWS_PROFILE' $AwsProfile

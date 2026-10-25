@@ -5,6 +5,14 @@ runs the SELECT-only `providers/local/sql` worker against the a-search database
 on **walrus**, and writes `a-clubs/{host}/{guid}/IN/sql.json` (overwritten each search).
 No AWS Lambda connects to MSSQL. No inbound ports on walrus.
 
+FR #4827 / #4997: the SEA package `a-sqlsearch.exe` is the intended replacement,
+but trusted SQL needs `msnodesqlv8` loaded via `createRequire(process.execPath)`
+from `node_modules` beside the exe. Until
+`node scripts/smoke-a-sqlsearch-trusted-select.js --exe dist\sea\a-sqlsearch.exe`
+passes on walrus, keep this node service (`a-search-walrus-sql-drain`) running.
+`Register-ASearchWalrusServices.ps1` does not remove it unless you pass
+`-ReplaceLegacySqlDrain`.
+
 ## Install
 
 ```powershell
