@@ -32,7 +32,7 @@ describe('MRB-1210 hostile FR-144 smoke-deploy', () => {
     const text = readUtf8NoBom(SCRIPT);
     assert.match(text, /function runSmoke/);
     assert.ok(text.includes('A_SEARCH_API_URL'));
-    assert.ok(text.includes('A_SEARCH_SMOKE_JWT'));
+    assert.ok(text.includes('signedHeaders') || text.includes('SigV4'));
     assert.ok(text.includes('/search'));
     assert.ok(text.includes('/selftest'));
     assert.ok(text.includes('assertSearchAccept'));
@@ -55,10 +55,10 @@ describe('MRB-1210 hostile FR-144 smoke-deploy', () => {
     assert.ok(fr.includes('smoke-deploy.js'));
 
     const deploy = readUtf8NoBom(DEPLOY);
-    assert.ok(deploy.includes('## 7. Smoke (FR-144)'));
+    assert.ok(deploy.includes('## 7. Smoke (FR-144'));
     assert.ok(deploy.includes('smoke-deploy.js'));
     assert.ok(
-      deploy.includes('A_SEARCH_API_URL') || deploy.includes('A_SEARCH_SMOKE_JWT'),
+      deploy.includes('A_SEARCH_API_URL') || deploy.includes('SigV4'),
     );
   });
 

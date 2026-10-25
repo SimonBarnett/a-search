@@ -18,8 +18,8 @@ describe('MRB-1300 hostile FR-161 endpoint skill deploy smoke', () => {
     assert.ok(text.includes('## Deploy URL + smoke (FR-161 / FR-144)'));
     assert.ok(text.includes('SearchApiUrl'));
     assert.ok(text.includes('smoke-deploy'));
-    assert.ok(text.includes('A_SEARCH_SMOKE_JWT'));
-    assert.ok(text.includes('never commit the JWT'));
+    assert.ok(text.includes('SigV4') || text.includes('IAM'));
+    assert.ok(text.includes('never commit credentials'));
     assert.ok(!text.startsWith('\uFEFF'));
   });
 
