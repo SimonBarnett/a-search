@@ -52,11 +52,10 @@ function createStubExec() {
       runSeq += 1;
       return { recordset: [{ RunId: runSeq }] };
     }
-    if (sql.includes('DELETE FROM ingest.PartsStaging')) {
+    if (sql.includes('DELETE FROM dbo.PartsStaging')) {
       for (let i = staging.length - 1; i >= 0; i -= 1) {
         const r = staging[i];
         if (
-          r.RunId === inputs.RunId &&
           r.ProviderId === inputs.ProviderId &&
           r.FeedKey === inputs.FeedKey &&
           r.Env === inputs.Env
@@ -66,16 +65,38 @@ function createStubExec() {
       }
       return { recordset: [] };
     }
-    if (sql.includes('INSERT INTO ingest.PartsStaging')) {
+    if (sql.includes('INSERT INTO dbo.PartsStaging')) {
       staging.push({ ...inputs });
       return { recordset: [] };
+    }
+    if (sql.includes('SELECT COUNT(*) AS N FROM dbo.PartsStaging')) {
+      let n = staging.length;
+      if (inputs.ProviderId) {
+        n = staging.filter(
+          (r) =>
+            r.ProviderId === inputs.ProviderId &&
+            r.FeedKey === inputs.FeedKey &&
+            r.Env === inputs.Env,
+        ).length;
+      }
+      return { recordset: [{ N: n }] };
+    }
+    if (sql.includes('SELECT DISTINCT Source, FeedKey, Env FROM dbo.PartsStaging')) {
+      const seen = new Set();
+      const rows = [];
+      for (const r of staging) {
+        const k = `${r.ProviderId}|${r.FeedKey}|${r.Env}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        rows.push({ Source: r.ProviderId, FeedKey: r.FeedKey, Env: r.Env });
+      }
+      return { recordset: rows };
     }
     if (sql.includes('MERGE dbo.Parts')) {
       let inserted = 0;
       let updated = 0;
       const slice = staging.filter(
         (r) =>
-          r.RunId === inputs.RunId &&
           r.ProviderId === inputs.ProviderId &&
           r.FeedKey === inputs.FeedKey &&
           r.Env === inputs.Env,
@@ -103,7 +124,8 @@ function createStubExec() {
           Availability: s.Availability,
           ContentHash: s.ContentHash,
           DeletedAt: null,
-          LastSeenRunId: s.RunId,
+          // FR #4941 staging rows omit RunId; sqlStore MERGE binds @RunId (inputs.RunId).
+          LastSeenRunId: inputs.RunId != null ? inputs.RunId : s.RunId,
         };
         if (!prev || prev.DeletedAt) inserted += 1;
         else if (prev.ContentHash !== s.ContentHash) updated += 1;
@@ -123,7 +145,6 @@ function createStubExec() {
         ) {
           const inStaging = staging.some(
             (s) =>
-              s.RunId === inputs.RunId &&
               s.ProviderId === row.Source &&
               s.FeedKey === row.FeedKey &&
               s.MerchantProductId === row.MerchantProductId &&
@@ -143,11 +164,11 @@ function createStubExec() {
         if (
           row.Source === inputs.ProviderId &&
           row.FeedKey === inputs.FeedKey &&
-          row.Env === inputs.Env
+          row.Env === inputs.Env &&
+          row.LastSeenRunId != null
         ) {
           const inStaging = staging.some(
             (s) =>
-              s.RunId === inputs.RunId &&
               s.ProviderId === row.Source &&
               s.FeedKey === row.FeedKey &&
               s.MerchantProductId === row.MerchantProductId &&

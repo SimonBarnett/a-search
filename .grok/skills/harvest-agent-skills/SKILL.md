@@ -653,8 +653,10 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Imported a-clubs EventBridge: use Bucket.fromBucketName + enableEventBridgeNotification (Managed=false merges existing Topic/Queue/Lambda); do not hand-put EventBridgeConfiguration.
 - When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.
 - After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
+- a-searches hourly FR: ACK then GIVEUP needs_human until Simon stamps age key/unit and how /search forces a new fan-out; do not invent refresh:true or defaultage.
 - FIX after hasresults/DONE: empty-query / zero-product worker pins must allow DONE/ puts (assert no IN/ + DONE present), not puts.length===0
 - FR with open Needs Simon decision stamps (key name + refresh vs idempotent fan-out): ACK then GIVEUP needs_human; do not invent refresh:true or a metadata key
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
 - MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
 - Awin productdata may be gzip even when the marker says compression=none; sniff 1f8b/504b before treating the body as plain CSV.
+- Affiliates schedule: shared/defaultAge.js merchant>provider>_root/ positive int; due on lastdownload age UTC; fail needs_defaultage (no silent 7); leave live refreshdays ignored; skip _root as provider slug
