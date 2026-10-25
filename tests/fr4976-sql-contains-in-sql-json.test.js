@@ -44,13 +44,14 @@ function sampleRow() {
 }
 
 describe('FR #4976 contains + TOP helpers', () => {
-  it('ORs each query and AND NOTs each exclude as CONTAINS tokens', () => {
+  it('joins queries as FREETEXT natural language (excludes are separate params)', () => {
+    const { buildFreetextQuery } = require('../providers/local/sql/src/queryParts');
     assert.equal(
-      buildContainsQuery({
+      buildFreetextQuery({
         queries: [{ q: 'model aircraft' }, 'servo'],
         exclude: [{ match: 'title:calendar' }],
       }),
-      '"model" AND "aircraft" OR "servo" AND NOT "calendar"',
+      'model aircraft servo',
     );
   });
 
@@ -60,9 +61,9 @@ describe('FR #4976 contains + TOP helpers', () => {
     assert.equal(sqlTopLimit({ A_SEARCH_SQL_TOP: '0' }), 500);
   });
 
-  it('SELECT_SQL is CONTAINSTABLE + TOP (@n) + RANK, SELECT-only', () => {
+  it('SELECT_SQL is FREETEXTTABLE + TOP (@n) + RANK, SELECT-only', () => {
     assert.match(SELECT_SQL, /SELECT\s+TOP\s+\(@n\)/i);
-    assert.match(SELECT_SQL, /CONTAINSTABLE/i);
+    assert.match(SELECT_SQL, /FREETEXTTABLE/i);
     assert.match(SELECT_SQL, /ORDER BY\s+ft\.\[RANK\]/i);
     assert.doesNotMatch(SELECT_SQL, /\bLIKE\b/i);
     assert.doesNotMatch(SELECT_SQL, /\b(INSERT|UPDATE|DELETE|MERGE)\b/i);
@@ -84,9 +85,11 @@ describe('FR #4976 contains + TOP helpers', () => {
     assert.equal(connected, false);
   });
 
-  it('passes @contains and @n into a static query', async () => {
+  it('passes @q @top @n and phrase @ex0 into FREETEXTTABLE SQL', async () => {
     /** @type {Record<string, unknown>} */
     const inputs = {};
+    /** @type {Record<string, unknown>} */
+    const types = {};
     let sqlText = '';
     const rows = await defaultQueryParts(
       { env: 'live', queries: ['servo', 'arm'], exclude: ['junkxx'] },
@@ -101,8 +104,9 @@ describe('FR #4976 contains + TOP helpers', () => {
         connect: async () => ({
           request() {
             return {
-              input(name, _type, value) {
+              input(name, type, value) {
                 inputs[name] = value;
+                types[name] = type;
                 return this;
               },
               async query(text) {
@@ -116,9 +120,12 @@ describe('FR #4976 contains + TOP helpers', () => {
       },
     );
     assert.equal(rows.length, 1);
-    assert.equal(inputs.contains, '"servo" OR "arm" AND NOT "junkxx"');
+    assert.equal(inputs.q, 'servo arm');
+    assert.equal(inputs.ex0, '"junkxx"');
     assert.equal(inputs.n, 12);
-    assert.equal(sqlText, SELECT_SQL);
+    assert.equal(inputs.top, 12);
+    assert.match(sqlText, /FREETEXTTABLE/);
+    assert.match(sqlText, /@ex0/);
     assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'like'), false);
   });
 });
