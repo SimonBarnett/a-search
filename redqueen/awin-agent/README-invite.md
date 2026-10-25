@@ -11,7 +11,7 @@ invite -Live -Max 20       # submit
 invite -Live -Max 1 -Otp 123456
 
 cd S:\a-affiliates
-invite -Max 3              # every enabled=1 provider (today: awin only)
+invite -Max 3              # every enabled=1 provider (awin + rakuten when both enabled)
 ```
 
 Shim: `C:\ai\a-search\tools\invite.ps1` (on PATH). Backend: `node C:\ai\a-search\awin-agent\scripts\invite.mjs`.
