@@ -1,11 +1,16 @@
 'use strict';
 
 /**
- * FR #3968 / FR #4107: standalone parts-gateway Lambda --- GET /parts via a-clubs S3.
- * No MSSQL, no VPC, no secrets. Host from Origin only (embed frames → club domain).
+ * FR #3968 / FR #4107 / FR #4891: standalone parts-gateway Lambda --- GET /parts
+ * via a-clubs S3. No MSSQL, no VPC, no secrets. Host from Origin only.
+ * Searching (enabled!=1) → HTTP 202 + Retry-After; ok/no_parts → 200.
  */
 
-const { pagePartsAclubs, PartsError } = require('./pageParts');
+const {
+  pagePartsAclubs,
+  PartsError,
+  SEARCHING_RETRY_AFTER_MS,
+} = require('./pageParts');
 
 /** Lazy-load AWS SDK so unit tests can inject S3 fns without node_modules. */
 function loadS3Sdk() {
@@ -51,10 +56,10 @@ function headerMap(event) {
   return out;
 }
 
-function jsonResponse(statusCode, payload) {
+function jsonResponse(statusCode, payload, extraHeaders) {
   return {
     statusCode,
-    headers: JSON_HEADERS,
+    headers: extraHeaders ? { ...JSON_HEADERS, ...extraHeaders } : JSON_HEADERS,
     body: JSON.stringify(payload),
   };
 }
@@ -72,6 +77,7 @@ function buildS3Fns(deps = {}) {
       putObjectTagging: deps.putObjectTagging,
       getObjectTagging: deps.getObjectTagging,
       copyObject: deps.copyObject,
+      getObjectAnnotation: deps.getObjectAnnotation,
     };
   }
 
@@ -95,6 +101,28 @@ function buildS3Fns(deps = {}) {
       region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'eu-west-2',
     });
 
+  /** Optional: promote module / pageParts may use annotations when present. */
+  let getObjectAnnotation = deps.getObjectAnnotation;
+  if (!getObjectAnnotation) {
+    getObjectAnnotation = async (input) => {
+      try {
+        const { GetObjectAnnotationCommand } = loadS3Sdk();
+        return client.send(
+          new GetObjectAnnotationCommand({ Bucket: bucket, ...input }),
+        );
+      } catch (err) {
+        if (err && /Cannot find module|GetObjectAnnotation/.test(String(err))) {
+          const e = new Error('NoSuchAnnotation');
+          e.name = 'NoSuchAnnotation';
+          e.code = 'NoSuchAnnotation';
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        throw err;
+      }
+    };
+  }
+
   return {
     headObject: (input) =>
       client.send(new HeadObjectCommand({ Bucket: bucket, ...input })),
@@ -110,6 +138,7 @@ function buildS3Fns(deps = {}) {
       client.send(new GetObjectTaggingCommand({ Bucket: bucket, ...input })),
     copyObject: (input) =>
       client.send(new CopyObjectCommand({ Bucket: bucket, ...input })),
+    getObjectAnnotation,
   };
 }
 
@@ -159,11 +188,22 @@ async function handlePartsGateway(event, deps = {}) {
       putObjectTagging: s3.putObjectTagging,
       getObjectTagging: s3.getObjectTagging,
       copyObject: s3.copyObject,
+      getObjectAnnotation: s3.getObjectAnnotation,
       mint: deps.mint,
       sendMessage,
       folderEventsQueueUrl,
       now: deps.now,
     });
+    if (page && page.status === 'searching') {
+      const retrySec = Math.max(
+        1,
+        Math.ceil(
+          Number(page.retryAfterMs != null ? page.retryAfterMs : SEARCHING_RETRY_AFTER_MS) /
+            1000,
+        ),
+      );
+      return jsonResponse(202, page, { 'retry-after': String(retrySec) });
+    }
     return jsonResponse(200, page);
   } catch (err) {
     const code =

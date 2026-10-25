@@ -3,7 +3,7 @@
 /**
  * FR #3968: auto-create a-clubs/{hostkey}/{guid}/ with seeded JSON files.
  * GUID folder marker (zero-byte trailing-slash key) carries metadata:
- * uri, seen, clicks, since, lastmod, annotated, init --- not widget.json.
+ * uri, seen, clicks, since, lastmod, annotated, enabled, hasresults --- not widget.json.
  * Prefer Referer path for uri (see pageUri.js).
  * Seed writes bump GUID + host lastmod; publish host folder event on new GUID.
  */
@@ -91,9 +91,8 @@ async function ensureAclubsWidget(opts) {
     since: createdAt,
     lastmod: createdAt,
     annotated: '0',
-    init: '0',
-    // FR #4891 / #4917: agent sets enabled=1 after IN→live; hasresults=1 when
-    // every fan-out source is serviced or DLQ'd (searchDone.js).
+    // FR #4891: enabled replaces init; agent sets enabled=1 after IN→live.
+    // FR #4917: hasresults=1 when every fan-out source is serviced or DLQ'd.
     enabled: '0',
     hasresults: '0',
   };

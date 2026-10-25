@@ -7,6 +7,7 @@
  */
 
 const { setHasResults } = require('../widgets/hostFolderMeta');
+const { promoteInToLive } = require('../widgets/promoteInToLive');
 
 /**
  * @param {Record<string, string|undefined>} [envVars]
@@ -204,7 +205,9 @@ async function doneExists(opts, source) {
 
 /**
  * Compare DONE set for fan-out searchid vs queued; set hasresults=1 when complete.
- * @returns {Promise<{ hasresults: boolean, reason?: string }>}
+ * FR #4891: after hasresults flips, promote IN/ → live.json and set enabled=1
+ * (empty IN still enables → widget no_parts).
+ * @returns {Promise<{ hasresults: boolean, reason?: string, promote?: object }>}
  */
 async function maybeSetHasResults(opts) {
   const hostkey = String(opts.hostkey || '').trim();
@@ -236,7 +239,34 @@ async function maybeSetHasResults(opts) {
     getObjectTagging: opts.getObjectTagging,
     putObjectTagging: opts.putObjectTagging,
   });
-  return { hasresults: true };
+  let promote = null;
+  try {
+    promote = await promoteInToLive({
+      host: hostkey,
+      guid,
+      bucket,
+      now: opts.now,
+      listObjectsV2: opts.listObjectsV2,
+      getObject: opts.getObject,
+      putObject: opts.putObject,
+      getObjectAnnotation: opts.getObjectAnnotation,
+      headObject: opts.headObject,
+      copyObject: opts.copyObject,
+      getObjectTagging: opts.getObjectTagging,
+      putObjectTagging: opts.putObjectTagging,
+    });
+  } catch (err) {
+    if (typeof opts.logError === 'function') {
+      opts.logError(
+        '[a-search]',
+        'WARN',
+        'promote_in_to_live_failed',
+        String((err && err.message) || err),
+      );
+    }
+    promote = { error: String((err && err.message) || err) };
+  }
+  return { hasresults: true, promote };
 }
 
 /**

@@ -1059,7 +1059,7 @@ class ASearchStack extends cdk.Stack {
     const httpApiProps = {
       apiName: stagedName('a-search'),
       description:
-        'a-search POST /search + ComponentsPiece /parts /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + FR-228 auth email/SMS OTP + account routes -> entry Lambda',
+        'a-search POST /search + ComponentsPiece /go /ext/status /widgets (FR-219/220 mint) /w/events + FR-216/235 merchant shops + FR-218 /partner/register + FR-222 account payouts + FR-249 /club/revenue-share + FR-229 /auth/session|/auth/redirect + FR-231 /auth/oauth/callback + FR-228 auth email/SMS OTP + account routes -> entry Lambda (GET /parts lives on APartsGateway only; FR #4891)',
       createDefaultStage: false,
     };
     if (corsOrigins.length > 0) {
@@ -1128,15 +1128,8 @@ class ASearchStack extends cdk.Stack {
       }),
     );
 
-    // FR-198: public GET /parts?host&widgetGuid&offset&n (JWT not required; verified in Lambda)
-    httpApi.addRoutes({
-      path: '/parts',
-      methods: [apigwv2.HttpMethod.GET],
-      integration: new integrations.HttpLambdaIntegration(
-        'EntryPartsIntegration',
-        entry,
-      ),
-    });
+    // FR #4891: GET /parts removed from ASearchStack --- canonical route is
+    // APartsGateway only (PartsGatewayApiUrl). Do not re-add path: '/parts' here.
     // FR-199 + FR-200: public GET /go (approved path + DNS TXT signup gate; JWT not required)
     httpApi.addRoutes({
       path: '/go',

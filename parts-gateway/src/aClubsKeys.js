@@ -26,7 +26,7 @@ function useridClaimKey(userid) {
 
 /**
  * Zero-byte GUID folder marker key (trailing slash).
- * Metadata (uri/seen/clicks/since/init/lastmod) lives here --- not on widget.json.
+ * Metadata (uri/seen/clicks/since/enabled/hasresults/lastmod) lives here --- not on widget.json.
  * @param {unknown} host
  * @param {unknown} widgetGuid
  * @returns {string}

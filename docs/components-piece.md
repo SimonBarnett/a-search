@@ -38,7 +38,10 @@ x:/{customerNumber}/
 
 Minimal public contracts (host-keyed; not JWT `POST /search`):
 
-- `GET /parts?host&widgetGuid&offset&n` -> `{ customerNumber, widgetGuid, layout, parts[], nextOffset }`
+- `GET /parts?widgetGuid&offset&n` (FR #4891: **APartsGateway only**,
+  `data-api-base` = CDK output `PartsGatewayApiUrl`; host from `Origin`, not
+  `?host=`) -> `{ userid, widgetGuid, layout, parts[], nextOffset, status, enabled, init }`.
+  `status` is `searching` (HTTP 202 while `enabled!=1`), `ok`, or `no_parts`.
 - `GET /go?host&widgetGuid&part` -> `{ url }` (affiliate target or signup URL)
 - `POST /widgets` (FR-232) -> mints/binds a widgetGuid for a host (embed-code creation)
 

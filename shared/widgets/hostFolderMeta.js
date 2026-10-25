@@ -497,7 +497,8 @@ async function touchLastmod(opts) {
 }
 
 /**
- * Set init=1 on a GUID marker (never back to 0); bumps lastmod; preserves other keys/tags.
+ * FR #4891: set enabled=1 on a GUID marker (never back to 0); bumps lastmod;
+ * preserves other keys/tags. Replaces former init flag (Simon 17:21).
  * @param {{
  *   Key: string,
  *   bucket?: string,
@@ -510,16 +511,16 @@ async function touchLastmod(opts) {
  *   putObjectTagging?: Function,
  * }} opts
  */
-async function setInit(opts) {
+async function setEnabled(opts) {
   if (!opts || typeof opts !== 'object') {
-    throw new Error('setInit opts required');
+    throw new Error('setEnabled opts required');
   }
   if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
     throw new Error('copyObject_or_getObject_required');
   }
   const state = await readMarkerState(opts);
   const lastmod = isoLastmod(opts.now);
-  const metadata = { ...state.metadata, init: '1', lastmod };
+  const metadata = { ...state.metadata, enabled: '1', lastmod };
   await rewriteMarkerMetadata({
     Key: state.Key,
     metadata,
@@ -531,12 +532,20 @@ async function setInit(opts) {
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
   });
-  return { Key: state.Key, init: 1, lastmod, metadata };
+  return { Key: state.Key, enabled: 1, lastmod, metadata };
+}
+
+/**
+ * One-release compat alias: writes enabled:'1' (not init). Prefer setEnabled.
+ * @param {Parameters<typeof setEnabled>[0]} opts
+ */
+async function setInit(opts) {
+  return setEnabled(opts);
 }
 
 /**
  * FR #4917: set hasresults=1 on a GUID marker (never back to 0); bumps lastmod;
- * preserves other keys/tags (enabled, annotated, init, uri, …).
+ * preserves other keys/tags (enabled, annotated, uri, …).
  * @param {{
  *   Key: string,
  *   bucket?: string,
@@ -781,6 +790,7 @@ module.exports = {
   putWidgetAnnotations,
   isoLastmod,
   touchLastmod,
+  setEnabled,
   setInit,
   setHasResults,
   hashHostPassword,

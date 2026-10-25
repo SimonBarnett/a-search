@@ -328,12 +328,12 @@ describe('FR #4823 walrus runDrainJob + pageParts', () => {
     assert.equal(fs.existsSync(abs), false);
   });
 
-  it('pagePartsAclubs keeps init=0 when IN/ prefix is empty; init=1 with product IN', async () => {
+  it('pagePartsAclubs stays searching when IN/ has files but enabled=0 (FR #4891)', async () => {
     const s3 = createMemoryS3();
-    const mintFixed = (bytes) => () => {
-      const b = Buffer.from(bytes);
-      return require('../shared/identity/madeiraUserId').mintChecksummedUserId(b);
-    };
+    const mintFixed = (bytes) => () =>
+      require('../shared/identity/madeiraUserId').mintChecksummedUserId({
+        randomBytes: () => Buffer.from(bytes),
+      });
     const pageEmpty = await pagePartsAclubs({
       origin: `https://${HOST}`,
       widgetGuid: GUID,
@@ -344,6 +344,8 @@ describe('FR #4823 walrus runDrainJob + pageParts', () => {
       copyObject: s3.copyObject,
       mint: mintFixed([1, 1, 1, 1, 1, 1, 1]),
     });
+    assert.equal(pageEmpty.status, 'searching');
+    assert.equal(pageEmpty.enabled, 0);
     assert.equal(pageEmpty.init, 0);
 
     const body = buildInResult({
@@ -374,7 +376,10 @@ describe('FR #4823 walrus runDrainJob + pageParts', () => {
       getObjectTagging: s3.getObjectTagging,
       putObjectTagging: s3.putObjectTagging,
     });
-    assert.equal(pagePromo.init, 1);
+    // /parts must not promote; still searching until promoteInToLive sets enabled.
+    assert.equal(pagePromo.status, 'searching');
+    assert.equal(pagePromo.enabled, 0);
+    assert.equal(pagePromo.init, 0);
   });
 });
 
