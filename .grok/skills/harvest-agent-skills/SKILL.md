@@ -671,3 +671,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search UAT S1: if SearchApiUrl and smoke JWT are unset, ACK then GIVEUP needs_human with a deploy-host checklist; never invent POST /search 200.
 - a-sqlsearch IN file is always sql.json (overwrite). Match with CONTAINSTABLE on Title/Description; TOP from A_SEARCH_SQL_TOP (500); empty queries must not scan Parts.
 - a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
+- GUID marker ready-flag is enabled (not init); /parts must not promote IN→live — promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
