@@ -24,6 +24,24 @@ param(
 )
 
 Set-StrictMode -Version Latest
+
+function Invoke-DbImportFailureReport {
+    param(
+        [string]$Provider,
+        [string]$AffiliateId,
+        [string]$ErrorCode = 'dbimport_error',
+        [string]$Detail = ''
+    )
+    # FR #4943: same bobiverse intake path as walrus/import (fail-soft).
+    $reporter = Join-Path $PSScriptRoot 'dbimport\reportFailure.js'
+    if (-not (Test-Path -LiteralPath $reporter)) { return }
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $node) { return }
+    $safeDetail = [string]$Detail
+    if ($safeDetail.Length -gt 1500) { $safeDetail = $safeDetail.Substring(0, 1500) }
+    & $node.Source $reporter --provider $Provider --feedKey $AffiliateId --errorCode $ErrorCode --detail $safeDetail 2>$null | Out-Null
+}
+
 $ErrorActionPreference = 'Stop'
 $DryRun = $WhatIf -or $DryRunSwitch
 
@@ -316,6 +334,7 @@ try {
                 $safe = $_.Exception.Message -replace '(?i)(password|secret|token)\s*[:=]\s*\S+', '$1=***'
                 Write-FolderToolDetail ("FAILED {0}/{1}: {2}" -f $j.Provider, $j.AffiliateId, $safe)
                 Write-Output ("provider={0} affiliateid={1} status=error error={2}" -f $j.Provider, $j.AffiliateId, $safe)
+                Invoke-DbImportFailureReport -Provider $j.Provider -AffiliateId $j.AffiliateId -ErrorCode 'dbimport_error' -Detail $safe
             }
         }
     }

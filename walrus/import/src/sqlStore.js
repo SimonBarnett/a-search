@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /**
  * FR #4520: mssql-backed Parts + ingest.* store for walrus daily import.
@@ -421,10 +421,10 @@ function createSqlStore(opts = {}) {
       await exec(
         `INSERT INTO ingest.Failures (
            RunId, ProviderId, FeedKey, FileKey, ErrorCode, ErrorDetail,
-           SampleBadRowsPath, ProviderJsonSha, AgentStatus
+           SampleBadRowsPath, ProviderJsonSha, AgentStatus, IssueUrl
          ) VALUES (
            @RunId, @ProviderId, @FeedKey, @FileKey, @ErrorCode, @ErrorDetail,
-           @SampleBadRowsPath, @ProviderJsonSha, @AgentStatus
+           @SampleBadRowsPath, @ProviderJsonSha, @AgentStatus, @IssueUrl
          );`,
         {
           RunId: row.RunId,
@@ -436,12 +436,91 @@ function createSqlStore(opts = {}) {
           SampleBadRowsPath: row.SampleBadRowsPath || null,
           ProviderJsonSha: row.ProviderJsonSha || null,
           AgentStatus: row.AgentStatus || null,
+          IssueUrl: row.IssueUrl || null,
         },
       );
     } catch {
       // keep in-memory failure for agent stamp even if SQL insert fails mid-run
     }
     return f;
+  }
+
+  /** FR #4943: stamp IssueNumber / IssueUrl / AgentStatus on matching rows. */
+  async function stampFailureIssue(patch) {
+    const matches = failures.filter(
+      (f) =>
+        String(f.ProviderId) === String(patch.ProviderId) &&
+        String(f.FeedKey) === String(patch.FeedKey) &&
+        String(f.ErrorCode) === String(patch.ErrorCode) &&
+        (patch.RunId == null || Number(f.RunId) === Number(patch.RunId)),
+    );
+    for (const f of matches) {
+      if (patch.IssueNumber != null) f.IssueNumber = patch.IssueNumber;
+      if (patch.IssueUrl) f.IssueUrl = patch.IssueUrl;
+      if (patch.AgentStatus) f.AgentStatus = patch.AgentStatus;
+    }
+    try {
+      await exec(
+        `UPDATE ingest.Failures
+         SET IssueUrl = COALESCE(@IssueUrl, IssueUrl),
+             IssueNumber = COALESCE(@IssueNumber, IssueNumber),
+             AgentStatus = COALESCE(@AgentStatus, AgentStatus)
+         WHERE RunId = @RunId
+           AND ProviderId = @ProviderId
+           AND FeedKey = @FeedKey
+           AND ErrorCode = @ErrorCode;`,
+        {
+          RunId: patch.RunId,
+          ProviderId: patch.ProviderId,
+          FeedKey: patch.FeedKey,
+          ErrorCode: patch.ErrorCode,
+          IssueUrl: patch.IssueUrl || null,
+          IssueNumber: patch.IssueNumber != null ? patch.IssueNumber : null,
+          AgentStatus: patch.AgentStatus || null,
+        },
+      );
+    } catch {
+      // column may be missing pre-migration; in-memory stamp still applies
+    }
+    return matches.length;
+  }
+
+  /** FR #4943: leftover staging after merge (ingest + dbo). */
+  async function countStagingLeftovers(runId) {
+    const feeds = [];
+    let count = 0;
+    try {
+      const result = await exec(
+        `SELECT ProviderId, FeedKey, COUNT(*) AS Cnt
+         FROM ingest.PartsStaging
+         GROUP BY ProviderId, FeedKey;`,
+      );
+      for (const row of result.recordset || []) {
+        const c = Number(row.Cnt) || 0;
+        count += c;
+        feeds.push({
+          provider: row.ProviderId,
+          feedKey: row.FeedKey,
+          count: c,
+          runId,
+        });
+      }
+    } catch {
+      // table may not exist in older DBs
+    }
+    try {
+      const result = await exec(
+        `SELECT COUNT(*) AS Cnt FROM dbo.PartsStaging;`,
+      );
+      const c = Number(result.recordset && result.recordset[0] && result.recordset[0].Cnt) || 0;
+      if (c > 0) {
+        count += c;
+        feeds.push({ provider: '_dbo', feedKey: '_PartsStaging', count: c, runId });
+      }
+    } catch {
+      // optional
+    }
+    return { count, feeds };
   }
 
   async function drainLeftoverStaging() {
@@ -558,6 +637,8 @@ function createSqlStore(opts = {}) {
     markFileOk,
     isFileOk,
     addFailure,
+    stampFailureIssue,
+    countStagingLeftovers,
     drainLeftoverStaging,
     endOfRunHealth,
     containstableProbe,
