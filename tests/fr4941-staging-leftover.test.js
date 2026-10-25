@@ -71,7 +71,7 @@ describe('FR #4941 leftover staging', () => {
     assert.doesNotMatch(src, /INSERT INTO ingest\.PartsStaging/);
     assert.match(src, /FROM dbo\.PartsStaging/);
     const mig = fs.readFileSync(
-      path.join(__dirname, '..', 'db', 'migrations', '023_DropIngestPartsStaging.sql'),
+      path.join(__dirname, '..', 'db', 'migrations', '024_DropIngestPartsStaging.sql'),
       'utf8',
     );
     assert.match(mig, /DROP TABLE ingest\.PartsStaging/i);
