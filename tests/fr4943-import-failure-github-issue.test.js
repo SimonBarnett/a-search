@@ -349,9 +349,9 @@ describe('FR #4943 lock + database default', () => {
 });
 
 describe('FR #4943 migration', () => {
-  it('023 adds IssueNumber idempotently', () => {
+  it('025 adds IssueNumber idempotently', () => {
     const sql = fs.readFileSync(
-      path.join(__dirname, '..', 'db', 'migrations', '023_Failures_IssueNumber.sql'),
+      path.join(__dirname, '..', 'db', 'migrations', '025_Failures_IssueNumber.sql'),
       'utf8',
     );
     assert.equal(sql.split(/\r?\n/)[0].trim(), '-- target: a_search');
