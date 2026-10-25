@@ -124,7 +124,8 @@ function createStubExec() {
           Availability: s.Availability,
           ContentHash: s.ContentHash,
           DeletedAt: null,
-          LastSeenRunId: s.RunId,
+          // FR #4941 staging rows omit RunId; sqlStore MERGE binds @RunId (inputs.RunId).
+          LastSeenRunId: inputs.RunId != null ? inputs.RunId : s.RunId,
         };
         if (!prev || prev.DeletedAt) inserted += 1;
         else if (prev.ContentHash !== s.ContentHash) updated += 1;
@@ -163,7 +164,8 @@ function createStubExec() {
         if (
           row.Source === inputs.ProviderId &&
           row.FeedKey === inputs.FeedKey &&
-          row.Env === inputs.Env
+          row.Env === inputs.Env &&
+          row.LastSeenRunId != null
         ) {
           const inStaging = staging.some(
             (s) =>

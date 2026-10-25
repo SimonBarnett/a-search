@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /**
  * FR #4463: in-memory Parts + ingest store for unit tests (no live MSSQL).
@@ -291,6 +291,32 @@ function createMemoryStore(opts = {}) {
     return f;
   }
 
+  /** FR #4943: stamp IssueNumber / IssueUrl onto matching failure rows. */
+  function stampFailureIssue(patch) {
+    const matches = failures.filter(
+      (f) =>
+        String(f.ProviderId) === String(patch.ProviderId) &&
+        String(f.FeedKey) === String(patch.FeedKey) &&
+        String(f.ErrorCode) === String(patch.ErrorCode) &&
+        (patch.RunId == null || Number(f.RunId) === Number(patch.RunId)),
+    );
+    for (const f of matches) {
+      if (patch.IssueNumber != null) f.IssueNumber = patch.IssueNumber;
+      if (patch.IssueUrl) f.IssueUrl = patch.IssueUrl;
+      if (patch.AgentStatus) f.AgentStatus = patch.AgentStatus;
+    }
+    return matches.length;
+  }
+
+  /** FR #4943: injectable leftover staging count (memory default 0). */
+  let stagingLeftover = { count: 0, feeds: [] };
+  function countStagingLeftovers() {
+    return stagingLeftover;
+  }
+  function setStagingLeftover(v) {
+    stagingLeftover = v && typeof v === 'object' ? v : { count: 0, feeds: [] };
+  }
+
   async function drainLeftoverStaging() {
     const feeds = new Set(
       leftoverStaging.map((r) => `${r.Source}|${r.FeedKey}|${r.Env}`),
@@ -365,6 +391,9 @@ function createMemoryStore(opts = {}) {
     markFileOk,
     isFileOk,
     addFailure,
+    stampFailureIssue,
+    countStagingLeftovers,
+    setStagingLeftover,
     drainLeftoverStaging,
     endOfRunHealth,
     containstableProbe,
