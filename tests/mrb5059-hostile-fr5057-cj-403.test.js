@@ -30,6 +30,7 @@ describe('MRB #5059 hostile FR #5057 CJ 403', () => {
     assert.match(a, /CJ_COMPANY_ID/);
     assert.match(a, /CJ_WEBSITE_ID/);
     assert.match(m, /CJ_COMPANY_ID/);
-    assert.match(m, /omit.*companyId|without \companyId\|retries once without/i);
+    assert.match(m, /retries once without/);
+    assert.match(m, /FR #4782/);
   });
 });
