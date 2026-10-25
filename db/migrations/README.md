@@ -39,5 +39,7 @@ msnodesqlv8 default (`SQL Server Native Client 11.0`) --- it is often missing.
 | `021_ImportCatalog.sql` | ImportProviders / ImportFeeds (FR #4463) |
 | `022_IngestSchema.sql` | ingest.* runs/files/staging/rejects/failures/purge + RCSI (FR #4463) |
 | `023_DeleteMissingParts_null_lastseen.sql` | DeleteMissingParts skips NULL LastSeenRunId (FR #4942) |
+| `024_DropIngestPartsStaging.sql` | Drop leftover ingest.PartsStaging (FR #4941) |
+| `026_Awin_MerchantSku.sql` | MerchantSku for Awin merchant_product_id; key is aw_product_id (FR #4941) |
 
 Every file starts with `-- target: a_search`.

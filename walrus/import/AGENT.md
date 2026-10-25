@@ -13,7 +13,7 @@
 **Check, in this order, and record each result:**
 1. **Empty or truncated download:** zero bytes, size much smaller than `lastsize`, missing trailing newline / unterminated XML or JSON, row count far below `LastGoodRowCount`. Download `laststatus` isn't `ok`.
 2. **Feed or credentials expired:** the file is actually an HTML/login page or an error body; `laststatus` shows `http_401`/`http_403`/`missing_credentials`; the merchant is unpaid or uninstalled.
-3. **Format changed:** csv vs tsv vs json vs xml, or the delimiter or quoting changed, or it's still compressed even though the marker says decompressed.
+3. **Format changed:** csv vs tsv vs json vs xml, or the delimiter or quoting changed, or it's still compressed even though the marker says decompressed. `schema_drift` that lists **every** `expectedColumns` name is leftover gzip (1f8b) on a `.csv` key — `parseAndMapFeed` gunzips that itself (FR #4961); do not remap columns.
 4. **Encoding:** BOM or UTF-16, mojibake, windows-1252 characters.
 5. **Columns renamed, added or removed:** diff the header/field set against `validation.expectedColumns` and `mapping`.
 6. **Data quality:** which `requiredFields` are blank, duplicate keys, prices that don't parse, currency changes.
@@ -37,8 +37,10 @@
 - Print, log or commit credentials, tokens, emails or feed URLs that carry keys.
 - File in any repo other than SimonBarnett/a-search.
 
+**Deterministic filing (FR #4943):** the import CLI POSTs bobiverse intake (`https://irc.ntsa.uk/bob/v1/intake`, override `A_SEARCH_INTAKE_URL`) with `kind:fr`, `dedupe_key=sha256(provider|feedKey|errorCode)`, and title `import failure: {provider}/{feedKey}: {errorCode}` plus a hidden `<!-- import-fp:... -->` marker. Agents must search that marker / open intake issue first and never open a twin. Set `A_SEARCH_IMPORT_USE_GITHUB=1` only for the legacy Issues API path.
+
 **How to report (exactly one place per problem):**
-- Search SimonBarnett/a-search for an open issue titled `import: {provider}/{feedKey} {errorCode}`. Comment on it if it exists. Otherwise file one, labelled `via-intake`. Include the evidence, the diagnosis, the PR link (if any), the dry-run summary and the next step.
+- Search SimonBarnett/a-search for an open issue with `<!-- import-fp:... -->` (or title `import failure: {provider}/{feedKey}: {errorCode}`). Comment on it if it exists. Otherwise file one, labelled `import-failure`. Include the evidence, the diagnosis, the PR link (if any), the dry-run summary and the next step.
 - Notify Bob with label `bob` + mention on the issue (default until ops names another channel).
 - Stamp `ingest.Failures.AgentStatus` = `pr_open` | `needs_human` | `download_refetched` | `not_reproducible`, plus `IssueUrl`/`PrUrl`.
 - Exit 0 when a PR with a passing dry run is open, or the refetched file dry-runs clean. Exit non-zero with `needs_fix` when you can't fix it (code bug, feed dead, 3 attempts or 30 min).
