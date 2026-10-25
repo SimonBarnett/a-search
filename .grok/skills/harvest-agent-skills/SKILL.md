@@ -681,3 +681,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4881: npm run deploy must run IAM SigV4 smoke-deploy via scripts/cdk-deploy-with-smoke.js after cdk exit 0 (SearchApiUrl from stack; fail closed; no JWT); keep manual npm run smoke-deploy for re-smoke.
 - Walrus Node SQL drain deploy must copy every require-graph folder (include redqueen/src until pageSelect moves to shared #5022); run assert-walrus-sql-drain-graph.js before restarting a-search-walrus-sql-drain.
 - Walrus Parts full-text: FREETEXTTABLE ranked match; bind NVarChar(4000) not nvarchar(max); keep multi-word excludes as one quoted CONTAINS phrase.
+- SQL Parts match: FREETEXTTABLE ranked @q/@top with NVarChar(4000) never nvarchar(max); excludes are quoted phrases AND NOT CONTAINS including short IC; informational severity still 0 rows.
