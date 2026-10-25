@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -142,6 +142,14 @@ quoted phrases (`AND NOT CONTAINS(..., @exN)`), including short tokens like IC.
 Informational SQL messages (severity < 11, including noise-word notices) are
 0-row results, not errors. A real SQL error is logged as
 `sql_query_failed number=... message=... contains=...` (never bare `EREQUEST`).
+
+FR #5041 (SQL provider only; `searches.json` unchanged): before FREETEXT, strip
+annotator location/currency suffix (country name, parenthesised locality /
+postcode / TLD block, currency codes/symbols). Honour each query's `maxResults`
+capped by `A_SEARCH_SQL_TOP` (bind `@n` / `@top`). Drop rows with
+`ft.[RANK] < @minRank` (`A_SEARCH_SQL_MIN_RANK`, default **50** on the 0-1000
+FREETEXT scale --- Simon may tune). Empty after the threshold is 0 rows, not an
+error.
 
 ## Failure behaviour (FR #4534)
 

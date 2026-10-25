@@ -27,6 +27,7 @@ describe('MRB #5028 hostile FR #5024 FREETEXT', () => {
     const sql = buildSelectSql(2);
     assert.match(sql, /FREETEXTTABLE\s*\(\s*dbo\.Parts/i);
     assert.match(sql, /@q,\s*@top/);
+    assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
     assert.doesNotMatch(sql, /CONTAINSTABLE/i);
     assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);
     assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex1\)/);
@@ -37,7 +38,11 @@ describe('MRB #5028 hostile FR #5024 FREETEXT', () => {
     assert.equal(FT_NVARCHAR_LEN, 4000);
     assert.equal(quoteExcludePhrase('club membership'), '"club membership"');
     assert.equal(quoteExcludePhrase('IC'), '"IC"');
-    assert.equal(buildFreetextQuery({ queries: [ANNOTATOR_Q] }), ANNOTATOR_Q);
+    // FR #5041: location/currency stripped from FREETEXT input
+    const stripped = buildFreetextQuery({ queries: [ANNOTATOR_Q] });
+    assert.match(stripped, /VOLANTEXRC/i);
+    assert.doesNotMatch(stripped, /United\s+Kingdom/i);
+    assert.doesNotMatch(stripped, /\bGBP\b/i);
 
     /** @type {Record<string, unknown>} */
     const types = {};

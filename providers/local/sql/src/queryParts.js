@@ -337,6 +337,62 @@ function formatSqlQueryError(err, contains) {
 
 const FT_NVARCHAR_LEN = 4000;
 
+/** Default FREETEXTTABLE RANK floor (0-1000 scale). Simon may tune via env. */
+const DEFAULT_SQL_MIN_RANK = 50;
+
+/**
+ * ISO-ish currency codes stripped as whole tokens (not club-specific).
+ */
+const CURRENCY_CODES = new Set(
+  (
+    'GBP EUR USD CAD AUD NZD CHF JPY SEK NOK DKK PLN CZK HUF RON BGN TRY ZAR ' +
+    'INR CNY HKD SGD MXN BRL AED SAR KRW THB MYR IDR PHP TWD ILS EGP'
+  ).toLowerCase().split(/\s+/),
+);
+
+/**
+ * FR #5041: strip annotator location/currency suffix from a query string
+ * before FREETEXT. Deterministic; not club-specific. searches.json unchanged.
+ * @param {string} raw
+ * @returns {string}
+ */
+function stripAnnotatorLocationCurrency(raw) {
+  let s = String(raw || '');
+  // Parenthesised locality / postcode / TLD block only (keep product parens like (servo))
+  s = s.replace(/\(([^)]*)\)/g, (full, inner) => {
+    const i = String(inner || '');
+    if (/\.[a-z]{2,8}\b/i.test(i)) return ' ';
+    if (/\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]{2}\b/i.test(i)) return ' ';
+    if (/,/.test(i) && /\d/.test(i)) return ' ';
+    if (/\b(?:postcode|locality|county)\b/i.test(i)) return ' ';
+    return full;
+  });
+  // Currency symbols
+  s = s.replace(/[£€$¥]/g, ' ');
+  // Multi-word country names first
+  s = s.replace(/\bUnited\s+Kingdom\b/gi, ' ');
+  s = s.replace(/\bUnited\s+States(?:\s+of\s+America)?\b/gi, ' ');
+  s = s.replace(/\bGreat\s+Britain\b/gi, ' ');
+  s = s.replace(/\bNorthern\s+Ireland\b/gi, ' ');
+  s = s.replace(
+    /\b(?:England|Scotland|Wales|Ireland|France|Germany|Spain|Italy|Netherlands|Belgium|Portugal|Canada|Australia|New\s+Zealand)\b/gi,
+    ' ',
+  );
+  // Dot-TLD tokens (.co.uk, .com, ...)
+  s = s.replace(/\.[a-z]{2,8}(?:\.[a-z]{2,8})?\b/gi, ' ');
+  // Remaining tokens: drop currency codes and short geo abbreviations
+  const kept = [];
+  for (const part of s.split(/\s+/)) {
+    if (!part) continue;
+    const lower = part.toLowerCase().replace(/^\.+|\.+$/g, '');
+    if (!lower) continue;
+    if (CURRENCY_CODES.has(lower)) continue;
+    if (/^(?:uk|usa|u\.s\.a\.|u\.s\.|gb|eu)$/i.test(lower)) continue;
+    kept.push(part);
+  }
+  return kept.join(' ').replace(/\s+/g, ' ').trim();
+}
+
 /**
  * @param {string} raw
  * @returns {string}
@@ -359,13 +415,14 @@ function bindNVarChar(sqlTypes, len) {
 }
 
 /**
- * FR #5024: ranked FREETEXT string --- join queries as natural language.
- * Empty when no useful (non-noise) tokens remain.
+ * FR #5024 / #5041: ranked FREETEXT string --- join queries as natural language
+ * after stripping annotator location/currency. Empty when no useful tokens.
  * @param {object} msg
  * @returns {string}
  */
 function buildFreetextQuery(msg) {
   const raw = includeTermsFromMsg(msg)
+    .map(stripAnnotatorLocationCurrency)
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -424,7 +481,8 @@ SELECT TOP (@n)
 FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q, @top) AS ft
 INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
 WHERE p.Env = @env
-  AND p.DeletedAt IS NULL${extra}
+  AND p.DeletedAt IS NULL
+  AND ft.[RANK] >= @minRank${extra}
 ORDER BY ft.[RANK] DESC
 `.trim();
 }
@@ -439,6 +497,42 @@ function sqlTopLimit(envVars) {
   const n = parseInt(String(raw == null ? '' : raw).trim(), 10);
   if (!Number.isFinite(n) || n < 1) return 500;
   return Math.min(n, 10000);
+}
+
+/**
+ * FR #5041: per-query maxResults capped by A_SEARCH_SQL_TOP.
+ * @param {object} msg
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @returns {number}
+ */
+function resolveSqlRowLimit(msg, envVars) {
+  const cap = sqlTopLimit(envVars);
+  let fromQueries = null;
+  if (msg && Array.isArray(msg.queries)) {
+    for (const row of msg.queries) {
+      if (!row || typeof row !== 'object') continue;
+      const m = parseInt(
+        String(row.maxResults == null ? '' : row.maxResults).trim(),
+        10,
+      );
+      if (!Number.isFinite(m) || m < 1) continue;
+      fromQueries = fromQueries == null ? m : Math.min(fromQueries, m);
+    }
+  }
+  if (fromQueries == null) return cap;
+  return Math.min(fromQueries, cap);
+}
+
+/**
+ * FR #5041: minimum FREETEXTTABLE RANK (0-1000). Default 50.
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @returns {number}
+ */
+function sqlMinRank(envVars) {
+  const raw = envVars && envVars.A_SEARCH_SQL_MIN_RANK;
+  const n = parseInt(String(raw == null ? '' : raw).trim(), 10);
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_SQL_MIN_RANK;
+  return Math.min(n, 1000);
 }
 
 /**
@@ -502,7 +596,8 @@ async function defaultQueryParts(msg, deps) {
     .map(quoteExcludePhrase)
     .filter(Boolean);
   const config = mssqlConfigFromEnv(envVars);
-  const topN = sqlTopLimit(envVars);
+  const topN = resolveSqlRowLimit(msg || {}, envVars);
+  const minRank = sqlMinRank(envVars);
   const connect =
     deps && typeof deps.connect === 'function' ? deps.connect : defaultConnect;
   const pool = await connect(config);
@@ -521,6 +616,7 @@ async function defaultQueryParts(msg, deps) {
       req = req.input('q', nv, q);
       req = req.input('top', sqlTypes.Int, topN);
       req = req.input('n', sqlTypes.Int, topN);
+      req = req.input('minRank', sqlTypes.Int, minRank);
       for (let i = 0; i < excludePhrases.length; i += 1) {
         req = req.input(`ex${i}`, nv, excludePhrases[i]);
       }
@@ -557,8 +653,12 @@ module.exports = {
   buildSelectSql,
   bindNVarChar,
   truncateFt,
+  stripAnnotatorLocationCurrency,
   FT_NVARCHAR_LEN,
+  DEFAULT_SQL_MIN_RANK,
   sqlTopLimit,
+  resolveSqlRowLimit,
+  sqlMinRank,
   SELECT_SQL,
   defaultQueryParts,
   defaultConnect,
