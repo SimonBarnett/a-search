@@ -659,3 +659,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
 - MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
 - Awin productdata may be gzip even when the marker says compression=none; sniff 1f8b/504b before treating the body as plain CSV.
+- When two open PRs both add 023_*.sql, number the later migration 025 after 024 is taken; pin the filename in the FR test title.
