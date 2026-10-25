@@ -124,12 +124,8 @@ function createStubExec() {
           Availability: s.Availability,
           ContentHash: s.ContentHash,
           DeletedAt: null,
-<<<<<<< HEAD
-          LastSeenRunId: s.RunId != null ? s.RunId : inputs.RunId,
-=======
           // FR #4941 staging rows omit RunId; sqlStore MERGE binds @RunId (inputs.RunId).
           LastSeenRunId: inputs.RunId != null ? inputs.RunId : s.RunId,
->>>>>>> origin/main
         };
         if (!prev || prev.DeletedAt) inserted += 1;
         else if (prev.ContentHash !== s.ContentHash) updated += 1;
