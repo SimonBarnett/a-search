@@ -267,9 +267,111 @@ async function promoteInToLive(opts) {
   };
 }
 
+/**
+ * List IN/*.json object keys for a GUID (FR #4918 delete-after-process).
+ * @param {{
+ *   host: string,
+ *   guid: string,
+ *   listObjectsV2?: Function,
+ * }} opts
+ * @returns {Promise<string[]>}
+ */
+async function listInObjectKeys(opts) {
+  if (!opts || typeof opts.listObjectsV2 !== 'function') return [];
+  /** @type {string[]} */
+  const keys = [];
+  try {
+    const listed = await opts.listObjectsV2({
+      Prefix: widgetInPrefix(opts.host, opts.guid),
+    });
+    const contents = (listed && listed.Contents) || [];
+    for (const c of contents) {
+      if (!c || !c.Key || !String(c.Key).endsWith('.json')) continue;
+      keys.push(String(c.Key));
+    }
+  } catch {
+    // listing optional
+  }
+  return keys;
+}
+
+/**
+ * Delete only the IN keys this run processed (FR #4918). Keys that appear
+ * after the snapshot stay for the next pass.
+ * @param {{
+ *   keys: string[],
+ *   deleteObject: Function,
+ *   bucket?: string,
+ * }} opts
+ * @returns {Promise<{ deleted: string[], failed: Array<{ key: string, error: string }> }>}
+ */
+async function deleteProcessedInFiles(opts) {
+  if (!opts || typeof opts.deleteObject !== 'function') {
+    throw new Error('deleteObject_required');
+  }
+  const keys = Array.isArray(opts.keys) ? opts.keys : [];
+  /** @type {string[]} */
+  const deleted = [];
+  /** @type {Array<{ key: string, error: string }>} */
+  const failed = [];
+  for (const key of keys) {
+    try {
+      const args = { Key: key };
+      if (opts.bucket) args.Bucket = opts.bucket;
+      await opts.deleteObject(args);
+      deleted.push(key);
+    } catch (err) {
+      failed.push({
+        key,
+        error: String((err && err.message) || err),
+      });
+    }
+  }
+  return { deleted, failed };
+}
+
+/**
+ * FR #4918 agent work (deterministic): promote IN → live.json, set enabled=1,
+ * delete the IN files read in this run. Does not write hasresults.
+ * @param {Parameters<typeof promoteInToLive>[0] & {
+ *   deleteObject?: Function,
+ *   failBeforeDelete?: boolean,
+ * }} opts
+ */
+async function runHasresultsAgentWork(opts) {
+  const keysBefore = await listInObjectKeys(opts);
+  const promote = await promoteInToLive(opts);
+  if (opts && opts.failBeforeDelete) {
+    const err = new Error('agent_fail_before_delete');
+    err.code = 'agent_fail_before_delete';
+    throw err;
+  }
+  let deleted = { deleted: [], failed: [] };
+  if (typeof opts.deleteObject === 'function' && keysBefore.length) {
+    deleted = await deleteProcessedInFiles({
+      keys: keysBefore,
+      deleteObject: opts.deleteObject,
+      bucket: opts.bucket,
+    });
+  }
+  return {
+    ok: true,
+    liveWritten: true,
+    enabled: 1,
+    promote,
+    inKeys: keysBefore,
+    deleted: deleted.deleted,
+    deleteFailed: deleted.failed,
+  };
+}
+
 module.exports = {
   promoteInToLive,
   loadInCandidates,
+  listInObjectKeys,
+  deleteProcessedInFiles,
+  runHasresultsAgentWork,
   parseLiveBody,
   parseAnnotationBody,
+  widgetInPrefix,
 };

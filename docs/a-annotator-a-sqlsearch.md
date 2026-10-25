@@ -43,6 +43,21 @@ Optional read-only check (no put):
 .\scripts\Enable-AClubsEventBridge.ps1 -Region eu-west-2 -AwsProfile <profile>
 ```
 
+## a-hasresults-monitor (FR #4918, redqueen)
+
+Deterministic poller on **redqueen** (Simon 2026-10-25). It lists GUID markers with `hasresults=1`, runs one agent per GUID with cwd `{A_CLUBS_ROOT}\{host}\{guid}` (lock), and clears `hasresults=0` only after a successful run that wrote `live.json`. Selection never uses an LLM. The agent work (default deterministic path) promotes `IN/` → `live.json`, sets `enabled=1`, and deletes only the IN files from that run; it never writes `hasresults`. Optional Grok-then-Cursor launch uses the same brief. Missing AWS credentials log a warning and the service stays up.
+
+Build: `npm run build:sea` also writes `dist/sea/a-hasresults-monitor.exe`. Install on redqueen:
+
+```powershell
+.\redqueen\install\Register-HasresultsMonitorService.ps1 `
+  -InstallRoot C:\ai\a-search `
+  -AClubsRoot D:\s3\a-clubs `
+  -IntervalMs 900000
+```
+
+Env: `HASRESULTS_MONITOR_MS` (default `REDQUEEN_SWEEP_MS` / 900000), `HASRESULTS_MONITOR_MAX_RETRIES` (default 5), `A_CLUBS_BUCKET`, `A_CLUBS_ROOT`, `AWS_PROFILE` (default `a-search-redqueen-annotator`).
+
 ## a-searches hourly loop (FR #4916)
 
 `a-searches` is deterministic (no AI). Every hour (`A_SEARCHES_LOOP_MS`, default 3600000) it:

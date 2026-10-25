@@ -418,12 +418,13 @@ async function rewriteMarkerMetadata(opts) {
   const Key = String(opts.Key || '');
   const metadata = { ...(opts.metadata || {}) };
   const tagSet = opts.tagSet;
+  let etag;
   if (typeof opts.copyObject === 'function') {
     const bucket = opts.bucket || 'a-clubs';
     const encodedKey = Key.split('/')
       .map((p) => encodeURIComponent(p))
       .join('/');
-    await opts.copyObject({
+    const copyResp = await opts.copyObject({
       Key,
       CopySource: `${bucket}/${encodedKey}`,
       MetadataDirective: 'REPLACE',
@@ -431,6 +432,10 @@ async function rewriteMarkerMetadata(opts) {
       ...(tagSet ? { TaggingDirective: 'COPY' } : {}),
       ...(opts.contentType ? { ContentType: opts.contentType } : {}),
     });
+    etag =
+      copyResp &&
+      ((copyResp.CopyObjectResult && copyResp.CopyObjectResult.ETag) ||
+        copyResp.ETag);
   } else if (typeof opts.putObject === 'function') {
     const Body =
       opts.body == null
@@ -438,13 +443,14 @@ async function rewriteMarkerMetadata(opts) {
         : Buffer.isBuffer(opts.body)
           ? opts.body
           : Buffer.from(String(opts.body), 'utf8');
-    await opts.putObject({
+    const putResp = await opts.putObject({
       Key,
       Body,
       ContentLength: Body.length,
       Metadata: metadata,
       ...(opts.contentType ? { ContentType: opts.contentType } : {}),
     });
+    etag = putResp && putResp.ETag;
     if (tagSet && typeof opts.putObjectTagging === 'function') {
       await opts.putObjectTagging({
         Key,
@@ -454,7 +460,9 @@ async function rewriteMarkerMetadata(opts) {
   } else {
     throw new Error('copyObject_or_putObject_required');
   }
-  return { Key, metadata };
+  const out = { Key, metadata };
+  if (etag) out.etag = String(etag).replace(/"/g, '');
+  return out;
 }
 
 /**
@@ -544,8 +552,9 @@ async function setInit(opts) {
 }
 
 /**
- * FR #4917: set hasresults=1 on a GUID marker (never back to 0); bumps lastmod;
+ * FR #4917: set hasresults=1 on a GUID marker; bumps lastmod;
  * preserves other keys/tags (enabled, annotated, uri, …).
+ * FR #4918 monitor clears back to 0 via clearHasResults after a successful agent run.
  * @param {{
  *   Key: string,
  *   bucket?: string,
@@ -580,6 +589,37 @@ async function setHasResults(opts) {
     putObjectTagging: opts.putObjectTagging,
   });
   return { Key: state.Key, hasresults: 1, lastmod, metadata };
+}
+
+/**
+ * FR #4918: deterministic monitor sets hasresults=0 after a successful agent run.
+ * Preserves other metadata keys/tags; bumps lastmod.
+ * @param {Parameters<typeof setHasResults>[0]} opts
+ */
+async function clearHasResults(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('clearHasResults opts required');
+  }
+  if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
+    throw new Error('copyObject_or_getObject_required');
+  }
+  const state = await readMarkerState(opts);
+  const lastmod = isoLastmod(opts.now);
+  const metadata = { ...state.metadata, hasresults: '0', lastmod };
+  const rewritten = await rewriteMarkerMetadata({
+    Key: state.Key,
+    metadata,
+    body: state.body == null ? Buffer.alloc(0) : state.body,
+    contentType: state.contentType,
+    tagSet: state.tagSet,
+    bucket: opts.bucket,
+    copyObject: opts.copyObject,
+    putObject: opts.putObject,
+    putObjectTagging: opts.putObjectTagging,
+  });
+  const out = { Key: state.Key, hasresults: 0, lastmod, metadata };
+  if (rewritten && rewritten.etag) out.etag = rewritten.etag;
+  return out;
 }
 
 /**
@@ -793,6 +833,7 @@ module.exports = {
   setEnabled,
   setInit,
   setHasResults,
+  clearHasResults,
   hashHostPassword,
   isHostPasswordHash,
   setHostCredentials,
