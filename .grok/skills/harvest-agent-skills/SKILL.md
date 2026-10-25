@@ -662,3 +662,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Affiliates schedule: shared/defaultAge.js merchant>provider>_root/ positive int; due on lastdownload age UTC; fail needs_defaultage (no silent 7); leave live refreshdays ignored; skip _root as provider slug
 - Walrus import failures: deterministic GitHub issue per sha256(provider|feedKey|errorCode) with import-fp marker; comment not twin; outbox when A_SEARCH_GH_TOKEN missing or GH down; never silent sandbox MSSQL_DATABASE default
 - Affiliate age is defaultage (merchant > provider > _root); self-heal missing _root only (create-only defaultage=7); never overwrite an existing invalid root.
+- Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
