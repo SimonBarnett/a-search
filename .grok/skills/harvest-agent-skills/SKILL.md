@@ -641,7 +641,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Fixture-only /selftest for local MSSQL/feed providers must not require MSSQL_* or feed tokens on the entry box; gate config checks behind typeof deps.connect === function (FR #4854-#4856).
 - FR-043 pins a-search-awin SKILL.md /never silent/i as contiguous words; do not wrap that phrase across a newline.
 - UAT S19 FR that adds smoke-selftest (mocked GET+POST, fail-closed unset JWT/URL) may PASS with ACCEPTABLE drift: live SearchApiUrl probe stays needs_human on the deploy host.
-- UAT S1 live smoke-deploy FR on a shop without A_SEARCH_API_URL/A_SEARCH_SMOKE_JWT: ACK then GIVEUP reason=needs_human; comment a deploy-host checklist; never invent POST /search 200.
+- a-search #4881 smoke: runs inside the CDK deploy, reads SearchApiUrl from stack outputs, signs POST /search with IAM (SigV4, #4888); no JWT or hand-set URL. Missing A_SEARCH_* env on a seat is never a GIVEUP reason. Never invent a 200.
 - UAT S19 live /selftest is npm run smoke-selftest (GET then POST) with A_SEARCH_API_URL and A_SEARCH_SMOKE_JWT; fail-closed when unset; never print the JWT; do not use POST /search for the S19 probe.
 - When publishGuidSearch returns searches_empty_seed (idempotent, wrote=false), annotateOneGuid must fall through to re-review, not treat it as guid_unchanged noop.
 - Markdown section pins that use (?=\n\n) fail on Windows CRLF checkouts; normalize \\r\\n first and bound on the next ## heading.
@@ -668,7 +668,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
 - FIX after MRB FAIL on FR#4943: land GG fixture fix then switch reportImportFailure to POST /bob/v1/intake (dedupe_key); guard tools/dbimport/reportFailure.js with require.main; wire Invoke-FolderDbImport catch fail-soft
 - schema_drift listing every expectedColumns name on awin/*.csv is leftover gzip (1f8b); gunzip in parseAndMapFeed, do not remap columns.
-- a-search UAT S1: if SearchApiUrl and smoke JWT are unset, ACK then GIVEUP needs_human with a deploy-host checklist; never invent POST /search 200.
 - a-sqlsearch IN file is always sql.json (overwrite). Match with CONTAINSTABLE on Title/Description; TOP from A_SEARCH_SQL_TOP (500); empty queries must not scan Parts.
 - a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
 - GUID marker ready-flag is enabled (not init); /parts must not promote IN->live --- promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
