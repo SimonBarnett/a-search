@@ -26,7 +26,7 @@ Exit codes: `0` ok / nothing to do, `1` one or more feeds failed (agent started)
 
 ## SQL store (FR #4520)
 
-Production uses an mssql-backed store (`walrus/import/src/sqlStore.js`): stage into `ingest.PartsStaging`, `MERGE` into `dbo.Parts`, then soft/hard delete-missing for that `(Source, FeedKey, Env)`. Set `IMPORT_MEMORY=1` only for unit/dev (in-memory store). Never `madeiradb`.
+Production uses an mssql-backed store (`walrus/import/src/sqlStore.js`): stage into `dbo.PartsStaging`, `MERGE` into `dbo.Parts`, then soft/hard delete-missing and **clear that feed's staging** (FR #4941). Leftover staging at run start is drained (merge then delete). A run that still has leftover staging fails with `staging_leftover`. `ingest.PartsStaging` is dropped (migration `024_DropIngestPartsStaging.sql`). Set `IMPORT_MEMORY=1` only for unit/dev (in-memory store). Never `madeiradb`.
 
 Required env (same names as the walrus SQL drain, FR #4515):
 

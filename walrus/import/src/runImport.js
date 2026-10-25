@@ -189,6 +189,13 @@ async function runDailyImport(opts) {
     const results = [];
     let anyFail = false;
 
+    if (!dryRun && typeof store.drainLeftoverStaging === 'function') {
+      const drained = await store.drainLeftoverStaging();
+      if (drained && drained.feeds) {
+        log(`drained_leftover_staging feeds=${drained.feeds}`);
+      }
+    }
+
     // Purge requests first
     const pendingPurge = store.purgeRequests.splice(0, store.purgeRequests.length);
     for (const pr of pendingPurge) {

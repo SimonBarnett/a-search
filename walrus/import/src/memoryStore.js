@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 /**
  * FR #4463: in-memory Parts + ingest store for unit tests (no live MSSQL).
@@ -11,6 +11,8 @@ function createMemoryStore(opts = {}) {
   const importFiles = new Map();
   const failures = [];
   const rejects = [];
+  /** @type {object[]} leftover dbo.PartsStaging rows (FR #4941) */
+  const leftoverStaging = [];
   const purgeRequests = [];
   const runFeeds = [];
   let runSeq = 0;
@@ -115,6 +117,17 @@ function createMemoryStore(opts = {}) {
         const batch = staged.slice(i, i + batchSize);
         const batchIdx = Math.floor(i / batchSize);
         if (failAfterBatch != null && batchIdx === failAfterBatch) {
+          leftoverStaging.length = 0;
+          for (const s of staged.slice(0, i)) {
+            leftoverStaging.push({
+              Source: providerId,
+              FeedKey: feedKey,
+              MerchantProductId: String(s.MerchantProductId),
+              Env: env,
+              Title: s.title || '',
+              ContentHash: s.ContentHash,
+            });
+          }
           const err = new Error('forced_batch_failure');
           err.code = 'sql_error';
           throw err;
@@ -285,7 +298,34 @@ function createMemoryStore(opts = {}) {
     stagingLeftover = v && typeof v === 'object' ? v : { count: 0, feeds: [] };
   }
 
+  async function drainLeftoverStaging() {
+    const feeds = new Set(
+      leftoverStaging.map((r) => `${r.Source}|${r.FeedKey}|${r.Env}`),
+    );
+    for (const row of leftoverStaging) {
+      const k = partKey(row.Source, row.FeedKey, row.MerchantProductId);
+      if (!parts.has(k)) {
+        parts.set(k, {
+          Source: row.Source,
+          FeedKey: row.FeedKey,
+          MerchantProductId: String(row.MerchantProductId),
+          Env: row.Env || env,
+          Title: row.Title || '',
+          ContentHash: row.ContentHash || '',
+          DeletedAt: null,
+        });
+      }
+    }
+    leftoverStaging.length = 0;
+    return { feeds: feeds.size };
+  }
+
   function endOfRunHealth() {
+    if (leftoverStaging.length) {
+      const err = new Error('staging_leftover');
+      err.code = 'staging_leftover';
+      throw err;
+    }
     const rebuilt = [];
     for (const name of [...indexesDisabled]) {
       indexesDisabled.delete(name);
@@ -314,6 +354,7 @@ function createMemoryStore(opts = {}) {
 
   return {
     env,
+    leftoverStaging,
     parts,
     importFiles,
     failures,
@@ -333,6 +374,7 @@ function createMemoryStore(opts = {}) {
     stampFailureIssue,
     countStagingLeftovers,
     setStagingLeftover,
+    drainLeftoverStaging,
     endOfRunHealth,
     containstableProbe,
     disableIndex,
