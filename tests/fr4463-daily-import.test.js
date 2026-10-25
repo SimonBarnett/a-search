@@ -41,6 +41,7 @@ describe('FR #4463 migrations', () => {
     '020_Parts_FullText.sql',
     '021_ImportCatalog.sql',
     '022_IngestSchema.sql',
+    '023_DropIngestPartsStaging.sql',
   ]) {
     it(`${name} targets a_search and is idempotent-shaped`, () => {
       const sql = fs.readFileSync(path.join(ROOT, 'db', 'migrations', name), 'utf8');
