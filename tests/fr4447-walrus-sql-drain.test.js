@@ -76,7 +76,7 @@ describe('FR #4447 sql worker path', () => {
   it('sql queryParts is SELECT-only (no writes to madeiradb / Parts)', () => {
     assert.match(SELECT_SQL, /^\s*SELECT\b/i);
     assert.doesNotMatch(SELECT_SQL, /\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|DROP|ALTER)\b/i);
-    assert.match(SELECT_SQL, /CONTAINSTABLE\s*\(\s*dbo\.Parts/i);
+    assert.match(SELECT_SQL, /FREETEXTTABLE\s*\(\s*dbo\.Parts/i);
   });
 
   it('searchTextFromMsg reads agent queries {q} + exclude (not string-only)', () => {

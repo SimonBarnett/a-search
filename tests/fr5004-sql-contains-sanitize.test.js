@@ -11,7 +11,7 @@ const path = require('node:path');
 
 const {
   quoteContainsTerm,
-  buildContainsQuery,
+  buildFreetextQuery,
   defaultQueryParts,
   isInformationalSqlError,
   formatSqlQueryError,
@@ -20,50 +20,23 @@ const {
 const ANNOTATOR_Q =
   'VOLANTEXRC Sport Cub S2 761-14 3CH RTF Xpilot beginner United Kingdom (Lathom, Ormskirk, L40 4BA; .co.uk) GBP';
 
-describe('FR #5004 CONTAINS sanitise', () => {
-  it('annotator query becomes quoted terms without punctuation or operators', () => {
-    const q = buildContainsQuery({ queries: [ANNOTATOR_Q] });
-    assert.match(q, /"VOLANTEXRC"/);
-    assert.match(q, /"Sport"/);
-    assert.match(q, /"Cub"/);
-    assert.match(q, /"761"/);
-    assert.match(q, /"14"/);
-    assert.match(q, /"3CH"/);
-    assert.match(q, /"Xpilot"/);
-    assert.match(q, /"Lathom"/);
-    assert.match(q, /"Ormskirk"/);
-    assert.match(q, /"L40"/);
-    assert.match(q, /"4BA"/);
-    assert.match(q, /"co\.uk"/);
-    assert.match(q, /"GBP"/);
-    assert.equal(/\(|\)|,|;/.test(q), false);
-    assert.doesNotMatch(q, /\bAND NOT\b/);
-    assert.match(q, / AND /);
-    assert.doesNotMatch(q, /"the"/i);
+describe('FR #5004 / #5024 freetext skip empty', () => {
+  it('annotator query stays natural-language FREETEXT (not word-AND)', () => {
+    const q = buildFreetextQuery({ queries: [ANNOTATOR_Q] });
+    assert.match(q, /VOLANTEXRC/);
+    assert.match(q, /Sport Cub/);
+    assert.doesNotMatch(q, /"VOLANTEXRC" AND/);
   });
 
-  it('all-noise query yields empty CONTAINS (no SELECT)', () => {
+  it('all-noise query yields empty FREETEXT (no SELECT)', () => {
     assert.equal(quoteContainsTerm('the and or of a an'), '');
-    assert.equal(buildContainsQuery({ queries: ['the', 'and or'] }), '');
+    assert.equal(buildFreetextQuery({ queries: ['the', 'and or'] }), '');
   });
 
-  it('punctuation-heavy input drops operators and empty tokens', () => {
+  it('punctuation-only input is empty FREETEXT', () => {
     assert.equal(quoteContainsTerm('!!! ;;; ---'), '');
-    const q = buildContainsQuery({
-      queries: ['NEAR FORMSOF (servo)'],
-      exclude: ['NOT calendar'],
-    });
-    assert.equal(q, '"servo" AND NOT "calendar"');
-  });
-
-  it('queries stay OR and excludes AND NOT after sanitise', () => {
-    assert.equal(
-      buildContainsQuery({
-        queries: [{ q: 'model aircraft' }, 'servo'],
-        exclude: [{ match: 'title:calendar' }],
-      }),
-      '"model" AND "aircraft" OR "servo" AND NOT "calendar"',
-    );
+    assert.equal(buildFreetextQuery({ queries: ['!!! ;;;'] }), '');
+    assert.match(buildFreetextQuery({ queries: ['NEAR FORMSOF (servo)'] }), /servo/i);
   });
 });
 
@@ -167,12 +140,12 @@ describe('FR #5004 informational vs real SQL errors', () => {
     assert.equal(thrown.code, 'sql_query_failed');
     assert.equal(thrown.sqlNumber, 102);
     assert.match(String(thrown.sqlMessage), /Incorrect syntax/);
-    assert.equal(thrown.containsQuery, '"servo"');
+    assert.equal(thrown.containsQuery, 'servo');
     assert.match(String(thrown.message), /102/);
     const line = formatSqlQueryError(thrown, thrown.containsQuery);
     assert.match(String(line), /102/);
     assert.match(String(line), /Incorrect syntax/);
-    assert.match(String(line), /"servo"/);
+    assert.match(String(line), /servo/);
     assert.doesNotMatch(String(line), /^EREQUEST$/);
   });
 });
@@ -185,7 +158,7 @@ describe('FR #5004 docs grant', () => {
     );
     assert.match(text, /GRANT SELECT ON dbo\.Parts/);
     assert.match(text, /WONDERLAND\\a-search-drain/);
-    assert.match(text, /CONTAINSTABLE/);
+    assert.match(text, /FREETEXTTABLE/);
     assert.match(text, /FR #5004/);
     assert.doesNotMatch(text, /\bGRANT\s+(INSERT|UPDATE|DELETE)\b/i);
   });
