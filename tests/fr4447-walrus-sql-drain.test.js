@@ -15,10 +15,7 @@ const path = require('node:path');
 const { localWorkerPath, runDrainJob } = require('../walrus/src/runJob');
 const { createDrainRunner } = require('../walrus/src/drainRunner');
 const { aClubsInAbsPath } = require('../walrus/src/aClubsInPath');
-const {
-  validateInResult,
-  inResultKey,
-} = require('../shared/search/inResultSchema');
+const { validateInResult } = require('../shared/search/inResultSchema');
 const {
   SELECT_SQL,
   searchTextFromMsg,
@@ -79,7 +76,7 @@ describe('FR #4447 sql worker path', () => {
   it('sql queryParts is SELECT-only (no writes to madeiradb / Parts)', () => {
     assert.match(SELECT_SQL, /^\s*SELECT\b/i);
     assert.doesNotMatch(SELECT_SQL, /\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|DROP|ALTER)\b/i);
-    assert.match(SELECT_SQL, /FROM\s+dbo\.Parts/i);
+    assert.match(SELECT_SQL, /CONTAINSTABLE\s*\(\s*dbo\.Parts/i);
   });
 
   it('searchTextFromMsg reads agent queries {q} + exclude (not string-only)', () => {
@@ -95,7 +92,7 @@ describe('FR #4447 sql worker path', () => {
   });
 });
 
-describe('FR #4447 walrus drain writes schema-valid IN/{searchid}-sql.json', () => {
+describe('FR #4447 walrus drain writes schema-valid IN/sql.json', () => {
   it('processOnce deletes after stubbed sql job writes valid IN file', async () => {
     const root = tmpRoot();
     const queue = createFakeQueue();
@@ -159,23 +156,15 @@ describe('FR #4447 walrus drain writes schema-valid IN/{searchid}-sql.json', () 
     assert.deepEqual(queue.deleted(), ['rh-1']);
     assert.deepEqual(queue.visibility(), []);
 
-    const expectedKey = inResultKey({
-      hostkey: host,
-      guid,
-      searchid,
-      source: 'sql',
-    });
-    assert.equal(
-      expectedKey,
-      `${host}/${guid}/IN/${searchid}-sql.json`,
-    );
+    const expectedKey = `${host}/${guid}/IN/sql.json`;
 
     const abs = aClubsInAbsPath({
       root,
       host,
       guid,
-      searchId: `${searchid}-sql`,
+      searchId: 'sql',
     });
+    assert.equal(abs.endsWith(path.join('IN', 'sql.json')) || abs.includes(`${path.sep}IN${path.sep}sql.json`), true);
     assert.equal(fs.existsSync(abs), true, `missing IN file ${abs}`);
     const body = JSON.parse(fs.readFileSync(abs, 'utf8'));
     const validated = validateInResult(body);

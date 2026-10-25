@@ -5,7 +5,7 @@ FR #4827 packages the on-prem drains as Node single-executable applications and 
 | Service | Exe | Reads | Writes |
 |---|---|---|---|
 | `a-annotator` | `dist/sea/a-annotator.exe` | `a-clubs-new-folders.fifo` and `a-clubs-changes` | marker annotations, `searches.json`, POST `/search` |
-| `a-sqlsearch` | `dist/sea/a-sqlsearch.exe` | `a-search-db-backed` | `a-clubs/{host}/{guid}/IN/{searchid}-sql.json` on `A_CLUBS_ROOT` |
+| `a-sqlsearch` | `dist/sea/a-sqlsearch.exe` | `a-search-db-backed` | `a-clubs/{host}/{guid}/IN/sql.json` on `A_CLUBS_ROOT` |
 
 Both exes accept `--version` and exit 0 without AWS or SQL. Build them with `npm run build:sea` (`node scripts/build-a-search-sea.js`). On Linux the script downloads the Windows `node.exe` that matches the local Node version, then runs esbuild, `node --experimental-sea-config`, and postject. `--smoke` checks the SEA fuse and, on Windows, runs `--version`.
 
