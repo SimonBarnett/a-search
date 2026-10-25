@@ -685,3 +685,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - SQL FREETEXT: stripAnnotatorLocationCurrency before @q; honour queries[].maxResults capped by A_SEARCH_SQL_TOP; filter ft.RANK >= A_SEARCH_SQL_MIN_RANK (default 50); keep product parentheticals.
 - SQL Parts match: admit only via CONTAINS exact brand/model gates (extractBrandModelGateTokens); FREETEXT/RANK orders gated rows never admits; no gate tokens => return [] without SELECT
 - When hasresults flips with empty live.json, write GUID feedback/no-results.json and upsert a-clubs/_ops/need-vendors-by-sector.json (sector count++ dedupe); annotator must file enough brand/model/type searches; 0 results means need more vendors --- providers never widen
+- CJ 403 You are not Authorised: retry once omitting companyId (same token+pid); assert still requires CJ_COMPANY_ID+CJ_WEBSITE_ID; remaining 403 DLQs FR #4782
