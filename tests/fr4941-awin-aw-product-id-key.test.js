@@ -60,6 +60,22 @@ describe('FR #4941 aw_product_id key', () => {
     );
   });
 
+  it('DbImportSql.ps1 and sql.js write MerchantSku through bulk/MERGE', () => {
+    const ps1 = fs.readFileSync(
+      path.join(ROOT, 'tools', 'DbImportSql.ps1'),
+      'utf8',
+    );
+    const sqlJs = fs.readFileSync(
+      path.join(ROOT, 'tools', 'dbimport', 'sql.js'),
+      'utf8',
+    );
+    assert.match(ps1, /MerchantSku/);
+    assert.match(ps1, /'MerchantSku'/);
+    assert.match(ps1, /MerchantSku=s\.MerchantSku/);
+    assert.match(sqlJs, /columns\.add\('MerchantSku'/);
+    assert.match(sqlJs, /MerchantSku=s\.MerchantSku/);
+  });
+
   it('dbimport prefers MSSQL_DATABASE and refuses a silent default', () => {
     const src = fs.readFileSync(
       path.join(ROOT, 'tools', 'Invoke-FolderDbImport.ps1'),
