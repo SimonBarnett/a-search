@@ -21,6 +21,8 @@ const {
 const {
   normalizeMarketCurrency,
 } = require('../../shared/search/cleanSearchQuery');
+const { isEnabledOne } = require('../../shared/enabledFlag');
+const { providerMarkerKey } = require('../../shared/affiliates/keys');
 
 class AgentSearchError extends Error {
   /**
@@ -209,6 +211,8 @@ function isAgentSearchBody(body) {
 
 /**
  * Live (non-local) provider ids enabled for env, plus always "sql".
+ * Registry + queue-env gates only. FR #5079 applies a-affiliates enabled
+ * via applyAffiliatesEnabledFilter / handleAgentSearch.
  * @param {'live'|'sandbox'} envName
  * @param {{ enabled?: Function, loadRegistry?: Function }} [deps]
  * @returns {string[]}
@@ -246,6 +250,101 @@ function resolveFanOutTargets(envName, deps = {}) {
   return [...live, 'sql'];
 }
 
+let defaultAffiliatesS3;
+
+/**
+ * HeadObject against s3://a-affiliates (FR #5079 provider enabled gate).
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ headObject: Function, bucket: string }}
+ */
+function defaultAffiliatesIo(env) {
+  if (defaultAffiliatesS3) return defaultAffiliatesS3;
+  const {
+    S3Client,
+    HeadObjectCommand,
+  } = require('@aws-sdk/client-s3');
+  const client = new S3Client({});
+  const bucket =
+    (env && env.A_AFFILIATES_BUCKET) ||
+    process.env.A_AFFILIATES_BUCKET ||
+    'a-affiliates';
+  defaultAffiliatesS3 = {
+    bucket,
+    headObject: (input) =>
+      client.send(
+        new HeadObjectCommand({
+          Bucket: input.Bucket || bucket,
+          Key: input.Key,
+        }),
+      ),
+  };
+  return defaultAffiliatesS3;
+}
+
+/**
+ * FR #5079: keep only providers whose a-affiliates/<id>/ marker has enabled=1.
+ * Missing folder or enabled=0 => skip. Always keeps trailing "sql".
+ * @param {string[]} targets
+ * @param {{
+ *   headAffiliatesObject?: Function,
+ *   log?: { info?: Function, warn?: Function },
+ * }} [deps]
+ * @returns {Promise<{ queued: string[], skipped: Array<{ id: string, reason: string }> }>}
+ */
+async function applyAffiliatesEnabledFilter(targets, deps = {}) {
+  const head = deps.headAffiliatesObject;
+  const log = deps.log || console;
+  const list = Array.isArray(targets) ? targets.map(String) : [];
+  if (typeof head !== 'function') {
+    return { queued: list, skipped: [] };
+  }
+  const skipped = [];
+  const kept = [];
+  for (const id of list) {
+    if (id === 'sql') {
+      kept.push(id);
+      continue;
+    }
+    let key;
+    try {
+      key = providerMarkerKey(id);
+    } catch {
+      skipped.push({ id, reason: 'invalid_provider_slug' });
+      if (typeof log.info === 'function') {
+        log.info(`[agentSearch] skip fan-out ${id}: invalid_provider_slug`);
+      }
+      continue;
+    }
+    try {
+      const headOut = await head({ Key: key });
+      const md =
+        (headOut && (headOut.Metadata || headOut.metadata)) || {};
+      if (!isEnabledOne(md)) {
+        skipped.push({ id, reason: 'affiliates_enabled_0' });
+        if (typeof log.info === 'function') {
+          log.info(
+            `[agentSearch] skip fan-out ${id}: a-affiliates/${id}/ enabled=0`,
+          );
+        }
+        continue;
+      }
+      kept.push(id);
+    } catch (err) {
+      if (isMissingObject(err)) {
+        skipped.push({ id, reason: 'affiliates_folder_missing' });
+        if (typeof log.info === 'function') {
+          log.info(
+            `[agentSearch] skip fan-out ${id}: a-affiliates/${id}/ missing`,
+          );
+        }
+        continue;
+      }
+      throw err;
+    }
+  }
+  return { queued: kept, skipped };
+}
+
 /**
  * @param {{
  *   event: object,
@@ -255,13 +354,17 @@ function resolveFanOutTargets(envName, deps = {}) {
  *   newSearchId?: () => string,
  *   enabled?: Function,
  *   loadRegistry?: Function,
+ *   headAffiliatesObject?: Function,
+ *   checkAffiliatesEnabled?: boolean,
+ *   log?: { info?: Function, warn?: Function },
  * }} opts
  */
 async function handleAgentSearch(opts) {
   if (!opts || typeof opts !== 'object') {
     throw new AgentSearchError('s3_required', 500);
   }
-  const io = typeof opts.headObject === 'function' ? opts : { ...opts, ...defaultAclubsIo() };
+  const injectedAclubsHead = typeof opts.headObject === 'function';
+  const io = injectedAclubsHead ? opts : { ...opts, ...defaultAclubsIo() };
   if (typeof io.headObject !== 'function') {
     throw new AgentSearchError('s3_required', 500);
   }
@@ -316,10 +419,28 @@ async function handleAgentSearch(opts) {
     ? String(body.searchid)
     : (io.newSearchId || newSearchId)();
   const jobEnv = body.sandbox === true ? 'sandbox' : 'live';
-  const queued = resolveFanOutTargets(jobEnv, {
+  const candidates = resolveFanOutTargets(jobEnv, {
     enabled: io.enabled,
     loadRegistry: io.loadRegistry,
     envVars: io.env || process.env,
+  });
+
+  // FR #5079: queue only providers with a-affiliates/<id>/ enabled=1.
+  // Production (no injected a-clubs head) always uses defaultAffiliatesIo.
+  // Unit tests that inject headObject without headAffiliatesObject keep the
+  // registry+queue list unless they opt in with headAffiliatesObject or
+  // checkAffiliatesEnabled: true.
+  let affiliatesHead = null;
+  if (typeof io.headAffiliatesObject === 'function') {
+    affiliatesHead = io.headAffiliatesObject;
+  } else if (io.checkAffiliatesEnabled === true) {
+    affiliatesHead = defaultAffiliatesIo(io.env || process.env).headObject;
+  } else if (!injectedAclubsHead && io.checkAffiliatesEnabled !== false) {
+    affiliatesHead = defaultAffiliatesIo(io.env || process.env).headObject;
+  }
+  const { queued } = await applyAffiliatesEnabledFilter(candidates, {
+    headAffiliatesObject: affiliatesHead,
+    log: io.log,
   });
 
   const { market, currency } = normalizeMarketCurrency(body);
@@ -424,6 +545,8 @@ module.exports = {
   agentKeyMatches,
   handleAgentSearch,
   resolveFanOutTargets,
+  applyAffiliatesEnabledFilter,
+  defaultAffiliatesIo,
   isAgentSearchBody,
   newSearchId,
   searchFanoutKey,

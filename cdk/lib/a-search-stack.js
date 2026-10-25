@@ -950,6 +950,15 @@ class ASearchStack extends cdk.Stack {
     });
     entry.addEnvironment('A_CLUBS_BUCKET', 'a-clubs');
     aClubsBucket.grantRead(entry);
+    // FR #5079: /search fan-out reads a-affiliates/<provider>/ enabled=0|1 metadata.
+    entry.addEnvironment('A_AFFILIATES_BUCKET', 'a-affiliates');
+    entry.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AgentSearchAffiliatesEnabled',
+        actions: ['s3:GetObject'],
+        resources: ['arn:aws:s3:::a-affiliates/*'],
+      }),
+    );
     // FR #4265: remember one searchid per GUID so a retry does not fan out twice.
     // FR #4712 / #4563: syncSearchesSearchid also PutObjects host/guid/searches.json;
     // grantRead alone is Get*; without PutObject on searches.json entry AccessDenied.

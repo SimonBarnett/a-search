@@ -29,11 +29,18 @@ Metadata (FR #4415 / #4287). Missing userid is **400 `userid_required`** ---
 never enqueue jobs that would crash workers with `TrackedUrlError`. Then entry
 mints a `searchid` and enqueues:
 
-1. one message to **each enabled AWS search provider** queue (registry
-   `awsSearch: true`: amazon, ebay, rakuten, cj, kelkoo, etsy; aliexpress and bol
-   when enabled)
+1. one message to **each AWS search provider** that passes all three gates
+   (FR #5079):
+   - `providers/registry.json` live/sandbox enabled + `awsSearch: true`
+   - deploy queue URL present (`SQS_<X>_LIVE_URL` / soft-env FR #4650)
+   - `s3://a-affiliates/<provider>/` folder metadata `enabled=1` (shared
+     `parseEnabledFlag` / `isEnabledOne`; missing folder or `enabled=0` is
+     skipped and logged). Candidate ids include amazon, ebay, rakuten, cj,
+     kelkoo, etsy; aliexpress and bol when registry-enabled. Creating amazon /
+     ebay folders needs Simon's go before deploy, or they stop being searched.
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env
-   `SQS_DB_BACKED_URL` / `SQS_SQL_URL`)
+   `SQS_DB_BACKED_URL` / `SQS_SQL_URL`) --- always; SQL covers local/db-backed
+   sources such as awin (their a-affiliates folders do not gate the sql target)
 
 Response: **`202 { searchid, queued: [providers..., "sql"] }`**. Nothing is
 written to MSSQL from AWS. Job payloads carry normalized `market` /

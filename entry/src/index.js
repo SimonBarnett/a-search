@@ -799,6 +799,13 @@ async function handleSearch(event, deps = {}) {
         ...(typeof deps.putObject === 'function'
           ? { putObject: deps.putObject }
           : {}),
+        ...(typeof deps.headAffiliatesObject === 'function'
+          ? { headAffiliatesObject: deps.headAffiliatesObject }
+          : {}),
+        ...(deps.checkAffiliatesEnabled != null
+          ? { checkAffiliatesEnabled: deps.checkAffiliatesEnabled }
+          : {}),
+        log: deps.log,
         sendMessage: deps.sendMessage,
         env,
         newSearchId: deps.newSearchId || makeId,
