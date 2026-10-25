@@ -208,6 +208,7 @@ function createSqlStore(opts = {}) {
     }
     if (deleteMissing === 'soft' || deleteMissing === 'hard') {
       for (const a of active) {
+        if (a.LastSeenRunId == null) continue;
         if (!stagedKeys.has(a.MerchantProductId)) wouldDelete += 1;
       }
     }
@@ -223,11 +224,11 @@ function createSqlStore(opts = {}) {
       };
     }
 
-    // Clear this run's staging slice then load rows (ingest.* per FR #4520)
+    // Canonical staging is dbo.PartsStaging (FR #4941). Clear this feed then load.
     await exec(
-      `DELETE FROM ingest.PartsStaging
-       WHERE RunId = @RunId AND ProviderId = @ProviderId AND FeedKey = @FeedKey AND Env = @Env;`,
-      { RunId: runId, ProviderId: providerId, FeedKey: feedKey, Env: env },
+      `DELETE FROM dbo.PartsStaging
+       WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env;`,
+      { ProviderId: providerId, FeedKey: feedKey, Env: env },
     );
 
     const batchSize = Number(mergeOpts.batchSize) || 500;
@@ -235,34 +236,23 @@ function createSqlStore(opts = {}) {
       const batch = staged.slice(i, i + batchSize);
       for (const s of batch) {
         await exec(
-          `INSERT INTO ingest.PartsStaging (
-             RunId, ProviderId, FeedKey, RowNum, MerchantProductId,
-             Title, Description, Brand, Category, Price, Currency, Url, ImageUrl,
-             Gtin, Ean, Mpn, Availability, Class, ContentHash, Env
+          `INSERT INTO dbo.PartsStaging (
+             Source, FeedKey, MerchantProductId, Env,
+             Title, Description, Url, ImageUrl, Price, Currency, ContentHash
            ) VALUES (
-             @RunId, @ProviderId, @FeedKey, @RowNum, @MerchantProductId,
-             @Title, @Description, @Brand, @Category, @Price, @Currency, @Url, @ImageUrl,
-             @Gtin, @Ean, @Mpn, @Availability, @Class, @ContentHash, @Env
+             @ProviderId, @FeedKey, @MerchantProductId, @Env,
+             @Title, @Description, @Url, @ImageUrl, @Price, @Currency, @ContentHash
            );`,
           {
-            RunId: runId,
             ProviderId: providerId,
             FeedKey: feedKey,
-            RowNum: Number(s.rowNum) || i + 1,
             MerchantProductId: String(s.MerchantProductId),
             Title: s.title || null,
             Description: s.description || null,
-            Brand: s.brand || null,
-            Category: s.category || null,
             Price: s.price,
             Currency: s.currency || null,
             Url: s.url || null,
             ImageUrl: s.image_url || null,
-            Gtin: s.gtin || null,
-            Ean: s.ean || null,
-            Mpn: s.mpn || null,
-            Availability: s.availability || null,
-            Class: className || null,
             ContentHash: s.ContentHash || null,
             Env: env,
           },
@@ -274,34 +264,31 @@ function createSqlStore(opts = {}) {
       `DECLARE @ins int = 0, @upd int = 0;
        MERGE dbo.Parts AS T
        USING (
-         SELECT ProviderId AS Source, FeedKey, MerchantProductId, Env,
-                Title, Description, Brand, Category, Url, ImageUrl, Price, Currency,
-                Gtin, Ean, Mpn, Availability, Class, ContentHash, RunId
-         FROM ingest.PartsStaging
-         WHERE RunId = @RunId AND ProviderId = @ProviderId AND FeedKey = @FeedKey AND Env = @Env
+         SELECT Source, FeedKey, MerchantProductId, Env,
+                Title, Description, Url, ImageUrl, Price, Currency, ContentHash
+         FROM dbo.PartsStaging
+         WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env
        ) AS S
        ON T.Source = S.Source AND T.FeedKey = S.FeedKey
           AND T.MerchantProductId = S.MerchantProductId AND T.Env = S.Env
        WHEN MATCHED AND ISNULL(T.ContentHash, N'') <> ISNULL(S.ContentHash, N'') THEN UPDATE SET
-         Title = S.Title, Description = S.Description, Brand = S.Brand, Category = S.Category,
+         Title = S.Title, Description = S.Description,
          Url = S.Url, ImageUrl = S.ImageUrl, Price = S.Price, Currency = S.Currency,
-         Gtin = S.Gtin, Ean = S.Ean, Mpn = S.Mpn, Availability = S.Availability,
-         Class = S.Class, ContentHash = S.ContentHash, DeletedAt = NULL,
-         LastSeenRunId = S.RunId, UpdatedAt = SYSUTCDATETIME()
+         ContentHash = S.ContentHash, DeletedAt = NULL,
+         LastSeenRunId = @RunId, UpdatedAt = SYSUTCDATETIME()
        WHEN MATCHED THEN UPDATE SET
-         DeletedAt = NULL, LastSeenRunId = S.RunId, UpdatedAt = SYSUTCDATETIME()
+         DeletedAt = NULL, LastSeenRunId = @RunId, UpdatedAt = SYSUTCDATETIME()
        WHEN NOT MATCHED BY TARGET THEN INSERT (
          Source, FeedKey, MerchantProductId, Env,
-         Title, Description, Brand, Category, Url, ImageUrl, Price, Currency,
-         Gtin, Ean, Mpn, Availability, Class, ContentHash, LastSeenRunId
+         Title, Description, Url, ImageUrl, Price, Currency, ContentHash, LastSeenRunId
        ) VALUES (
          S.Source, S.FeedKey, S.MerchantProductId, S.Env,
-         S.Title, S.Description, S.Brand, S.Category, S.Url, S.ImageUrl, S.Price, S.Currency,
-         S.Gtin, S.Ean, S.Mpn, S.Availability, S.Class, S.ContentHash, S.RunId
+         S.Title, S.Description, S.Url, S.ImageUrl, S.Price, S.Currency,
+         S.ContentHash, @RunId
        );
        SELECT @ins = (
-         SELECT COUNT(*) FROM ingest.PartsStaging st
-         WHERE st.RunId = @RunId AND st.ProviderId = @ProviderId AND st.FeedKey = @FeedKey AND st.Env = @Env
+         SELECT COUNT(*) FROM dbo.PartsStaging st
+         WHERE st.Source = @ProviderId AND st.FeedKey = @FeedKey AND st.Env = @Env
            AND NOT EXISTS (
              SELECT 1 FROM dbo.Parts p
              WHERE p.Source = st.ProviderId AND p.FeedKey = st.FeedKey
@@ -327,9 +314,10 @@ function createSqlStore(opts = {}) {
          FROM dbo.Parts AS T
          WHERE T.Source = @ProviderId AND T.FeedKey = @FeedKey AND T.Env = @Env
            AND T.DeletedAt IS NULL
+           AND T.LastSeenRunId IS NOT NULL
            AND NOT EXISTS (
-             SELECT 1 FROM ingest.PartsStaging S
-             WHERE S.RunId = @RunId AND S.ProviderId = T.Source AND S.FeedKey = T.FeedKey
+             SELECT 1 FROM dbo.PartsStaging S
+             WHERE S.Source = T.Source AND S.FeedKey = T.FeedKey
                AND S.Env = T.Env AND S.MerchantProductId = T.MerchantProductId
            );
          SELECT @@ROWCOUNT AS Deleted;`,
@@ -343,9 +331,10 @@ function createSqlStore(opts = {}) {
         `DELETE T
          FROM dbo.Parts AS T
          WHERE T.Source = @ProviderId AND T.FeedKey = @FeedKey AND T.Env = @Env
+           AND T.LastSeenRunId IS NOT NULL
            AND NOT EXISTS (
-             SELECT 1 FROM ingest.PartsStaging S
-             WHERE S.RunId = @RunId AND S.ProviderId = T.Source AND S.FeedKey = T.FeedKey
+             SELECT 1 FROM dbo.PartsStaging S
+             WHERE S.Source = T.Source AND S.FeedKey = T.FeedKey
                AND S.Env = T.Env AND S.MerchantProductId = T.MerchantProductId
            );
          SELECT @@ROWCOUNT AS Deleted;`,
@@ -354,6 +343,26 @@ function createSqlStore(opts = {}) {
       deleted = Number(
         (del.recordset && del.recordset[0] && del.recordset[0].Deleted) || wouldDelete,
       );
+    }
+
+    await exec(
+      `DELETE FROM dbo.PartsStaging
+       WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env;`,
+      { ProviderId: providerId, FeedKey: feedKey, Env: env },
+    );
+
+    const leftover = await exec(
+      `SELECT COUNT(*) AS N FROM dbo.PartsStaging
+       WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env;`,
+      { ProviderId: providerId, FeedKey: feedKey, Env: env },
+    );
+    const leftoverN = Number(
+      leftover.recordset && leftover.recordset[0] && leftover.recordset[0].N,
+    );
+    if (leftoverN > 0) {
+      const err = new Error('staging_leftover');
+      err.code = 'staging_leftover';
+      throw err;
     }
 
     return {
@@ -435,8 +444,57 @@ function createSqlStore(opts = {}) {
     return f;
   }
 
+  async function drainLeftoverStaging() {
+    const listed = await exec(
+      `SELECT DISTINCT Source, FeedKey, Env FROM dbo.PartsStaging;`,
+    );
+    const feeds = listed.recordset || [];
+    for (const f of feeds) {
+      await exec(
+        `DECLARE @rid bigint = 0;
+         MERGE dbo.Parts AS T
+         USING (
+           SELECT Source, FeedKey, MerchantProductId, Env,
+                  Title, Description, Url, ImageUrl, Price, Currency, ContentHash
+           FROM dbo.PartsStaging
+           WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env
+         ) AS S
+         ON T.Source = S.Source AND T.FeedKey = S.FeedKey
+            AND T.MerchantProductId = S.MerchantProductId AND T.Env = S.Env
+         WHEN MATCHED THEN UPDATE SET
+           Title = S.Title, Description = S.Description,
+           Url = S.Url, ImageUrl = S.ImageUrl, Price = S.Price, Currency = S.Currency,
+           ContentHash = S.ContentHash, DeletedAt = NULL, UpdatedAt = SYSUTCDATETIME()
+         WHEN NOT MATCHED BY TARGET THEN INSERT (
+           Source, FeedKey, MerchantProductId, Env,
+           Title, Description, Url, ImageUrl, Price, Currency, ContentHash
+         ) VALUES (
+           S.Source, S.FeedKey, S.MerchantProductId, S.Env,
+           S.Title, S.Description, S.Url, S.ImageUrl, S.Price, S.Currency, S.ContentHash
+         );`,
+        { ProviderId: f.Source, FeedKey: f.FeedKey, Env: f.Env },
+      );
+      await exec(
+        `DELETE FROM dbo.PartsStaging
+         WHERE Source = @ProviderId AND FeedKey = @FeedKey AND Env = @Env;`,
+        { ProviderId: f.Source, FeedKey: f.FeedKey, Env: f.Env },
+      );
+    }
+    return { feeds: feeds.length };
+  }
+
   async function endOfRunHealth() {
-    // FTS rebuild is ops-owned; import only probes after merge via containstableProbe.
+    const leftover = await exec(
+      `SELECT COUNT(*) AS N FROM dbo.PartsStaging;`,
+    );
+    const n = Number(
+      leftover.recordset && leftover.recordset[0] && leftover.recordset[0].N,
+    );
+    if (n > 0) {
+      const err = new Error('staging_leftover');
+      err.code = 'staging_leftover';
+      throw err;
+    }
     return { rebuilt: [], ftsPending: 0 };
   }
 
@@ -500,6 +558,7 @@ function createSqlStore(opts = {}) {
     markFileOk,
     isFileOk,
     addFailure,
+    drainLeftoverStaging,
     endOfRunHealth,
     containstableProbe,
     loadPurgeRequests,

@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * FR #4195: flat decompressed feed key, format-driven decompress, daily 7-day refresh.
+ * FR #4195: flat decompressed feed key, format-driven decompress, daily refresh.
+ * FR #4931: due clock is lastdownload + shared defaultage (not refreshdays/lastok).
  */
 
 const { describe, it } = require('node:test');
@@ -14,8 +15,8 @@ const { decompressFeedBody } = require('../affiliates/src/decompressFeed');
 const {
   resolveFeedFormat,
   feedDatedKey,
-  needsRefresh,
 } = require('../shared/affiliates/feedFormat');
+const { isDueByLastDownload } = require('../shared/defaultAge');
 const { normalizeAffiliateMeta } = require('../shared/affiliates/metadata');
 const {
   listPendingPartsFiles,
@@ -42,27 +43,31 @@ describe('FR #4195 feedFormat', () => {
     assert.equal(bad.status, 'unsupported_format');
   });
 
-  it('needsRefresh uses lastok and refreshdays', () => {
-    assert.equal(needsRefresh({}, NOW, 7), true);
+  it('isDueByLastDownload uses lastdownload + defaultage (FR #4931)', () => {
+    assert.equal(isDueByLastDownload({}, NOW, 7), true);
     assert.equal(
-      needsRefresh(
-        { lastok: '2026-10-11T12:00:00.000Z' },
+      isDueByLastDownload(
+        { lastdownload: '2026-10-11T12:00:00.000Z' },
         NOW,
         7,
       ),
       true,
     );
     assert.equal(
-      needsRefresh(
-        { lastok: '2026-10-12T12:00:00.000Z' },
+      isDueByLastDownload(
+        { lastdownload: '2026-10-12T12:00:00.000Z' },
         NOW,
         7,
       ),
       false,
     );
+    // lastok alone does not keep fresh when lastdownload is stale.
     assert.equal(
-      needsRefresh(
-        { laststatus: 'ok', lastdownload: '2026-10-01T00:00:00.000Z' },
+      isDueByLastDownload(
+        {
+          lastok: '2026-10-18T00:00:00.000Z',
+          lastdownload: '2026-10-01T00:00:00.000Z',
+        },
         NOW,
         7,
       ),
@@ -204,13 +209,19 @@ describe('FR #4195 downloadOne statuses', () => {
 });
 
 describe('FR #4195 runDaily refresh window', () => {
-  it('skips 6-day lastok; downloads 7-day and never; failure keeps lastok', async () => {
+  it('skips fresh lastdownload; downloads stale and never; failure keeps lastok', async () => {
     const s3 = createMemoryS3();
+    await s3.putObject({
+      Bucket: BUCKET,
+      Key: '_root/',
+      Body: Buffer.alloc(0),
+      Metadata: { defaultage: '7' },
+    });
     await s3.putObject({
       Bucket: BUCKET,
       Key: 'awin/',
       Body: Buffer.alloc(0),
-      Metadata: { name: 'Awin', enabled: '1', refreshdays: '7' },
+      Metadata: { name: 'Awin', enabled: '1' },
     });
     await s3.putObject({
       Bucket: BUCKET,
@@ -221,6 +232,7 @@ describe('FR #4195 runDaily refresh window', () => {
         feedurl: 'https://example.test/fresh.csv',
         format: 'csv',
         enabled: '1',
+        lastdownload: '2026-10-12T12:00:00.000Z',
         lastok: '2026-10-12T12:00:00.000Z',
         laststatus: 'ok',
       }),
@@ -234,6 +246,7 @@ describe('FR #4195 runDaily refresh window', () => {
         feedurl: 'https://example.test/stale.csv',
         format: 'csv',
         enabled: '1',
+        lastdownload: '2026-10-11T12:00:00.000Z',
         lastok: '2026-10-11T12:00:00.000Z',
         laststatus: 'ok',
       }),
@@ -258,6 +271,7 @@ describe('FR #4195 runDaily refresh window', () => {
         feedurl: 'https://example.test/fail.csv',
         format: 'csv',
         enabled: '1',
+        lastdownload: '2026-10-01T00:00:00.000Z',
         lastok: '2026-10-01T00:00:00.000Z',
         laststatus: 'ok',
       }),

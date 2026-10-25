@@ -118,7 +118,8 @@ class AffiliatesStack extends cdk.Stack {
       }),
     );
 
-    // Daily schedule (rate 1 day). Job skips affiliates fresher than refreshdays.
+    // Daily schedule (rate 1 day). Job skips affiliates fresher than defaultage
+    // (merchant > provider > _root/; lastdownload clock; FR #4931).
     const rule = new events.Rule(this, 'AffiliatesWeeklyRule', {
       ruleName: 'a-search-affiliates-weekly',
       description:

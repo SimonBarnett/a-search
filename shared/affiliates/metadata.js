@@ -17,7 +17,9 @@ const PROVIDER_KEYS = Object.freeze([
   'apitoken',
   'authtype',
   'enabled',
-  'refreshdays',
+  // FR #4931: schedule uses defaultage (shared/defaultAge.js); legacy
+  // refreshdays on live markers is ignored and no longer listed here.
+  'defaultage',
   'format',
   'compression',
   'feedapikey',
@@ -36,6 +38,7 @@ const AFFILIATE_KEYS = Object.freeze([
   'schedule',
   'enabled',
   'disabledreason',
+  'defaultage',
   'lastdownload',
   'lastok',
   'laststatus',

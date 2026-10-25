@@ -220,6 +220,12 @@ describe('FR #3999 / #4195 daily download (flat decompressed feed)', () => {
     const s3 = createMemoryS3();
     await s3.putObject({
       Bucket: BUCKET,
+      Key: '_root/',
+      Body: Buffer.alloc(0),
+      Metadata: { defaultage: '7' },
+    });
+    await s3.putObject({
+      Bucket: BUCKET,
       Key: 'impact/',
       Body: Buffer.alloc(0),
       Metadata: { name: 'Impact' },
@@ -383,7 +389,8 @@ describe('FR #3999 CDK source pins (no aws-cdk-lib runtime)', () => {
     assert.match(doc, /Lambda/);
     assert.match(doc, /Fargate/);
     assert.match(doc, /yyyy-mm-dd/);
-    assert.match(doc, /refreshdays|lastok/);
+    assert.match(doc, /defaultage|lastdownload/);
+    assert.match(doc, /_root\//);
     assert.match(doc, /rate\(1 day\)/);
     const deploy = fs.readFileSync(path.join(ROOT, 'docs', 'deploy.md'), 'utf8');
     assert.match(deploy, /AAffiliates/);

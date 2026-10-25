@@ -29,14 +29,17 @@ describe('MRB #4169 hostile FR #4167 WinPS', () => {
     );
     assert.match(text, /A_SEARCH_FOLDER_DOWNLOAD_ARGS/);
     assert.match(text, /'--args-env'|\"--args-env\"/);
-    assert.match(text, /\$node \$runner '--args-env'/);
+    // FR #4167 / spinner refactor: node may be $node or $nodeExe; script $runner or $js.
+    assert.match(
+      text,
+      /\&\s+\$(?:node|nodeExe)\s+\$(?:runner|js)\s+'--args-env'/,
+    );
     // Must not invoke node with the compressed JSON string as argv[2]
     assert.doesNotMatch(
       text,
-      /\& \$node \$runner \$jsonArgs/,
+      /\&\s+\$(?:node|nodeExe)\s+\$(?:runner|js)\s+\$(?:jsonArgs|argsObj)/,
       'legacy WinPS-mangling argv JSON handoff must stay gone',
     );
-    assert.doesNotMatch(text, /\& \$node \$runner \$argsObj/);
   });
 
   it('Invoke-FolderDownload sets process AWS_PROFILE for meta+writes and restores it', () => {
