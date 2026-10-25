@@ -47,7 +47,7 @@ Describe 'FR #4334 Invoke-FolderSearch gaps' {
 
     It 'sends market currency and userid and never customernumber' {
         $env:A_SEARCH_API_URL = 'https://example.test/'
-        $env:A_SEARCH_AGENT_API_KEY_FILE = $keyFile
+        # FR #5086: no agent key required
         $calls = @{}
         $invoke = {
             param($endpoint, $body, $key, $profile)
@@ -61,7 +61,7 @@ Describe 'FR #4334 Invoke-FolderSearch gaps' {
             -InvokeSearch $invoke 2>&1
         $LASTEXITCODE | Should Be 0
         $calls['endpoint'] | Should Be 'https://example.test'
-        $calls['key'] | Should Be 'FAKE_FILE_KEY'
+        $calls['key'] | Should Be ''
         $calls['body'].market | Should Be 'UK'
         $calls['body'].currency | Should Be 'GBP'
         $calls['body'].userid | Should Be 'user-1'
@@ -74,7 +74,6 @@ Describe 'FR #4334 Invoke-FolderSearch gaps' {
     }
 
     It 'fails when searches.json is missing' {
-        $env:A_SEARCH_AGENT_API_KEY = 'FAKE_AGENT_KEY_FOR_TEST'
         $missing = { param($b, $k) return $null }
         $null = & $scriptPath -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') -MountRoot $mount `
             -SearchApiUrl 'https://example.test' -Backend aws `
@@ -84,16 +83,16 @@ Describe 'FR #4334 Invoke-FolderSearch gaps' {
         (Get-Content -LiteralPath $scriptPath -Raw) | Should Match 'searches_json_missing'
     }
 
-    It 'fails when the key is not configured' {
-        $null = & $scriptPath -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') -MountRoot $mount `
+    It 'succeeds without agent key when InvokeSearch is injected (FR #5086)' {
+        $out = & $scriptPath -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') -MountRoot $mount `
             -SearchApiUrl 'https://example.test' -Backend aws `
             -AwsHeadObject $head -AwsGetObjectTagging $tags -AwsGetObject $getObj `
-            -InvokeSearch { param($e,$b,$k,$p) '{}' } 2>&1
-        $LASTEXITCODE | Should Be 1
+            -InvokeSearch { param($e,$b,$k,$p) '{"searchid":"sid-nokey","queued":["sql"]}' } 2>&1
+        $LASTEXITCODE | Should Be 0
+        ($out | Out-String) | Should Match 'searchid=sid-nokey'
     }
 
     It 'WhatIf prints the payload and does not post' {
-        $env:A_SEARCH_AGENT_API_KEY = 'FAKE_AGENT_KEY_FOR_TEST'
         $flag = @{ called = $false }
         $out = & $scriptPath -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') -MountRoot $mount `
             -SearchApiUrl 'https://example.test' -Backend aws -WhatIf `
@@ -109,7 +108,6 @@ Describe 'FR #4334 Invoke-FolderSearch gaps' {
     }
 
     It 'Json output includes searchid and query_count and not the key' {
-        $env:A_SEARCH_AGENT_API_KEY = 'FAKE_AGENT_KEY_FOR_TEST'
         $out = & $scriptPath -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') -MountRoot $mount `
             -SearchApiUrl 'https://example.test' -Backend aws -Json `
             -AwsHeadObject $head -AwsGetObjectTagging $tags -AwsGetObject $getObj `

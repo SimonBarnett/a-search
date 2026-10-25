@@ -2,8 +2,9 @@
 
 /**
  * FR #4030: agent /search fan-out --- hostkey+guid+queries to each live provider SQS + SQL SQS.
- * Auth: x-agent-api-key (or Authorization: Bearer agent:<key>) matching A_SEARCH_AGENT_API_KEY.
- * No CORS *. Returns 202 {searchid, queued}. Writes nothing to MSSQL.
+ * Auth (FR #5086 / #4888): API Gateway HttpIamAuthorizer is the gate. Lambda does not
+ * require x-agent-api-key. When requestContext.authorizer.iam is present, log the
+ * caller ARN (never secrets). No CORS *. Returns 202 {searchid, queued}.
  */
 
 const crypto = require('node:crypto');
@@ -23,6 +24,7 @@ const {
 } = require('../../shared/search/cleanSearchQuery');
 const { isEnabledOne } = require('../../shared/enabledFlag');
 const { providerMarkerKey } = require('../../shared/affiliates/keys');
+const { iamAuthorizerIdentity } = require('./auth/iam');
 
 class AgentSearchError extends Error {
   /**
@@ -67,8 +69,11 @@ function agentKeyMatches(provided, expected) {
 }
 
 /**
+ * Legacy agent-key check (FR #4311). Unused by handleAgentSearch after FR #5086
+ * (IAM at API Gateway). Kept exported for older unit helpers; prefer IAM.
  * @param {object} event
  * @param {{ env?: NodeJS.ProcessEnv }} [deps]
+ * @deprecated FR #5086 — do not call from /search; gateway IAM is the auth.
  */
 function requireAgentAuth(event, deps = {}) {
   const env = deps.env || process.env;
@@ -87,6 +92,24 @@ function requireAgentAuth(event, deps = {}) {
   if (!agentKeyMatches(provided, expected)) {
     throw new AgentSearchError('unauthorized', 401);
   }
+}
+
+/**
+ * FR #5086: note IAM caller when APIGW attached identity; never require agent key.
+ * @param {object} event
+ * @param {{ log?: { info?: Function } }} [deps]
+ * @returns {{ iam: boolean, userId?: string }}
+ */
+function noteSearchCaller(event, deps = {}) {
+  const log = deps.log || console;
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId && iamId.userId) {
+    if (typeof log.info === 'function') {
+      log.info(`[agentSearch] iam caller ${iamId.userId}`);
+    }
+    return { iam: true, userId: iamId.userId };
+  }
+  return { iam: false };
 }
 
 /**
@@ -368,7 +391,8 @@ async function handleAgentSearch(opts) {
   if (typeof io.headObject !== 'function') {
     throw new AgentSearchError('s3_required', 500);
   }
-  requireAgentAuth(io.event, { env: io.env });
+  // FR #5086: do not require x-agent-api-key — HttpIamAuthorizer is the gate.
+  noteSearchCaller(io.event, { log: io.log });
 
   const body = parseJsonBody(io.event && io.event.body);
   if (!body || typeof body !== 'object') {
@@ -542,6 +566,7 @@ async function syncSearchesSearchid(io, hostkey, guid, searchid, mc) {
 module.exports = {
   AgentSearchError,
   requireAgentAuth,
+  noteSearchCaller,
   agentKeyMatches,
   handleAgentSearch,
   resolveFanOutTargets,

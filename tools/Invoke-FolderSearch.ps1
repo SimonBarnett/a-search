@@ -6,10 +6,11 @@ POST /search for the a-clubs GUID folder under the mapped S3 drive (FR #4043, FR
 In a-clubs/{hostkey}/{guid}: reads searches.json and POSTs /search.
 Payload matches the annotator: host, hostkey, guid, queries, exclude, plus
 market and currency when present, and metadata userid (never customernumber).
-Never writes S3. Never prints the agent key.
-Env: A_SEARCH_API_URL and A_SEARCH_AGENT_API_KEY_FILE, with
-A_SEARCH_SEARCH_API_URL, A_SEARCH_AGENT_API_KEY, and folder-tools config as fallbacks.
-Missing searches.json, a non-GUID folder, or a missing URL/key fails clearly.
+Never writes S3. Never prints credentials.
+Auth is IAM SigV4 (FR #4888 / #5086); no x-agent-api-key.
+Env: A_SEARCH_API_URL / A_SEARCH_SEARCH_API_URL, folder-tools.config.json SearchApiUrl,
+or (when -AwsProfile is set) CloudFormation stack output SearchApiUrl.
+Missing searches.json, a non-GUID folder, or a missing URL fails clearly.
 -WhatIf prints the payload and does not POST. -Json prints searchid, query_count,
 and providers_queued. A host folder still needs -All.
 
@@ -26,7 +27,7 @@ Print one JSON object per GUID (searchid, query_count, providers_queued). No key
 Print the POST payload and do not call /search. No key.
 
 .PARAMETER ConfigPath
-JSON config with SearchApiUrl (and optional AgentApiKeyEnv / AwsProfile).
+JSON config with SearchApiUrl (and optional AwsProfile / SearchStackName).
 #>
 [CmdletBinding()]
 param(
@@ -74,34 +75,60 @@ function Get-FolderToolsConfig {
 }
 
 function Resolve-SearchEndpoint {
-    param($Config, [string]$SearchApiUrl)
+    param(
+        $Config,
+        [string]$SearchApiUrl,
+        [string]$AwsProfile
+    )
     if ($SearchApiUrl) { return $SearchApiUrl.TrimEnd('/') }
     if ($env:A_SEARCH_API_URL) { return $env:A_SEARCH_API_URL.TrimEnd('/') }
     if ($env:A_SEARCH_SEARCH_API_URL) { return $env:A_SEARCH_SEARCH_API_URL.TrimEnd('/') }
-    if ($Config -and $Config.SearchApiUrl) { return ([string]$Config.SearchApiUrl).TrimEnd('/') }
-    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_API_URL, A_SEARCH_SEARCH_API_URL, or folder-tools.config.json'
+    if ($Config -and $Config.SearchApiUrl) {
+        $fromCfg = ([string]$Config.SearchApiUrl).Trim()
+        if ($fromCfg -and $fromCfg -notmatch 'EXAMPLE') { return $fromCfg.TrimEnd('/') }
+    }
+    # FR #5086: optional stack output when aws CLI can describe ASearchStack
+    $stackName = 'ASearchStack'
+    if ($Config -and $Config.SearchStackName) { $stackName = [string]$Config.SearchStackName }
+    if ($env:A_SEARCH_STACK_NAME) { $stackName = $env:A_SEARCH_STACK_NAME.Trim() }
+    if (Get-Command aws -ErrorAction SilentlyContinue) {
+        try {
+            $awsArgs = @(
+                'cloudformation', 'describe-stacks',
+                '--stack-name', $stackName,
+                '--query', "Stacks[0].Outputs[?OutputKey=='SearchApiUrl'].OutputValue",
+                '--output', 'text'
+            )
+            if ($AwsProfile) { $awsArgs = @('--profile', $AwsProfile) + $awsArgs }
+            $raw = & aws @awsArgs 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                $url = (($raw | Out-String) -replace '[\u0000-\u001F]', '').Trim()
+                if ($url -and $url -ne 'None' -and $url -match '^https://') {
+                    return $url.TrimEnd('/')
+                }
+            }
+        } catch { }
+    }
+    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_API_URL, A_SEARCH_SEARCH_API_URL, folder-tools.config.json SearchApiUrl, or ensure stack SearchApiUrl is readable via aws cloudformation describe-stacks'
 }
 
+# FR #5086: agent key optional / unused for IAM /search. Kept for inject/tests only.
 function Resolve-AgentKey {
     param($Config, [string]$AgentApiKey)
     if ($AgentApiKey) { return $AgentApiKey }
     $file = [Environment]::GetEnvironmentVariable('A_SEARCH_AGENT_API_KEY_FILE')
     if ($file) {
         $file = $file.Trim()
-        if (-not $file -or -not (Test-Path -LiteralPath $file)) {
-            throw 'agent_api_key_file_unreadable: A_SEARCH_AGENT_API_KEY_FILE is set but the file cannot be read'
+        if ($file -and (Test-Path -LiteralPath $file)) {
+            $t = [System.IO.File]::ReadAllText($file).Trim()
+            if ($t) { return $t }
         }
-        $text = [System.IO.File]::ReadAllText($file).Trim()
-        if (-not $text) {
-            throw 'agent_api_key_required: A_SEARCH_AGENT_API_KEY_FILE is empty'
-        }
-        return $text
     }
     $envName = 'A_SEARCH_AGENT_API_KEY'
     if ($Config -and $Config.AgentApiKeyEnv) { $envName = [string]$Config.AgentApiKeyEnv }
     $v = [Environment]::GetEnvironmentVariable($envName)
     if ($v) { return $v }
-    throw "agent_api_key_required: set A_SEARCH_AGENT_API_KEY_FILE or env $envName"
+    return ''
 }
 
 function Resolve-AwsProfileName {
@@ -184,7 +211,7 @@ function Invoke-AgentSearchHttp {
     param(
         [Parameter(Mandatory = $true)][string]$Endpoint,
         [Parameter(Mandatory = $true)][hashtable]$Body,
-        [Parameter(Mandatory = $true)][string]$AgentApiKey,
+        [string]$AgentApiKey,
         [string]$AwsProfile,
         [scriptblock]$InvokeSearch,
         [scriptblock]$ResolveAwsCredentials,
@@ -193,52 +220,49 @@ function Invoke-AgentSearchHttp {
     if ($InvokeSearch) {
         return & $InvokeSearch $Endpoint $Body $AgentApiKey $AwsProfile
     }
-    # Prefer curl.exe with --aws-sigv4 when profile is set; else raw HTTPS with agent key only.
+    # Prefer curl.exe with --aws-sigv4 when profile is set (FR #4888 / #5078 / #5086).
+    # Do not send x-agent-api-key — gateway IAM is the only auth.
     $uri = "$Endpoint/search"
     $json = $Body | ConvertTo-Json -Compress -Depth 8
-    $headers = @{
-        'content-type'   = 'application/json'
-        'x-agent-api-key' = $AgentApiKey
-    }
     # Never log headers/body with secrets --- Write-Verbose only endpoint + hostkey/guid
     Write-Verbose ("POST {0} hostkey={1} guid={2}" -f $uri, $Body.hostkey, $Body.guid)
 
-    if ($AwsProfile -and ($CurlInvoke -or (Get-Command curl.exe -ErrorAction SilentlyContinue))) {
-        $tmp = [System.IO.Path]::GetTempFileName()
-        try {
-            [System.IO.File]::WriteAllText($tmp, $json)
-            # FR #5078: resolve real credentials; never pass the profile name as --user.
-            $creds = Resolve-AwsCliCredentials -ProfileName $AwsProfile -Resolver $ResolveAwsCredentials
-            $userPair = '{0}:{1}' -f $creds.AccessKeyId, $creds.SecretAccessKey
-            $curlArgs = @(
-                '-sS', '-X', 'POST', $uri,
-                '-H', 'content-type: application/json',
-                '-H', ('x-agent-api-key: {0}' -f $AgentApiKey),
-                '--aws-sigv4', 'aws:amz:eu-west-2:execute-api',
-                '--user', $userPair
-            )
-            if ($creds.SessionToken) {
-                $curlArgs += @('-H', ('x-amz-security-token: {0}' -f $creds.SessionToken))
-            }
-            $curlArgs += @('--data-binary', ('@{0}' -f $tmp))
-            if ($CurlInvoke) {
-                $out = & $CurlInvoke $curlArgs
-            }
-            else {
-                $out = & curl.exe @curlArgs 2>&1
-                $code = $LASTEXITCODE
-                if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
-            }
-            return $out
-        }
-        finally {
-            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        }
+    if (-not $AwsProfile) {
+        throw 'aws_profile_required: IAM SigV4 needs -AwsProfile (default a-search-redqueen-annotator)'
+    }
+    if (-not ($CurlInvoke -or (Get-Command curl.exe -ErrorAction SilentlyContinue))) {
+        throw 'curl_required: need curl.exe for --aws-sigv4 POST /search'
     }
 
-    # Fallback: Invoke-RestMethod with agent key (SigV4 optional when IAM authorizer not required locally)
-    $resp = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $json -ContentType 'application/json'
-    return ($resp | ConvertTo-Json -Compress -Depth 8)
+    $tmp = [System.IO.Path]::GetTempFileName()
+    try {
+        [System.IO.File]::WriteAllText($tmp, $json)
+        # FR #5078: resolve real credentials; never pass the profile name as --user.
+        $creds = Resolve-AwsCliCredentials -ProfileName $AwsProfile -Resolver $ResolveAwsCredentials
+        $userPair = '{0}:{1}' -f $creds.AccessKeyId, $creds.SecretAccessKey
+        $curlArgs = @(
+            '-sS', '-X', 'POST', $uri,
+            '-H', 'content-type: application/json',
+            '--aws-sigv4', 'aws:amz:eu-west-2:execute-api',
+            '--user', $userPair
+        )
+        if ($creds.SessionToken) {
+            $curlArgs += @('-H', ('x-amz-security-token: {0}' -f $creds.SessionToken))
+        }
+        $curlArgs += @('--data-binary', ('@{0}' -f $tmp))
+        if ($CurlInvoke) {
+            $out = & $CurlInvoke $curlArgs
+        }
+        else {
+            $out = & curl.exe @curlArgs 2>&1
+            $code = $LASTEXITCODE
+            if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
+        }
+        return $out
+    }
+    finally {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Read-SearchesQueries {
@@ -354,9 +378,10 @@ try {
     }
 
     $cfg = Get-FolderToolsConfig -ConfigPath $ConfigPath
-    $endpoint = Resolve-SearchEndpoint -Config $cfg -SearchApiUrl $SearchApiUrl
-    $apiKey = Resolve-AgentKey -Config $cfg -AgentApiKey $AgentApiKey
     $profile = Resolve-AwsProfileName -Config $cfg -AwsProfile $AwsProfile
+    $endpoint = Resolve-SearchEndpoint -Config $cfg -SearchApiUrl $SearchApiUrl -AwsProfile $profile
+    # FR #5086: key unused for IAM /search; still resolve for injectable -InvokeSearch tests.
+    $apiKey = Resolve-AgentKey -Config $cfg -AgentApiKey $AgentApiKey
 
     $results = @()
 
