@@ -311,9 +311,15 @@ async function publishGuidSearch(opts) {
   if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
     const queries = Array.isArray(existing.queries) ? existing.queries : [];
     if (!queries.length) {
-      const err = new Error('searches_missing');
-      err.code = 'searches_missing';
-      throw err;
+      // FR #4889: /parts seed (or not-yet-annotated GUID) has empty queries.
+      // Never POST /search; never throw (that retried into a-clubs-changes-dlq).
+      return {
+        ok: true,
+        idempotent: true,
+        wrote: false,
+        skipped: true,
+        reason: 'searches_empty_seed',
+      };
     }
     const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
     const posted = await postSearchBody(opts, {
