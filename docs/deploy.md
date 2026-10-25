@@ -154,8 +154,9 @@ npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
    is forwarded). A non-200 fails the whole deploy step.
 
 No hand-set `A_SEARCH_API_URL` or JWT is required for this path (FR #4888).
-Aliases: `deployAccount` / `deployRegion`. Fallback env:
-`CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`. Stack default: `ASearchStack`
+`npm run deploy` sets `-c requireDeployEnv=true` so a missing account exits with
+`FR-141: missing deploy account...`. Aliases: `deployAccount` / `deployRegion`.
+Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`. Stack default: `ASearchStack`
 (or `A_SEARCH_STACK`).
 
 Or call CDK directly from repo root (skips the automatic smoke --- then run
