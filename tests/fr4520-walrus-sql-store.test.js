@@ -118,7 +118,8 @@ function createStubExec() {
           row.Source === inputs.ProviderId &&
           row.FeedKey === inputs.FeedKey &&
           row.Env === inputs.Env &&
-          !row.DeletedAt
+          !row.DeletedAt &&
+          row.LastSeenRunId != null
         ) {
           const inStaging = staging.some(
             (s) =>
