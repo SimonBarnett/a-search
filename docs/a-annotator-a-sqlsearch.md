@@ -6,6 +6,8 @@ FR #4827 packages the on-prem drains as Node single-executable applications and 
 |---|---|---|---|
 | `a-annotator` | `dist/sea/a-annotator.exe` | `a-clubs-new-folders.fifo` and `a-clubs-changes` | marker annotations, `searches.json`, POST `/search` |
 | `a-sqlsearch` | `dist/sea/a-sqlsearch.exe` | `a-search-db-backed` | `a-clubs/{host}/{guid}/IN/sql.json` on `A_CLUBS_ROOT` |
+
+FR #5004: SQL CONTAINS terms are sanitised (punctuation and operators stripped, English noise words dropped, remaining tokens quoted). Informational full-text messages are 0 rows. See `docs/walrus-sql-drain.md` for the `WONDERLAND\a-search-drain` SELECT grant.
 | `a-searches` | `dist/sea/a-searches.exe` | a-clubs host/GUID markers + `searches.json` / `search-fanout.json` | POST `/search` (IAM SigV4) for GUIDs due by `defaultage` |
 
 All three exes accept `--version` and exit 0 without AWS or SQL. Build them with `npm run build:sea` (`node scripts/build-a-search-sea.js`). On Linux the script downloads the Windows `node.exe` that matches the local Node version, then runs esbuild, `node --experimental-sea-config`, and postject. `--smoke` checks the SEA fuse and, on Windows, runs `--version`.
