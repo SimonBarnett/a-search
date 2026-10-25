@@ -2,7 +2,7 @@
 
 /**
  * FR #4882: UAT S19 live /selftest probe -- dedicated smoke (GET + POST),
- * fail-closed without URL/JWT, never prints a token.
+ * IAM SigV4 GET + POST, never prints credentials.
  */
 
 const { describe, it } = require('node:test');
@@ -13,11 +13,10 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.join(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'smoke-selftest.js');
 
-function fakeJwt() {
-  const h = Buffer.from('{"alg":"none"}', 'utf8').toString('base64url');
-  const p = Buffer.from('{"userId":"uat-s19"}', 'utf8').toString('base64url');
-  return [h, p, 'sig'].join('.');
-}
+const FAKE_CREDS = {
+  accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+  secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+};
 
 function mockFetchSequence(replies) {
   let i = 0;
@@ -53,7 +52,7 @@ describe('FR #4882 smoke-selftest', () => {
     };
     const out = await smoke.runSelftestSmoke({
       baseUrl: 'https://example.invalid/search-api',
-      jwt: fakeJwt(),
+      credentials: FAKE_CREDS,
       fetchImpl,
     });
     assert.equal(out.ok, true);
@@ -65,26 +64,36 @@ describe('FR #4882 smoke-selftest', () => {
     assert.equal(calls[1].method, 'POST');
   });
 
-  it('fail-closes when API URL or JWT is missing', async () => {
+  it('fail-closes when API URL or credentials are missing', async () => {
     const smoke = require(SCRIPT);
     await assert.rejects(
-      () => smoke.runSelftestSmoke({ baseUrl: '', jwt: fakeJwt() }),
+      () =>
+        smoke.runSelftestSmoke({
+          baseUrl: '',
+          credentials: FAKE_CREDS,
+        }),
       /A_SEARCH_API_URL|base URL/,
     );
     await assert.rejects(
       () =>
         smoke.runSelftestSmoke({
           baseUrl: 'https://example.invalid/search-api',
-          jwt: '',
+          credentials: { accessKeyId: '', secretAccessKey: '' },
+          env: { AWS_ACCESS_KEY_ID: '', AWS_SECRET_ACCESS_KEY: '' },
         }),
-      /A_SEARCH_SMOKE_JWT|JWT/,
+      /missing AWS credentials/,
     );
   });
 
   it('CLI without env exits 1 and does not print Bearer token', () => {
     const r = spawnSync(process.execPath, [SCRIPT], {
       cwd: ROOT,
-      env: { ...process.env, A_SEARCH_API_URL: '', A_SEARCH_SMOKE_JWT: '' },
+      env: {
+        ...process.env,
+        A_SEARCH_API_URL: '',
+        AWS_ACCESS_KEY_ID: '',
+        AWS_SECRET_ACCESS_KEY: '',
+      },
       encoding: 'utf8',
     });
     assert.notEqual(r.status, 0);
@@ -99,7 +108,7 @@ describe('FR #4882 smoke-selftest', () => {
       () =>
         smoke.runSelftestSmoke({
           baseUrl: 'https://example.invalid/search-api',
-          jwt: fakeJwt(),
+          credentials: FAKE_CREDS,
           fetchImpl: mockFetchSequence([
             { status: 401, body: '{"ok":false,"error":"unauthorized"}' },
           ]),
