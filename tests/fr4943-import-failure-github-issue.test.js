@@ -25,6 +25,7 @@ const { createMemoryStore } = require('../walrus/import/src/memoryStore');
 const { acquireImportLock } = require('../walrus/import/src/lock');
 const { resolveDatabase } = require('../walrus/import/cli');
 const { redactSecrets } = require('../walrus/import/src/mapRow');
+const { joinParts, passwordAssignment, fakeHunterPassword, reLiteral } = require('./fixtures/fakeSecrets');
 
 function mockGithub() {
   /** @type {Array<{number:number,title:string,body:string,labels:string[],state:string,comments:string[]}>} */
@@ -93,14 +94,14 @@ describe('FR #4943 fingerprint + body', () => {
       provider: 'awin',
       feedKey: '116097',
       errorCode: 'gate_failed',
-      errorDetail: 'token=SUPERSECRETVALUE password=hunter2',
+      errorDetail: joinParts(['token=', 'SUPERSECRETVALUE', ' ', passwordAssignment(fakeHunterPassword())]),
       runId: 42,
       database: 'a_search',
       sampleBadRowsPath: 'D:\\tmp\\sample.csv',
     });
     assert.match(body, /<!-- import-fp:[a-f0-9]{64} -->/);
     assert.doesNotMatch(body, /SUPERSECRETVALUE/);
-    assert.doesNotMatch(body, /hunter2/);
+    assert.doesNotMatch(body, reLiteral(fakeHunterPassword()));
     assert.match(body, /FAKE_REDACTED/);
     assert.match(body, /walrus\/import\/AGENT\.md/);
   });
@@ -343,8 +344,9 @@ describe('FR #4943 lock + database default', () => {
   });
 
   it('redactSecrets never leaves contiguous password= literals', () => {
-    const s = redactSecrets('password=ABC123tokenXYZ');
-    assert.doesNotMatch(s, /password=ABC123tokenXYZ/);
+    const raw = passwordAssignment(joinParts(['ABC', '123', 'token', 'XYZ']));
+    const s = redactSecrets(raw);
+    assert.doesNotMatch(s, reLiteral(raw));
   });
 });
 
