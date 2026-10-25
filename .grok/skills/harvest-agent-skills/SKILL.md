@@ -642,3 +642,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - UAT S19 FR that adds smoke-selftest (mocked GET+POST, fail-closed unset JWT/URL) may PASS with ACCEPTABLE drift: live SearchApiUrl probe stays needs_human on the deploy host.
 - UAT S1 live smoke-deploy FR on a shop without A_SEARCH_API_URL/A_SEARCH_SMOKE_JWT: ACK then GIVEUP reason=needs_human; comment a deploy-host checklist; never invent POST /search 200.
 - UAT S19 live /selftest is npm run smoke-selftest (GET then POST) with A_SEARCH_API_URL and A_SEARCH_SMOKE_JWT; fail-closed when unset; never print the JWT; do not use POST /search for the S19 probe.
+- a-search /parts e2e tracker #4892 is a living umbrella: ACK, comment the child matrix, GIVEUP; never Closes it from a child PR
