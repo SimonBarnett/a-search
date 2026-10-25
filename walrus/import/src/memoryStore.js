@@ -51,6 +51,21 @@ function createMemoryStore(opts = {}) {
     appLockHeld = !!held;
   }
 
+  function seedPart(row) {
+    const source = row.Source;
+    const feedKey = row.FeedKey;
+    const mpid = String(row.MerchantProductId);
+    parts.set(partKey(source, feedKey, mpid), {
+      Source: source,
+      FeedKey: feedKey,
+      MerchantProductId: mpid,
+      Env: env,
+      DeletedAt: row.DeletedAt || null,
+      LastSeenRunId: row.LastSeenRunId == null ? null : row.LastSeenRunId,
+      ContentHash: row.ContentHash || '',
+    });
+  }
+
   function listActive(source, feedKey) {
     const out = [];
     for (const row of parts.values()) {
@@ -87,6 +102,8 @@ function createMemoryStore(opts = {}) {
     }
     if (deleteMissing === 'soft' || deleteMissing === 'hard') {
       for (const a of active) {
+        // FR #4942 / MRB #4944: dry-run must match DeleteMissing (skip NULL LastSeen).
+        if (a.LastSeenRunId == null) continue;
         if (!stagedKeys.has(a.MerchantProductId)) wouldDelete += 1;
       }
     }
@@ -166,6 +183,7 @@ function createMemoryStore(opts = {}) {
       let deleted = 0;
       if (deleteMissing === 'soft' || deleteMissing === 'hard') {
         for (const a of listActive(providerId, feedKey)) {
+          if (a.LastSeenRunId == null) continue;
           if (!stagedKeys.has(a.MerchantProductId)) {
             const k = partKey(providerId, feedKey, a.MerchantProductId);
             if (deleteMissing === 'hard') parts.delete(k);
@@ -218,6 +236,7 @@ function createMemoryStore(opts = {}) {
       let deleted = 0;
       if (deleteMissing === 'soft' || deleteMissing === 'hard') {
         for (const a of listActive(providerId, feedKey)) {
+          if (a.LastSeenRunId == null) continue;
           if (!stagedKeys.has(a.MerchantProductId)) {
             const k = partKey(providerId, feedKey, a.MerchantProductId);
             if (deleteMissing === 'hard') parts.delete(k);
@@ -340,6 +359,7 @@ function createMemoryStore(opts = {}) {
     releaseAppLock,
     forceHoldAppLock,
     listActive,
+    seedPart,
     mergeFeed,
     hardPurge,
     markFileOk,

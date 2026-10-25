@@ -38,5 +38,6 @@ msnodesqlv8 default (`SQL Server Native Client 11.0`) --- it is often missing.
 | `020_Parts_FullText.sql` | FULLTEXT catalog + index on Parts (FR #4463) |
 | `021_ImportCatalog.sql` | ImportProviders / ImportFeeds (FR #4463) |
 | `022_IngestSchema.sql` | ingest.* runs/files/staging/rejects/failures/purge + RCSI (FR #4463) |
+| `023_DeleteMissingParts_null_lastseen.sql` | DeleteMissingParts skips NULL LastSeenRunId (FR #4942) |
 
 Every file starts with `-- target: a_search`.

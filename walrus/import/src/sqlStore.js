@@ -208,6 +208,7 @@ function createSqlStore(opts = {}) {
     }
     if (deleteMissing === 'soft' || deleteMissing === 'hard') {
       for (const a of active) {
+        if (a.LastSeenRunId == null) continue;
         if (!stagedKeys.has(a.MerchantProductId)) wouldDelete += 1;
       }
     }
@@ -313,6 +314,7 @@ function createSqlStore(opts = {}) {
          FROM dbo.Parts AS T
          WHERE T.Source = @ProviderId AND T.FeedKey = @FeedKey AND T.Env = @Env
            AND T.DeletedAt IS NULL
+           AND T.LastSeenRunId IS NOT NULL
            AND NOT EXISTS (
              SELECT 1 FROM dbo.PartsStaging S
              WHERE S.Source = T.Source AND S.FeedKey = T.FeedKey
@@ -329,6 +331,7 @@ function createSqlStore(opts = {}) {
         `DELETE T
          FROM dbo.Parts AS T
          WHERE T.Source = @ProviderId AND T.FeedKey = @FeedKey AND T.Env = @Env
+           AND T.LastSeenRunId IS NOT NULL
            AND NOT EXISTS (
              SELECT 1 FROM dbo.PartsStaging S
              WHERE S.Source = T.Source AND S.FeedKey = T.FeedKey
