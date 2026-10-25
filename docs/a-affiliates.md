@@ -8,8 +8,12 @@ and **affiliate feed** downloads. Deployed as standalone CDK stack `AAffiliates`
 ## Why Lambda (not Fargate)
 
 v1 uses a **Node 20 Lambda** (15 min timeout, EventBridge `rate(1 day)`). The
-job skips affiliates fresher than `refreshdays` (default **7**). Fargate is a
-documented follow-up if feeds exceed Lambda time or ephemeral storage limits.
+job skips affiliates fresher than shared `defaultage` (merchant >
+provider > `_root/`; clock is `lastdownload`; FR #4931). Missing `_root/`
+self-heals with `defaultage=7` (create-only). Existing `_root/` with
+invalid `defaultage` fails with `needs_defaultage` (no overwrite). Fargate
+is a documented follow-up if feeds exceed Lambda time or ephemeral storage
+limits.
 
 ## Bucket
 
@@ -33,6 +37,7 @@ merchant folder (no `parts/`, no `latest`, no retention copies).
 
 ```
 a-affiliates/
+  _root/                                   # bucket config marker (`defaultage`, …)
   {provider}/                              # marker key `{provider}/`
   {provider}/provider.json                 # optional overflow when metadata > 2 KiB
   {provider}/{affiliateid}/                # marker key `{provider}/{affiliateid}/`
@@ -61,9 +66,15 @@ Everything an agent needs to log into that network:
 | `feedapikey` / `darwinhash` | Feed URL placeholder secrets (**secret**) |
 | `authtype` | `password` \| `token` \| `oauth` |
 | `enabled` | `1` or `0` (skip whole provider when `0`) |
-| `refreshdays` | Days before re-download (default `7`) |
+| `defaultage` | Positive integer days (schedule; falls through to `_root/` if unset). Legacy `refreshdays` on live markers is ignored. |
 | `format` / `compression` | Defaults for affiliates missing their own |
 | `lastmod` | ISO UTC last metadata change |
+
+### Root marker (`_root/`)
+
+| Key | Notes |
+|-----|--------|
+| `defaultage` | Bucket-wide default age in whole days. Missing `_root/` object is created once with `7`. Existing invalid value is never overwritten (`needs_defaultage`). Shared resolver: `shared/defaultAge.js`. |
 
 If the combined user-metadata payload exceeds ~2 KiB, put overflow JSON at
 `{provider}/provider.json` (same secret rules). Helpers expose
@@ -84,8 +95,9 @@ Everything needed to download that affiliate's feed. Affiliates pay
 | `compression` | Source feed: `gzip` \| `zip` \| `none` |
 | `schedule` | Default `daily` |
 | `enabled` | `1` or `0` |
-| `lastdownload` | ISO UTC of last attempt |
-| `lastok` | ISO UTC of last **successful** download (refresh clock) |
+| `defaultage` | Optional merchant override (positive integer days; wins over provider/`_root/`) |
+| `lastdownload` | ISO UTC of last attempt (**schedule clock**, FR #4931) |
+| `lastok` | ISO UTC of last **successful** download (status/history; not the due clock) |
 | `laststatus` | `ok`, `exists`, `unsupported_*`, `decompress_error`, `http_*`, ... |
 | `lastsize` | Bytes of last successful **decompressed** body |
 | `lastmod` | ISO UTC last metadata change |
@@ -97,9 +109,11 @@ Normalizers throw `stripe_fields_forbidden`.
 
 1. EventBridge rule `rate(1 day)` invokes Lambda `a-search-affiliates-weekly`
    (legacy name; behaviour is daily).
-2. Lambda lists enabled provider markers (paginated), then affiliate markers.
-3. Downloads when `lastok` (or `lastdownload` with `laststatus=ok`) is missing or
-   older than `refreshdays`. Failures do **not** move `lastok`.
+2. Lambda loads `_root/` `defaultage`, lists enabled provider markers
+   (paginated; skips `_root` as a provider), then affiliate markers.
+3. Downloads when `lastdownload` is missing/unparseable or age in UTC days is
+   at least `defaultage` (merchant > provider > `_root/`). Failures still
+   update `lastdownload` / `laststatus` but do **not** move `lastok`.
 4. Writes `{provider}/{affiliateid}/{yyyy-mm-dd}.{ext}` only; skips with
    `exists` when today's file is present (unless force). Older dated files are
    left for import to delete.

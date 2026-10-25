@@ -11,6 +11,8 @@ function createMemoryStore(opts = {}) {
   const importFiles = new Map();
   const failures = [];
   const rejects = [];
+  /** @type {object[]} leftover dbo.PartsStaging rows (FR #4941) */
+  const leftoverStaging = [];
   const purgeRequests = [];
   const runFeeds = [];
   let runSeq = 0;
@@ -49,6 +51,21 @@ function createMemoryStore(opts = {}) {
     appLockHeld = !!held;
   }
 
+  function seedPart(row) {
+    const source = row.Source;
+    const feedKey = row.FeedKey;
+    const mpid = String(row.MerchantProductId);
+    parts.set(partKey(source, feedKey, mpid), {
+      Source: source,
+      FeedKey: feedKey,
+      MerchantProductId: mpid,
+      Env: env,
+      DeletedAt: row.DeletedAt || null,
+      LastSeenRunId: row.LastSeenRunId == null ? null : row.LastSeenRunId,
+      ContentHash: row.ContentHash || '',
+    });
+  }
+
   function listActive(source, feedKey) {
     const out = [];
     for (const row of parts.values()) {
@@ -85,6 +102,8 @@ function createMemoryStore(opts = {}) {
     }
     if (deleteMissing === 'soft' || deleteMissing === 'hard') {
       for (const a of active) {
+        // FR #4942 / MRB #4944: dry-run must match DeleteMissing (skip NULL LastSeen).
+        if (a.LastSeenRunId == null) continue;
         if (!stagedKeys.has(a.MerchantProductId)) wouldDelete += 1;
       }
     }
@@ -115,6 +134,17 @@ function createMemoryStore(opts = {}) {
         const batch = staged.slice(i, i + batchSize);
         const batchIdx = Math.floor(i / batchSize);
         if (failAfterBatch != null && batchIdx === failAfterBatch) {
+          leftoverStaging.length = 0;
+          for (const s of staged.slice(0, i)) {
+            leftoverStaging.push({
+              Source: providerId,
+              FeedKey: feedKey,
+              MerchantProductId: String(s.MerchantProductId),
+              Env: env,
+              Title: s.title || '',
+              ContentHash: s.ContentHash,
+            });
+          }
           const err = new Error('forced_batch_failure');
           err.code = 'sql_error';
           throw err;
@@ -153,6 +183,7 @@ function createMemoryStore(opts = {}) {
       let deleted = 0;
       if (deleteMissing === 'soft' || deleteMissing === 'hard') {
         for (const a of listActive(providerId, feedKey)) {
+          if (a.LastSeenRunId == null) continue;
           if (!stagedKeys.has(a.MerchantProductId)) {
             const k = partKey(providerId, feedKey, a.MerchantProductId);
             if (deleteMissing === 'hard') parts.delete(k);
@@ -205,6 +236,7 @@ function createMemoryStore(opts = {}) {
       let deleted = 0;
       if (deleteMissing === 'soft' || deleteMissing === 'hard') {
         for (const a of listActive(providerId, feedKey)) {
+          if (a.LastSeenRunId == null) continue;
           if (!stagedKeys.has(a.MerchantProductId)) {
             const k = partKey(providerId, feedKey, a.MerchantProductId);
             if (deleteMissing === 'hard') parts.delete(k);
@@ -259,7 +291,34 @@ function createMemoryStore(opts = {}) {
     return f;
   }
 
+  async function drainLeftoverStaging() {
+    const feeds = new Set(
+      leftoverStaging.map((r) => `${r.Source}|${r.FeedKey}|${r.Env}`),
+    );
+    for (const row of leftoverStaging) {
+      const k = partKey(row.Source, row.FeedKey, row.MerchantProductId);
+      if (!parts.has(k)) {
+        parts.set(k, {
+          Source: row.Source,
+          FeedKey: row.FeedKey,
+          MerchantProductId: String(row.MerchantProductId),
+          Env: row.Env || env,
+          Title: row.Title || '',
+          ContentHash: row.ContentHash || '',
+          DeletedAt: null,
+        });
+      }
+    }
+    leftoverStaging.length = 0;
+    return { feeds: feeds.size };
+  }
+
   function endOfRunHealth() {
+    if (leftoverStaging.length) {
+      const err = new Error('staging_leftover');
+      err.code = 'staging_leftover';
+      throw err;
+    }
     const rebuilt = [];
     for (const name of [...indexesDisabled]) {
       indexesDisabled.delete(name);
@@ -288,6 +347,7 @@ function createMemoryStore(opts = {}) {
 
   return {
     env,
+    leftoverStaging,
     parts,
     importFiles,
     failures,
@@ -299,11 +359,13 @@ function createMemoryStore(opts = {}) {
     releaseAppLock,
     forceHoldAppLock,
     listActive,
+    seedPart,
     mergeFeed,
     hardPurge,
     markFileOk,
     isFileOk,
     addFailure,
+    drainLeftoverStaging,
     endOfRunHealth,
     containstableProbe,
     disableIndex,

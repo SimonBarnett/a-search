@@ -10,6 +10,7 @@
   "files": [
     "index.js",
     "assertEnv.js",
+    "defaultAge.js",
     "resultsPath.js",
     "writeResults.js",
     "identity/",

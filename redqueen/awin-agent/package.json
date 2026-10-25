@@ -1,0 +1,17 @@
+{
+  "name": "awin-agent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test scripts/lib/invite-core.test.mjs",
+    "invite": "node scripts/invite.mjs",
+    "invite:live": "node scripts/invite.mjs --live"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "playwright": "^1.64.1"
+  }
+}
