@@ -100,7 +100,11 @@ describe('FR #4782 nonRetryable immediate DLQ', () => {
       logError: () => {},
       source: 'rakuten',
     });
-    assert.equal(puts.length, 0);
+    // FR #4917: DONE/dlq may be written; never an IN/ status file.
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      0,
+    );
     assert.equal(intake.length, 0);
     assert.equal(sent.length, 1);
     assert.equal(sent[0].QueueUrl, 'https://sqs.example/source-dlq.fifo');

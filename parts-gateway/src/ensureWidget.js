@@ -92,6 +92,10 @@ async function ensureAclubsWidget(opts) {
     lastmod: createdAt,
     annotated: '0',
     init: '0',
+    // FR #4891 / #4917: agent sets enabled=1 after IN→live; hasresults=1 when
+    // every fan-out source is serviced or DLQ'd (searchDone.js).
+    enabled: '0',
+    hasresults: '0',
   };
 
   const markerPut = await putIfAbsent({

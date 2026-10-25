@@ -9,6 +9,7 @@ const path = require('node:path');
 const { assertWritableDatabaseFromEnv } = require('./dbWriterGuard');
 const { createAClubsPutObject, writeAClubsIn } = require('./writeAClubsIn');
 const { hostGuidFromMessage } = require('./aClubsInPath');
+const { writeAClubsDoneFs } = require('./writeAClubsDoneFs');
 
 /**
  * FR #4827: static requires so the SEA bundle includes every local provider.
@@ -173,11 +174,37 @@ async function runDrainJob(msg, deps) {
     });
   }
 
+  // FR #4917: terminal DONE on mapped a-clubs (serviced, products may be 0).
+  let done = null;
+  try {
+    const productCount = Array.isArray(result && result.products)
+      ? result.products.length
+      : 0;
+    done = writeAClubsDoneFs({
+      root: aClubsRoot,
+      msg: writeMsg,
+      source,
+      status: 'serviced',
+      products: productCount,
+    });
+  } catch (err) {
+    // Fail-soft: drain success must not roll back for a DONE write miss.
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn(
+        '[a-search]',
+        'WARN',
+        'search_done_fs_write_failed',
+        String((err && err.message) || err),
+      );
+    }
+  }
+
   return {
     ok: !!(result && result.ok !== false),
     kind: 'search',
     source,
     result,
+    done,
   };
 }
 
