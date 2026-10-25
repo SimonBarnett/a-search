@@ -676,3 +676,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FIX owner/repo#main when CI red is FR #4197 harvest-agent-skills non-ASCII: if a covering fix/main-ci ASCII PR already merged and tip SKILL.md has zero non-ASCII bytes, DONE FIX with that PR URL; do not open a second fix PR.
 - stage-provider-worker-lambda-asset: copy redqueen/src/pageSelect.js when present for promoteInToLive; never hard-require it in minimal test fixtures
 - a-sqlsearch SEA cannot plain-require msnodesqlv8 (ERR_UNKNOWN_BUILTIN_MODULE): load with module.createRequire(process.execPath) from node_modules beside the exe; keep a-search-walrus-sql-drain until -ReplaceLegacySqlDrain after smoke-a-sqlsearch-trusted-select.
+- SQL CONTAINS: strip punct/operators, drop English noise, quote tokens; severity less than 11 is 0 rows; log sql_query_failed number/message/contains never bare EREQUEST.
