@@ -60,12 +60,16 @@ describe('FR-195 ComponentsPiece docs lock', () => {
 
   it('pins Parts/Click/POST widgets contracts and field names', () => {
     const text = fs.readFileSync(DOC, 'utf8');
-    assert.match(text, /GET\s+\/parts\?host&widgetGuid&offset&n/);
+    // FR #4891: host from Origin (not ?host=); query is widgetGuid&offset&n
+    assert.match(text, /GET\s+\/parts\?widgetGuid&offset&n/);
+    assert.match(text, /host from `Origin`|PartsGatewayApiUrl|APartsGateway/i);
     assert.match(text, /customerNumber/);
     assert.match(text, /widgetGuid/);
     assert.match(text, /layout/);
     assert.match(text, /parts\[\]/);
     assert.match(text, /nextOffset/);
+    assert.match(text, /\benabled\b/);
+    assert.match(text, /\bstatus\b/);
     assert.match(text, /GET\s+\/go\?host&widgetGuid&part/);
     assert.match(text, /\{\s*url\s*\}/);
     assert.match(text, /POST\s+\/widgets/);
