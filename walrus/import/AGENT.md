@@ -23,6 +23,7 @@
 **You may:**
 - Create a branch `import-fix/{provider}-{feedKey}-{runId}` in **SimonBarnett/a-search** and open a PR that changes **only** `providers/local/{provider}/provider.json` (mapping, encoding, delimiter, recordPath, expectedColumns, or `feedOverrides` for this feed). The PR body must include the evidence and the dry-run output.
 - Run `node walrus/import/cli.js run --provider {provider} --feed {feedKey} --dry-run --config <path to your branch's provider.json>`. Dry-run parses, maps, stages into a **RunId-scoped staging slice**, runs every validation and reports what MERGE would do. It never writes `dbo.Parts`, never deletes S3 files and never changes markers, apart from your fix report.
+- FR #4942: loaders that bypass this CLI (folder `dbimport` / SqlBulkCopy) leave `ingest.ImportRuns` empty and `Parts.LastSeenRunId` NULL. DeleteMissing then skips those rows (`LastSeenRunId IS NOT NULL`). Do not backfill 1.8M Awin rows without Simon. Next proper `cli.js` run writes ImportRuns and stamps LastSeen on rows it touches.
 - If the download itself is bad (truncated, HTML error page), re-run the sanctioned download for that one feed (`download -Force` from its folder), then dry-run again.
 - Write a short ASCII fix report to the marker (`lastfix`, `lastfixnote`) and harvest the lesson into `SKILLS.md`.
 

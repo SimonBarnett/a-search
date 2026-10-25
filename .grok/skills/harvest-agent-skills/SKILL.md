@@ -659,4 +659,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
 - MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
 - Awin productdata may be gzip even when the marker says compression=none; sniff 1f8b/504b before treating the body as plain CSV.
+- Affiliates schedule: shared/defaultAge.js merchant>provider>_root/ positive int; due on lastdownload age UTC; fail needs_defaultage (no silent 7); leave live refreshdays ignored; skip _root as provider slug
 - Walrus import failures: deterministic GitHub issue per sha256(provider|feedKey|errorCode) with import-fp marker; comment not twin; outbox when A_SEARCH_GH_TOKEN missing or GH down; never silent sandbox MSSQL_DATABASE default
