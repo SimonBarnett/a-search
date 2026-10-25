@@ -13,7 +13,10 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 test('mrb1157: package.json deploy sets requireDeployEnv; resolver + bin wired', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(String(pkg.scripts.deploy || ''), /requireDeployEnv=true/);
-  assert.match(String(pkg.scripts.deploy || ''), /cdk deploy/);
+  assert.match(
+    String(pkg.scripts.deploy || ''),
+    /cdk deploy|cdk-deploy-with-smoke/,
+  );
   const resolver = read('cdk/lib/resolve-deploy-env.js');
   assert.match(resolver, /FR-141/);
   assert.match(resolver, /missing deploy account/);

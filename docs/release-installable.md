@@ -19,10 +19,10 @@ deploy smoke path - **without committing secrets**.
 | id | metric | target | how measured | fail-when |
 |----|--------|--------|--------------|-----------|
 | D1 | CI gate | `npm test` + `npm run synth` on Node 20 in GitHub Actions | workflow on PR / main | No CI, or synth skipped |
-| D2 | cdk deploy | `npx cdk deploy` (or `npm run deploy`) creates API + queues + workers + maintainer + onboarding for **enabled** sources | synth template + deploy docs | Missing Lambda/queue for an enabled id |
+| D2 | cdk deploy | `npx cdk deploy` (or `npm run deploy`) creates API + queues + workers + maintainer + onboarding for **enabled** sources; `npm run deploy` also runs IAM SigV4 smoke against SearchApiUrl (FR #4881) | synth template + deploy docs | Missing Lambda/queue for an enabled id |
 | D3 | Secrets | JWT_*, MSSQL_*, provider credentials, `S3_RESULTS_BUCKET` via Secrets Manager / context - never git | synth secret-scan + docs | Passwords or keys in repo or plaintext template |
 | D4 | S3 results | Results bucket exists; Lambdas have `S3_RESULTS_BUCKET` + PutObject/GetObject IAM | synth + pin | Workers throw missing bucket / AccessDenied |
-| D5 | Smoke | Post-deploy script: JWT fixture -> `POST /search` 200 accept + `/selftest` shape | unit pin + ops after deploy | No smoke path |
+| D5 | Smoke | Post-deploy script: IAM SigV4 -> `POST /search` 200 accept + `/selftest` shape (part of `npm run deploy`; manual `npm run smoke-deploy`) | unit pin + ops after deploy | No smoke path |
 | D6 | VERSION | Tagged VERSION + release checklist pointing at this DoD | `VERSION` file + checklist pin | No installable tag criteria |
 | D7 | Stay-dark OOS | Phase-2 stub ids remain `enabled.live/sandbox=false` | registry pin (FR-061 / FR-126) | Accidental bulk enable |
 

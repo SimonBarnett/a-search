@@ -137,7 +137,7 @@ aws ssm put-parameter --name /madeira/etsy/api-key --type SecureString --value '
 # aws ssm put-parameter --name /madeira/etsy/shared-secret --type SecureString --value 'SECRET' --region eu-west-2
 ```
 
-## 5. cdk deploy
+## 5. cdk deploy (+ IAM smoke, FR #4881)
 
 Prefer the FR-141 wrapper (requires account context; never commit account IDs):
 
@@ -145,12 +145,23 @@ Prefer the FR-141 wrapper (requires account context; never commit account IDs):
 npm run deploy -- -c account=ACCOUNT_ID -c region=eu-west-2
 ```
 
+`npm run deploy` runs fill-madeira SSM + `stage-entry`, then
+`scripts/cdk-deploy-with-smoke.js` which:
+
+1. runs `npx --no-install cdk deploy ...` with `-c requireDeployEnv=true`
+2. on cdk exit 0, runs `node scripts/smoke-deploy.js --stack <same>` (IAM SigV4
+   against stack output **SearchApiUrl**; optional `--region` / `-c region=`
+   is forwarded). A non-200 fails the whole deploy step.
+
+No hand-set `A_SEARCH_API_URL` or JWT is required for this path (FR #4888).
 `npm run deploy` sets `-c requireDeployEnv=true` so a missing account exits with
 `FR-141: missing deploy account...`. Aliases: `deployAccount` / `deployRegion`.
-Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`.
+Fallback env: `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`. Stack default: `ASearchStack`
+(or `A_SEARCH_STACK`).
 
-Or call CDK directly from repo root. Provider secret ARNs are optional and
-must be real; omit them on a first deploy:
+Or call CDK directly from repo root (skips the automatic smoke --- then run
+section 7 manually). Provider secret ARNs are optional and must be real; omit
+them on a first deploy:
 
 ```bash
 npx cdk deploy --app "node cdk/bin/a-search.js" ASearchStack \
@@ -249,10 +260,16 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
   --output text
 ```
 
-## 7. Smoke (FR-144 / FR #4888)
+## 7. Smoke (FR-144 / FR #4888 / FR #4881)
 
 `/search` and `/selftest` use API Gateway **IAM** (SigV4 `execute-api`). The
 smoke host default AWS credential chain signs the request. No JWT.
+
+**Automatic:** `npm run deploy` already runs this smoke after a successful
+`cdk deploy` (FR #4881) using stack output **SearchApiUrl** --- no hand-set
+`A_SEARCH_API_URL` needed for that path.
+
+**Manual re-smoke** (same SigV4 path; keep `npm run smoke-deploy` for ops):
 
 ```bash
 # URL from stack output SearchApiUrl (default stack ASearchStack)

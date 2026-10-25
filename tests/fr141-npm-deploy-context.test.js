@@ -19,7 +19,10 @@ describe('FR-141 npm deploy + account/region context', () => {
       fs.readFileSync(path.join(root, 'package.json'), 'utf8'),
     );
     assert.ok(pkg.scripts && pkg.scripts.deploy, 'scripts.deploy missing');
-    assert.match(pkg.scripts.deploy, /cdk deploy/);
+    assert.match(
+      pkg.scripts.deploy,
+      /cdk deploy|cdk-deploy-with-smoke/,
+    );
     assert.match(pkg.scripts.deploy, /requireDeployEnv/);
     assert.match(pkg.scripts.deploy, /ASearchStack/);
     assert.match(pkg.scripts.deploy, /cdk\/bin\/a-search\.js/);
