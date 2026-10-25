@@ -11,6 +11,7 @@
     "index.js",
     "assertEnv.js",
     "defaultAge.js",
+    "enabledFlag.js",
     "resultsPath.js",
     "writeResults.js",
     "identity/",
