@@ -689,3 +689,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Rakuten invite: list/status via Advertisers and Partnerships APIs; apply is Playwright only; records under rakuten/_invites/{mid}/; never invent Christow MID.
 - CJ invite: Advertiser Lookup XML (25/min, page 100) for notjoined; 403 => cj_account_not_active exit 5 no writes; apply is Account Manager UI only --- generalise tools/invite.ps1 InviteProviders + runFromAgentRoot; keep marker enabled=0 until activation
 - FR #5070 a-affiliates S3-to-git import requires redqueen (profile a-search-redqueen-agents + S:\a-affiliates); flamingo seats GIVEUP require_machine=redqueen
+- FIX after covering tip merged: verify main for the CI fix (GitGuardian JWT via fakeSecrets parts); do not reopen closed product tip --- DONE FIX with covering PR URL
