@@ -38,7 +38,7 @@ describe('FR-161 a-search-endpoint deploy URL + smoke pointers', () => {
     assert.match(text, /FR-144/);
     assert.match(text, /FR-161/);
     assert.match(text, /A_SEARCH_API_URL/);
-    assert.match(text, /A_SEARCH_SMOKE_JWT/);
+    assert.match(text, /SigV4|IAM/);
     assert.match(text, /A_SEARCH_URL_LIVE/);
     assert.match(text, /A_SEARCH_URL_SANDBOX/);
     assert.match(text, /live/i);
