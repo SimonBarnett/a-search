@@ -199,7 +199,10 @@ async function runDailyImport(opts) {
             const stagedKeys = new Set(parsed.staged.map((r) => String(r.MerchantProductId)));
             let wouldDelete = 0;
             if (cfg.deleteMissing === 'soft' || cfg.deleteMissing === 'hard') {
-              wouldDelete = active.filter((a) => !stagedKeys.has(a.MerchantProductId)).length;
+              // FR #4942 / MRB #4955: gate must match DeleteMissing (skip NULL LastSeen).
+              wouldDelete = active.filter(
+                (a) => a.LastSeenRunId != null && !stagedKeys.has(a.MerchantProductId),
+              ).length;
             }
 
             const prevGood =
