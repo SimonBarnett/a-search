@@ -10,14 +10,14 @@ Operator checklist for active-passive multi-region (FR-190..193). Ties FR-144
 1. **Deploy primary** (`eu-west-2` default) and note `SearchApiUrl` / custom domain.
 2. **Deploy standby** (FR-191): `-c region=<standby> -c stage=standby -c includeRegionInNames=true`.
 3. **Confirm region-local ResultsBucket** on both stacks (FR-192); SQL stays IONOS.
-4. **Smoke primary** with fixture JWT:
-   `node scripts/smoke-deploy.js --url <primary-SearchApiUrl> --jwt "$TOKEN" --region eu-west-2`
+4. **Smoke primary** with IAM SigV4:
+   `node scripts/smoke-deploy.js --url <primary-SearchApiUrl> --region eu-west-2`
 5. **Smoke standby** the same way with `--url <standby-SearchApiUrl> --region <standby-region>`.
 6. **Simulate primary deny** (security group / DNS weight / temporary block - ops choice; not CI).
 7. **Cutover DNS** per [multi-region-dns.md](multi-region-dns.md) (FR-193).
-8. **Verify failover** accepts JWT `POST /search` via the public hostname (smoke against `<api-hostname>`).
+8. **Verify failover** accepts IAM SigV4 `POST /search` via the public hostname (smoke against `<api-hostname>`).
 9. **Fail back** when primary is healthy; re-smoke primary.
-10. Record times / owners; never log JWT or secrets.
+10. Record times / owners; never log credentials.
 
 ## Script flag
 

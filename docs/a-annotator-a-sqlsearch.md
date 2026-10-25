@@ -21,13 +21,13 @@ A `searches.json` edit is posted to `/search` when `{queries, exclude}` hash dif
 
 Startup, and then every `REDQUEEN_SWEEP_MS` milliseconds (default 900000), lists markers with `annotated != 1` or `lastmod > lastupdate` and processes hosts before GUIDs.
 
-Enable EventBridge on the existing bucket (CDK imports it; it does not create it):
+EventBridge on the existing `a-clubs` bucket is enabled by the **APartsGateway** CDK stack (FR #4890): `Bucket.fromBucketName` + `enableEventBridgeNotification()`. That uses unmanaged `Custom::S3BucketNotifications` (`Managed=false`) so existing Topic/Queue/Lambda notification configs are merged, not replaced. Stack delete leaves EventBridge in place. Do not enable it by hand.
+
+Optional read-only check (no put):
 
 ```powershell
-.\scripts\Enable-AClubsEventBridge.ps1 -Bucket a-clubs -Region eu-west-2 -AwsProfile <profile> -WhatIf
+.\scripts\Enable-AClubsEventBridge.ps1 -Region eu-west-2 -AwsProfile <profile>
 ```
-
-The helper merges `EventBridgeConfiguration` into the current notification config. It does not print credentials.
 
 ## Install
 

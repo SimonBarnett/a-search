@@ -15,8 +15,8 @@ Target tag: **`v0.1.0`** (must match the root `VERSION` file).
 - [ ] `npm run synth` green (or in-process synth pins used by CI)
 - [ ] GitHub Actions on `main` green for the tip being tagged (FR-139)
 - [ ] Deploy playbook followed on the target account/region: [deploy.md](deploy.md) (FR-140 / FR-141)
-- [ ] Post-deploy smoke pass: `npm run smoke-deploy` with fixture JWT (FR-144) - or documented manual equivalent if smoke PR not yet merged
-- [ ] UAT S19 live `/selftest`: `npm run smoke-selftest` (GET then POST) with the same `A_SEARCH_API_URL` / `A_SEARCH_SMOKE_JWT` (FR #4882). Fail-closed when those env keys are unset. Never print the JWT.
+- [ ] Post-deploy smoke pass: `npm run smoke-deploy` with IAM SigV4 (FR-144 / FR #4888)
+- [ ] UAT S19 live `/selftest`: `npm run smoke-selftest` (GET then POST) with IAM SigV4 (FR #4882 / FR #4888). Never print credentials.
 - [ ] Secrets stay out of git (synth secret-scan / secrets-matrix)
 - [ ] Stay-dark Phase-2 providers remain `enabled=false` (FR-061 / FR-126)
 

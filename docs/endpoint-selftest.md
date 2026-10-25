@@ -150,17 +150,17 @@ do **not** file intake.
 | 400 | Validation (`fields` lists bad keys) | Fix query/body; no intake |
 | 5xx | Selftest runner fault | Back off; expect intake from exception path (FR-048) |
 
-## UAT S19 live probe (FR #4882)
+## UAT S19 live probe (FR #4882 / FR #4888)
 
-On a seat that has `A_SEARCH_API_URL` and a fixture `A_SEARCH_SMOKE_JWT`:
+On a seat whose default AWS credentials can invoke execute-api:
 
 ```
 npm run smoke-selftest
 ```
 
-This GET-then-POST `/selftest` (sandbox query/body). It fail-closes if the URL
-or JWT is missing. It does not print the JWT. `npm run smoke-deploy` (FR-144)
-still covers `/search` plus a GET `/selftest` shape check.
+This GET-then-POST `/selftest` (sandbox query/body) with IAM SigV4. It does
+not use a JWT. `npm run smoke-deploy` (FR-144) covers `/search` plus a GET
+`/selftest` shape check the same way.
 
 ## Related
 

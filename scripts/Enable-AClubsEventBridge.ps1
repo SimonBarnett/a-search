@@ -1,12 +1,13 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Enable Amazon EventBridge notifications on the a-clubs bucket (FR #4827).
+  Read-only check: EventBridge notifications on the a-clubs bucket (FR #4890).
 
 .DESCRIPTION
-  Reads the current bucket notification configuration and merges an empty
-  EventBridgeConfiguration so Object Created events reach the CDK rules.
-  Existing Topic/Queue/Lambda configurations are kept.
+  EventBridge on a-clubs is enabled by the APartsGateway CDK stack
+  (Bucket.fromBucketName + enableEventBridgeNotification, Managed=false merge).
+  This script only checks whether EventBridgeConfiguration is present.
+  It does not put or change bucket notification configuration.
   Does not print credentials or profile secrets.
 
 .PARAMETER Bucket
@@ -19,7 +20,7 @@
   Optional named profile (passed to aws --profile). The name is not a secret.
 
 .PARAMETER WhatIf
-  Print the notification JSON that would be put. Do not call put.
+  Same as the default check path (no writes). Kept for callers that already pass -WhatIf.
 #>
 [CmdletBinding()]
 param(
@@ -60,42 +61,22 @@ try {
 } catch {
   $msg = "$_"
   if ($msg -match 'NoSuchBucket') { throw }
-  # A bucket with no notification config returns an empty document or a client error.
   $cfg = New-Object psobject
 }
 
 if ($null -eq $cfg) { $cfg = New-Object psobject }
 
-# ConvertFrom-Json on {} yields a PSCustomObject. Add the EventBridge member.
-if ($cfg.PSObject.Properties.Name -contains 'EventBridgeConfiguration') {
-  $cfg.EventBridgeConfiguration = New-Object psobject
-} else {
-  $cfg | Add-Member -NotePropertyName EventBridgeConfiguration -NotePropertyValue (New-Object psobject) -Force
-}
-
-$json = $cfg | ConvertTo-Json -Depth 20 -Compress
-Write-Host "EventBridgeConfiguration set on s3://$Bucket ($Region)"
-
+$enabled = $cfg.PSObject.Properties.Name -contains 'EventBridgeConfiguration'
 if ($WhatIf) {
-  Write-Host '[DryRun] aws s3api put-bucket-notification-configuration'
-  Write-Host $json
-  return
+  Write-Host "[check only] EventBridgeConfiguration on s3://$Bucket ($Region): $(if ($enabled) { 'present' } else { 'missing' })"
+} else {
+  Write-Host "EventBridgeConfiguration on s3://$Bucket ($Region): $(if ($enabled) { 'present' } else { 'missing' })"
 }
 
-$tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("a-clubs-notify-{0}.json" -f [guid]::NewGuid().ToString('n'))
-try {
-  [System.IO.File]::WriteAllText($tmp, $json)
-  $putArgs = @(
-    's3api', 'put-bucket-notification-configuration',
-    '--bucket', $Bucket,
-    '--region', $Region,
-    '--notification-configuration', ("file://{0}" -f $tmp)
-  )
-  if ($AwsProfile) { $putArgs += @('--profile', $AwsProfile) }
-  & aws @putArgs
-  if ($LASTEXITCODE -ne 0) { throw "put-bucket-notification-configuration failed: $LASTEXITCODE" }
-} finally {
-  if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Force }
+if (-not $enabled) {
+  Write-Host 'Enable via CDK: npm run deploy:parts-gateway (APartsGateway FR #4890). This script is read-only.'
+  exit 1
 }
 
-Write-Host "Enabled EventBridge on $Bucket"
+Write-Host 'OK: EventBridge already enabled (CDK-managed merge).'
+exit 0
