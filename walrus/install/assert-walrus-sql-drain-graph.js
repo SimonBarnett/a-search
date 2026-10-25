@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * FR #5023: load-check the walrus SQL drain require graph before service restart.
- * Requires drain entry plus promoteInToLive -> pageSelect (redqueen/src until #5022).
- * Exit 0 on success; exit 1 with a clear message on MODULE_NOT_FOUND / throw.
+ * FR #5023 / fix(mrb-5035): load-check the walrus SQL drain require graph
+ * before service restart. Requires drain entry plus promoteInToLive ->
+ * shared/widgets/pageSelect (FR #5022). Exit 0 on success; exit 1 with a
+ * clear message on MODULE_NOT_FOUND / throw.
  *
  * Usage (from repo / InstallRoot):
  *   node walrus/install/assert-walrus-sql-drain-graph.js
@@ -27,8 +28,8 @@ const targets = [
     rel: path.join('shared', 'widgets', 'promoteInToLive.js'),
   },
   {
-    label: 'redqueen/src/pageSelect.js',
-    rel: path.join('redqueen', 'src', 'pageSelect.js'),
+    label: 'shared/widgets/pageSelect.js',
+    rel: path.join('shared', 'widgets', 'pageSelect.js'),
   },
 ];
 
@@ -49,7 +50,9 @@ for (const t of targets) {
         `MODULE_NOT_FOUND requiring ${t.label} (${abs}): ${err.message}`,
       );
     }
-    fail(`throw requiring ${t.label} (${abs}): ${err && err.stack ? err.stack : err}`);
+    fail(
+      `throw requiring ${t.label} (${abs}): ${err && err.stack ? err.stack : err}`,
+    );
   }
 }
 

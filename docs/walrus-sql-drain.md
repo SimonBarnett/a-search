@@ -36,8 +36,9 @@ without touching secrets or `walrus\aws`:
 ```
 
 Checked-in manifest: `walrus/install/walrus-sql-drain-deploy-manifest.json`
-(paths: `walrus/src`, `providers`, `shared`, `worker`, `redqueen/src`,
-`package.json`, `package-lock.json`, `VERSION`).
+(paths: `walrus/src`, `providers`, `shared`, `worker`,
+`package.json`, `package-lock.json`, `VERSION`). FR #5022 landed: do **not**
+copy `redqueen/src` for the SQL drain path (`pageSelect` is under `shared/`).
 
 Behaviour:
 
@@ -48,16 +49,12 @@ Behaviour:
 5. **Load check before service restart**:
    `node walrus/install/assert-walrus-sql-drain-graph.js` (requires
    `walrus/src/index.js`, `drainRunner`, `shared/widgets/promoteInToLive.js`,
-   and `redqueen/src/pageSelect.js`). On `MODULE_NOT_FOUND` or throw: restore
+   and `shared/widgets/pageSelect.js`). On `MODULE_NOT_FOUND` or throw: restore
    backup, do **not** restart, exit non-zero.
 6. `npm install --omit=dev` in `-InstallRoot` (root `package.json`; deps include
    `@a-search/shared` via `file:shared`). Pass `-SkipNpm` to skip.
 7. Restart `a-search-walrus-sql-drain`. On start failure: rollback from backup,
    npm install again if needed, restart the previous tree, exit non-zero.
-
-`redqueen/src` is required while `shared/widgets/promoteInToLive.js` does
-`require('../../redqueen/src/pageSelect')`. Open #5022 will move `pageSelect`
-into `shared`; once that lands, drop `redqueen/src` from the manifest.
 
 Keep the `a-sqlsearch.exe` path (#4997 / #4827) documented above: this deploy
 script updates the **legacy Node** drain only. SEA cut-over still uses

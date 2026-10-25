@@ -9,8 +9,8 @@
   Never overwrites walrus\aws or *.password secrets. On load-check or service
   start failure, restores the timestamped backup and exits non-zero.
 
-  redqueen/src is in the manifest while promoteInToLive requires
-  ../../redqueen/src/pageSelect.js. Drop it after #5022 moves pageSelect into shared.
+  FR #5022: pageSelect lives in shared/widgets; manifest does not copy redqueen/src
+  for the SQL drain path. Load-check asserts shared/widgets/pageSelect.js.
 
 .PARAMETER SourceRoot
   Repo root that holds walrus/, providers/, shared/, etc. Default: parent of this
