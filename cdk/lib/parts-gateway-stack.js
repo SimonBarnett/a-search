@@ -17,6 +17,7 @@ const logs = require('aws-cdk-lib/aws-logs');
 const sqs = require('aws-cdk-lib/aws-sqs');
 const events = require('aws-cdk-lib/aws-events');
 const targets = require('aws-cdk-lib/aws-events-targets');
+const s3 = require('aws-cdk-lib/aws-s3');
 const {
   stagePartsGatewayLambdaAsset,
 } = require('../../scripts/stage-parts-gateway-lambda-asset');
@@ -84,6 +85,13 @@ class PartsGatewayStack extends cdk.Stack {
       encryption: sqs.QueueEncryption.SQS_MANAGED,
     });
     changesQueue.grantConsumeMessages(redqueenUser);
+
+    // FR #4890: enable EventBridge on the existing imported a-clubs bucket via CDK.
+    // fromBucketName => unmanaged Custom::S3BucketNotifications (Managed=false) so
+    // existing Topic/Queue/Lambda notification configs are merged, not replaced.
+    // Delete is a no-op for EventBridge (handler treats it as external once present).
+    const aClubsImported = s3.Bucket.fromBucketName(this, 'AClubsImportedBucket', A_CLUBS_BUCKET);
+    aClubsImported.enableEventBridgeNotification();
 
     // Direct EventBridge → SQS for precise file suffixes (no Lambda hop).
     const changeFileSuffixes = [

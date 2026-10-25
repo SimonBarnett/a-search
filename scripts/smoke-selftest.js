@@ -2,22 +2,27 @@
 'use strict';
 
 /**
- * FR #4882: UAT S19 probe -- JWT GET then POST /selftest against SearchApiUrl.
- * Does not call POST /search (that is FR-144 smoke-deploy). Provider ok=false
- * rows are allowed; HTTP 200 + table shape is required.
+ * FR #4882 / FR #4888: UAT S19 IAM SigV4 GET then POST /selftest.
+ * No JWT. Default AWS credential chain.
  *
- *   node scripts/smoke-selftest.js --url https://xxxx.execute-api... --jwt "$TOKEN"
- *   A_SEARCH_API_URL=... A_SEARCH_SMOKE_JWT=... npm run smoke-selftest
+ *   node scripts/smoke-selftest.js --url https://xxxx.execute-api...
+ *   node scripts/smoke-selftest.js --stack ASearchStack
  *
- * Never prints the JWT.
+ * Never prints credentials.
  */
 
 const {
   normalizeBaseUrl,
-  requireJwt,
   assertSelftestShape,
   resolveSmokeTarget,
+  resolveSearchApiUrl,
 } = require('./smoke-deploy.js');
+const {
+  defaultCredentials,
+  requireCredentials,
+  regionFromExecuteApiHost,
+  signExecuteApiRequest,
+} = require('./awsExecuteApiSigV4');
 
 function parseJson(text, status, verb) {
   try {
@@ -42,40 +47,53 @@ async function fetchSelftest(fetchImpl, url, init, verb) {
   return json;
 }
 
-/**
- * @param {{
- *   fetchImpl?: typeof fetch,
- *   baseUrl: string,
- *   jwt: string,
- * }} opts
- */
 async function runSelftestSmoke(opts) {
   const fetchImpl = opts.fetchImpl || globalThis.fetch;
   if (typeof fetchImpl !== 'function') {
     throw new Error('FR-4882: fetch is not available');
   }
   const base = normalizeBaseUrl(opts.baseUrl);
-  const jwt = requireJwt(opts.jwt);
-  const auth = { Authorization: 'Bearer ' + jwt };
+  const creds = requireCredentials(
+    opts.credentials || defaultCredentials(opts.env),
+  );
+  const region =
+    opts.region || regionFromExecuteApiHost(new URL(base).host) || undefined;
 
+  const getUrl = base + '/selftest?sandbox=true';
+  const getHeaders = signExecuteApiRequest({
+    method: 'GET',
+    url: getUrl,
+    body: '',
+    credentials: creds,
+    region,
+    now: opts.now,
+    extraHeaders: { accept: 'application/json' },
+  });
   const getJson = await fetchSelftest(
     fetchImpl,
-    base + '/selftest?sandbox=true',
-    { method: 'GET', headers: { ...auth, Accept: 'application/json' } },
+    getUrl,
+    { method: 'GET', headers: getHeaders },
     'GET',
   );
+
+  const postUrl = base + '/selftest';
+  const postBody = JSON.stringify({ sandbox: true });
+  const postHeaders = signExecuteApiRequest({
+    method: 'POST',
+    url: postUrl,
+    body: postBody,
+    credentials: creds,
+    region,
+    now: opts.now,
+    extraHeaders: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+    },
+  });
   const postJson = await fetchSelftest(
     fetchImpl,
-    base + '/selftest',
-    {
-      method: 'POST',
-      headers: {
-        ...auth,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ sandbox: true }),
-    },
+    postUrl,
+    { method: 'POST', headers: postHeaders, body: postBody },
     'POST',
   );
 
@@ -93,12 +111,20 @@ function argValue(flag) {
 }
 
 async function main() {
-  const { baseUrl, region } = resolveSmokeTarget({
+  const stack = argValue('--stack') || process.env.A_SEARCH_STACK || 'ASearchStack';
+  const { baseUrl: fromEnv, region } = resolveSmokeTarget({
     url: argValue('--url'),
     region: argValue('--region'),
   });
-  const jwt = argValue('--jwt') || process.env.A_SEARCH_SMOKE_JWT;
-  const result = await runSelftestSmoke({ baseUrl, jwt });
+  let baseUrl = fromEnv;
+  if (!baseUrl) {
+    baseUrl = await resolveSearchApiUrl({ stackName: stack, region });
+  }
+  const result = await runSelftestSmoke({
+    baseUrl,
+    region,
+    env: process.env,
+  });
   if (region) result.region = region;
   process.stdout.write(JSON.stringify(result) + '\n');
 }

@@ -63,22 +63,22 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
   --output text
 ```
 
-Map that URL into caller env vars (never commit the JWT):
+Map that URL into caller env vars (never commit credentials):
 
 | Env var | Use |
 |---------|-----|
-| `A_SEARCH_API_URL` | FR-144 smoke script base (`scripts/smoke-deploy.js`) |
+| `A_SEARCH_API_URL` | Optional FR-144 smoke URL override (`scripts/smoke-deploy.js`) |
 | `A_SEARCH_URL_LIVE` | Agent calls with `sandbox: false` / omit |
 | `A_SEARCH_URL_SANDBOX` | Agent calls with `sandbox: true` (often the same SearchApiUrl) |
-| `A_SEARCH_SMOKE_JWT` | Fixture JWT for smoke only (issuer/audience match deploy) |
 
-Post-deploy smoke against the chosen URL (default body uses `sandbox: true`):
+`/search` and `/selftest` use IAM SigV4 (`execute-api`). Smoke uses the host default AWS credential chain (FR #4888).
+
+Post-deploy smoke (default body uses `sandbox: true`):
 
 ```bash
-export A_SEARCH_API_URL="<SearchApiUrl>"
-export A_SEARCH_SMOKE_JWT="<fixture jwt>"
 npm run smoke-deploy
-# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL" --jwt "$A_SEARCH_SMOKE_JWT"
+# or: node scripts/smoke-deploy.js --stack ASearchStack
+# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL"
 ```
 
 Smoke asserts `POST /search` accept (200 + `accepted:true` + `searchId`) and

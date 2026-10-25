@@ -9,6 +9,7 @@
 
 const crypto = require('node:crypto');
 const { verifyAuthorization, AuthError } = require('./auth/jwt');
+const { iamAuthorizerIdentity } = require('./auth/iam');
 const { fanOutEnqueue, EnqueueError } = require('./enqueue');
 const {
   handleAgentSearch,
@@ -669,14 +670,20 @@ async function handleSelftest(event, deps = {}) {
     headerGet(event && event.headers, 'Authorization');
 
   let userId;
-  try {
-    const auth = await verify(authHeader, { env, body: undefined });
-    userId = auth.userId;
-  } catch (err) {
-    if (err instanceof AuthError) {
-      return jsonResponse(401, { ok: false, error: err.code });
+  // FR #4888: IAM authorizer identity first, JWT fallback
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId) {
+    userId = iamId.userId;
+  } else {
+    try {
+      const auth = await verify(authHeader, { env, body: undefined });
+      userId = auth.userId;
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return jsonResponse(401, { ok: false, error: err.code });
+      }
+      return jsonResponse(401, { ok: false, error: 'unauthorized' });
     }
-    return jsonResponse(401, { ok: false, error: 'unauthorized' });
   }
 
   const query = queryParams(event);
@@ -819,14 +826,20 @@ async function handleSearch(event, deps = {}) {
     headerGet(event && event.headers, 'Authorization');
 
   let userId;
-  try {
-    const auth = await verify(authHeader, { env, body: undefined });
-    userId = auth.userId;
-  } catch (err) {
-    if (err instanceof AuthError) {
-      return jsonResponse(401, { accepted: false, error: err.code });
+  // FR #4888: IAM authorizer identity first, JWT fallback
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId) {
+    userId = iamId.userId;
+  } else {
+    try {
+      const auth = await verify(authHeader, { env, body: undefined });
+      userId = auth.userId;
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return jsonResponse(401, { accepted: false, error: err.code });
+      }
+      return jsonResponse(401, { accepted: false, error: 'unauthorized' });
     }
-    return jsonResponse(401, { accepted: false, error: 'unauthorized' });
   }
 
   const parsed = parsedEarly;
