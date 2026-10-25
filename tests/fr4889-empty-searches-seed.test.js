@@ -7,6 +7,8 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { handleChangeEvent } = require('../redqueen/src/changeHandler');
 const { drainOnce } = require('../redqueen/src/drain');
 
@@ -111,5 +113,14 @@ describe('FR #4889 empty searches.json seed', () => {
     const bad = out.actions.find((a) => a.messageId === 'bad');
     assert.ok(bad);
     assert.equal(bad.action, 'retry');
+  });
+
+  it('annotate does not noop reannotate when publish skip is searches_empty_seed', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', 'redqueen', 'src', 'annotate.js'),
+      'utf8',
+    );
+    assert.match(src, /searches_empty_seed/);
+    assert.match(src, /!published\.skipped/);
   });
 });
