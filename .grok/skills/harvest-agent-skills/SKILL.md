@@ -684,3 +684,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FR #5022, walrus SQL drain deploy manifest must omit redqueen/src and assert shared/widgets/pageSelect.js; fold main before DONE FIX when tip still requires redqueen pageSelect.
 - SQL FREETEXT: stripAnnotatorLocationCurrency before @q; honour queries[].maxResults capped by A_SEARCH_SQL_TOP; filter ft.RANK >= A_SEARCH_SQL_MIN_RANK (default 50); keep product parentheticals.
 - SQL Parts match: admit only via CONTAINS exact brand/model gates (extractBrandModelGateTokens); FREETEXT/RANK orders gated rows never admits; no gate tokens => return [] without SELECT
+- a-search FR #5047: empty live after hasresults writes feedback/no-results.json and upserts a-clubs/_ops/need-vendors-by-sector.json; annotator files enough searches; providers never widen; 0 results valid
