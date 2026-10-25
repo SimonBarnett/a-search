@@ -22,6 +22,9 @@ describe('MRB #5042 hostile FR #5041 strip/maxResults/minRank', () => {
     assert.match(src, /A_SEARCH_SQL_MIN_RANK/);
     assert.match(src, /ft\.\[RANK\]\s*>=\s*@minRank/);
     assert.match(src, /resolveSqlRowLimit|maxResults/);
+    // FR #5046: exact gate still required alongside FR #5041 ordering
+    assert.match(src, /function extractBrandModelGateTokens/);
+    assert.match(src, /@gate/);
   });
 
   it('docs pin FR #5041 strip, maxResults, min RANK', () => {

@@ -417,6 +417,7 @@ function bindNVarChar(sqlTypes, len) {
 /**
  * FR #5024 / #5041: ranked FREETEXT string --- join queries as natural language
  * after stripping annotator location/currency. Empty when no useful tokens.
+ * FREETEXT only orders rows that already passed the FR #5046 exact-token gate.
  * @param {object} msg
  * @returns {string}
  */
@@ -429,6 +430,285 @@ function buildFreetextQuery(msg) {
   if (!raw) return '';
   if (!sanitizeContainsTokens(raw).length) return '';
   return truncateFt(raw);
+}
+
+/**
+ * Tokens that never qualify a match on their own (FR #5046).
+ * Short generics, RC jargon, and stripAnnotator leftovers stay out of the gate.
+ */
+const GATE_GENERIC_WORDS = new Set(
+  (
+    's1 s2 s3 s4 2ch 3ch 4ch 6ch rtf bnf pnp arf tx rx esc ' +
+    'beginner intermediate advanced sport trainer plane airplane aircraft ' +
+    'rc radio control ready fly kit set model hobby mini micro electric ' +
+    'brushless brushed lipo nimh ni-mh battery batteries pack mode modes ' +
+    'version versions new used gift gifts offers special specials weekly'
+  ).toLowerCase().split(/\s+/),
+);
+
+/**
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isModelNumberToken(token) {
+  const t = String(token || '');
+  if (!t || t.length < 3) return false;
+  // 761-14, EFLU53550Y, ABC-12-3 --- must include a digit
+  if (!/\d/.test(t)) return false;
+  if (/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(t)) return true;
+  if (/^[A-Za-z]*\d+[A-Za-z0-9]*$/.test(t) && t.length >= 4) return true;
+  return false;
+}
+
+/**
+ * Brand-like: ALLCAPS / PascalCase / long alphanumeric (not a model number).
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isBrandLikeToken(token) {
+  const t = String(token || '');
+  if (!t || t.length < 4) return false;
+  if (isModelNumberToken(t)) return false;
+  const lower = t.toLowerCase();
+  if (GATE_GENERIC_WORDS.has(lower) || ENGLISH_FT_NOISE_WORDS.has(lower)) {
+    return false;
+  }
+  if (CURRENCY_CODES.has(lower)) return false;
+  // ALLCAPS alphanumeric brand (VOLANTEXRC, EFLITE)
+  if (/^[A-Z]{4,}[A-Z0-9]*$/.test(t)) return true;
+  // PascalCase (Xpilot, HobbyZone, Volantex)
+  if (/^[A-Z][a-z]+(?:[A-Z][a-z0-9]*)+$/.test(t)) return true;
+  if (/^[A-Z][a-z]{3,}$/.test(t) && t.length >= 5) return true;
+  // Long mixed alphanumeric product brand code
+  if (/^[A-Za-z]{5,}[A-Za-z0-9]*$/.test(t) && /[A-Z]/.test(t) && t.length >= 6) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * CONTAINS brand form: prefix wildcard. Strip trailing RC when remainder is
+ * long enough so VOLANTEXRC -> "volantex*" (titles often omit RC).
+ * @param {string} brand
+ * @returns {string}
+ */
+function formatBrandGate(brand) {
+  let core = String(brand || '')
+    .replace(/"/g, '')
+    .trim();
+  if (!core) return '';
+  if (/rc$/i.test(core) && core.length > 6) {
+    core = core.replace(/rc$/i, '');
+  }
+  core = core.toLowerCase();
+  if (core.length < 3) return '';
+  return `"${truncateFt(core)}*"`;
+}
+
+/**
+ * Exact quoted phrase or model number for CONTAINS.
+ * @param {string} text
+ * @returns {string}
+ */
+function formatExactGate(text) {
+  const cleaned = String(text || '')
+    .replace(/"/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return '';
+  return `"${truncateFt(cleaned)}"`;
+}
+
+/**
+ * Push unique CONTAINS gate strings (order preserved).
+ * @param {string[]} out
+ * @param {string} gate
+ */
+function pushGate(out, gate) {
+  if (!gate) return;
+  if (out.includes(gate)) return;
+  out.push(gate);
+}
+
+/**
+ * Structured brand/model fields on msg or a queries[] row (FR #5046).
+ * @param {object} obj
+ * @param {string[]} out
+ */
+function collectStructuredGates(obj, out) {
+  if (!obj || typeof obj !== 'object') return;
+
+  const brandVals = [];
+  if (typeof obj.brand === 'string' && obj.brand.trim()) {
+    brandVals.push(obj.brand.trim());
+  }
+  if (Array.isArray(obj.brands)) {
+    for (const b of obj.brands) {
+      if (typeof b === 'string' && b.trim()) brandVals.push(b.trim());
+      else if (b && typeof b === 'object' && typeof b.brand === 'string') {
+        brandVals.push(b.brand.trim());
+      }
+    }
+  }
+  for (const b of brandVals) {
+    if (GATE_GENERIC_WORDS.has(b.toLowerCase())) continue;
+    pushGate(out, formatBrandGate(b));
+  }
+
+  const modelVals = [];
+  for (const key of ['model', 'modelName', 'model_name']) {
+    if (typeof obj[key] === 'string' && obj[key].trim()) {
+      modelVals.push(obj[key].trim());
+    }
+  }
+  if (Array.isArray(obj.models)) {
+    for (const m of obj.models) {
+      if (typeof m === 'string' && m.trim()) modelVals.push(m.trim());
+      else if (m && typeof m === 'object') {
+        if (typeof m.brand === 'string' && m.brand.trim()) {
+          pushGate(out, formatBrandGate(m.brand.trim()));
+        }
+        if (typeof m.model === 'string' && m.model.trim()) {
+          modelVals.push(m.model.trim());
+        }
+        for (const sk of ['sku', 'modelNumber', 'model_number', 'partNumber']) {
+          if (typeof m[sk] === 'string' && m[sk].trim()) {
+            pushGate(out, formatExactGate(m[sk].trim()));
+          }
+        }
+      }
+    }
+  }
+  for (const m of modelVals) {
+    const lower = m.toLowerCase();
+    if (GATE_GENERIC_WORDS.has(lower)) continue;
+    // Multi-word model phrase, or single non-generic token
+    if (/\s/.test(m) || (!GATE_GENERIC_WORDS.has(lower) && m.length >= 3)) {
+      pushGate(out, formatExactGate(m));
+    }
+  }
+
+  for (const key of [
+    'modelNumber',
+    'model_number',
+    'sku',
+    'partNumber',
+    'part_number',
+  ]) {
+    if (typeof obj[key] === 'string' && obj[key].trim()) {
+      pushGate(out, formatExactGate(obj[key].trim()));
+    }
+  }
+}
+
+/**
+ * Whitespace tokens; keep hyphenated model numbers intact.
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function tokenizeGateText(raw) {
+  const s = String(raw || '')
+    .replace(/"/g, ' ')
+    .replace(/[^\w.\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!s) return [];
+  return s.split(' ').filter(Boolean);
+}
+
+/**
+ * Heuristic brand / model-phrase / model-number gates from free text.
+ * @param {string} raw already location/currency-stripped preferred
+ * @param {string[]} out
+ */
+function collectHeuristicGates(raw, out) {
+  const tokens = tokenizeGateText(raw);
+  if (!tokens.length) return;
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    const tok = tokens[i];
+    const lower = tok.toLowerCase();
+    if (
+      GATE_GENERIC_WORDS.has(lower) ||
+      ENGLISH_FT_NOISE_WORDS.has(lower) ||
+      CONTAINS_OPERATORS.has(lower) ||
+      CURRENCY_CODES.has(lower)
+    ) {
+      continue;
+    }
+    if (isModelNumberToken(tok)) {
+      pushGate(out, formatExactGate(tok));
+      continue;
+    }
+    if (isBrandLikeToken(tok)) {
+      pushGate(out, formatBrandGate(tok));
+    }
+  }
+
+  // Multi-word model phrases: consecutive Capitalised words that are not
+  // ALLCAPS brands (e.g. Sport Cub). Title-case generics may sit inside a
+  // phrase but never form a one-word gate on their own.
+  let phrase = [];
+  function flushPhrase() {
+    if (phrase.length >= 2) {
+      const text = phrase.join(' ');
+      pushGate(out, formatExactGate(text));
+    }
+    phrase = [];
+  }
+  for (const tok of tokens) {
+    const lower = tok.toLowerCase();
+    const titleish =
+      /^[A-Z][a-z]{1,}(?:[A-Z][a-z0-9]*)*$/.test(tok) ||
+      (/^[A-Z][a-z]+$/.test(tok) && tok.length >= 3);
+    const allCapsBrand = /^[A-Z]{4,}[A-Z0-9]*$/.test(tok);
+    if (
+      titleish &&
+      !allCapsBrand &&
+      !ENGLISH_FT_NOISE_WORDS.has(lower) &&
+      !CONTAINS_OPERATORS.has(lower) &&
+      !CURRENCY_CODES.has(lower) &&
+      !isModelNumberToken(tok)
+    ) {
+      phrase.push(tok);
+    } else {
+      flushPhrase();
+    }
+  }
+  flushPhrase();
+}
+
+/**
+ * FR #5046: deterministic exact brand/model CONTAINS gate tokens.
+ * Prefer structured brand/model/modelNumber on msg or queries[]; else heuristic
+ * on stripped query text. Empty => caller must not run FREETEXT-only.
+ * @param {object} msg
+ * @returns {string[]} CONTAINS predicates e.g. `"volantex*"`, `"sport cub"`, `"761-14"`
+ */
+function extractBrandModelGateTokens(msg) {
+  const out = [];
+  if (!msg || typeof msg !== 'object') return out;
+
+  collectStructuredGates(msg, out);
+  if (Array.isArray(msg.queries)) {
+    for (const row of msg.queries) {
+      if (row && typeof row === 'object') collectStructuredGates(row, out);
+    }
+  }
+  if (Array.isArray(msg.searchterms)) {
+    for (const row of msg.searchterms) {
+      if (row && typeof row === 'object') collectStructuredGates(row, out);
+    }
+  }
+
+  const stripped = includeTermsFromMsg(msg)
+    .map(stripAnnotatorLocationCurrency)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (stripped) collectHeuristicGates(stripped, out);
+
+  return out;
 }
 
 /**
@@ -447,7 +727,8 @@ function quoteExcludePhrase(raw) {
 
 /**
  * Legacy helper (FR #4976 / #5004): word-AND CONTAINS for one query.
- * Matching now uses FREETEXT; excludes use quoteExcludePhrase.
+ * Matching uses FREETEXT for order plus FR #5046 exact gates for admission;
+ * excludes use quoteExcludePhrase.
  * @param {object} msg
  * @returns {string}
  */
@@ -457,10 +738,20 @@ function buildContainsQuery(msg) {
 
 /**
  * @param {number} excludeCount
+ * @param {number} [gateCount] FR #5046 exact brand/model CONTAINS ORs
  * @returns {string}
  */
-function buildSelectSql(excludeCount) {
+function buildSelectSql(excludeCount, gateCount) {
   const n = Math.max(0, Number(excludeCount) || 0);
+  const g = Math.max(0, Number(gateCount) || 0);
+  let gateSql = '';
+  if (g > 0) {
+    const parts = [];
+    for (let i = 0; i < g; i += 1) {
+      parts.push(`CONTAINS((p.Title, p.Description), @gate${i})`);
+    }
+    gateSql = `\n  AND ( ${parts.join('\n     OR ')} )`;
+  }
   let extra = '';
   for (let i = 0; i < n; i += 1) {
     extra += `\n  AND NOT CONTAINS((p.Title, p.Description), @ex${i})`;
@@ -482,7 +773,7 @@ FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q, @top) AS ft
 INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
 WHERE p.Env = @env
   AND p.DeletedAt IS NULL
-  AND ft.[RANK] >= @minRank${extra}
+  AND ft.[RANK] >= @minRank${gateSql}${extra}
 ORDER BY ft.[RANK] DESC
 `.trim();
 }
@@ -536,11 +827,11 @@ function sqlMinRank(envVars) {
 }
 
 /**
- * Cross-source SELECT on a-search-owned dbo.Parts (FR-120 / FR #4976 / #5024).
- * Ranked FREETEXTTABLE on Title/Description; TOP (@n) by rank.
+ * Cross-source SELECT on a-search-owned dbo.Parts (FR-120 / FR #4976 / #5024 / #5046).
+ * Ranked FREETEXTTABLE orders rows; exact brand/model CONTAINS gates admit them.
  * Phrase excludes are AND NOT CONTAINS(..., @exN). Never nvarchar(max).
  */
-const SELECT_SQL = buildSelectSql(0);
+const SELECT_SQL = buildSelectSql(0, 0);
 
 /**
  * @param {object} config
@@ -585,6 +876,14 @@ async function defaultQueryParts(msg, deps) {
       `message.env must be live or sandbox (got ${JSON.stringify(msg && msg.env)})`,
     );
   }
+  const gateTokens = extractBrandModelGateTokens(msg || {});
+  // FR #5046: never admit via FREETEXT alone --- no gate => empty product list.
+  if (!gateTokens.length) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[a-search]', 'WARN', 'sql_empty_brand_model_gate_no_select');
+    }
+    return [];
+  }
   const q = buildFreetextQuery(msg || {});
   if (!q) {
     if (typeof console !== 'undefined' && console.warn) {
@@ -607,7 +906,7 @@ async function defaultQueryParts(msg, deps) {
     sqlTypes = loadMssqlModule(config);
   }
   const nv = bindNVarChar(sqlTypes, FT_NVARCHAR_LEN);
-  const sqlText = buildSelectSql(excludePhrases.length);
+  const sqlText = buildSelectSql(excludePhrases.length, gateTokens.length);
 
   try {
     try {
@@ -617,6 +916,9 @@ async function defaultQueryParts(msg, deps) {
       req = req.input('top', sqlTypes.Int, topN);
       req = req.input('n', sqlTypes.Int, topN);
       req = req.input('minRank', sqlTypes.Int, minRank);
+      for (let i = 0; i < gateTokens.length; i += 1) {
+        req = req.input(`gate${i}`, nv, gateTokens[i]);
+      }
       for (let i = 0; i < excludePhrases.length; i += 1) {
         req = req.input(`ex${i}`, nv, excludePhrases[i]);
       }
@@ -651,6 +953,12 @@ module.exports = {
   buildContainsQuery,
   buildFreetextQuery,
   buildSelectSql,
+  extractBrandModelGateTokens,
+  formatBrandGate,
+  formatExactGate,
+  isBrandLikeToken,
+  isModelNumberToken,
+  GATE_GENERIC_WORDS,
   bindNVarChar,
   truncateFt,
   stripAnnotatorLocationCurrency,

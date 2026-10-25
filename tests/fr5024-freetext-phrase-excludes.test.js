@@ -102,6 +102,9 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
     assert.match(sqlText, /FREETEXTTABLE\s*\(\s*dbo\.Parts/);
     assert.match(sqlText, /@q,\s*@top/);
     assert.doesNotMatch(sqlText, /CONTAINSTABLE/);
+    // FR #5046: exact brand/model CONTAINS gates admit; FREETEXT only orders
+    assert.match(sqlText, /CONTAINS\(\(p\.Title, p\.Description\), @gate0\)/);
+    assert.ok(Object.keys(inputs).some((k) => /^gate\d+$/.test(k)));
     assert.equal(inputs.ex0, '"club membership"');
     assert.equal(inputs.ex1, '"IC"');
     assert.match(sqlText, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);
@@ -149,14 +152,15 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
   });
 
   it(
-    'optional local FREETEXT integration returns ranked rows',
+    'optional local: bare servo has no brand/model gate => 0 rows (FR #5046)',
     { skip: process.env.A_SEARCH_SQL_INTEGRATION === '1' ? false : 'set A_SEARCH_SQL_INTEGRATION=1' },
     async () => {
       const rows = await defaultQueryParts(
         { env: 'live', queries: ['servo'] },
         { env: process.env },
       );
-      assert.ok(rows.length > 0, 'expected ranked Parts rows');
+      // FREETEXT alone must not admit; no gate tokens => empty
+      assert.equal(rows.length, 0);
     },
   );
 

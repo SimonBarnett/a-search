@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041 / #5046)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -136,12 +136,44 @@ INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY];
 REVERT;
 ```
 
-Matching is ranked FREETEXTTABLE on Title/Description with `@q` and `@top`
-bound as NVarChar(4000) / Int (never nvarchar(max); FR #5024). Excludes are
-quoted phrases (`AND NOT CONTAINS(..., @exN)`), including short tokens like IC.
-Informational SQL messages (severity < 11, including noise-word notices) are
-0-row results, not errors. A real SQL error is logged as
+Matching (FR #4976 / FR #5024 / FR #5041 / FR #5046): a part is admitted only
+when it hits an **exact brand or model token** from the query via `CONTAINS` on
+a quoted word/phrase across Title/Description. FREETEXTTABLE / `RANK` only
+**orders** rows that already passed that gate --- it never admits a part on its
+own. `@q` and `@top` are bound as NVarChar(4000) / Int (never nvarchar(max);
+FR #5024). Excludes stay quoted phrases (`AND NOT CONTAINS(..., @exN)`),
+including short tokens like IC. Informational SQL messages (severity < 11, including noise-word
+notices) are 0-row results, not errors. A real SQL error is logged as
 `sql_query_failed number=... message=... contains=...` (never bare `EREQUEST`).
+
+**Simon rule (FR #5046):** if no part is a relevant match, write **no results**.
+Relevance beats showing something. There is no best-guess FREETEXT-only fallback
+and no "similar product" fallback. Zero qualifying matches => empty product list
+(0 products), DONE serviced, not an error, not DLQ.
+
+**Brand/model gate heuristic** (`extractBrandModelGateTokens` in
+`providers/local/sql/src/queryParts.js`):
+
+1. Prefer structured fields on the message or each `queries[]` / `searchterms[]`
+   object when present: `brand` / `brands`, `model` / `models`, `modelNumber` /
+   `model_number` / `sku` / `partNumber` (and `models[].brand|model|sku`).
+2. Else, after FR #5041 location/currency strip, scan the query text:
+   - **Brand** --- ALLCAPS / Pascal / long alphanumeric token (e.g. VOLANTEXRC).
+     Emitted as a CONTAINS prefix, trailing `RC` stripped when long enough:
+     `"volantex*"`.
+   - **Model phrase** --- two or more consecutive Capitalised words
+     (e.g. Sport Cub) => `"Sport Cub"`.
+   - **Model number** --- hyphenated or alphanumeric-with-digit token
+     (e.g. `761-14`) => `"761-14"`.
+3. Generic / short tokens alone never qualify: S2, 3CH, RTF, beginner, sport,
+   and other RC jargon in `GATE_GENERIC_WORDS`, plus English FT noise words and
+   location/currency leftovers from the stripper.
+4. If the heuristic yields **zero** gate tokens, the worker returns `[]` without
+   querying (never FREETEXT-only).
+
+SQL shape: `FREETEXTTABLE` ... `INNER JOIN Parts` ... `ft.[RANK] >= @minRank`
+and `( CONTAINS(..., @gate0) OR CONTAINS(..., @gate1) OR ... )` plus phrase
+excludes; `ORDER BY ft.[RANK] DESC`.
 
 FR #5041 (SQL provider only; `searches.json` unchanged): before FREETEXT, strip
 annotator location/currency suffix (country name, parenthesised locality /

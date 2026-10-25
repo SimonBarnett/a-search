@@ -68,7 +68,8 @@ describe('FR #5004 informational vs real SQL errors', () => {
 
   it('informational query error returns [] and does not throw', async () => {
     const rows = await defaultQueryParts(
-      { env: 'live', queries: ['servo'] },
+      // FR #5046: need a brand/model gate or SELECT is skipped
+      { env: 'live', queries: ['VOLANTEXRC servo'] },
       {
         env: {
           MSSQL_SERVER: 'walrus\\ASEARCH',
@@ -105,7 +106,7 @@ describe('FR #5004 informational vs real SQL errors', () => {
     let thrown;
     try {
       await defaultQueryParts(
-        { env: 'live', queries: ['servo'] },
+        { env: 'live', queries: ['VOLANTEXRC servo'] },
         {
           env: {
             MSSQL_SERVER: 'walrus\\ASEARCH',
@@ -140,12 +141,12 @@ describe('FR #5004 informational vs real SQL errors', () => {
     assert.equal(thrown.code, 'sql_query_failed');
     assert.equal(thrown.sqlNumber, 102);
     assert.match(String(thrown.sqlMessage), /Incorrect syntax/);
-    assert.equal(thrown.containsQuery, 'servo');
+    assert.equal(thrown.containsQuery, 'VOLANTEXRC servo');
     assert.match(String(thrown.message), /102/);
     const line = formatSqlQueryError(thrown, thrown.containsQuery);
     assert.match(String(line), /102/);
     assert.match(String(line), /Incorrect syntax/);
-    assert.match(String(line), /servo/);
+    assert.match(String(line), /VOLANTEXRC/);
     assert.doesNotMatch(String(line), /^EREQUEST$/);
   });
 });
