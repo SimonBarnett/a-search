@@ -655,4 +655,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
 - FR with open Needs Simon decision stamps (key name + refresh vs idempotent fan-out): ACK then GIVEUP needs_human; do not invent refresh:true or a metadata key
 - An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.
-- MRB hasresults/DONE: transient 429/502-504 are not isProviderFaultForDlq --- write DONE=dlq on ApproximateReceiveCount>=maxReceiveCount before throw or SQS redrive leaves hasresults stuck
+- After hasresults writes DONE/, empty-query worker pins must assert no IN/ plus DONE present, not puts.length===0.
