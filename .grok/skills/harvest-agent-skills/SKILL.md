@@ -662,3 +662,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Affiliates schedule: shared/defaultAge.js merchant>provider>_root/ positive int; due on lastdownload age UTC; fail needs_defaultage (no silent 7); leave live refreshdays ignored; skip _root as provider slug
 - Walrus import failures: deterministic GitHub issue per sha256(provider|feedKey|errorCode) with import-fp marker; comment not twin; outbox when A_SEARCH_GH_TOKEN missing or GH down; never silent sandbox MSSQL_DATABASE default
 - Affiliate age is defaultage (merchant > provider > _root); self-heal missing _root only (create-only defaultage=7); never overwrite an existing invalid root.
+- FIX after MRB FAIL on FR#4943: land GG fixture fix then switch reportImportFailure to POST /bob/v1/intake (dedupe_key); guard tools/dbimport/reportFailure.js with require.main; wire Invoke-FolderDbImport catch fail-soft
