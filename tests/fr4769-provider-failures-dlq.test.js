@@ -276,7 +276,11 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
     assert.equal(out.ok, true);
     assert.deepEqual(out.products, []);
     assert.equal(out.key, null);
-    assert.equal(puts.length, 0);
+    // FR #4917: DONE terminal record is allowed; IN/ stays empty.
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      0,
+    );
   });
 
   it('missing_credentials still acks without status IN (FR #4823)', async () => {
@@ -311,6 +315,9 @@ describe('FR #4769 provider failures go to DLQ (no IN)', () => {
     });
     assert.equal(result.ok, true);
     assert.equal(result.results[0].skipped, 'missing_credentials');
-    assert.equal(puts.length, 0);
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      0,
+    );
   });
 });

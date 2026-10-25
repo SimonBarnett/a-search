@@ -9,6 +9,7 @@
 const { writeInResultToS3 } = require('./writeInResultS3');
 const { writeResults } = require('../writeResults');
 const { touchLastmod: defaultTouchLastmod } = require('../widgets/hostFolderMeta');
+const { recordSearchTerminal } = require('./searchDone');
 
 /**
  * @param {Record<string, string|undefined>} envVars
@@ -85,6 +86,46 @@ function resolveInPathFromMsg(msg) {
  *   now?: Date|string|number,
  * }} opts
  */
+/**
+ * FR #4917: write DONE/{searchid}-{source}.json status=serviced and maybe flip hasresults.
+ * Fail-soft so IN/ success is never lost to a DONE write error.
+ */
+async function recordServicedDone(opts, pathParts, productsCount, s3Fns, bucket) {
+  if (!pathParts || typeof s3Fns.putObject !== 'function') return null;
+  try {
+    return await recordSearchTerminal({
+      hostkey: pathParts.hostkey,
+      guid: pathParts.guid,
+      searchid: pathParts.searchid,
+      source: opts.source,
+      status: 'serviced',
+      products: productsCount,
+      bucket,
+      envVars: opts.envVars || process.env,
+      now: opts.now,
+      putObject: s3Fns.putObject,
+      getObject: s3Fns.getObject,
+      headObject: s3Fns.headObject,
+      copyObject: s3Fns.copyObject,
+      getObjectTagging: s3Fns.getObjectTagging,
+      putObjectTagging: s3Fns.putObjectTagging,
+      logError: opts.logError,
+    });
+  } catch (err) {
+    const log =
+      typeof opts.logError === 'function'
+        ? opts.logError
+        : console.error.bind(console);
+    log(
+      '[a-search]',
+      'WARN',
+      'search_done_write_failed',
+      String((err && err.message) || err),
+    );
+    return null;
+  }
+}
+
 async function writeLiveProviderInResult(opts) {
   if (!opts || !opts.msg || !opts.source) {
     throw new Error('writeLiveProviderInResult requires msg + source');
@@ -97,6 +138,31 @@ async function writeLiveProviderInResult(opts) {
   if (products.length === 0) {
     logProviderDoneZero({ msg, source: opts.source, logInfo: opts.logInfo });
     const bucket = pathParts ? resolveAClubsBucket(envVars) : null;
+    // FR #4917 / #4823: zero products still write DONE (never IN/).
+    if (pathParts && typeof opts.putObject === 'function') {
+      const withBucket = (fn) => {
+        if (typeof fn !== 'function') return fn;
+        return async (args) => {
+          const a = args && typeof args === 'object' ? { ...args } : {};
+          if (!a.Bucket && bucket) a.Bucket = bucket;
+          return fn(a);
+        };
+      };
+      await recordServicedDone(
+        opts,
+        pathParts,
+        0,
+        {
+          putObject: withBucket(opts.putObject),
+          getObject: withBucket(opts.getObject),
+          headObject: withBucket(opts.headObject),
+          copyObject: withBucket(opts.copyObject),
+          getObjectTagging: withBucket(opts.getObjectTagging),
+          putObjectTagging: withBucket(opts.putObjectTagging),
+        },
+        bucket,
+      );
+    }
     return {
       bucket,
       key: null,
@@ -175,6 +241,22 @@ async function writeLiveProviderInResult(opts) {
     bucket,
     now: opts.now,
   });
+
+  // FR #4917: terminal DONE after a successful IN write.
+  await recordServicedDone(
+    opts,
+    pathParts,
+    products.length,
+    {
+      putObject,
+      getObject,
+      headObject,
+      copyObject,
+      getObjectTagging,
+      putObjectTagging,
+    },
+    bucket,
+  );
 
   return {
     bucket,

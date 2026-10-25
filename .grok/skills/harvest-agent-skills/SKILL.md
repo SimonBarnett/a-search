@@ -653,3 +653,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.
 - After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
 - FR with open Needs Simon decision stamps (key name + refresh vs idempotent fan-out): ACK then GIVEUP needs_human; do not invent refresh:true or a metadata key
+- An FR that depends on unlanded hasresults/enabled plus an owner host choice (redqueen vs walrus) is ACK then GIVEUP needs_human; comment the stamps; do not invent the monitor on the wrong box.

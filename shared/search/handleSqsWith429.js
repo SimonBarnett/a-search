@@ -22,6 +22,10 @@ const {
   writeLiveProviderInResult,
   resolveInPathFromMsg,
 } = require('./writeLiveProviderInResult');
+const { recordSearchTerminal } = require('./searchDone');
+
+/** CDK worker / db-backed queues use maxReceiveCount 3 (FR-142). */
+const DEFAULT_MAX_RECEIVE_COUNT = 3;
 
 /**
  * @param {unknown} err
@@ -118,7 +122,63 @@ function messageGroupIdFromRecord(record) {
 }
 
 /**
+ * @param {object} record
+ * @returns {number}
+ */
+function receiveCountFromRecord(record) {
+  const attrs = (record && record.attributes) || {};
+  const n = Number(
+    attrs.ApproximateReceiveCount != null
+      ? attrs.ApproximateReceiveCount
+      : attrs.approximateReceiveCount,
+  );
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+/**
+ * FR #4917: write DONE status=dlq (fail-soft) when host/guid/searchid present.
+ * @param {object} args
+ */
+async function recordDlqDone(args) {
+  const msg = args.msg || {};
+  const pathParts = resolveInPathFromMsg(msg);
+  if (!pathParts || typeof args.putObject !== 'function') return null;
+  try {
+    return await recordSearchTerminal({
+      hostkey: pathParts.hostkey,
+      guid: pathParts.guid,
+      searchid: pathParts.searchid,
+      source: args.source || msg.source,
+      status: 'dlq',
+      products: 0,
+      envVars: args.envVars || process.env,
+      putObject: args.putObject,
+      getObject: args.getObject,
+      headObject: args.headObject,
+      copyObject: args.copyObject,
+      getObjectTagging: args.getObjectTagging,
+      putObjectTagging: args.putObjectTagging,
+      now: args.now,
+      logError: args.logError,
+    });
+  } catch (err) {
+    const log =
+      typeof args.logError === 'function'
+        ? args.logError
+        : console.error.bind(console);
+    log(
+      '[a-search]',
+      'WARN',
+      'search_done_dlq_write_failed',
+      String((err && err.message) || err),
+    );
+    return null;
+  }
+}
+
+/**
  * Move a poison message to the sibling DLQ and delete it from the source queue.
+ * FR #4917: also writes DONE/{searchid}-{source}.json status=dlq when S3 deps present.
  * @param {{
  *   record: object,
  *   err: unknown,
@@ -128,6 +188,15 @@ function messageGroupIdFromRecord(record) {
  *   deleteMessage: Function,
  *   queueUrl: string,
  *   dlqUrl: string,
+ *   putObject?: Function,
+ *   getObject?: Function,
+ *   headObject?: Function,
+ *   copyObject?: Function,
+ *   getObjectTagging?: Function,
+ *   putObjectTagging?: Function,
+ *   envVars?: Record<string, string|undefined>,
+ *   logError?: Function,
+ *   now?: Date|string|number,
  * }} args
  */
 async function moveMessageToDlq(args) {
@@ -174,6 +243,9 @@ async function moveMessageToDlq(args) {
     QueueUrl: args.queueUrl,
     ReceiptHandle: record.receiptHandle,
   });
+  // FR #4917: terminal DONE for immediate DLQ (after SQS move so a DONE failure
+  // does not strand the poison message on the primary queue).
+  await recordDlqDone({ ...args, msg, source });
 }
 
 /**
@@ -243,6 +315,53 @@ function resolveImmediateDlqDeps(opts, record) {
     deleteMessage = deleteMessage || built.deleteMessage;
   }
   return { sendMessage, deleteMessage, queueUrl, dlqUrl };
+}
+
+/**
+ * FR #4917: S3 fns for DONE writes (from opts, deps, or Lambda default chain).
+ * @param {object} opts
+ * @returns {object}
+ */
+function resolveDoneS3Deps(opts) {
+  const deps = (opts && opts.deps) || {};
+  const env =
+    (deps.env && typeof deps.env === 'object' ? deps.env : null) ||
+    opts.envVars ||
+    process.env;
+  const pick = (name) => {
+    if (typeof opts[name] === 'function') return opts[name];
+    if (typeof deps[name] === 'function') return deps[name];
+    return null;
+  };
+  let putObject = pick('putObject');
+  let getObject = pick('getObject');
+  let headObject = pick('headObject');
+  let copyObject = pick('copyObject');
+  let getObjectTagging = pick('getObjectTagging');
+  let putObjectTagging = pick('putObjectTagging');
+  if (!putObject) {
+    try {
+      const { attachDefaultS3 } = require('./liveWorkerS3');
+      const built = attachDefaultS3({});
+      putObject = putObject || built.putObject;
+      getObject = getObject || built.getObject;
+      headObject = headObject || built.headObject;
+      copyObject = copyObject || built.copyObject;
+      getObjectTagging = getObjectTagging || built.getObjectTagging;
+      putObjectTagging = putObjectTagging || built.putObjectTagging;
+    } catch {
+      // No AWS SDK in unit fixtures — DONE write is skipped.
+    }
+  }
+  return {
+    putObject,
+    getObject,
+    headObject,
+    copyObject,
+    getObjectTagging,
+    putObjectTagging,
+    envVars: env,
+  };
 }
 
 /**
@@ -427,6 +546,27 @@ async function handleSqsWith429(opts) {
           deps,
           logError: opts.logError,
         });
+        // FR #4917: config skip is a terminal "serviced" finish (0 products).
+        const pathParts = resolveInPathFromMsg(msg);
+        if (pathParts) {
+          const s3 = resolveDoneS3Deps(opts);
+          if (typeof s3.putObject === 'function') {
+            try {
+              await recordSearchTerminal({
+                ...s3,
+                hostkey: pathParts.hostkey,
+                guid: pathParts.guid,
+                searchid: pathParts.searchid,
+                source,
+                status: 'serviced',
+                products: 0,
+                logError: opts.logError,
+              });
+            } catch {
+              // fail-soft
+            }
+          }
+        }
         results.push({
           ok: false,
           skipped: 'missing_credentials',
@@ -460,6 +600,7 @@ async function handleSqsWith429(opts) {
         if (isImmediateDlqFault(err)) {
           const dlqDeps = resolveImmediateDlqDeps(opts, record);
           if (dlqDeps) {
+            const s3 = resolveDoneS3Deps(opts);
             await moveMessageToDlq({
               record,
               err,
@@ -469,6 +610,8 @@ async function handleSqsWith429(opts) {
               deleteMessage: dlqDeps.deleteMessage,
               queueUrl: dlqDeps.queueUrl,
               dlqUrl: dlqDeps.dlqUrl,
+              ...s3,
+              logError: opts.logError,
             });
             results.push({
               ok: false,
@@ -479,7 +622,52 @@ async function handleSqsWith429(opts) {
             continue;
           }
         }
+        // FR #4917: on the final receive (maxReceiveCount), write DONE=dlq
+        // before throw — SQS redrive itself runs no Lambda code.
+        const maxReceive =
+          Number(opts.maxReceiveCount) > 0
+            ? Math.floor(Number(opts.maxReceiveCount))
+            : DEFAULT_MAX_RECEIVE_COUNT;
+        if (receiveCountFromRecord(record) >= maxReceive) {
+          const s3 = resolveDoneS3Deps(opts);
+          await recordDlqDone({
+            ...s3,
+            msg,
+            source,
+            logError: opts.logError,
+          });
+        }
         throw err;
+      }
+
+      // FR #4917: transient 429/502-504 are not isProviderFaultForDlq, but on the
+      // final receive SQS will redrive to the DLQ with no Lambda code. Write
+      // DONE=dlq here so hasresults can still complete.
+      if (transient) {
+        const maxReceive =
+          Number(opts.maxReceiveCount) > 0
+            ? Math.floor(Number(opts.maxReceiveCount))
+            : DEFAULT_MAX_RECEIVE_COUNT;
+        if (receiveCountFromRecord(record) >= maxReceive) {
+          let msg = {};
+          try {
+            if (record && typeof record.body === 'string') {
+              msg = JSON.parse(record.body);
+            }
+          } catch {
+            msg = {};
+          }
+          const source = String(
+            opts.source || (msg && msg.source) || '',
+          ).trim();
+          const s3 = resolveDoneS3Deps(opts);
+          await recordDlqDone({
+            ...s3,
+            msg,
+            source,
+            logError: opts.logError,
+          });
+        }
       }
 
       if (
@@ -514,6 +702,9 @@ module.exports = {
   isProviderFaultForDlq,
   isImmediateDlqFault,
   moveMessageToDlq,
+  receiveCountFromRecord,
+  recordDlqDone,
+  DEFAULT_MAX_RECEIVE_COUNT,
   statusErrorFromSkip,
   logProviderFailure,
   reportNonRetryableSkip: reportMissingCredentialsSkip,

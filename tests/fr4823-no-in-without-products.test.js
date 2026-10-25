@@ -123,7 +123,7 @@ function minimalProduct(id) {
 }
 
 describe('FR #4823 writeLiveProviderInResult', () => {
-  it('skips S3 put at 0 products and logs provider_done', async () => {
+  it('skips IN put at 0 products, writes DONE, and logs provider_done (FR #4917)', async () => {
     const puts = [];
     const { logs, result } = await withCapturedLog(() =>
       writeLiveProviderInResult({
@@ -139,7 +139,10 @@ describe('FR #4823 writeLiveProviderInResult', () => {
     );
     assert.equal(result.skipped, 'no_products');
     assert.equal(result.key, null);
-    assert.equal(puts.length, 0);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    const donePuts = puts.filter((p) => /\/DONE\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 0);
+    assert.ok(donePuts.length >= 1);
     assert.ok(logs.some((l) => /provider_done/.test(l) && /products=0/.test(l)));
     assert.ok(logs.some((l) => /\bsource=cj\b/.test(l)));
     assert.ok(logs.some((l) => /srch_4823_empty/.test(l)));
@@ -159,7 +162,8 @@ describe('FR #4823 writeLiveProviderInResult', () => {
     });
     assert.equal(out.skipped, undefined);
     assert.match(out.key, /IN\/srch_4823_empty-ebay\.json$/);
-    assert.equal(puts.length, 1);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
   });
 });
 
@@ -210,7 +214,7 @@ describe('FR #4823 live workers zero products', () => {
   ];
 
   for (const c of cases) {
-    it(`${c.name}: 0 products -> no putObject, ok, key null, provider_done log`, async () => {
+    it(`${c.name}: 0 products -> no IN put, DONE ok, key null, provider_done log (FR #4917)`, async () => {
       const puts = [];
       const msg = { ...ACLUBS_MSG, source: c.name, searchId: ACLUBS_MSG.searchid };
       const { logs, result } = await withCapturedLog(() =>
@@ -227,7 +231,8 @@ describe('FR #4823 live workers zero products', () => {
       assert.equal(result.ok, true);
       assert.deepEqual(result.products, []);
       assert.equal(result.key, null);
-      assert.equal(puts.length, 0);
+      const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+      assert.equal(inPuts.length, 0);
       assert.ok(logs.some((l) => /provider_done/.test(l) && /products=0/.test(l)));
     });
   }
@@ -246,8 +251,9 @@ describe('FR #4823 live workers zero products', () => {
     });
     assert.equal(out.ok, true);
     assert.equal(out.products.length, 1);
-    assert.equal(puts.length, 1);
-    assert.match(puts[0].Key, /IN\/srch_4823_empty-ebay\.json$/);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
+    assert.match(inPuts[0].Key, /IN\/srch_4823_empty-ebay\.json$/);
   });
 
   it('rakuten worker with products writes IN (FR #4781 search [] still no IN at worker)', async () => {
@@ -263,7 +269,10 @@ describe('FR #4823 live workers zero products', () => {
       touchLastmod: async () => {},
     });
     assert.equal(outEmpty.key, null);
-    assert.equal(puts.length, 0);
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      0,
+    );
 
     puts.length = 0;
     const outHit = await runRakutenWorker(msg, {
@@ -276,7 +285,10 @@ describe('FR #4823 live workers zero products', () => {
       touchLastmod: async () => {},
     });
     assert.equal(outHit.products.length, 1);
-    assert.equal(puts.length, 1);
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      1,
+    );
   });
 });
 
@@ -397,6 +409,10 @@ describe('FR #4823 failures unchanged (DLQ, no IN)', () => {
         }),
       (e) => e === err,
     );
-    assert.equal(puts.length, 0);
+    // Immediate DLQ without queue URLs throws; no IN. (DONE needs SQS move path.)
+    assert.equal(
+      puts.filter((p) => /\/IN\//i.test(String(p.Key || ''))).length,
+      0,
+    );
   });
 });

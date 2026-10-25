@@ -52,6 +52,17 @@ the FIFO dedupe window also does not double-enqueue. The SQL queue is
 `MessageDeduplicationId` there (AWS `InvalidParameterValue`); SQL idempotency
 is the fan-out marker only.
 
+## Completion tracking (FR #4917)
+
+Each worker writes a terminal record at
+`a-clubs/{hostkey}/{guid}/DONE/{searchid}-{source}.json` with
+`status: serviced|dlq` (including zero-product finishes --- still no `IN/`
+file, FR #4823). Immediate DLQ and the final receive before SQS redrive
+(`ApproximateReceiveCount >= maxReceiveCount`, including transient
+429/502-504) both write `status: dlq`. When every source in
+`search-fanout.json.queued` has a DONE record for the current `searchid`,
+the GUID marker flips `hasresults=1` (starts at `0` with `enabled=0`).
+
 Each job payload includes userId / userid from the host marker so live
 providers can stamp tracked outbound links (FR #4415). Payloads may carry
 messageGroupId=<provider|sql> for app-level intent; entry/src/sqsSend.js
