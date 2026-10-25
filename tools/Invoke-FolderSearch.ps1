@@ -106,7 +106,7 @@ function Resolve-AwsProfileName {
     if ($AwsProfile) { return $AwsProfile }
     if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
     if ($Config -and $Config.AwsProfile) { return [string]$Config.AwsProfile }
-    return 'a-search-redqueen-agents'
+    return 'a-search-redqueen-annotator'
 }
 
 function Invoke-AgentSearchHttp {

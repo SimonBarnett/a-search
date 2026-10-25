@@ -249,22 +249,23 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
   --output text
 ```
 
-## 7. Smoke (FR-144)
+## 7. Smoke (FR-144 / FR #4888)
 
-With a **fixture** JWT issued for the configured issuer/audience (never a
-production user token in git):
+`/search` and `/selftest` use API Gateway **IAM** (SigV4 `execute-api`). The
+smoke host default AWS credential chain signs the request. No JWT.
 
 ```bash
-export A_SEARCH_API_URL="<SearchApiUrl>"
-export A_SEARCH_SMOKE_JWT="<fixture jwt>"
+# URL from stack output SearchApiUrl (default stack ASearchStack)
 npm run smoke-deploy
-# or: node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL" --jwt "$A_SEARCH_SMOKE_JWT"
+# or override:
+node scripts/smoke-deploy.js --stack ASearchStack --region eu-west-2
+node scripts/smoke-deploy.js --url "$A_SEARCH_API_URL"
 ```
 
 The script asserts:
 
-1. `POST {SearchApiUrl}/search` with `Authorization: Bearer <fixture>` -> **HTTP 200** + `accepted: true` + `searchId`
-2. `GET {SearchApiUrl}/selftest?sandbox=true` -> **HTTP 200** + selftest JSON shape (`ok`, `providers[].id`/`ok`) per [endpoint-selftest.md](endpoint-selftest.md). Provider probe failures are reported in the table and are **not** fatal (no live provider credentials required for the accept/shape path).
+1. `POST {SearchApiUrl}/search` with `Authorization: AWS4-HMAC-SHA256 ...` -> **HTTP 200** + `accepted: true` + `searchId`
+2. `GET {SearchApiUrl}/selftest?sandbox=true` (same SigV4) -> **HTTP 200** + selftest JSON shape (`ok`, `providers[].id`/`ok`) per [endpoint-selftest.md](endpoint-selftest.md). Provider probe failures are reported in the table and are **not** fatal (no live provider credentials required for the accept/shape path).
 
 Optional manual follow-up: confirm a results object appears under `{env}/{source}/...` in S3 (and on the rclone mount after step 8).
 
@@ -272,6 +273,14 @@ Optional manual follow-up: confirm a results object appears under `{env}/{source
 `POST https://irc.ntsa.uk/bob/v1/intake` (or `A_SEARCH_INTAKE_URL` if set) returns
 success; if blocked, expect CloudWatch `intake_egress_blocked` on the next fatal
 path - see [intake-on-exception.md](intake-on-exception.md) and section FR-158 below.
+
+**Caller impact (FR #4888):** API Gateway requires SigV4 on `/search` and
+`/selftest`. Unsigned JWT or `x-agent-api-key` requests stop at the gateway
+(403). Lambda still accepts JWT or agent-key when the request is already
+IAM-signed (local tests without APIGW unchanged). The annotator identity
+`a-search-redqueen-annotator` is granted `execute-api:Invoke` in CDK.
+`redqueen/src/guidSearch.js` signs with that default chain. Club-cwd
+`Invoke-FolderSearch.ps1` defaults to the same profile.
 
 Do **not** wire this against production from CI without an explicit approval gate.
 
