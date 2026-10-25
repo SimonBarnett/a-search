@@ -652,3 +652,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Imported a-clubs EventBridge: use Bucket.fromBucketName + enableEventBridgeNotification (Managed=false merges existing Topic/Queue/Lambda); do not hand-put EventBridgeConfiguration.
 - When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.
 - After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
+- FIX after hasresults/DONE: empty-query / zero-product worker pins must allow DONE/ puts (assert no IN/ + DONE present), not puts.length===0
