@@ -77,6 +77,30 @@ function createAClubsPutObject(opts) {
 
     let writeMsg = msg;
     const keyStr = Key != null ? String(Key).trim() : '';
+    // FR #4917: DONE/{searchid}-{source}.json passthrough on the mapped drive.
+    const doneMatch = keyStr.match(
+      /^([^/]+)\/([^/]+)\/DONE\/([^/]+)\.json$/i,
+    );
+    if (doneMatch) {
+      const abs = require('node:path').join(
+        root,
+        doneMatch[1],
+        doneMatch[2],
+        'DONE',
+        `${doneMatch[3]}.json`,
+      );
+      require('node:fs').mkdirSync(require('node:path').dirname(abs), {
+        recursive: true,
+      });
+      const raw =
+        typeof Body === 'string'
+          ? Body
+          : Buffer.isBuffer(Body)
+            ? Body.toString('utf8')
+            : `${JSON.stringify(productsBody || {})}\n`;
+      require('node:fs').writeFileSync(abs, raw.endsWith('\n') ? raw : `${raw}\n`, 'utf8');
+      return { abs, key: keyStr, bucket: 'a-clubs' };
+    }
     const m = keyStr.match(/^([^/]+)\/([^/]+)\/IN\/([^/]+)\.json$/i);
     if (m) {
       writeMsg = {

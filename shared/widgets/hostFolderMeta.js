@@ -535,6 +535,45 @@ async function setInit(opts) {
 }
 
 /**
+ * FR #4917: set hasresults=1 on a GUID marker (never back to 0); bumps lastmod;
+ * preserves other keys/tags (enabled, annotated, init, uri, …).
+ * @param {{
+ *   Key: string,
+ *   bucket?: string,
+ *   now?: Date|string|number,
+ *   headObject?: Function,
+ *   getObject?: Function,
+ *   getObjectTagging?: Function,
+ *   copyObject?: Function,
+ *   putObject?: Function,
+ *   putObjectTagging?: Function,
+ * }} opts
+ */
+async function setHasResults(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new Error('setHasResults opts required');
+  }
+  if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
+    throw new Error('copyObject_or_getObject_required');
+  }
+  const state = await readMarkerState(opts);
+  const lastmod = isoLastmod(opts.now);
+  const metadata = { ...state.metadata, hasresults: '1', lastmod };
+  await rewriteMarkerMetadata({
+    Key: state.Key,
+    metadata,
+    body: state.body == null ? Buffer.alloc(0) : state.body,
+    contentType: state.contentType,
+    tagSet: state.tagSet,
+    bucket: opts.bucket,
+    copyObject: opts.copyObject,
+    putObject: opts.putObject,
+    putObjectTagging: opts.putObjectTagging,
+  });
+  return { Key: state.Key, hasresults: 1, lastmod, metadata };
+}
+
+/**
  * Hash a host password for S3 metadata storage (FR #3968).
  * Format: scrypt$16384$8$1$<saltHex>$<hashHex> (Node crypto.scrypt).
  * Madeira's auth layer is not vendored here; claim/onboarding may pass a
@@ -743,6 +782,7 @@ module.exports = {
   isoLastmod,
   touchLastmod,
   setInit,
+  setHasResults,
   hashHostPassword,
   isHostPasswordHash,
   setHostCredentials,
