@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Provider invite dispatcher for a-affiliates (Awin + CJ; Rakuten sibling FR).
+Provider invite dispatcher for a-affiliates (Awin + Rakuten + CJ).
 
 .DESCRIPTION
 From bucket root: run invite for every provider with enabled=1.
@@ -47,7 +47,8 @@ $here = $PSScriptRoot
 # Providers that have an invite implementation under {provider}/_invite/.
 # enabled=1 without _invite => invite_not_implemented.
 # CJ stays enabled=0 on the marker until #5057 activation.
-$script:InviteProviders = @('awin', 'cj')
+# Rakuten from FR #5065; CJ from FR #5066.
+$script:InviteProviders = @('awin', 'rakuten', 'cj')
 
 function Get-InviteProviderNames {
     param([string]$Bucket)
@@ -104,7 +105,9 @@ function Resolve-InviteProviderRoots {
     if (Test-Path -LiteralPath $cfgPath) {
         $cfg = Get-Content -LiteralPath $cfgPath -Raw | ConvertFrom-Json
     }
-    $agentRoot = if ($slug -eq 'cj') { 'C:\ai\a-search\cj-invite' } else { 'C:\ai\a-search\awin-agent' }
+    if ($slug -eq 'cj') { $agentRoot = 'C:\ai\a-search\cj-invite' }
+    elseif ($slug -eq 'rakuten') { $agentRoot = 'C:\ai\a-search' }
+    else { $agentRoot = 'C:\ai\a-search\awin-agent' }
     if ($cfg -and $cfg.agentRoot) { $agentRoot = [string]$cfg.agentRoot }
     $entry = 'invite.mjs'
     if ($cfg -and $cfg.entry) { $entry = [string]$cfg.entry }
@@ -129,6 +132,12 @@ function Resolve-InviteProviderRoots {
         if ($cfg -and $cfg.websiteId) { $env:CJ_WEBSITE_ID = [string]$cfg.websiteId }
         if ($cfg -and $cfg.reportDir) { $env:CJ_INVITE_REPORT_DIR = [string]$cfg.reportDir }
         if ($cfg -and $cfg.lockPath) { $env:CJ_INVITE_LOCK = [string]$cfg.lockPath }
+    }
+    elseif ($slug -eq 'rakuten') {
+        if ($cfg -and $cfg.secretFile) { $env:RAKUTEN_SECRET_FILE = [string]$cfg.secretFile }
+        if ($cfg -and $cfg.publisherId) { $env:RAKUTEN_PUBLISHER_ID = [string]$cfg.publisherId }
+        if ($cfg -and $cfg.profile) { $env:RAKUTEN_PROFILE = [string]$cfg.profile }
+        $env:RAKUTEN_USE_INVITE = '1'
     }
 
     return [pscustomobject]@{

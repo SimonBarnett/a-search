@@ -2,7 +2,7 @@
 
 /**
  * FR #5066: load CJ invite secrets from file (names only in docs).
- * C:\passwords\cj.secret.txt — line 4 = personal access token, line 5 = website id.
+ * C:\passwords\cj.secret.txt --- line 4 = personal access token, line 5 = website id.
  * Never log values.
  */
 

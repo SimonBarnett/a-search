@@ -148,7 +148,7 @@ Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tool
 | `S:\a-affiliates` | Run invite for every provider with `enabled=1` |
 | `S:\a-affiliates\{provider}` | That provider only when `enabled=1`; else `provider_disabled` (exit 3) |
 
-An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered today: **awin** and **cj** (FR #5066). Keep the CJ marker `enabled=0` until publisher activation (#5057); root `invite` then skips CJ.
+An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered: **awin**, **rakuten** (FR #5065), and **cj** (FR #5066). Keep the CJ marker `enabled=0` until publisher activation (#5057); root `invite` then skips CJ. Do not enable download/dbimport for Rakuten (no `_import/`, no merchant feeds).
 
 ```powershell
 cd S:\a-affiliates\awin
@@ -168,7 +168,7 @@ invite -Max 3           # all enabled=1 providers
 | `4` | `invite_not_implemented` |
 | `5` | `cj_account_not_active` (CJ 403; no records written) |
 
-Awin: `C:\ai\a-search\awin-agent\README-invite.md`. CJ: seed `redqueen/affiliate-agent/seed/a-affiliates/cj/AGENT.md` and backend `redqueen/cj-invite/` (copy to `C:\ai\a-search\cj-invite` on redqueen). Reports: `logs\{provider}-invite\{yyyy-mm-dd}.json`.
+Awin: `C:\ai\a-search\awin-agent\README-invite.md`. Rakuten: `redqueen/invite/` + seed `a-affiliates/rakuten`. CJ: seed `redqueen/affiliate-agent/seed/a-affiliates/cj/AGENT.md` and backend `redqueen/cj-invite/` (copy to `C:\ai\a-search\cj-invite` on redqueen). Reports: `logs\{provider}-invite\{yyyy-mm-dd}.json`.
 
 ## Tests
 

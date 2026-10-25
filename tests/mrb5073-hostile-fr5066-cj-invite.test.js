@@ -14,7 +14,7 @@ const ROOT = path.join(__dirname, '..');
 describe('MRB #5073 hostile FR #5066', () => {
   it('invite.ps1 registers cj + awin; exit 5 for inactive account', () => {
     const src = fs.readFileSync(path.join(ROOT, 'tools', 'invite.ps1'), 'utf8');
-    assert.match(src, /InviteProviders = @\('awin', 'cj'\)/);
+    assert.match(src, /InviteProviders = @\('awin', 'rakuten', 'cj'\)/);
     assert.match(src, /cj_account_not_active/);
     assert.match(src, /Exit 5/);
     assert.match(src, /Invoke-CjInvite|provider=cj|'cj'/);

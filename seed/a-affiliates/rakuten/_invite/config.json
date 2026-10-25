@@ -1,0 +1,10 @@
+{
+  "entry": "invite.mjs",
+  "agentRoot": "C:\\ai\\a-search",
+  "secretFile": "C:\\passwords\\rakuten.secret.txt",
+  "publisherId": "4766177",
+  "maxMsg": 500,
+  "recordPrefix": "_invites",
+  "excludeFromDownload": true,
+  "excludeFromDbImport": true
+}
