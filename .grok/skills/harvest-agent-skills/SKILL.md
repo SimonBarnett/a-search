@@ -643,6 +643,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - UAT S1 live smoke-deploy FR on a shop without A_SEARCH_API_URL/A_SEARCH_SMOKE_JWT: ACK then GIVEUP reason=needs_human; comment a deploy-host checklist; never invent POST /search 200.
 - UAT S19 live /selftest is npm run smoke-selftest (GET then POST) with A_SEARCH_API_URL and A_SEARCH_SMOKE_JWT; fail-closed when unset; never print the JWT; do not use POST /search for the S19 probe.
 - HttpIamAuthorizer on /search means JWT never reaches Lambda; treat that as intended when the FR says IAM-only, not as a missing authorizer bug.
+- A parent e2e tracker whose acceptance is all children closed plus live UAT is GIVEUP needs_human while those children still have open PRs/issues; comment the blockers; do not invent a covering PR that Closes the tracker.
 - a-search /parts e2e tracker #4892 is a living umbrella: ACK, comment the child matrix, GIVEUP; never Closes it from a child PR
 - A /parts seed searches.json with empty queries must skip (searches_empty_seed), delete the change message, and never POST /search; a throw on one drain batch message retries only that message
 - FR #4891 after canonical /parts=APartsGateway is decided: ACK then GIVEUP needs_human until Simon stamps enabled vs init and zero-product searching behaviour.
