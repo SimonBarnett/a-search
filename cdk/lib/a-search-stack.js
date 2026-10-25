@@ -17,6 +17,7 @@ const sns = require('aws-cdk-lib/aws-sns');
 const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');
 const apigwv2 = require('aws-cdk-lib/aws-apigatewayv2');
 const integrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
+const { HttpIamAuthorizer } = require('aws-cdk-lib/aws-apigatewayv2-authorizers');
 const apigw = require('aws-cdk-lib/aws-apigateway');
 const { Construct } = require('constructs');
 const { resolveApiThrottle } = require('./resolve-api-throttle');
@@ -1045,7 +1046,7 @@ class ASearchStack extends cdk.Stack {
       description: 'FR-3949 walrus IAM user ARN',
     });
 
-    // FR-035: HTTP API POST /search -> entry (JWT still verified in Lambda)
+    // FR-035 / FR #4888: HTTP API POST /search -> entry (IAM authorizer; Lambda accepts IAM identity)
     // FR-153: CORS allowlist from -c corsOrigins (default localhost-only; never *)
     // FR-156: apiName gets optional stage suffix
     // FR-157: createDefaultStage false so we own $default access logs + throttle
@@ -1068,14 +1069,22 @@ class ASearchStack extends cdk.Stack {
           apigwv2.CorsHttpMethod.PATCH,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
-        allowHeaders: ['Authorization', 'Content-Type', 'Accept'],
+        allowHeaders: [
+          'Authorization',
+          'Content-Type',
+          'Accept',
+          'X-Amz-Date',
+          'X-Amz-Security-Token',
+        ],
         maxAge: cdk.Duration.days(1),
       };
     }
     const httpApi = new apigwv2.HttpApi(this, 'SearchHttpApi', httpApiProps);
+    const searchIamAuthorizer = new HttpIamAuthorizer();
     httpApi.addRoutes({
       path: '/search',
       methods: [apigwv2.HttpMethod.POST],
+      authorizer: searchIamAuthorizer,
       integration: new integrations.HttpLambdaIntegration(
         'EntrySearchIntegration',
         entry,
@@ -1090,15 +1099,33 @@ class ASearchStack extends cdk.Stack {
         entry,
       ),
     });
-    // FR-059b/l: API Gateway /selftest next to /search (JWT in Lambda; probes OOS here)
+    // FR-059b/l / FR #4888: /selftest IAM authorizer (probes OOS here)
     httpApi.addRoutes({
       path: '/selftest',
       methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
+      authorizer: searchIamAuthorizer,
       integration: new integrations.HttpLambdaIntegration(
         'EntrySelftestIntegration',
         entry,
       ),
     });
+    // FR #4888: same annotator IAM user as a-annotator / sqlQuery (APartsGateway)
+    const redqueenAnnotator = iam.User.fromUserName(
+      this,
+      'ImportedRedqueenAnnotator',
+      'a-search-redqueen-annotator',
+    );
+    redqueenAnnotator.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['execute-api:Invoke'],
+        resources: [
+          httpApi.arnForExecuteApi('POST', '/search'),
+          httpApi.arnForExecuteApi('GET', '/selftest'),
+          httpApi.arnForExecuteApi('POST', '/selftest'),
+        ],
+      }),
+    );
+
     // FR-198: public GET /parts?host&widgetGuid&offset&n (JWT not required; verified in Lambda)
     httpApi.addRoutes({
       path: '/parts',
