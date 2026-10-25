@@ -50,7 +50,7 @@ describe('FR #4976 contains + TOP helpers', () => {
         queries: [{ q: 'model aircraft' }, 'servo'],
         exclude: [{ match: 'title:calendar' }],
       }),
-      '"model aircraft" OR "servo" AND NOT "calendar"',
+      '"model" AND "aircraft" OR "servo" AND NOT "calendar"',
     );
   });
 
