@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -12,6 +12,50 @@ from `node_modules` beside the exe. Until
 passes on walrus, keep this node service (`a-search-walrus-sql-drain`) running.
 `Register-ASearchWalrusServices.ps1` does not remove it unless you pass
 `-ReplaceLegacySqlDrain`.
+
+## Deploy / update Node drain code (FR #5023)
+
+After the service is registered, refresh the Node drain tree from a repo checkout
+without touching secrets or `walrus\aws`:
+
+```powershell
+.\walrus\install\Deploy-WalrusSqlDrain.ps1 `
+  -SourceRoot <repo-root> `
+  -InstallRoot C:\ai\a-search
+
+# Preview only:
+.\walrus\install\Deploy-WalrusSqlDrain.ps1 -WhatIf
+```
+
+Checked-in manifest: `walrus/install/walrus-sql-drain-deploy-manifest.json`
+(paths: `walrus/src`, `providers`, `shared`, `worker`, `redqueen/src`,
+`package.json`, `package-lock.json`, `VERSION`).
+
+Behaviour:
+
+1. Verify every manifest source path exists under `-SourceRoot`.
+2. Timestamped backup under `InstallRoot\.deploy-backup\yyyyMMdd-HHmmss\`.
+3. Never overwrite `walrus\aws` or `*.password` / credentials files.
+4. Copy manifest paths onto `-InstallRoot`.
+5. **Load check before service restart**:
+   `node walrus/install/assert-walrus-sql-drain-graph.js` (requires
+   `walrus/src/index.js`, `drainRunner`, `shared/widgets/promoteInToLive.js`,
+   and `redqueen/src/pageSelect.js`). On `MODULE_NOT_FOUND` or throw: restore
+   backup, do **not** restart, exit non-zero.
+6. `npm install --omit=dev` in `-InstallRoot` (root `package.json`; deps include
+   `@a-search/shared` via `file:shared`). Pass `-SkipNpm` to skip.
+7. Restart `a-search-walrus-sql-drain`. On start failure: rollback from backup,
+   npm install again if needed, restart the previous tree, exit non-zero.
+
+`redqueen/src` is required while `shared/widgets/promoteInToLive.js` does
+`require('../../redqueen/src/pageSelect')`. Open #5022 will move `pageSelect`
+into `shared`; once that lands, drop `redqueen/src` from the manifest.
+
+Keep the `a-sqlsearch.exe` path (#4997 / #4827) documented above: this deploy
+script updates the **legacy Node** drain only. SEA cut-over still uses
+`Register-ASearchWalrusServices.ps1` / `-ReplaceLegacySqlDrain` when the trusted
+SQL smoke passes.
+
 
 ## Install
 
