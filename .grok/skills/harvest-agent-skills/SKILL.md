@@ -121,6 +121,7 @@ force-push history only to clear GG false positives --- fix the fixture instead.
 
 Misfiled a-search harvests from SimonBarnett/bobiverse, moved here so no lesson is lost.
 MRB: keep, reword or trim; twins are listed once with every source.
+- Search completion: write DONE serviced/dlq per source (incl. 0 products); HeadObject each queued source vs fan-out; setHasResults REPLACE; skip DONE/ in changeEvents; live backfill needs Simon yes
 - CAST IRON (FR #3827 / bobiverse#4649): fold origin/main into a PR only when CONFLICTING/DIRTY or CI failed on a main-fixed issue (cite the main commit/PR). never fold just because the PR is behind (FR #3827 / bobiverse#4649); if the repo has no required up-to-date check, PASS at the current head SHA and arm --auto. CONFLICTING keep-both folds remain required.
 
 - a-search FR-042: product results use worker/lib/normalizeProduct.js + docs/result-schema.md; amazon normalize asserts shared schema; other providers can adopt later (bobiverse#3215; context: FR a-search#102 FR-042 shared result schema + normalizeProduct; amazon refactor; PR opened)
