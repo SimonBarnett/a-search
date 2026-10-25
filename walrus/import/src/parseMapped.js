@@ -4,8 +4,24 @@
  * FR #4463: parse feed bytes using provider.json format + map to canonical rows.
  */
 
+const zlib = require('node:zlib');
 const { parseDelimitedRecords } = require('./rfc4180');
 const { mapRecord, contentHash, redactSecrets } = require('./mapRow');
+
+/**
+ * FR #4961: Awin productdata is often still gzip (1f8b) on a .csv key.
+ * Affiliates download already sniffs this; walrus import must too or every
+ * expectedColumn looks missing (schema_drift).
+ * @param {Buffer|string} raw
+ * @returns {Buffer}
+ */
+function inflateIfGzip(raw) {
+  const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(String(raw), 'utf8');
+  if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) {
+    return zlib.gunzipSync(buf);
+  }
+  return buf;
+}
 
 /**
  * @param {Buffer|string} raw
@@ -56,7 +72,7 @@ function parseXmlRecords(text, recordPath) {
  */
 function parseAndMapFeed(raw, providerJson, ctx = {}) {
   const format = String(providerJson.format || 'csv').toLowerCase();
-  const text = decodeText(raw, providerJson, ctx);
+  const text = decodeText(inflateIfGzip(raw), providerJson, ctx);
   let headers = [];
   let records = [];
 
