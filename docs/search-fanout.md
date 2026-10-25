@@ -41,16 +41,16 @@ written to MSSQL from AWS. Job payloads carry normalized `market` /
 strings living inside `q` (FR #4318 / #4563). eBay maps `market` to Browse
 `marketplace_id` (for example `EBAY_GB`).
 
-A second POST for the same GUID (FR #4265) reads
-`a-clubs/{hostkey}/{guid}/search-fanout.json` and returns
-`202 { searchid, queued, idempotent: true }` without sending again. The first
-successful fan-out writes that marker and updates
+Every POST `/search` for a GUID fans out again and rewrites
+`a-clubs/{hostkey}/{guid}/search-fanout.json` (FR #4916; Simon 2026-10-25
+removed the FR #4265 per-GUID short-circuit). The fan-out write also updates
 `searches.json` `searchid` to match (FR #4563). On **FIFO** provider queues,
 `MessageDeduplicationId` is `{searchid}-{source}` so a lost response inside
 the FIFO dedupe window also does not double-enqueue. The SQL queue is
 **standard** (FR #4411): entry must **not** send `MessageGroupId` /
-`MessageDeduplicationId` there (AWS `InvalidParameterValue`); SQL idempotency
-is the fan-out marker only.
+`MessageDeduplicationId` there (AWS `InvalidParameterValue`). Hourly
+re-search age is owned by `a-searches` (`defaultage` / `lastsearch` or fan-out
+`at`), not by an idempotent `/search` guard.
 
 ## Completion tracking (FR #4917)
 

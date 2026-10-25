@@ -64,6 +64,7 @@ describe('FR #4827 SEA scripts and version', () => {
     assert.match(src, /postject/);
     assert.match(src, /a-annotator\.exe/);
     assert.match(src, /a-sqlsearch\.exe/);
+    assert.match(src, /a-searches\.exe/);
     assert.match(src, /nodejs\.org\/dist/);
     assert.match(src, /win-x64\/node\.exe/);
     assert.match(src, /--smoke/);
@@ -81,6 +82,8 @@ describe('FR #4827 SEA scripts and version', () => {
       ['walrus/src/index.js', /a-sqlsearch 0\.1\.0/],
       ['scripts/sea/annotator-entry.js', /a-annotator 0\.1\.0/],
       ['scripts/sea/sqlsearch-entry.js', /a-sqlsearch 0\.1\.0/],
+      ['scripts/sea/searches-entry.js', /a-searches 0\.1\.0/],
+      ['searches/src/cli.js', /a-searches 0\.1\.0/],
     ];
     for (const [rel, re] of cases) {
       const r = spawnSync(process.execPath, [path.join(ROOT, rel), '--version'], {
@@ -98,8 +101,10 @@ describe('FR #4827 SEA scripts and version', () => {
     assert.match(yml, /node scripts\/build-a-search-sea\.js --smoke/);
     assert.match(yml, /annotator-entry\.js --version/);
     assert.match(yml, /sqlsearch-entry\.js --version/);
+    assert.match(yml, /searches-entry\.js --version/);
     assert.match(yml, /a-annotator\.exe/);
     assert.match(yml, /a-sqlsearch\.exe/);
+    assert.match(yml, /a-searches\.exe/);
     assert.match(yml, /upload-artifact@v4/);
   });
 });
@@ -107,7 +112,7 @@ describe('FR #4827 SEA scripts and version', () => {
 describe('FR #4827 register script', () => {
   const rel = 'walrus/install/Register-ASearchWalrusServices.ps1';
 
-  it('parses on Windows PowerShell 5.1 and names both services', () => {
+  it('parses on Windows PowerShell 5.1 and names all three services', () => {
     if (winPs) {
       parsePs1(rel);
       parsePs1('scripts/Enable-AClubsEventBridge.ps1');
@@ -116,6 +121,8 @@ describe('FR #4827 register script', () => {
     assert.match(src, /#Requires -Version 5\.1/);
     assert.match(src, /a-annotator/);
     assert.match(src, /a-sqlsearch/);
+    assert.match(src, /a-searches/);
+    assert.match(src, /A_SEARCHES_LOOP_MS/);
     assert.match(src, /a-search-walrus-sql-drain/);
     assert.match(src, /SERVICE_AUTO_START/);
     assert.match(src, /AppRotateFiles/);
