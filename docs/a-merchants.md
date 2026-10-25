@@ -175,6 +175,16 @@ The downloader pages `GET /admin/api/{version}/products.json` with header
 IAM: Get/Put/List/DeleteObject on `a-merchants` (+ `a-affiliates` for the daily
 role). No a-clubs, no madeira.
 
+## No-results sector feedback (FR #5047)
+
+Club GUID searches that finish with 0 relevant parts write a batched sector
+ledger at `a-clubs/_ops/need-vendors-by-sector.json` (`need more vendors in
+sector {sector}`, example queries, affected pages; same sector increments
+`count`). Merchant agents should read that ledger and prefer onboarding shops
+that cover those sectors. Internal feedback only --- never contact merchants
+automatically from this signal. Per-GUID detail:
+`a-clubs/{host}/{guid}/feedback/no-results.json`.
+
 ## Synth / deploy
 
 ```bash

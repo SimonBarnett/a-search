@@ -192,6 +192,17 @@ Verified on live bucket 2026-10-18 for: awin, impact, partnerize, webgains,
 tradedoubler, admitad, flexoffers, avantlink. Root `AGENTS.md` points at the
 per-provider "Download format" section for the `format` metadata key.
 
+## No-results sector feedback (FR #5047)
+
+When club GUID searches finish with 0 relevant parts, a-clubs records a batched
+sector ledger at `a-clubs/_ops/need-vendors-by-sector.json` (message shape:
+`need more vendors in sector {sector}`, with example queries and affected
+pages; same sector increments `count`). Affiliate agents should read that
+ledger on their daily pass and prefer joining / enabling vendors that cover
+those sectors. Internal feedback only --- never contact affiliate networks
+automatically from this signal. Per-GUID detail lives at
+`a-clubs/{host}/{guid}/feedback/no-results.json`.
+
 ## Out of scope
 
 - Parsing feeds into search candidates (walrus / SQS; parent #3944).

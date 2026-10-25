@@ -80,6 +80,30 @@ terms shorter than 3 characters are dropped. Exclude matching is whole-word,
 so `IC` does not drop "electric". The shape is
 `{ queries: [{ q, intent, maxResults }], exclude: [...], market, currency }`.
 
+### Annotator responsibility and empty results (FR #5047)
+
+The annotator must file **enough searches** in `searches.json` (brand/model,
+product type, and close alternatives) to give a reasonable chance of relevant
+parts. **0 results is still a valid outcome**: it means the catalogue needs
+more vendors in that sector. Providers never widen matches to fill a page
+(relevance over filler; see also #5046).
+
+When every fan-out source for a GUID is terminal (`hasresults=1`, FR #4917) and
+`live.json` still has 0 parts, deterministic code writes:
+
+- GUID signal: `a-clubs/{host}/{guid}/feedback/no-results.json`
+  (`schema: a-clubs.no-results.v1`) with host, guid, searchid, queries, sector
+  hint, and message `need more vendors in sector {sector}`.
+- Batched sector ledger: `a-clubs/_ops/need-vendors-by-sector.json`
+  (`schema: a-clubs.need-vendors.v1`). Repeated no-result hits for the same
+  sector increment `count` and merge example queries / affected pages (dedupe
+  by host+guid). Affiliate and merchant agents read this ledger; nothing
+  contacts merchants or affiliate networks automatically.
+
+A no-results GUID is not an error and does not retry. Keys under `feedback/`
+and `_ops/` are excluded from annotator change events (same class as `IN/` /
+`DONE/`).
+
 `/search` always fans out and rewrites `search-fanout.json` (FR #4916;
 the FR #4265 per-GUID short-circuit is removed). On each fan-out (FR #4563),
 entry also writes that `searchid` (and normalized `market`/`currency`) into
