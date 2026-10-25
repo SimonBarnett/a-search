@@ -8,6 +8,7 @@
 
 const { assertWritableDatabase } = require('../../src/dbWriterGuard');
 const { applyTrustedMssqlOdbc } = require('../../../shared/mssql/trustedOdbc');
+const { loadMssqlModule } = require('../../../shared/mssql/loadMssql');
 
 class SqlStoreConfigError extends Error {
   constructor(message) {
@@ -98,8 +99,8 @@ function createSqlStore(opts = {}) {
             const cfg = mssqlConfigFromEnv(envVars);
             const mod =
               cfg.driver === 'msnodesqlv8' ? 'mssql/msnodesqlv8' : 'mssql';
-            // eslint-disable-next-line global-require, import/no-dynamic-require
-            const sql = require(mod);
+            // FR #4997: SEA uses createRequire(process.execPath) for msnodesqlv8.
+            const sql = loadMssqlModule(mod);
             const connect =
               typeof opts.connect === 'function'
                 ? opts.connect
