@@ -670,4 +670,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - schema_drift listing every expectedColumns name on awin/*.csv is leftover gzip (1f8b); gunzip in parseAndMapFeed, do not remap columns.
 - a-sqlsearch IN file is always sql.json (overwrite). Match with CONTAINSTABLE on Title/Description; TOP from A_SEARCH_SQL_TOP (500); empty queries must not scan Parts.
 - a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
-- GUID marker ready-flag is enabled (not init); /parts must not promote IN→live — promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
+- GUID marker ready-flag is enabled (not init); /parts must not promote IN->live --- promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
+- a-search #4881 smoke runs inside CDK deploy, SearchApiUrl from stack outputs, POST /search IAM SigV4; missing A_SEARCH_* on a seat is never a GIVEUP reason.
+- When FR #4891 (or any /parts contract) drops ?host= for Origin host, update tests/fr195-components-piece-docs.test.js pin from GET /parts?host&widgetGuid&offset&n to GET /parts?widgetGuid&offset&n plus Origin/PartsGatewayApiUrl/enabled/status needles before push.
+- FIX owner/repo#main when CI red is FR #4197 harvest-agent-skills non-ASCII: if a covering fix/main-ci ASCII PR already merged and tip SKILL.md has zero non-ASCII bytes, DONE FIX with that PR URL; do not open a second fix PR.
