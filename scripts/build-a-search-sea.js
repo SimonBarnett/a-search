@@ -2,7 +2,8 @@
 
 /**
  * FR #4827: esbuild bundle + node --experimental-sea-config + postject.
- * Writes dist/sea/a-annotator.exe, dist/sea/a-sqlsearch.exe, and dist/sea/a-searches.exe.
+ * Writes dist/sea/a-annotator.exe, dist/sea/a-sqlsearch.exe,
+ * dist/sea/a-searches.exe, and dist/sea/a-hasresults-monitor.exe (FR #4918).
  *
  * On Windows the host node.exe is copied. On Linux/macOS the matching
  * win-x64 node.exe is downloaded from nodejs.org (same version as this process,
@@ -33,6 +34,10 @@ const TARGETS = [
   {
     name: 'a-searches',
     entry: path.join(ROOT, 'scripts', 'sea', 'searches-entry.js'),
+  },
+  {
+    name: 'a-hasresults-monitor',
+    entry: path.join(ROOT, 'scripts', 'sea', 'hasresults-monitor-entry.js'),
   },
 ];
 
