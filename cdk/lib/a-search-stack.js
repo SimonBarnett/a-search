@@ -204,6 +204,8 @@ function wireResultsBucketAccess(fn, bucket) {
 
 /**
  * FR #4038 / #4030: live provider workers write a-clubs/{host}/{guid}/IN/*.
+ * FR #4917: same grant covers DONE/{searchid}-{source}.json + GUID marker
+ * CopyObject REPLACE for hasresults=1 (grantReadWrite + Copy/Tag below).
  * FR #4545 / #4441: touchLastmod -> rewriteMarkerMetadata uses CopyObject +
  * object tagging; grantReadWrite does not include s3:CopyObject (ebay AccessDenied).
  * FR #4559: annotated markers (redqueen PutObjectAnnotation) --- CopyObject /

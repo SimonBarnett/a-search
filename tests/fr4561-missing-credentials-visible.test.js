@@ -103,7 +103,10 @@ describe('FR #4561 missing_credentials visibility', () => {
     assert.match(logs[0], /cj_missing_credentials/);
     assert.doesNotMatch(logs[0], /password|secret|Bearer|api[_-]?key=/i);
 
-    assert.equal(puts.length, 0);
+    // FR #4917: missing_credentials is terminal serviced DONE (still no IN/).
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 0);
+    assert.ok(puts.some((p) => /\/DONE\//i.test(String(p.Key || ''))));
   });
 
   it('nonRetryable provider API error throws to DLQ without IN (FR #4769)', async () => {

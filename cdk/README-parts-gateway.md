@@ -45,9 +45,12 @@ returns `400` `club_domain_unresolved` and creates **nothing**. Embed-pattern
 hosts are never stored as hostkeys (gateway resolve + `ensureAclubsHost` guard).
 
 **GUID folder marker** (zero-byte `a-clubs/{hostkey}/{guid}/`): `uri`, `seen=0`,
-`clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`. `widget.json` is a plain
-seed file (no GUID folder metadata). `uri` prefers the `Referer` path; else
-`pageUri` / `uri` query. Documented choice: Referer first.
+`clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`, `enabled=0` (FR #4891),
+`hasresults=0` (FR #4917). `hasresults` flips to `1` when every source in the
+current `search-fanout.json` has a terminal `DONE/{searchid}-{source}.json`
+(`status` `serviced` or `dlq`). `widget.json` is a plain seed file (no GUID
+folder metadata). `uri` prefers the `Referer` path; else `pageUri` / `uri`
+query. Documented choice: Referer first.
 
 Host claim helpers (shared `hostFolderMeta.js`): `setHostCredentials` (scrypt
 hash format `scrypt$N$r$p$saltHex$hashHex`; Madeira auth not vendored here) and
