@@ -2,19 +2,22 @@
 'use strict';
 
 /**
- * FR-144: post-deploy smoke - fixture JWT -> POST /search (200 accept) +
- * GET /selftest (JSON shape). No live provider credentials required for the
- * accept / shape checks (provider probe failures are reported, not fatal).
+ * FR-144 / FR-194 / FR #4888: post-deploy smoke - IAM SigV4 POST /search (200 accept)
+ * + GET /selftest (JSON shape). No JWT. Default AWS credential chain.
  *
- * Usage:
- *   node scripts/smoke-deploy.js --url https://xxxx.execute-api... --jwt "$TOKEN"
- *   A_SEARCH_API_URL=... A_SEARCH_SMOKE_JWT=... node scripts/smoke-deploy.js
- *   # FR-194 multi-region label / URL pick:
- *   node scripts/smoke-deploy.js --region eu-west-2 --jwt "$TOKEN"
- *   A_SEARCH_API_URL_EUWEST2=... A_SEARCH_SMOKE_JWT=... node scripts/smoke-deploy.js --region eu-west-2
+ *   node scripts/smoke-deploy.js --url https://xxxx.execute-api...
+ *   node scripts/smoke-deploy.js --stack ASearchStack --region eu-west-2
  *
- * Never prints the JWT. Out of scope: CI hitting production without approval.
+ * Never prints credentials. Out of scope: CI hitting production without approval.
  */
+
+const { spawnSync } = require('node:child_process');
+const {
+  defaultCredentials,
+  requireCredentials,
+  regionFromExecuteApiHost,
+  signExecuteApiRequest,
+} = require('./awsExecuteApiSigV4');
 
 const DEFAULT_SEARCH_BODY = {
   q: 'a-search smoke fixture',
@@ -24,15 +27,11 @@ const DEFAULT_SEARCH_BODY = {
   sandbox: true,
 };
 
-/**
- * @param {string} baseUrl
- * @returns {string}
- */
 function normalizeBaseUrl(baseUrl) {
   const s = String(baseUrl || '').trim().replace(/\/+$/, '');
   if (!s) {
     throw new Error(
-      'FR-144: missing API base URL (pass --url or set A_SEARCH_API_URL)',
+      'FR-144: missing API base URL (pass --url, A_SEARCH_API_URL, or --stack SearchApiUrl)',
     );
   }
   if (!/^https?:\/\//i.test(s)) {
@@ -41,23 +40,6 @@ function normalizeBaseUrl(baseUrl) {
   return s;
 }
 
-/**
- * @param {string} jwt
- * @returns {string}
- */
-function requireJwt(jwt) {
-  const t = String(jwt || '').trim();
-  if (!t) {
-    throw new Error(
-      'FR-144: missing fixture JWT (pass --jwt or set A_SEARCH_SMOKE_JWT)',
-    );
-  }
-  return t;
-}
-
-/**
- * @param {unknown} body
- */
 function assertSearchAccept(body) {
   if (!body || typeof body !== 'object') {
     throw new Error('FR-144: /search body must be a JSON object');
@@ -73,11 +55,6 @@ function assertSearchAccept(body) {
   }
 }
 
-/**
- * Selftest shape per docs/endpoint-selftest.md - runner may list failed
- * providers; we only require the table shape (no live creds).
- * @param {unknown} body
- */
 function assertSelftestShape(body) {
   if (!body || typeof body !== 'object') {
     throw new Error('FR-144: /selftest body must be a JSON object');
@@ -103,32 +80,116 @@ function assertSelftestShape(body) {
   }
 }
 
-/**
- * @param {{
- *   fetchImpl?: typeof fetch,
- *   baseUrl: string,
- *   jwt: string,
- *   searchBody?: Record<string, unknown>,
- * }} opts
- */
+function defaultDescribeStacks({ stackName, region }) {
+  const args = [
+    'cloudformation',
+    'describe-stacks',
+    '--stack-name',
+    stackName,
+    '--output',
+    'json',
+  ];
+  if (region) args.push('--region', region);
+  const r = spawnSync('aws', args, { encoding: 'utf8' });
+  if (r.status !== 0) {
+    throw new Error(
+      `FR-4888: describe-stacks ${stackName} failed (exit ${r.status})`,
+    );
+  }
+  return JSON.parse(r.stdout || '{}');
+}
+
+async function resolveSearchApiUrl(opts) {
+  const stackName = String((opts && opts.stackName) || 'ASearchStack').trim();
+  const region = opts && opts.region ? String(opts.region).trim() : undefined;
+  const describe =
+    (opts && opts.describeStacks) || defaultDescribeStacks;
+  const data = await Promise.resolve(describe({ stackName, region }));
+  const stacks = (data && data.Stacks) || [];
+  const outputs = (stacks[0] && stacks[0].Outputs) || [];
+  const row = outputs.find((o) => o && o.OutputKey === 'SearchApiUrl');
+  const url = row && row.OutputValue ? String(row.OutputValue).trim() : '';
+  if (!url) {
+    throw new Error(
+      `FR-4888: stack ${stackName} has no SearchApiUrl output`,
+    );
+  }
+  return url.replace(/\/+$/, '');
+}
+
+function regionEnvSuffix(region) {
+  return String(region || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '');
+}
+
+function resolveSmokeTarget(opts) {
+  const env = (opts && opts.env) || process.env;
+  const regionRaw =
+    (opts && opts.region) || env.A_SEARCH_SMOKE_REGION || undefined;
+  const region =
+    regionRaw !== undefined && String(regionRaw).trim() !== ''
+      ? String(regionRaw).trim()
+      : undefined;
+  let baseUrl = opts && opts.url ? String(opts.url).trim() : '';
+  if (!baseUrl && region) {
+    const suf = regionEnvSuffix(region);
+    if (suf) {
+      const keyed = env[`A_SEARCH_API_URL_${suf}`];
+      if (keyed) baseUrl = String(keyed).trim();
+    }
+  }
+  if (!baseUrl) {
+    baseUrl = env.A_SEARCH_API_URL ? String(env.A_SEARCH_API_URL).trim() : '';
+  }
+  return { baseUrl: baseUrl || undefined, region };
+}
+
+function signedHeaders(opts) {
+  return signExecuteApiRequest({
+    method: opts.method,
+    url: opts.url,
+    body: opts.body,
+    credentials: requireCredentials(
+      opts.credentials || defaultCredentials(opts.env),
+    ),
+    region: opts.region,
+    now: opts.now,
+    extraHeaders: opts.extraHeaders,
+  });
+}
+
 async function runSmoke(opts) {
   const fetchImpl = opts.fetchImpl || globalThis.fetch;
   if (typeof fetchImpl !== 'function') {
     throw new Error('FR-144: fetch is not available');
   }
   const base = normalizeBaseUrl(opts.baseUrl);
-  const jwt = requireJwt(opts.jwt);
   const searchBody = opts.searchBody || DEFAULT_SEARCH_BODY;
-  const auth = { Authorization: `Bearer ${jwt}` };
-
-  const searchRes = await fetchImpl(`${base}/search`, {
+  const body = JSON.stringify(searchBody);
+  const searchUrl = `${base}/search`;
+  const creds = opts.credentials || defaultCredentials(opts.env);
+  const region =
+    opts.region || regionFromExecuteApiHost(new URL(base).host) || undefined;
+  const searchHeaders = signedHeaders({
     method: 'POST',
-    headers: {
-      ...auth,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+    url: searchUrl,
+    body,
+    credentials: creds,
+    region,
+    now: opts.now,
+    extraHeaders: {
+      accept: 'application/json',
+      'content-type': 'application/json',
     },
-    body: JSON.stringify(searchBody),
+    env: opts.env,
+  });
+
+  const searchRes = await fetchImpl(searchUrl, {
+    method: 'POST',
+    headers: searchHeaders,
+    body,
   });
   const searchText = await searchRes.text();
   let searchJson;
@@ -146,12 +207,20 @@ async function runSmoke(opts) {
   }
   assertSearchAccept(searchJson);
 
-  const selfRes = await fetchImpl(`${base}/selftest?sandbox=true`, {
+  const selfUrl = `${base}/selftest?sandbox=true`;
+  const selfHeaders = signedHeaders({
     method: 'GET',
-    headers: {
-      ...auth,
-      Accept: 'application/json',
-    },
+    url: selfUrl,
+    body: '',
+    credentials: creds,
+    region,
+    now: opts.now,
+    extraHeaders: { accept: 'application/json' },
+    env: opts.env,
+  });
+  const selfRes = await fetchImpl(selfUrl, {
+    method: 'GET',
+    headers: selfHeaders,
   });
   const selfText = await selfRes.text();
   let selfJson;
@@ -183,67 +252,32 @@ function argValue(flag) {
   return undefined;
 }
 
-/**
- * FR-194: sanitize region token for env key suffix (eu-west-2 -> EUWEST2).
- * @param {string} region
- * @returns {string}
- */
-function regionEnvSuffix(region) {
-  return String(region || '')
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '');
-}
-
-/**
- * Resolve API URL: --url, else A_SEARCH_API_URL_<REGION>, else A_SEARCH_API_URL.
- * @param {{ url?: string, region?: string, env?: NodeJS.ProcessEnv }} opts
- * @returns {{ baseUrl: string|undefined, region: string|undefined }}
- */
-function resolveSmokeTarget(opts) {
-  const env = (opts && opts.env) || process.env;
-  const regionRaw =
-    (opts && opts.region) ||
-    env.A_SEARCH_SMOKE_REGION ||
-    undefined;
-  const region =
-    regionRaw !== undefined && String(regionRaw).trim() !== ''
-      ? String(regionRaw).trim()
-      : undefined;
-  let baseUrl = opts && opts.url ? String(opts.url).trim() : '';
-  if (!baseUrl && region) {
-    const suf = regionEnvSuffix(region);
-    if (suf) {
-      const keyed = env[`A_SEARCH_API_URL_${suf}`];
-      if (keyed) baseUrl = String(keyed).trim();
-    }
-  }
-  if (!baseUrl) {
-    baseUrl = env.A_SEARCH_API_URL ? String(env.A_SEARCH_API_URL).trim() : '';
-  }
-  return { baseUrl: baseUrl || undefined, region };
-}
-
 async function main() {
-  const { baseUrl, region } = resolveSmokeTarget({
+  const stack = argValue('--stack') || process.env.A_SEARCH_STACK || 'ASearchStack';
+  const { baseUrl: fromEnv, region } = resolveSmokeTarget({
     url: argValue('--url'),
     region: argValue('--region'),
   });
-  const jwt = argValue('--jwt') || process.env.A_SEARCH_SMOKE_JWT;
-  const result = await runSmoke({ baseUrl, jwt });
-  if (region) {
-    result.region = region;
+  let baseUrl = fromEnv;
+  if (!baseUrl) {
+    baseUrl = await resolveSearchApiUrl({ stackName: stack, region });
   }
+  const result = await runSmoke({
+    baseUrl,
+    region,
+    env: process.env,
+  });
+  if (region) result.region = region;
   process.stdout.write(JSON.stringify(result) + '\n');
 }
 
 module.exports = {
   runSmoke,
   normalizeBaseUrl,
-  requireJwt,
   assertSearchAccept,
   assertSelftestShape,
   resolveSmokeTarget,
+  resolveSearchApiUrl,
   regionEnvSuffix,
   DEFAULT_SEARCH_BODY,
 };
