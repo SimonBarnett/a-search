@@ -93,6 +93,7 @@ async function loadPartsStaging(pool, rows) {
   table.columns.add('Source', sql.NVarChar(64), { nullable: false });
   table.columns.add('FeedKey', sql.NVarChar(128), { nullable: false });
   table.columns.add('MerchantProductId', sql.NVarChar(256), { nullable: false });
+  table.columns.add('MerchantSku', sql.NVarChar(256), { nullable: true });
   table.columns.add('Env', sql.NVarChar(16), { nullable: false });
   table.columns.add('Title', sql.NVarChar(512), { nullable: true });
   table.columns.add('Description', sql.NVarChar(sql.MAX), { nullable: true });
@@ -112,6 +113,7 @@ async function loadPartsStaging(pool, rows) {
         r.Source,
         r.FeedKey,
         r.MerchantProductId,
+        r.MerchantSku || null,
         r.Env,
         r.Title || null,
         r.Description || null,
@@ -206,13 +208,14 @@ async function mergePartsFromStaging(pool, source, feedKey, env, runId) {
     .query(`
 MERGE dbo.Parts AS t
 USING (
-  SELECT Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
+  SELECT Source, FeedKey, MerchantProductId, MerchantSku, Env, Title, Description, Url, ImageUrl,
          Price, Currency, Stock, ContentHash
   FROM dbo.PartsStaging
   WHERE Source=@Source AND FeedKey=@FeedKey AND Env=@Env
 ) AS s
 ON t.Source=s.Source AND t.FeedKey=s.FeedKey AND t.MerchantProductId=s.MerchantProductId AND t.Env=s.Env
 WHEN MATCHED THEN UPDATE SET
+  MerchantSku=s.MerchantSku,
   Title=s.Title,
   Description=s.Description,
   Url=s.Url,
@@ -226,10 +229,10 @@ WHEN MATCHED THEN UPDATE SET
   LastSeenRunId=@RunId,
   UpdatedAt=SYSUTCDATETIME()
 WHEN NOT MATCHED BY TARGET THEN INSERT
-  (Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
+  (Source, FeedKey, MerchantProductId, MerchantSku, Env, Title, Description, Url, ImageUrl,
    Price, Currency, Stock, ContentHash, DeletedAt, LastSeenRunId)
   VALUES
-  (s.Source, s.FeedKey, s.MerchantProductId, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
+  (s.Source, s.FeedKey, s.MerchantProductId, s.MerchantSku, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
    s.Price, s.Currency, s.Stock, s.ContentHash, NULL, @RunId);
 
 SELECT @@ROWCOUNT AS MergeRows;
