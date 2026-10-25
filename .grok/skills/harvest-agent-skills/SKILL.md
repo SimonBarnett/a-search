@@ -683,3 +683,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Walrus Parts full-text: FREETEXTTABLE ranked match; bind NVarChar(4000) not nvarchar(max); keep multi-word excludes as one quoted CONTAINS phrase.
 - After FR #5022, walrus SQL drain deploy manifest must omit redqueen/src and assert shared/widgets/pageSelect.js; fold main before DONE FIX when tip still requires redqueen pageSelect.
 - SQL FREETEXT: stripAnnotatorLocationCurrency before @q; honour queries[].maxResults capped by A_SEARCH_SQL_TOP; filter ft.RANK >= A_SEARCH_SQL_MIN_RANK (default 50); keep product parentheticals.
+- When hasresults flips with empty live.json, write GUID feedback/no-results.json and upsert a-clubs/_ops/need-vendors-by-sector.json (sector count++ dedupe); annotator must file enough brand/model/type searches; 0 results means need more vendors --- providers never widen
