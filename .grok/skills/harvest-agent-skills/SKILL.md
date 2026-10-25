@@ -685,3 +685,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - SQL FREETEXT: stripAnnotatorLocationCurrency before @q; honour queries[].maxResults capped by A_SEARCH_SQL_TOP; filter ft.RANK >= A_SEARCH_SQL_MIN_RANK (default 50); keep product parentheticals.
 - SQL Parts match: admit only via CONTAINS exact brand/model gates (extractBrandModelGateTokens); FREETEXT/RANK orders gated rows never admits; no gate tokens => return [] without SELECT
 - When hasresults flips with empty live.json, write GUID feedback/no-results.json and upsert a-clubs/_ops/need-vendors-by-sector.json (sector count++ dedupe); annotator must file enough brand/model/type searches; 0 results means need more vendors --- providers never widen
+- a-search Kelkoo: no /madeira SSM; enable requires gitignored providers/live/kelkoo/.env with KELKOO_API_KEY+KELKOO_PUBLISHER_ID on deploy host; synth soft-disable warning must name missing file path and keys
