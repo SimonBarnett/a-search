@@ -184,7 +184,10 @@ function Get-FolderS3ObjectMeta {
         [scriptblock]$AwsHeadObject,
         [scriptblock]$AwsGetObjectTagging,
         [scriptblock]$RcloneLsJson,
-        [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto'
+        [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto',
+        # Selection / due-check only needs user metadata from head-object; skip the
+        # second get-object-tagging round-trip (halves scan time for large providers).
+        [switch]$SkipTags
     )
     $useAws = $Backend -eq 'aws'
     $useRclone = $Backend -eq 'rclone'
@@ -214,20 +217,6 @@ function Get-FolderS3ObjectMeta {
                 finally { $ErrorActionPreference = $prev }
             }
         }
-        $tagFn = $AwsGetObjectTagging
-        if (-not $tagFn) {
-            $tagFn = {
-                param($b, $k)
-                $prev = $ErrorActionPreference
-                $ErrorActionPreference = 'Continue'
-                try {
-                    $raw = aws s3api get-object-tagging --bucket $b --key $k --output json 2>&1
-                    if ($LASTEXITCODE -ne 0) { return $null }
-                    return $raw
-                }
-                finally { $ErrorActionPreference = $prev }
-            }
-        }
         try {
             $headRaw = & $headFn $Bucket $Key
         }
@@ -242,11 +231,27 @@ function Get-FolderS3ObjectMeta {
                 $metadata[$p.Name] = [string]$p.Value
             }
         }
-        $tagRaw = & $tagFn $Bucket $Key
-        if ($tagRaw) {
-            $tagDoc = ConvertFrom-FolderS3Json $tagRaw
-            foreach ($t in @($tagDoc.TagSet)) {
-                if ($t -and $t.Key) { $tags[[string]$t.Key] = [string]$t.Value }
+        if (-not $SkipTags) {
+            $tagFn = $AwsGetObjectTagging
+            if (-not $tagFn) {
+                $tagFn = {
+                    param($b, $k)
+                    $prev = $ErrorActionPreference
+                    $ErrorActionPreference = 'Continue'
+                    try {
+                        $raw = aws s3api get-object-tagging --bucket $b --key $k --output json 2>&1
+                        if ($LASTEXITCODE -ne 0) { return $null }
+                        return $raw
+                    }
+                    finally { $ErrorActionPreference = $prev }
+                }
+            }
+            $tagRaw = & $tagFn $Bucket $Key
+            if ($tagRaw) {
+                $tagDoc = ConvertFrom-FolderS3Json $tagRaw
+                foreach ($t in @($tagDoc.TagSet)) {
+                    if ($t -and $t.Key) { $tags[[string]$t.Key] = [string]$t.Value }
+                }
             }
         }
     }
