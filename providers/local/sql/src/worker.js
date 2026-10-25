@@ -2,7 +2,7 @@
 
 /**
  * FR #4447: sql local provider worker for walrus SQL SQS drain.
- * SELECT dbo.Parts → normalize → schema-valid a-clubs IN/{searchid}-sql.json.
+ * SELECT dbo.Parts → normalize → schema-valid a-clubs IN/sql.json (FR #4976).
  * No AWS Lambda path; runs on walrus only (outbound HTTPS SQS + local MSSQL).
  */
 
@@ -16,9 +16,34 @@ const {
 } = require('../../../../worker/lib/normalizeProduct');
 const {
   buildInResult,
-  inResultKey,
   validateInResult,
 } = require('../../../../shared/search/inResultSchema');
+
+/**
+ * FR #4976: SQL drain always overwrites IN/sql.json. Live providers keep
+ * inResultKey (`{searchid}-{source}.json`).
+ * @param {{ hostkey: string, guid: string }} parts
+ * @returns {string}
+ */
+function sqlInResultKey(parts) {
+  const hostkey = String((parts && parts.hostkey) || '').trim();
+  const guid = String((parts && parts.guid) || '').trim();
+  if (
+    !hostkey ||
+    !guid ||
+    hostkey.includes('..') ||
+    hostkey.includes('/') ||
+    hostkey.includes('\\') ||
+    guid.includes('..') ||
+    guid.includes('/') ||
+    guid.includes('\\')
+  ) {
+    const err = new Error('invalid_in_path_segment');
+    err.code = 'invalid_in_path_segment';
+    throw err;
+  }
+  return `${hostkey}/${guid}/IN/sql.json`;
+}
 const {
   logProviderDoneZero,
 } = require('../../../../shared/search/writeLiveProviderInResult');
@@ -141,12 +166,7 @@ async function run(msg, deps) {
     };
   }
 
-  const Key = inResultKey({
-    hostkey,
-    guid,
-    searchid,
-    source: 'sql',
-  });
+  const Key = sqlInResultKey({ hostkey, guid });
   const Body = `${JSON.stringify(body, null, 2)}\n`;
 
   if (!deps || typeof deps.putObject !== 'function') {
@@ -180,6 +200,7 @@ async function run(msg, deps) {
 
 module.exports = {
   run,
+  sqlInResultKey,
   normalizePart,
   identityFromMsg,
   defaultQueryParts,
