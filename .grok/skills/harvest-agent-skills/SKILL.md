@@ -673,3 +673,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
 - GUID marker ready-flag is enabled (not init); /parts must not promote IN→live — promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
 - a-search #4881 smoke runs inside CDK deploy, SearchApiUrl from stack outputs, POST /search IAM SigV4; missing A_SEARCH_* on a seat is never a GIVEUP reason.
+- Stale harvest GIVEUP on unset A_SEARCH_SMOKE_JWT is wrong after #4888 IAM smoke; FIX lesson to CDK+IAM and never GIVEUP for missing seat env
