@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -70,6 +70,28 @@ parameters again so hand-set nssm values are not dropped).
 If any required value is missing at process start, the drain prints
 `walrus-sql-drain missing config: KEY, ...` and exits **before** any
 `ReceiveMessage`, so nothing is pushed to the DLQ.
+
+## Full-text SELECT grant (FR #5004)
+
+`WONDERLAND\a-search-drain` needs **SELECT only** on `a_search.dbo.Parts` so
+CONTAINSTABLE can run. Do not grant write privileges. Do not touch madeiradb.
+
+```sql
+USE a_search;
+GRANT SELECT ON dbo.Parts TO [WONDERLAND\a-search-drain];
+-- Confirm as the drain login (read-only):
+EXECUTE AS LOGIN = 'WONDERLAND\a-search-drain';
+SELECT TOP (1) p.PartId
+FROM CONTAINSTABLE(dbo.Parts, (Title, Description), '"servo"') AS ft
+INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY];
+REVERT;
+```
+
+The worker sanitises annotator queries (strip punctuation and CONTAINS operators,
+drop English noise words, quote remaining tokens, OR includes / AND NOT excludes).
+Informational SQL messages (severity < 11, including noise-word notices) are
+0-row results, not errors. A real SQL error is logged as
+`sql_query_failed number=... message=... contains=...` (never bare `EREQUEST`).
 
 ## Failure behaviour (FR #4534)
 
