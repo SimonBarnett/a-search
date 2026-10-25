@@ -15,7 +15,7 @@ Target tag: **`v0.1.0`** (must match the root `VERSION` file).
 - [ ] `npm run synth` green (or in-process synth pins used by CI)
 - [ ] GitHub Actions on `main` green for the tip being tagged (FR-139)
 - [ ] Deploy playbook followed on the target account/region: [deploy.md](deploy.md) (FR-140 / FR-141)
-- [ ] Post-deploy smoke pass: `npm run smoke-deploy` with IAM SigV4 (FR-144 / FR #4888)
+- [ ] Post-deploy smoke pass: included in `npm run deploy` (FR #4881 runs `smoke-deploy` with IAM SigV4 against SearchApiUrl after cdk). Manual re-smoke: `npm run smoke-deploy` (FR-144 / FR #4888). No hand-set JWT / `A_SEARCH_API_URL` required for the deploy path.
 - [ ] UAT S19 live `/selftest`: `npm run smoke-selftest` (GET then POST) with IAM SigV4 (FR #4882 / FR #4888). Never print credentials.
 - [ ] Secrets stay out of git (synth secret-scan / secrets-matrix)
 - [ ] Stay-dark Phase-2 providers remain `enabled=false` (FR-061 / FR-126)
@@ -32,4 +32,4 @@ Target tag: **`v0.1.0`** (must match the root `VERSION` file).
 - DoD metrics D1-D7: [release-installable.md](release-installable.md)
 - Gap table: [release-gap-aws-installable-2026-10-09.md](release-gap-aws-installable-2026-10-09.md)
 - Deploy: [deploy.md](deploy.md)
-- Smoke: `scripts/smoke-deploy.js` (FR-144)
+- Smoke: `scripts/smoke-deploy.js` (FR-144); wired into `npm run deploy` via `scripts/cdk-deploy-with-smoke.js` (FR #4881)
