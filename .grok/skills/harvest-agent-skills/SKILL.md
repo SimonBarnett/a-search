@@ -644,3 +644,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - UAT S19 live /selftest is npm run smoke-selftest (GET then POST) with A_SEARCH_API_URL and A_SEARCH_SMOKE_JWT; fail-closed when unset; never print the JWT; do not use POST /search for the S19 probe.
 - Imported a-clubs EventBridge: use Bucket.fromBucketName + enableEventBridgeNotification (Managed=false merges existing Topic/Queue/Lambda); do not hand-put EventBridgeConfiguration.
 - When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.
+- After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
