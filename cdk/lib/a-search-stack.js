@@ -959,6 +959,14 @@ class ASearchStack extends cdk.Stack {
         resources: ['arn:aws:s3:::a-affiliates/*'],
       }),
     );
+    // FR #5095: HeadObject on a missing key is 403 without ListBucket.
+    entry.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AgentSearchAffiliatesList',
+        actions: ['s3:ListBucket'],
+        resources: ['arn:aws:s3:::a-affiliates'],
+      }),
+    );
     // FR #4265: remember one searchid per GUID so a retry does not fan out twice.
     // FR #4712 / #4563: syncSearchesSearchid also PutObjects host/guid/searches.json;
     // grantRead alone is Get*; without PutObject on searches.json entry AccessDenied.
