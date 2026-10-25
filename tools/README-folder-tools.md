@@ -131,7 +131,7 @@ Import dated affiliate feeds into **`a_search` on `walrus\asearch`**. Provider i
 | `S:\a-affiliates\{provider}` | That provider when enabled |
 | `S:\a-affiliates\{provider}\{id}` | That merchant only |
 
-Upserts `dbo.Parts` and `dbo.AffiliateOffers`; soft-deletes rows missing from the batch; **deletes** the dated CSV/JSON after success. `-WhatIf` = parse + safety only.
+Upserts `dbo.Parts` and `dbo.AffiliateOffers`; soft-deletes rows missing from the batch; **deletes** the dated CSV/JSON after success. `-WhatIf` = parse + safety only. Each live parts load inserts `ingest.ImportRuns` / `ImportRunFeeds` (and `ImportFiles` when a file key is known) and stamps `dbo.Parts.LastSeenRunId` (FR #4947). Do not backfill the existing 1.8M NULL ids without Simon.
 
 ```powershell
 cd S:\a-affiliates\awin\100597

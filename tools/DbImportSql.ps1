@@ -133,6 +133,12 @@ SELECT COUNT(*) FROM dbo.Parts WHERE Source=@Source AND FeedKey=@FeedKey AND Env
         }
     }
 
+    $runId = [int64](Get-DbImportScalar -Connection $Connection -Sql @"
+INSERT INTO ingest.ImportRuns (Host, Mode, Status)
+OUTPUT INSERTED.RunId
+VALUES (@Host, N'run', N'running');
+"@ -Params @{ '@Host' = $env:COMPUTERNAME })
+
     Clear-DbImportPartsStaging -Connection $Connection -Source $Source -FeedKey $FeedKey -Env $Env
 
     $table = New-Object System.Data.DataTable
@@ -195,14 +201,14 @@ ON t.Source=s.Source AND t.FeedKey=s.FeedKey AND t.MerchantProductId=s.MerchantP
 WHEN MATCHED THEN UPDATE SET
   Title=s.Title, Description=s.Description, Url=s.Url, ImageUrl=s.ImageUrl,
   Price=s.Price, Currency=s.Currency, Stock=s.Stock, ContentHash=s.ContentHash,
-  DeletedAt=NULL, UpdatedAt=SYSUTCDATETIME()
+  DeletedAt=NULL, LastSeenRunId=@RunId, UpdatedAt=SYSUTCDATETIME()
 WHEN NOT MATCHED BY TARGET THEN INSERT
   (Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
-   Price, Currency, Stock, ContentHash, DeletedAt)
+   Price, Currency, Stock, ContentHash, DeletedAt, LastSeenRunId)
   VALUES
   (s.Source, s.FeedKey, s.MerchantProductId, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
-   s.Price, s.Currency, s.Stock, s.ContentHash, NULL);
-"@ -Params @{ '@Source' = $Source; '@FeedKey' = $FeedKey; '@Env' = $Env })
+   s.Price, s.Currency, s.Stock, s.ContentHash, NULL, @RunId);
+"@ -Params @{ '@Source' = $Source; '@FeedKey' = $FeedKey; '@Env' = $Env; '@RunId' = $runId })
 
     $deleted = [int](Invoke-DbImportNonQuery -Connection $Connection -TimeoutSec 600 -Sql @"
 UPDATE dbo.Parts
@@ -217,9 +223,21 @@ WHERE Source=@Source AND FeedKey=@FeedKey AND Env=@Env
 
     Clear-DbImportPartsStaging -Connection $Connection -Source $Source -FeedKey $FeedKey -Env $Env
 
+    [void](Invoke-DbImportNonQuery -Connection $Connection -Sql @"
+INSERT INTO ingest.ImportRunFeeds (RunId, ProviderId, FeedKey, Status, RowsStaged, RowsInserted, RowsDeleted)
+VALUES (@RunId, @ProviderId, @FeedKey, N'ok', @RowsStaged, @RowsInserted, @RowsDeleted);
+"@ -Params @{
+        '@RunId' = $runId; '@ProviderId' = $Source; '@FeedKey' = $FeedKey
+        '@RowsStaged' = $Rows.Count; '@RowsInserted' = $Rows.Count; '@RowsDeleted' = $deleted
+    })
+    [void](Invoke-DbImportNonQuery -Connection $Connection -Sql @"
+UPDATE ingest.ImportRuns SET EndedAt = SYSUTCDATETIME(), Status = N'ok', ExitCode = 0 WHERE RunId = @RunId;
+"@ -Params @{ '@RunId' = $runId })
+
     return [pscustomobject]@{
         dryRun = $false; parsed = $Rows.Count; existing = $existing
         wouldRemove = $wouldRemove; upserted = $Rows.Count; deleted = $deleted
+        runId = $runId
     }
 }
 
