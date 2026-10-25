@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * MRB #4998: hostile pin — stage-provider-worker-lambda-asset soft-copies
- * redqueen/src/pageSelect.js when present; never hard-require in fixtures.
+ * MRB #4998: hostile pin --- stage-provider-worker-lambda-asset soft-copies
+ * shared/widgets/pageSelect.js (FR #5022); never hard-require redqueen pageSelect in fixtures.
  */
 
 const { describe, it } = require('node:test');
@@ -20,7 +20,7 @@ const SKILL = path.join(
 );
 
 const NEEDLE =
-  'stage-provider-worker-lambda-asset: copy redqueen/src/pageSelect.js when present for promoteInToLive; never hard-require it in minimal test fixtures';
+  'stage-provider-worker-lambda-asset: pageSelect lives in shared/widgets (FR #5022); shared/** stage covers promoteInToLive; never hard-require redqueen pageSelect in minimal test fixtures';
 
 describe('MRB #4998 hostile pageSelect soft-stage lesson', () => {
   it('SKILL.md UTF-8 no-BOM pure ASCII', () => {

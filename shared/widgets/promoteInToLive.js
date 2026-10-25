@@ -12,7 +12,7 @@ const {
   safeHostFolderName,
 } = require('./hostFolderMeta');
 const { assertWidgetGuid } = require('./widgetPath');
-const { filterPartsByPage } = require('../../redqueen/src/pageSelect');
+const { filterPartsByPage } = require('./pageSelect');
 
 /**
  * @param {unknown} host
