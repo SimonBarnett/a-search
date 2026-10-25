@@ -283,7 +283,12 @@ try {
     else { $provPath = Join-Path $loc.Path $jobs[0].Provider }
     $cfg = Read-DbImportConfig -ImportRoot (Join-Path $provPath '_import')
     $server = if ($cfg.server) { [string]$cfg.server } else { 'walrus\asearch' }
-    $database = if ($cfg.database) { [string]$cfg.database } else { 'a_search' }
+    $envDb = if ($env:MSSQL_DATABASE) { [string]$env:MSSQL_DATABASE.Trim() } else { '' }
+    $cfgDb = if ($cfg.database) { [string]$cfg.database.Trim() } else { '' }
+    $database = if ($envDb) { $envDb } elseif ($cfgDb) { $cfgDb } else { '' }
+    if (-not $database) {
+        throw 'needs_mssql_database: set MSSQL_DATABASE or _import/config.json database (no silent a_search default)'
+    }
 
     Write-FolderToolStep ("dbimport merchants={0} server={1} db={2} dryRun={3}" -f $jobs.Count, $server, $database, $DryRun)
     $conn = New-DbImportConnection -Server $server -Database $database
