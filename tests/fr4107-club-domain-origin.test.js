@@ -155,6 +155,8 @@ describe('FR #4107 pageParts + handler: club folder, never embed folder', () => 
       putObjectTagging: s3.putObjectTagging,
       mint: mintFixed([4, 1, 0, 7, 4, 1, 0]),
     });
+    assert.equal(page.status, 'searching');
+    assert.equal(page.enabled, 0);
     assert.equal(page.init, 0);
     assert.ok(s3.objects.has(hostMarkerKey(CLUB)));
     assert.equal(
@@ -221,7 +223,9 @@ describe('FR #4107 pageParts + handler: club folder, never embed folder', () => 
         mint: mintFixed([2, 2, 2, 2, 2, 2, 2]),
       },
     );
-    assert.equal(res.statusCode, 200);
+    // FR #4891: create/searching returns 202.
+    assert.equal(res.statusCode, 202);
+    assert.equal(JSON.parse(res.body).status, 'searching');
     assert.ok(s3.objects.has(hostMarkerKey(CLUB)));
     assert.equal(s3.objects.has(hostMarkerKey('spoof.example.com')), false);
     assert.equal(

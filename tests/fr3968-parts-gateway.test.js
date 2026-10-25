@@ -14,6 +14,7 @@ const {
 const {
   safeHostFolderName,
   touchLastmod,
+  setEnabled,
   setInit,
   setHostCredentials,
   setHostStripe,
@@ -236,7 +237,9 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     assert.equal(w.metadata.seen, '0');
     assert.equal(w.metadata.clicks, '0');
     assert.equal(w.metadata.annotated, '0');
-    assert.equal(w.metadata.init, '0');
+    assert.equal(w.metadata.enabled, '0');
+    assert.equal(w.metadata.hasresults, '0');
+    assert.equal(Object.prototype.hasOwnProperty.call(w.metadata, 'init'), false);
     assert.ok(w.metadata.since);
     assert.ok(w.metadata.lastmod);
     const markerKey = guidMarkerKey('w.example.com', GUID);
@@ -244,7 +247,8 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
     const marker = s3.objects.get(markerKey);
     assert.equal(marker.Body.length, 0);
     assert.equal(marker.Metadata.uri, '/page/one');
-    assert.equal(marker.Metadata.init, '0');
+    assert.equal(marker.Metadata.enabled, '0');
+    assert.equal(Object.prototype.hasOwnProperty.call(marker.Metadata, 'init'), false);
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'widget.json')));
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'live.json')));
     assert.ok(s3.objects.has(widgetFileKey('w.example.com', GUID, 'searches.json')));
@@ -286,7 +290,7 @@ describe('FR #3968 ensure host + widget on a-clubs', () => {
   });
 });
 
-describe('FR #3968 lastmod touchLastmod setInit', () => {
+describe('FR #3968 lastmod touchLastmod setEnabled', () => {
   it('touchLastmod bumps lastmod and preserves other metadata + tags', async () => {
     const s3 = createMemoryS3();
     const key = 'touch.example.com/';
@@ -323,7 +327,7 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
     assert.equal(tags.TagSet.find((t) => t.Key === 'hasdns').Value, '1');
   });
 
-  it('setInit sets init=1 on GUID folder marker, bumps lastmod, never back to 0', async () => {
+  it('setEnabled sets enabled=1 on GUID folder marker, bumps lastmod, never back to 0', async () => {
     const s3 = createMemoryS3();
     const key = guidMarkerKey('init.example.com', GUID);
     await s3.putObject({
@@ -336,28 +340,38 @@ describe('FR #3968 lastmod touchLastmod setInit', () => {
         since: '2026-01-01T00:00:00.000Z',
         lastmod: '2026-01-01T00:00:00.000Z',
         annotated: '0',
-        init: '0',
+        enabled: '0',
       },
     });
-    const r = await setInit({
+    const r = await setEnabled({
       Key: key,
       now: new Date('2026-10-18T13:00:00.000Z'),
       headObject: s3.headObject,
       getObject: s3.getObject,
       copyObject: s3.copyObject,
     });
-    assert.equal(r.init, 1);
-    assert.equal(r.metadata.init, '1');
+    assert.equal(r.enabled, 1);
+    assert.equal(r.metadata.enabled, '1');
     assert.equal(r.lastmod, '2026-10-18T13:00:00.000Z');
-    const again = await setInit({
+    const again = await setEnabled({
       Key: key,
       now: new Date('2026-10-18T14:00:00.000Z'),
       headObject: s3.headObject,
       getObject: s3.getObject,
       copyObject: s3.copyObject,
     });
-    assert.equal(again.metadata.init, '1');
+    assert.equal(again.metadata.enabled, '1');
     assert.equal(again.lastmod, '2026-10-18T14:00:00.000Z');
+    // Compat alias still writes enabled (not init).
+    const viaAlias = await setInit({
+      Key: key,
+      now: new Date('2026-10-18T15:00:00.000Z'),
+      headObject: s3.headObject,
+      getObject: s3.getObject,
+      copyObject: s3.copyObject,
+    });
+    assert.equal(viaAlias.metadata.enabled, '1');
+    assert.equal(viaAlias.metadata.init, undefined);
   });
 
   it('seed writes bump GUID and host lastmod; plain read does not', async () => {
@@ -592,7 +606,9 @@ describe('FR #3968 folder events SQS', () => {
       sendMessage: q.sendMessage,
       folderEventsQueueUrl: 'https://sqs.example/a-clubs-new-folders.fifo',
     });
+    assert.equal(page1.status, 'searching');
     assert.equal(page1.init, 0);
+    assert.equal(page1.enabled, 0);
     assert.equal(q.messages.length, 2);
     const bodies = q.messages.map((m) => JSON.parse(String(m.MessageBody).trim()));
     assert.equal(bodies[0].hostkey, 'evt.example.com');
@@ -618,7 +634,7 @@ describe('FR #3968 folder events SQS', () => {
 });
 
 describe('FR #3968 pagePartsAclubs + handler', () => {
-  it('auto-creates host+guid and returns empty parts page with init 0', async () => {
+  it('auto-creates host+guid and returns searching (enabled 0)', async () => {
     const s3 = createMemoryS3();
     const page = await pagePartsAclubs({
       origin: 'https://page.example.com',
@@ -636,7 +652,10 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
     assert.equal(page.layout, 'horizontal');
     assert.deepEqual(page.parts, []);
     assert.equal(page.nextOffset, null);
+    assert.equal(page.status, 'searching');
     assert.equal(page.init, 0);
+    assert.equal(page.enabled, 0);
+    assert.equal(page.retryAfterMs, 5000);
     assert.equal(isChecksumValid(page.userid), true);
     assert.equal(page.customerNumber, undefined);
   });
@@ -656,10 +675,12 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
     });
     assert.ok(s3.objects.has(hostMarkerKey('real.example.com')));
     assert.equal(s3.objects.has(hostMarkerKey('ignored.example.com')), false);
+    assert.equal(page.status, 'searching');
     assert.equal(page.init, 0);
+    assert.equal(page.enabled, 0);
   });
 
-  it('pages live.json and sets nextOffset', async () => {
+  it('pages live.json and sets nextOffset when enabled=1', async () => {
     const s3 = createMemoryS3();
     await pagePartsAclubs({
       origin: 'https://live.example.com',
@@ -671,10 +692,10 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
       copyObject: s3.copyObject,
       mint: mintFixed([5, 5, 5, 5, 5, 5, 5]),
     });
-    // Force init=1 so parts render from live.json without Searching promotion path
+    // Force enabled=1 so parts render from live.json (FR #4891: /parts does not promote)
     const gKey = guidMarkerKey('live.example.com', GUID);
     const gObj = s3.objects.get(gKey);
-    gObj.Metadata = { ...gObj.Metadata, init: '1' };
+    gObj.Metadata = { ...gObj.Metadata, enabled: '1' };
     const liveKey = widgetFileKey('live.example.com', GUID, 'live.json');
     s3.objects.set(liveKey, {
       Body: Buffer.from(
@@ -694,12 +715,14 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
       listObjectsV2: s3.listObjectsV2,
       copyObject: s3.copyObject,
     });
+    assert.equal(page.status, 'ok');
     assert.equal(page.parts.length, 2);
     assert.equal(page.nextOffset, 2);
     assert.equal(page.init, 1);
+    assert.equal(page.enabled, 1);
   });
 
-  it('promotes IN/ into live.json and setInit when init is 0', async () => {
+  it('does not promote IN/ when enabled=0 even if IN/ has files (FR #4891)', async () => {
     const s3 = createMemoryS3();
     await pagePartsAclubs({
       origin: 'https://promo.example.com',
@@ -716,6 +739,7 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
       Body: Buffer.from(JSON.stringify([{ id: 'a' }, { id: 'b' }]), 'utf8'),
       Metadata: {},
     });
+    const putsBefore = [...s3.objects.keys()];
     const page = await pagePartsAclubs({
       origin: 'https://promo.example.com',
       widgetGuid: GUID,
@@ -727,23 +751,21 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
       getObjectTagging: s3.getObjectTagging,
       putObjectTagging: s3.putObjectTagging,
     });
-    assert.equal(page.init, 1);
-    assert.equal(page.parts.length, 2);
+    assert.equal(page.status, 'searching');
+    assert.equal(page.init, 0);
+    assert.equal(page.enabled, 0);
+    assert.deepEqual(page.parts, []);
     const live = JSON.parse(
       s3.objects
         .get(widgetFileKey('promo.example.com', GUID, 'live.json'))
         .Body.toString('utf8'),
     );
-    assert.equal(live.length, 2);
+    assert.deepEqual(live, []);
     assert.equal(
-      s3.objects.get(guidMarkerKey('promo.example.com', GUID)).Metadata.init,
-      '1',
+      s3.objects.get(guidMarkerKey('promo.example.com', GUID)).Metadata.enabled,
+      '0',
     );
-    assert.deepEqual(
-      s3.objects.get(widgetFileKey('promo.example.com', GUID, 'widget.json')).Metadata ||
-        {},
-      {},
-    );
+    assert.ok(putsBefore.includes(widgetFileKey('promo.example.com', GUID, 'live.json')));
   });
 
   it('handler returns 400 origin_required when Origin missing', async () => {
@@ -777,9 +799,12 @@ describe('FR #3968 pagePartsAclubs + handler', () => {
         mint: mintFixed([1, 1, 1, 1, 1, 1, 9]),
       },
     );
-    assert.equal(res.statusCode, 200);
+    assert.equal(res.statusCode, 202);
+    assert.equal(res.headers['retry-after'], '5');
     const body = JSON.parse(res.body);
+    assert.equal(body.status, 'searching');
     assert.equal(body.init, 0);
+    assert.equal(body.enabled, 0);
     assert.ok(s3.objects.has(hostMarkerKey('right.example.com')));
   });
 
@@ -828,7 +853,7 @@ describe('FR #3968 widget buildPartsUrl + Searching', () => {
     assert.match(u, /pageUri=%2Fpath/);
   });
 
-  it('renderPage shows Searching when init is 0', () => {
+  it('renderPage shows Searching for parts... when searching/init 0', () => {
     const el = {
       attrs: {},
       innerHTML: '',
@@ -848,9 +873,13 @@ describe('FR #3968 widget buildPartsUrl + Searching', () => {
       },
       appendChild() {},
     };
-    renderPage(el, { init: 0, parts: [{ id: 1 }], layout: 'horizontal' }, 'horizontal');
+    renderPage(
+      el,
+      { status: 'searching', init: 0, enabled: 0, parts: [], layout: 'horizontal' },
+      'horizontal',
+    );
     assert.equal(el.attrs['data-state'], 'searching');
-    assert.match(el.innerHTML, /Searching/);
+    assert.match(el.innerHTML, /Searching for parts\.\.\./);
   });
 });
 

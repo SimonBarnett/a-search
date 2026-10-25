@@ -12,6 +12,11 @@ var SELECTOR = '.a-search-widget[data-widget-guid]';
 var BOOTED_ATTR = 'data-a-search-booted';
 var GO_BOUND_ATTR = 'data-a-search-go-bound';
 var DEFAULT_N = 10;
+var SEARCHING_TEXT = 'Searching for parts...';
+var NO_PARTS_TEXT = 'No parts found';
+var POLL_MAX_MS = 10 * 60 * 1000;
+var POLL_MAX_DELAY_MS = 60000;
+var POLL_DEFAULT_DELAY_MS = 5000;
 
 /**
  * FR #4107: parent page origin for embed frames (Wix filesusr, ...).
@@ -214,12 +219,45 @@ function createEventBatcher(opts) {
 }
 
 /**
+ * FR #4891: searching / no_parts / ok helpers for render + poll.
+ * @param {object|null|undefined} page
+ * @returns {boolean}
+ */
+function isSearchingPage(page) {
+  if (!page) return false;
+  if (page.status === 'searching') return true;
+  if (page.status === 'ok' || page.status === 'no_parts' || page.status === 'error') {
+    return false;
+  }
+  // Cached widgets: init/enabled 0 without status.
+  if (page.enabled === 0 || page.enabled === '0') return true;
+  if (page.init === 0 || page.init === '0') return true;
+  return false;
+}
+
+/**
+ * @param {object|null|undefined} page
+ * @returns {boolean}
+ */
+function isNoPartsPage(page) {
+  if (!page) return false;
+  if (page.status === 'no_parts') return true;
+  if (isSearchingPage(page)) return false;
+  var parts = page.parts;
+  var empty = !parts || !parts.length;
+  if (!empty) return false;
+  if (page.enabled === 1 || page.enabled === '1') return true;
+  if (page.init === 1 || page.init === '1') return true;
+  return false;
+}
+
+/**
  * @param {object[]} parts
  * @returns {string}
  */
 function partsHtml(parts) {
   if (!parts || !parts.length) {
-    return '<div class="empty-msg">No deals for this page yet. Check back soon.</div>';
+    return '<div class="empty-msg">' + NO_PARTS_TEXT + '</div>';
   }
   return parts
     .map(function (p) {
@@ -301,10 +339,15 @@ function resolveLayout(apiLayout, dataMode) {
 function renderPage(el, page, fallbackMode) {
   var layout = resolveLayout(page && page.layout, fallbackMode);
   el.setAttribute('data-mode', layout);
-  var initRaw = page && page.init;
-  if (initRaw === 0 || initRaw === '0') {
+  if (isSearchingPage(page)) {
     el.setAttribute('data-state', 'searching');
-    el.innerHTML = '<div class="searching-msg">Searching</div>';
+    el.innerHTML = '<div class="searching-msg">' + SEARCHING_TEXT + '</div>';
+    el.removeAttribute('data-next-offset');
+    return;
+  }
+  if (isNoPartsPage(page)) {
+    el.setAttribute('data-state', 'empty');
+    el.innerHTML = '<div class="empty-msg">' + NO_PARTS_TEXT + '</div>';
     el.removeAttribute('data-next-offset');
     return;
   }
@@ -341,6 +384,19 @@ function renderPage(el, page, fallbackMode) {
  *   uri?: string,
  * }} opts
  */
+/**
+ * @param {Response} res
+ * @returns {number|null} ms from Retry-After header when present
+ */
+function retryAfterMsFromResponse(res) {
+  if (!res || !res.headers || typeof res.headers.get !== 'function') return null;
+  var raw = res.headers.get('retry-after') || res.headers.get('Retry-After');
+  if (raw == null || raw === '') return null;
+  var sec = Number(raw);
+  if (!Number.isFinite(sec) || sec < 0) return null;
+  return Math.floor(sec * 1000);
+}
+
 async function fetchPartsPage(opts) {
   var url = buildPartsUrl(opts.apiBase, {
     widgetGuid: opts.widgetGuid,
@@ -365,12 +421,22 @@ async function fetchPartsPage(opts) {
     credentials: 'omit',
     headers: headers,
   });
-  if (!res || !res.ok) {
-    var err = new Error('parts_http_' + (res && res.status));
+  // FR #4891: HTTP 202 searching is success (parse JSON), not an error.
+  var status = res && res.status;
+  var okish = res && (res.ok || status === 202);
+  if (!okish) {
+    var err = new Error('parts_http_' + status);
     err.code = 'parts_http_error';
     throw err;
   }
-  return res.json();
+  var page = await res.json();
+  if (page && typeof page === 'object') {
+    var fromHeader = retryAfterMsFromResponse(res);
+    if (fromHeader != null && page.retryAfterMs == null) {
+      page.retryAfterMs = fromHeader;
+    }
+  }
+  return page;
 }
 
 /**
@@ -532,7 +598,7 @@ async function pageFullscreen(el, deps) {
     document: deps.document,
     parentOrigin: deps.parentOrigin,
   });
-  if (page && (page.init === 0 || page.init === '0')) {
+  if (isSearchingPage(page) || isNoPartsPage(page)) {
     renderPage(el, page, el.getAttribute('data-mode'));
     return page;
   }
@@ -551,6 +617,90 @@ async function pageFullscreen(el, deps) {
     el.removeAttribute('data-next-offset');
     var btn = el.querySelector('[data-action="page-more"]');
     if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+  }
+  return page;
+}
+
+/**
+ * @param {number} ms
+ * @param {Function} [sleepFn]
+ * @returns {Promise<void>}
+ */
+function delayMs(ms, sleepFn) {
+  if (typeof sleepFn === 'function') return Promise.resolve(sleepFn(ms));
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * @param {Element} el
+ * @param {object} deps
+ * @returns {boolean}
+ */
+function shouldStopPolling(el, deps) {
+  if (!el) return true;
+  if (el.getAttribute && el.getAttribute('data-a-search-stop-poll') === '1') {
+    return true;
+  }
+  var doc = deps.document || (el.ownerDocument || null);
+  if (doc && doc.hidden) return true;
+  if (doc && el.isConnected === false) return true;
+  if (doc && typeof doc.contains === 'function' && !doc.contains(el)) return true;
+  return false;
+}
+
+/**
+ * FR #4891: poll while status=searching; honour retryAfterMs (5s doubling to 60s);
+ * stop ~10 min or when hidden/removed. Stop on ok/no_parts/error.
+ * @param {Element} el
+ * @param {object} deps
+ * @param {object} firstPage
+ * @param {string|null|undefined} fallbackMode
+ * @returns {Promise<object>}
+ */
+async function pollWhileSearching(el, deps, firstPage, fallbackMode) {
+  var page = firstPage;
+  var delay =
+    page && page.retryAfterMs != null
+      ? Number(page.retryAfterMs)
+      : POLL_DEFAULT_DELAY_MS;
+  if (!Number.isFinite(delay) || delay < 1000) delay = POLL_DEFAULT_DELAY_MS;
+  var started =
+    typeof deps.now === 'function' ? deps.now() : Date.now();
+  var guid = el.getAttribute('data-widget-guid');
+  var uri =
+    deps.location && deps.location.pathname != null
+      ? String(deps.location.pathname)
+      : undefined;
+  while (isSearchingPage(page)) {
+    if (shouldStopPolling(el, deps)) break;
+    var elapsed =
+      (typeof deps.now === 'function' ? deps.now() : Date.now()) - started;
+    if (elapsed >= POLL_MAX_MS) break;
+    await delayMs(delay, deps.sleep);
+    if (shouldStopPolling(el, deps)) break;
+    try {
+      page = await fetchPartsPage({
+        fetch: deps.fetch,
+        apiBase: deps.apiBase,
+        widgetGuid: guid,
+        offset: 0,
+        n: deps.n != null ? deps.n : DEFAULT_N,
+        uri: uri,
+        pageUri: uri,
+        location: deps.location,
+        document: deps.document,
+        parentOrigin: deps.parentOrigin,
+      });
+    } catch (err) {
+      el.setAttribute('data-state', 'error');
+      el.innerHTML = '<div class="err">Unable to load deals.</div>';
+      return { status: 'error', error: err && err.code ? err.code : 'poll_error' };
+    }
+    renderPage(el, page, fallbackMode);
+    if (!isSearchingPage(page)) break;
+    delay = Math.min(POLL_MAX_DELAY_MS, delay * 2);
   }
   return page;
 }
@@ -595,6 +745,8 @@ async function mountWidget(el, deps) {
     n: deps.n,
     openUrl: deps.openUrl,
     parentOrigin: deps.parentOrigin,
+    sleep: deps.sleep,
+    now: deps.now,
   };
   bindGoClicks(el, mountDeps);
   try {
@@ -611,6 +763,9 @@ async function mountWidget(el, deps) {
       parentOrigin: deps.parentOrigin,
     });
     renderPage(el, page, fallbackMode);
+    if (isSearchingPage(page) && deps.poll !== false) {
+      page = await pollWhileSearching(el, mountDeps, page, fallbackMode);
+    }
     return { skipped: false, page: page };
   } catch (err) {
     el.setAttribute('data-state', 'error');
@@ -649,6 +804,9 @@ async function boot(deps) {
         n: deps.n,
         openUrl: deps.openUrl,
         parentOrigin: deps.parentOrigin,
+        sleep: deps.sleep,
+        now: deps.now,
+        poll: deps.poll,
       }),
     );
   }
@@ -660,6 +818,8 @@ var api = {
   BOOTED_ATTR: BOOTED_ATTR,
   GO_BOUND_ATTR: GO_BOUND_ATTR,
   DEFAULT_N: DEFAULT_N,
+  SEARCHING_TEXT: SEARCHING_TEXT,
+  NO_PARTS_TEXT: NO_PARTS_TEXT,
   buildPartsUrl: buildPartsUrl,
   resolveParentOrigin: resolveParentOrigin,
   buildGoUrl: buildGoUrl,
@@ -667,8 +827,11 @@ var api = {
   createEventBatcher: createEventBatcher,
   resolveLayout: resolveLayout,
   partsHtml: partsHtml,
+  isSearchingPage: isSearchingPage,
+  isNoPartsPage: isNoPartsPage,
   renderPage: renderPage,
   fetchPartsPage: fetchPartsPage,
+  pollWhileSearching: pollWhileSearching,
   clickGo: clickGo,
   bindGoClicks: bindGoClicks,
   findGoTarget: findGoTarget,

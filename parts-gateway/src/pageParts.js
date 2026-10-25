@@ -1,26 +1,41 @@
 'use strict';
 
 /**
- * FR #3968: S3 a-clubs backed GET /parts page (auto-create host + GUID).
- * Host from Origin only; returns init; promotes IN/ -> live.json when init=0.
+ * FR #3968 / #4891: S3 a-clubs backed GET /parts page (auto-create host + GUID).
+ * Host from Origin only. Returns status searching|ok|no_parts from enabled flag.
+ * Does NOT promote IN/ → live.json (that is promoteInToLive / hasresults path).
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
-const {
-  setInit,
-  touchLastmod,
-  partsResponseLeaksSecrets,
-} = require('../../shared/widgets/hostFolderMeta');
+const { partsResponseLeaksSecrets } = require('../../shared/widgets/hostFolderMeta');
 const { ensureAclubsHost } = require('./ensureHost');
 const { ensureAclubsWidget } = require('./ensureWidget');
-const {
-  widgetFileKey,
-  widgetInPrefix,
-  hostMarkerKey,
-  guidMarkerKey,
-} = require('./aClubsKeys');
+const { widgetFileKey } = require('./aClubsKeys');
 const { requireHostFromOrigin } = require('./originHost');
-const { filterPartsByPage } = require('../../redqueen/src/pageSelect');
+
+const SEARCHING_RETRY_AFTER_MS = 5000;
+
+/**
+ * @param {unknown} body
+ * @returns {object[]}
+ */
+function parseLiveBody(body) {
+  if (body == null) return [];
+  let text;
+  if (Buffer.isBuffer(body)) text = body.toString('utf8');
+  else if (typeof body === 'string') text = body;
+  else if (typeof body.transformToString === 'function') {
+    return [];
+  } else {
+    text = String(body);
+  }
+  try {
+    const raw = JSON.parse(text);
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
 
 class PartsError extends Error {
   /**
@@ -49,96 +64,16 @@ function parseNonNegInt(raw, fallback) {
 }
 
 /**
- * @param {unknown} body
- * @returns {object[]}
- */
-function parseAnnotationBody(resp) {
-  if (!resp) return null;
-  let body = resp.AnnotationPayload != null ? resp.AnnotationPayload : resp.Body;
-  if (body && typeof body.transformToString === 'function') {
-    return null;
-  }
-  try {
-    const text = Buffer.isBuffer(body) ? body.toString('utf8') : String(body || '');
-    const obj = JSON.parse(text);
-    return obj && typeof obj === 'object' ? obj : null;
-  } catch {
-    return null;
-  }
-}
-
-function parseLiveBody(body) {
-  if (body == null) return [];
-  let text;
-  if (Buffer.isBuffer(body)) text = body.toString('utf8');
-  else if (typeof body === 'string') text = body;
-  else if (typeof body.transformToString === 'function') {
-    return [];
-  } else {
-    text = String(body);
-  }
-  try {
-    const raw = JSON.parse(text);
-    return Array.isArray(raw) ? raw : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
  * @param {unknown} raw
  * @returns {0|1}
  */
-function parseInitFlag(raw) {
+function parseEnabledFlag(raw) {
   return raw === 1 || raw === '1' ? 1 : 0;
 }
 
-/**
- * Collect candidate objects from {guid}/IN/*.json
- * @param {{
- *   host: string,
- *   guid: string,
- *   listObjectsV2?: Function,
- *   getObject: Function,
- * }} opts
- * @returns {Promise<object[]>}
- */
-async function loadInCandidates(opts) {
-  if (typeof opts.listObjectsV2 !== 'function') return [];
-  /** @type {object[]} */
-  const out = [];
-  try {
-    const listed = await opts.listObjectsV2({
-      Prefix: widgetInPrefix(opts.host, opts.guid),
-    });
-    const contents = (listed && listed.Contents) || [];
-    for (const c of contents) {
-      if (!c || !c.Key || !String(c.Key).endsWith('.json')) continue;
-      try {
-        const obj = await opts.getObject({ Key: c.Key });
-        let body = obj && obj.Body;
-        if (body && typeof body.transformToString === 'function') {
-          body = await body.transformToString();
-        }
-        const parsed = parseLiveBody(body);
-        if (parsed.length) {
-          for (const row of parsed) out.push(row);
-        } else if (body) {
-          const one = JSON.parse(
-            Buffer.isBuffer(body) ? body.toString('utf8') : String(body),
-          );
-          if (one && typeof one === 'object' && !Array.isArray(one)) {
-            out.push(one);
-          }
-        }
-      } catch {
-        // skip bad IN objects
-      }
-    }
-  } catch {
-    // listing optional
-  }
-  return out;
+/** @deprecated FR #4891: use parseEnabledFlag */
+function parseInitFlag(raw) {
+  return parseEnabledFlag(raw);
 }
 
 /**
@@ -159,6 +94,7 @@ async function loadInCandidates(opts) {
  *   putObjectTagging?: Function,
  *   getObjectTagging?: Function,
  *   copyObject?: Function,
+ *   getObjectAnnotation?: Function,
  *   mint?: () => string,
  *   sendMessage?: Function,
  *   folderEventsQueueUrl?: string,
@@ -194,16 +130,6 @@ async function pagePartsAclubs(opts) {
     throw new PartsError('invalid_offset_or_n');
   }
 
-  const s3Meta = {
-    headObject: opts.headObject,
-    putObject: opts.putObject,
-    getObject: opts.getObject,
-    copyObject: opts.copyObject,
-    getObjectTagging: opts.getObjectTagging,
-    putObjectTagging: opts.putObjectTagging,
-    now: opts.now,
-  };
-
   const hostInfo = await ensureAclubsHost({
     host,
     headObject: opts.headObject,
@@ -234,10 +160,29 @@ async function pagePartsAclubs(opts) {
     now: opts.now,
   });
 
-  const guidKey = guidMarkerKey(host, guid);
-  let init = parseInitFlag(
-    widgetInfo.metadata && widgetInfo.metadata.init,
+  const enabled = parseEnabledFlag(
+    widgetInfo.metadata && widgetInfo.metadata.enabled,
   );
+
+  // Create leg / not ready: searching. Do not read or write live.json promotion.
+  if (enabled !== 1) {
+    const response = {
+      userid: hostInfo.userid,
+      widgetGuid: guid,
+      layout: widgetInfo.layout,
+      parts: [],
+      nextOffset: null,
+      status: 'searching',
+      retryAfterMs: SEARCHING_RETRY_AFTER_MS,
+      // Compat for cached widgets that still key off init (FR #4891).
+      init: 0,
+      enabled: 0,
+    };
+    if (partsResponseLeaksSecrets(response)) {
+      throw new PartsError('parts_response_secret_leak');
+    }
+    return response;
+  }
 
   const liveKey = widgetFileKey(host, guid, 'live.json');
   let live = [];
@@ -256,52 +201,21 @@ async function pagePartsAclubs(opts) {
     }
   }
 
-  const inCandidates = await loadInCandidates({
-    host,
-    guid,
-    listObjectsV2: opts.listObjectsV2,
-    getObject: opts.getObject,
-  });
-
-  let pageAnn = null;
-  let hostAnn = null;
-  if (typeof opts.getObjectAnnotation === 'function') {
-    try {
-      const pa = await opts.getObjectAnnotation({
-        Key: guidKey,
-        AnnotationName: 'annotation',
-      });
-      pageAnn = parseAnnotationBody(pa);
-    } catch {
-      pageAnn = null;
+  if (!live.length) {
+    const response = {
+      userid: hostInfo.userid,
+      widgetGuid: guid,
+      layout: widgetInfo.layout,
+      parts: [],
+      nextOffset: null,
+      status: 'no_parts',
+      init: 1,
+      enabled: 1,
+    };
+    if (partsResponseLeaksSecrets(response)) {
+      throw new PartsError('parts_response_secret_leak');
     }
-    try {
-      const ha = await opts.getObjectAnnotation({
-        Key: hostMarkerKey(host),
-        AnnotationName: 'annotation',
-      });
-      hostAnn = parseAnnotationBody(ha);
-    } catch {
-      hostAnn = null;
-    }
-  }
-
-  // When init is 0 and IN/ has candidates, promote into live.json and setInit.
-  if (init === 0 && inCandidates.length > 0) {
-    const selected = pageAnn
-      ? filterPartsByPage(inCandidates, { page: pageAnn, host: hostAnn })
-      : inCandidates;
-    live = live.concat(selected);
-    const Body = Buffer.from(`${JSON.stringify(live, null, 2)}\n`, 'utf8');
-    await opts.putObject({
-      Key: liveKey,
-      Body,
-      ContentLength: Body.length,
-      ContentType: 'application/json; charset=utf-8',
-    });
-    await setInit({ Key: guidKey, ...s3Meta });
-    await touchLastmod({ Key: hostMarkerKey(host), ...s3Meta });
-    init = 1;
+    return response;
   }
 
   const slice = live.slice(offset, offset + n);
@@ -314,7 +228,9 @@ async function pagePartsAclubs(opts) {
     layout: widgetInfo.layout,
     parts: slice,
     nextOffset,
-    init,
+    status: 'ok',
+    init: 1,
+    enabled: 1,
   };
   if (partsResponseLeaksSecrets(response)) {
     throw new PartsError('parts_response_secret_leak');
@@ -328,4 +244,6 @@ module.exports = {
   PartsError,
   parseNonNegInt,
   parseInitFlag,
+  parseEnabledFlag,
+  SEARCHING_RETRY_AFTER_MS,
 };

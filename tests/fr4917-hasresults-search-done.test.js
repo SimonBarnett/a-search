@@ -96,7 +96,6 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
         hasresults: '0',
         enabled: '0',
         annotated: '0',
-        init: '0',
         lastmod: '2026-10-25T12:00:00.000Z',
       },
     });
@@ -133,9 +132,13 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
         hasresults: '0',
         enabled: '0',
         annotated: '0',
-        init: '0',
         lastmod: '2026-10-25T12:00:00.000Z',
       },
+    });
+    // Seed empty live.json so promoteInToLive can rewrite on final flip.
+    await s3.putObject({
+      Key: `${HOST}/${GUID}/live.json`,
+      Body: '[]\n',
     });
     await s3.putObject({
       Key: `${HOST}/${GUID}/search-fanout.json`,
@@ -193,6 +196,10 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
     assert.equal(flip.hasresults, true);
     head = await s3.headObject({ Key: `${HOST}/${GUID}/` });
     assert.equal(String(head.Metadata.hasresults), '1');
+    // FR #4891: promote runs after hasresults flip (empty IN → enabled=1).
+    assert.equal(String(head.Metadata.enabled), '1');
+    assert.ok(flip.flip && flip.flip.promote);
+    assert.equal(flip.flip.promote.enabled, 1);
   });
 
   it('stale searchid DONE records are ignored for the flip', async () => {
@@ -249,6 +256,10 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
         enabled: '0',
         lastmod: '2026-10-25T12:00:00.000Z',
       },
+    });
+    await s3.putObject({
+      Key: `${HOST}/${GUID}/live.json`,
+      Body: '[]\n',
     });
     await s3.putObject({
       Key: `${HOST}/${GUID}/search-fanout.json`,

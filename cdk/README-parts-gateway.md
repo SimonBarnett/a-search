@@ -45,21 +45,31 @@ returns `400` `club_domain_unresolved` and creates **nothing**. Embed-pattern
 hosts are never stored as hostkeys (gateway resolve + `ensureAclubsHost` guard).
 
 **GUID folder marker** (zero-byte `a-clubs/{hostkey}/{guid}/`): `uri`, `seen=0`,
-`clicks=0`, `since`, `lastmod`, `annotated=0`, `init=0`, `enabled=0` (FR #4891),
-`hasresults=0` (FR #4917). `hasresults` flips to `1` when every source in the
-current `search-fanout.json` has a terminal `DONE/{searchid}-{source}.json`
-(`status` `serviced` or `dlq`). `widget.json` is a plain seed file (no GUID
-folder metadata). `uri` prefers the `Referer` path; else `pageUri` / `uri`
-query. Documented choice: Referer first.
+`clicks=0`, `since`, `lastmod`, `annotated=0`, `enabled=0` (FR #4891; replaces
+former `init`), `hasresults=0` (FR #4917). New markers do **not** carry an `init`
+key. `hasresults` flips to `1` when every source in the current
+`search-fanout.json` has a terminal `DONE/{searchid}-{source}.json`
+(`status` `serviced` or `dlq`); that flip also runs `promoteInToLive` (IN/ →
+`live.json`, then `enabled=1`, including empty IN → empty live → `no_parts`).
+`widget.json` is a plain seed file (no GUID folder metadata). `uri` prefers the
+`Referer` path; else `pageUri` / `uri` query. Documented choice: Referer first.
 
 Host claim helpers (shared `hostFolderMeta.js`): `setHostCredentials` (scrypt
 hash format `scrypt$N$r$p$saltHex$hashHex`; Madeira auth not vendored here) and
 `setHostStripe({accountId, customerId})`. `GET /parts` never returns email,
 passwordhash, or Stripe ids.
 
-`GET /parts` returns `init` (`0` or `1`). When `{guid}/IN/` has candidates and
-`init` is `0`, the gateway promotes them into `live.json` and sets `init=1`
-(via shared `setInit` on the GUID folder marker, which also bumps `lastmod`).
+**Canonical `/parts`:** this stack only (`PartsGatewayApiUrl`). `ASearchStack`
+no longer hosts `GET /parts` (FR #4891). Embed `data-api-base` must be
+`PartsGatewayApiUrl`.
+
+`GET /parts` reads `enabled` on the GUID marker (does **not** promote IN/):
+- `enabled != 1` → HTTP **202** + `Retry-After: 5`, body
+  `{status:'searching', parts:[], nextOffset:null, retryAfterMs:5000, init:0, enabled:0, …}`
+  (widget shows "Searching for parts..." and polls).
+- `enabled=1` with live parts → HTTP 200 `{status:'ok', parts, nextOffset, init:1, enabled:1, …}`.
+- `enabled=1` empty live → HTTP 200 `{status:'no_parts', parts:[], init:1, enabled:1, …}`
+  (widget shows "No parts found").
 
 Folder events: on **new host** and **new GUID**, the gateway sends
 `{hostkey, host, createdAt}` to `a-clubs-new-folders.fifo`
@@ -102,10 +112,11 @@ curl -sS -H "Origin: https://www-mymodelflyingclub-co-uk.filesusr.com" \
 # Expect a-clubs/www.mymodelflyingclub.co.uk/ (normalised), never a filesusr.com folder.
 ```
 
-Repeat the same URL --- response stays 200 (idempotent). Missing `Origin`
-yields `400` `origin_required`. Widget shows "Searching" while `init` is `0`.
-When embedded (Wix HTML box), the widget also sends `X-Parent-Origin` so
-hyphenated club domains resolve unambiguously.
+Repeat the same URL --- first create returns **202** `searching` (idempotent
+folder create). Missing `Origin` yields `400` `origin_required`. Widget shows
+"Searching for parts..." while `enabled` is `0`, then polls. When embedded
+(Wix HTML box), the widget also sends `X-Parent-Origin` so hyphenated club
+domains resolve unambiguously.
 
 Bob deploys after MRB PASS + merge (fleet playbook).
 

@@ -167,7 +167,8 @@ describe('FR #3987 gateway publish host on create', () => {
     assert.equal(r.uri, '/products/brakes');
     assert.equal(r.metadata.seen, '0');
     assert.equal(r.metadata.clicks, '0');
-    assert.equal(r.metadata.init, '0');
+    assert.equal(r.metadata.enabled, '0');
+    assert.equal(Object.prototype.hasOwnProperty.call(r.metadata, 'init'), false);
     assert.ok(r.metadata.since);
     assert.ok(r.metadata.lastmod);
     assert.equal(sent.length, 1);
