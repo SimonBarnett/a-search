@@ -31,6 +31,7 @@
     "@aws-sdk/client-s3": "^3.1147.0",
     "@aws-sdk/client-sqs": "^3.758.0",
     "@aws/lambda-invoke-store": "^0.3.0",
+    "csv-parse": "^7.0.3",
     "jose": "^5.10.0",
     "mssql": "^11.0.2"
   },

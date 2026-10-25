@@ -27,15 +27,29 @@ async function decompressFeedBody(body, opts) {
   }
 
   try {
-    if (compression === 'none' || compression === '') {
-      return { ok: true, buffer: body };
+    // Awin productdata often returns gzip even when the URL/marker say none.
+    let mode = compression;
+    if (mode === 'none' || mode === '') {
+      if (body.length >= 2 && body[0] === 0x1f && body[1] === 0x8b) {
+        mode = 'gzip';
+      } else if (
+        body.length >= 4 &&
+        body[0] === 0x50 &&
+        body[1] === 0x4b &&
+        body[2] === 0x03 &&
+        body[3] === 0x04
+      ) {
+        mode = 'zip';
+      } else {
+        return { ok: true, buffer: body };
+      }
     }
-    if (compression === 'gzip') {
+    if (mode === 'gzip') {
       const out = await gunzip(body);
       if (!out || out.length === 0) return { ok: false, status: 'empty_feed' };
       return { ok: true, buffer: out };
     }
-    if (compression === 'zip') {
+    if (mode === 'zip') {
       return await unzipPick(body, format);
     }
     return { ok: false, status: 'unsupported_compression' };

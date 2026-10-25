@@ -41,6 +41,7 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
+. (Join-Path $here 'FolderProgress.ps1')
 
 function Get-MarkerMetaValue {
     param($Metadata, [string]$Name)
@@ -163,19 +164,35 @@ function Write-HumanMeta {
 
 try {
     $target = if ($Path) { $Path } else { (Get-Location).Path }
+    if (-not $Json) {
+        Write-FolderToolStep ("meta starting path={0}" -f $target)
+    }
     $loc = ConvertTo-FolderS3Location -Path $target -MountRoot $MountRoot
     # FR #4087: empty Key is bucket root (S:\a-clubs) — clear message, exit 5
     if ([string]::IsNullOrEmpty($loc.Key)) {
         throw ("bucket_root: s3://{0}/ is the bucket root; cd into a host/GUID/provider folder" -f $loc.Bucket)
     }
-    $marker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key -Backend $Backend `
-        -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-        -RcloneLsJson $RcloneLsJson
+    if (-not $Json) {
+        Write-FolderToolStep ("Resolved s3://{0}/{1} kind={2}" -f $loc.Bucket, $loc.Key, $loc.Kind)
+    }
+
+    $marker = Invoke-FolderToolWithSpinner -Label 'Reading folder marker metadata/tags' -ArgumentList @(
+        $here, $loc.Bucket, $loc.Key, $Backend
+    ) -ScriptBlock {
+        param($toolsDir, $bucket, $key, $backend)
+        . (Join-Path $toolsDir 'FolderS3.ps1')
+        return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+    }
 
     # GUID reviews are always complete (FR #4270). Host folders still truncate unless -Full.
     $reviewFull = [bool]$Full -or ($loc.Kind -eq 'guid')
-    $ann = Get-FolderS3Annotations -Bucket $loc.Bucket -Key $loc.Key -Full:$reviewFull `
-        -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+    $ann = Invoke-FolderToolWithSpinner -Label 'Reading object annotations' -ArgumentList @(
+        $here, $loc.Bucket, $loc.Key, [bool]$reviewFull
+    ) -ScriptBlock {
+        param($toolsDir, $bucket, $key, $full)
+        . (Join-Path $toolsDir 'FolderS3.ps1')
+        return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+    }
 
     $hostAnn = $null
     $hostReview = $null
@@ -185,8 +202,13 @@ try {
     if ($loc.Kind -eq 'guid' -or $loc.Kind -eq 'guid-child') {
         $hostKey = Get-FolderS3ParentHostKey -Location $loc
         if ($hostKey) {
-            $hostAnns = Get-FolderS3Annotations -Bucket $loc.Bucket -Key ($hostKey + '/') -Full:$reviewFull `
-                -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+            $hostAnns = Invoke-FolderToolWithSpinner -Label 'Reading parent host annotations' -ArgumentList @(
+                $here, $loc.Bucket, ($hostKey + '/'), [bool]$reviewFull
+            ) -ScriptBlock {
+                param($toolsDir, $bucket, $key, $full)
+                . (Join-Path $toolsDir 'FolderS3.ps1')
+                return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+            }
             $hostAnn = @($hostAnns.Items) | Where-Object { $_.Name -eq 'annotation' } | Select-Object -First 1
             if (-not $hostAnn -and @($hostAnns.Items).Count) {
                 $hostAnn = @($hostAnns.Items) | Select-Object -First 1
