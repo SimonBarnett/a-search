@@ -22,27 +22,22 @@ const ANNOTATOR_Q =
   'VOLANTEXRC Sport Cub S2 761-14 3CH RTF Xpilot beginner United Kingdom (Lathom, Ormskirk, L40 4BA; .co.uk) GBP';
 
 describe('MRB #5005 hostile FR #5004 CONTAINS', () => {
-  it('SELECT_SQL binds @contains only (never concatenates user text)', () => {
-    assert.match(SELECT_SQL, /CONTAINSTABLE[\s\S]*@contains/i);
+  it('SELECT_SQL binds @q only (never concatenates user text)', () => {
+    assert.match(SELECT_SQL, /FREETEXTTABLE[\s\S]*@q/i);
     assert.doesNotMatch(SELECT_SQL, /\b(INSERT|UPDATE|DELETE|MERGE)\b/i);
     const src = fs.readFileSync(
       path.join(ROOT, 'providers', 'local', 'sql', 'src', 'queryParts.js'),
       'utf8',
     );
-    assert.match(src, /\.input\(\s*['"]contains['"]/);
+    assert.match(src, /\.input\(\s*['"]q['"]/);
+    assert.match(src, /NVarChar\(4000\)|FT_NVARCHAR_LEN|bindNVarChar/);
   });
 
-  it('annotator fixture query strips punctuation and drops listed noise words', () => {
+  it('annotator fixture query is FREETEXT natural language', () => {
     const q = buildContainsQuery({ queries: [ANNOTATOR_Q] });
-    assert.match(q, /"VOLANTEXRC"/);
-    assert.match(q, /"761"/);
-    assert.match(q, /"co\.uk"/);
-    assert.match(q, /"United"/);
-    assert.match(q, /"Kingdom"/);
-    assert.equal(/\(|\)|,|;/.test(q), false);
-    assert.doesNotMatch(q, /\bAND NOT\b/);
-    assert.doesNotMatch(q, /"the"/i);
-    assert.doesNotMatch(q, /"of"/i);
+    assert.match(q, /VOLANTEXRC/);
+    assert.match(q, /761-14/);
+    assert.doesNotMatch(q, /"VOLANTEXRC" AND/);
   });
 
   it('drainRunner logs sql_query_failed message not bare EREQUEST', () => {
