@@ -23,7 +23,7 @@ const BUNDLED_ENV_REQUIRED = {
   ],
   etsy: ['ETSY_API_KEY'],
   rakuten: ['RAKUTEN_CLIENT_ID', 'RAKUTEN_CLIENT_SECRET', 'RAKUTEN_SID'],
-  cj: ['CJ_API_TOKEN'],
+  cj: ['CJ_API_TOKEN', 'CJ_COMPANY_ID', 'CJ_WEBSITE_ID'],
   kelkoo: ['KELKOO_API_KEY', 'KELKOO_PUBLISHER_ID'],
 };
 
