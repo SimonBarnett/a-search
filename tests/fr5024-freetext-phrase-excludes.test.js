@@ -88,13 +88,17 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
       queries: [ANNOTATOR_Q],
       exclude: NINETEEN_EXCLUDES,
     });
-    assert.equal(inputs.q, ANNOTATOR_Q);
+    // FR #5041: location/currency stripped before FREETEXT
+    assert.match(String(inputs.q), /VOLANTEXRC/i);
+    assert.doesNotMatch(String(inputs.q), /United\s+Kingdom/i);
+    assert.doesNotMatch(String(inputs.q), /\bGBP\b/i);
     assert.doesNotMatch(String(inputs.q), / AND /);
     assert.equal(types.q.kind, 'NVarChar');
     assert.equal(types.q.length, 4000);
     assert.equal(types.env.length, 4000);
     assert.equal(inputs.n, 25);
     assert.equal(inputs.top, 25);
+    assert.equal(inputs.minRank, 50);
     assert.match(sqlText, /FREETEXTTABLE\s*\(\s*dbo\.Parts/);
     assert.match(sqlText, /@q,\s*@top/);
     assert.doesNotMatch(sqlText, /CONTAINSTABLE/);
