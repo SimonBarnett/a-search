@@ -20,6 +20,9 @@ describe('FR #4827 change events', () => {
   it('excludes IN/ and search-fanout.json', () => {
     assert.equal(isExcludedKey(`${HOST}/${GUID}/IN/srch-sql.json`), true);
     assert.equal(isExcludedKey(`${HOST}/${GUID}/in/notes.json`), true);
+    // FR #4917: DONE/ terminal records must not re-trigger annotation.
+    assert.equal(isExcludedKey(`${HOST}/${GUID}/DONE/srch-amazon.json`), true);
+    assert.equal(isExcludedKey(`${HOST}/${GUID}/done/x.json`), true);
     assert.equal(isExcludedKey(`${HOST}/${GUID}/search-fanout.json`), true);
     assert.equal(isExcludedKey(`${HOST}/${GUID}/widget.json`), false);
     assert.equal(isExcludedKey(`${HOST}/`), false);
