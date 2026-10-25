@@ -664,4 +664,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Walrus import failures: deterministic GitHub issue per sha256(provider|feedKey|errorCode) with import-fp marker; comment not twin; outbox when A_SEARCH_GH_TOKEN missing or GH down; never silent sandbox MSSQL_DATABASE default
 - Affiliate age is defaultage (merchant > provider > _root); self-heal missing _root only (create-only defaultage=7); never overwrite an existing invalid root.
 - FR #4941 aw_product_id key: parseAwin MerchantSku must also flow through DbImportSql.ps1 and sql.js bulk ColumnMappings and MERGE INSERT/UPDATE
+- sqlStore MERGE stub must set LastSeenRunId from inputs.RunId when staging insert has no RunId, or soft-delete stays 0 after FR #4942.
+- Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
 - FIX after MRB FAIL on FR#4943: land GG fixture fix then switch reportImportFailure to POST /bob/v1/intake (dedupe_key); guard tools/dbimport/reportFailure.js with require.main; wire Invoke-FolderDbImport catch fail-soft
+- schema_drift listing every expectedColumns name on awin/*.csv is leftover gzip (1f8b); gunzip in parseAndMapFeed, do not remap columns.
