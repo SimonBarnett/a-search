@@ -686,3 +686,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - SQL Parts match: admit only via CONTAINS exact brand/model gates (extractBrandModelGateTokens); FREETEXT/RANK orders gated rows never admits; no gate tokens => return [] without SELECT
 - When hasresults flips with empty live.json, write GUID feedback/no-results.json and upsert a-clubs/_ops/need-vendors-by-sector.json (sector count++ dedupe); annotator must file enough brand/model/type searches; 0 results means need more vendors --- providers never widen
 - a-search Kelkoo: no /madeira SSM; enable requires gitignored providers/live/kelkoo/.env with KELKOO_API_KEY+KELKOO_PUBLISHER_ID on deploy host; synth soft-disable warning must name missing file path and keys
+- Rakuten invite: list/status via Advertisers and Partnerships APIs; apply is Playwright only; records under rakuten/_invites/{mid}/; never invent Christow MID.
+- CJ invite: Advertiser Lookup XML (25/min, page 100) for notjoined; 403 => cj_account_not_active exit 5 no writes; apply is Account Manager UI only --- generalise tools/invite.ps1 InviteProviders + runFromAgentRoot; keep marker enabled=0 until activation
+- FR #5070 a-affiliates S3-to-git import requires redqueen (profile a-search-redqueen-agents + S:\a-affiliates); flamingo seats GIVEUP require_machine=redqueen

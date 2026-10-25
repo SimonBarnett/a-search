@@ -1,11 +1,11 @@
-# Folder tools (FR #4043)
+﻿# Folder tools (FR #4043)
 
 PowerShell helpers for the mapped S3 drive (`D:\s3` by default, or `A_SEARCH_S3_MOUNT`).
 First path segment under the mount is the bucket (`a-clubs`, `a-affiliates`, `a-merchants`).
 
 ## meta / Get-FolderMeta.ps1
 
-Progress (`[HH:mm:ss] …` + `/|\|` spinner while waiting on S3) goes to **stderr**; the human/JSON report goes to **stdout**.
+Progress (`[HH:mm:ss] ΓÇª` + `/|\|` spinner while waiting on S3) goes to **stderr**; the human/JSON report goes to **stdout**.
 
 Read-only view of the cwd (or `-Path`) folder marker:
 
@@ -67,12 +67,12 @@ onboard -BackfillLogourl   # one-shot: HEAD folders missing logourl only when as
 
 **Awin (implemented):**
 
-1. Read provider marker meta (`feedlisturl`, `feedurltemplate`, `feedapikey`, `publisherid`, …).
-2. Download the product-data **Feed List** (apikey filled in memory only — same credential family as
+1. Read provider marker meta (`feedlisturl`, `feedurltemplate`, `feedapikey`, `publisherid`, ΓÇª).
+2. Download the product-data **Feed List** (apikey filled in memory only ΓÇö same credential family as
    madeira-awin-clubscan product feeds; **no UI / OTP**).
 3. Optional Bearer token (`apitoken` / `AWIN_ACCESS_TOKEN` / `C:\passwords\awin.apitoken.txt`) fetches
    `programmes?relationship=joined` for preferred `logoUrl` values. Without a token, `logourl` still
-   uses the public profile CDN. URL only — onboard does **not** download logo image bytes.
+   uses the public profile CDN. URL only ΓÇö onboard does **not** download logo image bytes.
 4. For each `Membership Status = active` advertiser with no `awin/{id}/` folder: create the marker
    (`feedurl` keeps `{feedapikey}`, `enabled=1`, `source=onboard`, **required** `logourl`) and run `download`.
 5. **Do not** re-check existing folders for `logourl` on every run (folders that already have it are left alone).
@@ -88,17 +88,17 @@ Secrets are never printed. Report: final JSON on stdout + `C:\ai\a-search\logs\a
 
 ## download / Invoke-FolderDownload.ps1
 
-Manual affiliate download for `a-affiliates` (FR #4108 / #4195). Reuses `affiliates/src/downloadOne` via `tools/run-folder-download.js` for the **product feed**, and for Awin also pulls **coupons/offers** via Publisher API (`tools/run-folder-coupons.js` → `{yyyy-mm-dd}.coupons.json`). Needs `C:\passwords\awin.apitoken.txt` (or `AWIN_ACCESS_TOKEN`) for coupons. Joined no-feed affiliates still download coupons (`feed=skipped_nofeed`).
+Manual affiliate download for `a-affiliates` (FR #4108 / #4195). Reuses `affiliates/src/downloadOne` via `tools/run-folder-download.js` for the **product feed**, and for Awin also pulls **coupons/offers** via Publisher API (`tools/run-folder-coupons.js` ΓåÆ `{yyyy-mm-dd}.coupons.json`). Needs `C:\passwords\awin.apitoken.txt` (or `AWIN_ACCESS_TOKEN`) for coupons. Joined no-feed affiliates still download coupons (`feed=skipped_nofeed`).
 
 Progress steps and `/|\|` spinner go to **stderr** (same style as onboard); summaries to **stdout**. Default **skips** when today's dated feed/coupons object already exists (`exists`); pass `-Force` to re-download.
 
 **Batch selection (root / provider cwd):**
-- Provider marker must have `enabled=1` (Awin is `1`; partnerize/impact/… are `0`). Disabled provider cwd exits `provider_disabled` (code 3).
+- Provider marker must have `enabled=1` (Awin is `1`; partnerize/impact/ΓÇª are `0`). Disabled provider cwd exits `provider_disabled` (code 3).
 - Merchant marker must have `enabled=1`.
-- Due when `lastdownload` is empty or age ≥ resolved `defaultage` days. Precedence: merchant → provider → `_root/` (`s3://a-affiliates/_root/`, currently `defaultage=6`).
+- Due when `lastdownload` is empty or age ΓëÑ resolved `defaultage` days. Precedence: merchant ΓåÆ provider ΓåÆ `_root/` (`s3://a-affiliates/_root/`, currently `defaultage=6`).
 - `-All` ignores age; still skips disabled providers and merchants.
 - `-Force` is orthogonal: overwrites today's dated objects once a merchant is selected.
-- Selection uses a **parallel** Node head-object batch (`tools/batch-folder-head-meta.js`, concurrency 16) with a spinner — not one `aws.exe` per merchant (that looked hung on ~229 Awin folders).
+- Selection uses a **parallel** Node head-object batch (`tools/batch-folder-head-meta.js`, concurrency 16) with a spinner ΓÇö not one `aws.exe` per merchant (that looked hung on ~229 Awin folders).
 
 ```powershell
 cd S:\a-affiliates\awin\<affiliateid>
@@ -141,14 +141,14 @@ dbimport
 
 ## invite / invite.ps1
 
-Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tools`). Loads `{provider}/_invite/` + `config.json`.
+Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tools`). Loads `{provider}/_invite/`.
 
 | Cwd | Behaviour |
 |-----|-----------|
 | `S:\a-affiliates` | Run invite for every provider with `enabled=1` |
 | `S:\a-affiliates\{provider}` | That provider only when `enabled=1`; else `provider_disabled` (exit 3) |
 
-An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered today: **awin** and **cj** (FR #5066). Keep the CJ marker `enabled=0` until publisher activation (#5057); root `invite` then skips CJ.
+An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered: **awin**, **rakuten** (FR #5065), **cj** (FR #5066). Keep the CJ marker `enabled=0` until publisher activation (#5057). Do not enable download/dbimport for Rakuten (no `_import/`, no merchant feeds).
 
 ```powershell
 cd S:\a-affiliates\awin
@@ -156,7 +156,7 @@ invite -Max 3           # dry-run (default)
 invite -Live -Max 20    # submit joins
 invite -Live -Max 1 -Otp 123456
 cd S:\a-affiliates\cj
-invite -Max 3           # CJ Advertiser Lookup dry-run (needs token file)
+invite -Max 3           # CJ Advertiser Lookup dry-run (token file on redqueen)
 cd S:\a-affiliates
 invite -Max 3           # all enabled=1 providers
 ```
@@ -168,7 +168,7 @@ invite -Max 3           # all enabled=1 providers
 | `4` | `invite_not_implemented` |
 | `5` | `cj_account_not_active` (CJ 403; no records written) |
 
-Awin: `C:\ai\a-search\awin-agent\README-invite.md`. CJ: seed `redqueen/affiliate-agent/seed/a-affiliates/cj/AGENT.md` and backend `redqueen/cj-invite/` (copy to `C:\ai\a-search\cj-invite` on redqueen). Reports: `logs\{provider}-invite\{yyyy-mm-dd}.json`.
+Awin: `C:\ai\a-search\awin-agent\README-invite.md`. CJ: `redqueen/cj-invite/` + seed `a-affiliates/cj/AGENT.md`.
 
 ## Tests
 

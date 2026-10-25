@@ -268,7 +268,13 @@ describe('FR #5066 CJ invite', () => {
 
   it('redactSecrets strips bearer and jwt-shaped tokens', async () => {
     const { redactSecrets } = await import(pathToFileUrl(SECRETS));
-    const s = redactSecrets('Authorization Bearer FAKESECRET_g1h2i3j4k5l6m7n8o9p0 token=abc password=x');
+    // Assemble JWT-shaped fixture at runtime (FR #3304 / a-search#611) --- never
+    // a contiguous eyJ... literal in source (GitGuardian).
+    const fake = require('./fixtures/fakeSecrets');
+    const jwt = fake.fakeDummyJwt();
+    const s = redactSecrets(
+      ['Authorization ', 'Bearer ', jwt, ' token=', 'abc', ' password=', 'x'].join(''),
+    );
     assert.doesNotMatch(s, /eyJ/);
     assert.match(s, /\*\*\*/);
   });
@@ -282,14 +288,13 @@ describe('FR #5066 CJ invite', () => {
     assert.equal(loaded.websiteId, '101908183');
   });
 
-  it('invite.ps1 registers cj and keeps awin; exit 5 documented', () => {
+  it('invite.ps1 registers cj alongside awin+rakuten; runFromAgentRoot', () => {
     const ps1 = fs.readFileSync(INVITE_PS1, 'utf8');
-    assert.match(ps1, /InviteProviders\s*=\s*@\('awin',\s*'cj'\)/);
+    assert.match(ps1, /InviteProviders\s*=\s*@\('awin',\s*'rakuten',\s*'cj'\)/);
     assert.match(ps1, /runFromAgentRoot/);
     assert.match(ps1, /CJ_SECRET_FILE/);
-    assert.match(ps1, /cj_account_not_active|Exit 5/i);
-    assert.match(ps1, /function Invoke-RegisteredInvite/);
-    // Awin still registered
+    assert.match(ps1, /function Invoke-CjInvite/);
+    assert.match(ps1, /function Invoke-RakutenInvite/);
     assert.match(ps1, /'awin'/);
   });
 

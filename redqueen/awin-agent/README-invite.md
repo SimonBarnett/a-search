@@ -1,4 +1,4 @@
-# Awin invite scheduler (deterministic)
+﻿# Awin invite scheduler (deterministic)
 
 Zero-LLM daily joins from Join Programmes / notJoined.
 
@@ -11,21 +11,20 @@ invite -Live -Max 20       # submit
 invite -Live -Max 1 -Otp 123456
 
 cd S:\a-affiliates
-invite -Max 3              # every enabled=1 provider (awin; cj when enabled=1)
+invite -Max 3              # every enabled=1 provider (awin / rakuten / cj when enabled)
 ```
 
-Shim: `C:\ai\a-search\tools\invite.ps1` (on PATH). Awin backend: `s3://a-affiliates/awin/_invite/invite.mjs` (agentRoot `awin-agent`). CJ backend: `redqueen/cj-invite/` (FR #5066; agentRoot `C:\ai\a-search\cj-invite`).
+Shim: `C:\ai\a-search\tools\invite.ps1` (on PATH). Backend: `node C:\ai\a-search\awin-agent\scripts\invite.mjs`.
 
 - Cwd gate: `a-affiliates` root or provider folder; provider must be `enabled=1`
-- Enabled provider without a registered invite backend → `invite_not_implemented` (exit 4)
-- Registered providers: `awin`, `cj` (keep CJ marker `enabled=0` until #5057)
-- 90-day gate: `{provider}/_invites/{id}/` metadata `invitedat`
-- Skip existing `{provider}/{id}/` folders
-- Personalised <=149-char messages from scraped name/sector/feed/approval (Awin)
+- Enabled provider without a registered invite backend ΓåÆ `invite_not_implemented` (exit 4)
+- 90-day gate: `awin/_invites/{id}/` metadata `invitedat`
+- Skip existing `awin/{id}/` folders
+- Personalised <=149-char messages from scraped name/sector/feed/approval
 - Report: `C:\ai\a-search\logs\awin-invite\{yyyy-mm-dd}.json`
-- Exit 2 = needs OTP (ask Simon; tick trust device); exit 5 = `cj_account_not_active`
+- Exit 2 = needs OTP (ask Simon; tick trust device)
 - Long waits show a `/ | \ -` spinner on stderr (same style as `download` / `onboard`)
-- Tests: `npm test` in `awin-agent`; CJ: `tests/fr5066-cj-invite.test.js`
+- Tests: `npm test` in `awin-agent`
 
 ## Task Scheduler (example)
 

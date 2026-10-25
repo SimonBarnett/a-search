@@ -28,6 +28,7 @@ const { canReapply } = require('./dedupe');
 const { sortByPriority } = require('./priority');
 const { buildApplicationMessage } = require('./message');
 const { buildRakutenReport, writeDailyReportFile } = require('./report');
+const { runRakutenInvite } = require('../../../invite/rakutenInvite');
 
 const DEFAULT_LOCK =
   process.env.RAKUTEN_AGENT_LOCK ||
@@ -104,6 +105,38 @@ async function runRakutenAgent(opts = {}) {
   const notifiedApprovals = new Set();
 
   try {
+    const useInviteBackend =
+      opts.useInviteBackend === true ||
+      process.env.RAKUTEN_USE_INVITE === '1' ||
+      typeof opts.httpJson === 'function' ||
+      typeof opts.fetchToken === 'function';
+    if (
+      useInviteBackend &&
+      !opts.plan &&
+      !opts.rakuten &&
+      !opts.skipInviteBackend
+    ) {
+      return runRakutenInvite({
+        dryRun,
+        live: !dryRun,
+        max: maxApplications,
+        now,
+        env: opts.env || process.env,
+        httpJson: opts.httpJson,
+        fetchToken: opts.fetchToken,
+        apply: opts.apply,
+        writeInviteRecord: opts.writeInviteRecord,
+        reportDir:
+          opts.inviteReportDir ||
+          path.join('C:', 'ai', 'a-search', 'logs', 'rakuten-invite'),
+        agentMd:
+          opts.docs && opts.docs.texts && opts.docs.texts.providerAgent
+            ? opts.docs.texts.providerAgent
+            : '',
+        inviteIds: opts.inviteIds,
+        invitedAt: opts.invitedAt,
+      });
+    }
     let docs = opts.docs;
     if (!opts.skipDocs) {
       const loaded = loadAffiliateAgentDocs({
