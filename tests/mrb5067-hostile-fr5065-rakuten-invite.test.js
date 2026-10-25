@@ -12,10 +12,14 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 
 describe('MRB #5067 hostile FR #5065 rakuten invite', () => {
-  it('invite.ps1 registers rakuten beside awin', () => {
+  it('invite.ps1 registers rakuten beside awin (and cj)', () => {
     const src = fs.readFileSync(path.join(ROOT, 'tools', 'invite.ps1'), 'utf8');
-    assert.match(src, /InviteProviders\s*=\s*@\(\s*'awin'\s*,\s*'rakuten'\s*\)/);
-    assert.match(src, /Invoke-RakutenInvite/);
+    assert.match(
+      src,
+      /InviteProviders\s*=\s*@\(\s*'awin'\s*,\s*'rakuten'\s*,\s*'cj'\s*\)/,
+    );
+    assert.match(src, /RAKUTEN_USE_INVITE/);
+    assert.match(src, /rakuten/);
   });
 
   it('rakutenInvite redacts secrets and uses Advertisers/Partnerships URLs', () => {

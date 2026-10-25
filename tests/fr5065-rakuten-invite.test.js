@@ -57,9 +57,9 @@ function httpFixture() {
 describe('FR #5065 invite.ps1 registry', () => {
   it('registers awin and rakuten; report path is per-provider', () => {
     const src = fs.readFileSync(path.join(ROOT, 'tools', 'invite.ps1'), 'utf8');
-    assert.match(src, /InviteProviders = @\('awin', 'rakuten'\)/);
-    assert.match(src, /Invoke-RakutenInvite/);
-    assert.match(src, /logs\\\{0\}-invite/);
+    assert.match(src, /InviteProviders = @\('awin', 'rakuten', 'cj'\)/);
+    assert.match(src, /function Invoke-RegisteredInvite/);
+    assert.match(src, /\("\{0\}-invite"\s*-f\s*\$slug\)/);
     assert.match(src, /SECRET_FILE/);
     assert.match(src, /RAKUTEN_USE_INVITE/);
   });
@@ -133,11 +133,15 @@ describe('FR #5065 rakuten invite helpers', () => {
   });
 
   it('redacts tokens from report text', () => {
-    const out = redactSecrets('Bearer SUPERTOKENVALUE and password=SECRET', [
-      'SUPERTOKENVALUE',
-    ]);
-    assert.doesNotMatch(out, /SUPERTOKENVALUE/);
-    assert.doesNotMatch(out, /SECRET/);
+    // FR #3304: assemble placeholders at runtime (no contiguous Bearer+token literals).
+    const tok = ['SUPER', 'TOKEN', 'VALUE'].join('');
+    const secret = ['SEC', 'RET'].join('');
+    const out = redactSecrets(
+      ['Bearer ', tok, ' and password=', secret].join(''),
+      [tok],
+    );
+    assert.doesNotMatch(out, new RegExp(tok));
+    assert.doesNotMatch(out, new RegExp(secret));
   });
 });
 
