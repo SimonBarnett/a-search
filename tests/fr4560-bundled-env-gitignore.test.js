@@ -43,6 +43,8 @@ describe('FR #4560 bundled .env survives CDK asset pack', () => {
       'RAKUTEN_SID',
     ].sort());
     assert.ok(requiredBundledEnvKeys('cj').includes('CJ_API_TOKEN'));
+    assert.ok(requiredBundledEnvKeys('cj').includes('CJ_COMPANY_ID'));
+    assert.ok(requiredBundledEnvKeys('cj').includes('CJ_WEBSITE_ID'));
     assert.ok(requiredBundledEnvKeys('kelkoo').includes('KELKOO_API_KEY'));
   });
 

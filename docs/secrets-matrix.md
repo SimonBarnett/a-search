@@ -96,7 +96,7 @@ comes from the stack env (live means production).
 | amazon | env file: `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_PARTNER_TAG`, `AMAZON_HOST`, `AMAZON_REGION` (Creators LwA from access/secret, FR #4721 / #4816; host/region are PA-API leftovers and do not pick Creators token URL or marketplace). If the madeira Lambda (`madeira-sqs-affiliate`) has `AMAZON_*` env overrides, those working values must also be in SSM -- compare names and lengths only, never print values. | `a-search-amazon-worker-{live,sandbox}` |
 | ebay | env file: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `EBAY_CAMPAIGN_ID`, `EBAY_MARKETPLACE_ID` (`EBAY_REFRESH_TOKEN` optional) | `a-search-ebay-worker-{live,sandbox}` |
 | rakuten | bundled `.env`: `RAKUTEN_CLIENT_ID`, `RAKUTEN_CLIENT_SECRET`, `RAKUTEN_SID`, `RAKUTEN_SITE_ID` | `a-search-rakuten-worker-{live,sandbox}` |
-| cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` | `a-search-cj-worker-{live,sandbox}` |
+| cj | `CJ_API_TOKEN`, `CJ_COMPANY_ID`, `CJ_WEBSITE_ID` (bundled `.env`; FR #5057 assert matches stack). 403 Authorised: searchCj retries once without `companyId` (same token+pid). FR #4782 still DLQs remaining `cj_not_authorised`. | `a-search-cj-worker-{live,sandbox}` |
 | awin | `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID` | workers + awin onboarding live/sandbox |
 | impact | `IMPACT_CAMPAIGN_ID`, `IMPACT_ACCOUNT_SID`, `IMPACT_AUTH_TOKEN` | workers + impact onboarding live/sandbox |
 | kelkoo | bundled `.env` (no `/madeira/kelkoo/*`): `KELKOO_API_KEY`, `KELKOO_PUBLISHER_ID` from Publisher Center; omit file = resources kept, no `/search` fan-out (FR #4650) | `a-search-kelkoo-worker-{live,sandbox}` (FR-167); plain `KELKOO_COUNTRY=uk` |

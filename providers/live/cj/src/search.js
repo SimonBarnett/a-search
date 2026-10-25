@@ -146,7 +146,10 @@ function buildProductsQuery(keywords, companyId, websiteId) {
 }
 
 /**
- * FR #4762: permanent CJ auth faults (do not DLQ / intake-fatal).
+ * FR #4762: classify permanent CJ auth faults (401 / "not Authorised").
+ * FR #4782: SQS worker SendMessage to the provider DLQ and deletes the
+ * source message on the first nonRetryable failure.
+ * FR #5057: 403 with this text is still cj_not_authorised after companyId omit-retry.
  * @param {number} status
  * @param {object|null|undefined} json
  * @param {string} [text]
@@ -258,21 +261,42 @@ async function searchCj(msg, deps) {
       : defaultHttpRequest;
 
   const keywords = keywordsFromMsg(msg);
-  const payload = buildProductsQuery(
-    keywords,
-    creds.companyId,
-    creds.websiteId,
-  );
-  const json = await httpRequest({
-    method: 'POST',
-    url: creds.graphqlUrl,
-    headers: {
-      Authorization: `Bearer ${creds.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  const headers = {
+    Authorization: `Bearer ${creds.token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  async function postProducts(companyId) {
+    const payload = buildProductsQuery(keywords, companyId, creds.websiteId);
+    return httpRequest({
+      method: 'POST',
+      url: creds.graphqlUrl,
+      headers,
+      body: JSON.stringify(payload),
+    });
+  }
+
+  let json;
+  try {
+    json = await postProducts(creds.companyId);
+  } catch (err) {
+    // FR #5057: same token+pid, omit companyId --- 403 is often a company
+    // scope mismatch, not a dead token. Never log token / ids.
+    if (
+      creds.companyId &&
+      err &&
+      err.code === 'cj_not_authorised'
+    ) {
+      try {
+        json = await postProducts('');
+      } catch (err2) {
+        throw err2;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   if (json && Array.isArray(json.errors) && json.errors.length) {
     const msgText = json.errors
