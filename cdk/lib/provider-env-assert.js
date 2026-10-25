@@ -112,7 +112,7 @@ function softCheckProviderEnvFileKeys(filePath, sourceId, keys) {
     return {
       ok: false,
       missingKeys: required.slice(),
-      message: `provider env ${sourceId}: missing file ${filePath}. Required: ${required.join(', ')}`,
+      message: `provider env ${sourceId}: missing file ${filePath}. Fill providers/live/${sourceId}/.env from .env.example. Required: ${required.join(', ')}`,
     };
   }
   let parsed;
