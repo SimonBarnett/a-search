@@ -36,8 +36,10 @@
 - Print, log or commit credentials, tokens, emails or feed URLs that carry keys.
 - File in any repo other than SimonBarnett/a-search.
 
+**Deterministic filing (FR #4943):** the import CLI itself opens or comments a GitHub issue labelled `import-failure` with title `import failure: {provider}/{feedKey}: {errorCode}` and a hidden `<!-- import-fp:... -->` marker before it exits. Agents must search that marker first and never open a twin.
+
 **How to report (exactly one place per problem):**
-- Search SimonBarnett/a-search for an open issue titled `import: {provider}/{feedKey} {errorCode}`. Comment on it if it exists. Otherwise file one, labelled `via-intake`. Include the evidence, the diagnosis, the PR link (if any), the dry-run summary and the next step.
+- Search SimonBarnett/a-search for an open issue with `<!-- import-fp:... -->` (or title `import failure: {provider}/{feedKey}: {errorCode}`). Comment on it if it exists. Otherwise file one, labelled `import-failure`. Include the evidence, the diagnosis, the PR link (if any), the dry-run summary and the next step.
 - Notify Bob with label `bob` + mention on the issue (default until ops names another channel).
 - Stamp `ingest.Failures.AgentStatus` = `pr_open` | `needs_human` | `download_refetched` | `not_reproducible`, plus `IssueUrl`/`PrUrl`.
 - Exit 0 when a PR with a passing dry run is open, or the refetched file dry-runs clean. Exit non-zero with `needs_fix` when you can't fix it (code bug, feed dead, 3 attempts or 30 min).

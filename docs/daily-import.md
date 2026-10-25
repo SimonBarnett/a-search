@@ -70,3 +70,12 @@ Rows in `ingest.PurgeRequests` are hard-deleted for that `(provider, feedKey)` a
 ## Manual UAT
 
 Sandbox (Recommended FR-146/FR-251 DB `a_search_sandbox`) with real `awin/1902` and one Shopify shop first. Simon gives go before registering the live task.
+
+## Failure issues (FR #4943)
+
+Every failed load opens or comments a GitHub issue on \SimonBarnett/a-search(title \import failure: {provider}/{feedKey}: {errorCode}\, label \import-failure\,
+hidden \<!-- import-fp:... -->\ marker). Set \A_SEARCH_GH_TOKEN\ (issues:write).
+If GitHub is down, payloads land under \import-failures/<runId>/issue-*.json\ and
+are replayed on the next run. \MSSQL_DATABASE\ must be set explicitly (no silent
+sandbox default for scheduled runs); use \IMPORT_ALLOW_DEFAULT_DB=1\ only for local tests.
+

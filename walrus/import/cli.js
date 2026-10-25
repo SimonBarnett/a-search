@@ -2,16 +2,23 @@
 'use strict';
 
 /**
- * FR #4463 / #4520: walrus daily import CLI
+ * FR #4463 / #4520 / #4943: walrus daily import CLI
  * node walrus/import/cli.js run [--provider X] [--feed Y] [--dry-run]
  *
  * Production uses mssql store (ingest.* + MERGE dbo.Parts) unless IMPORT_MEMORY=1.
+ * FR #4943: every failed load opens/comments a GitHub issue on a-search (or outbox).
  */
 
 const path = require('node:path');
+const os = require('node:os');
 const { createMemoryStore } = require('./src/memoryStore');
 const { createSqlStore } = require('./src/sqlStore');
 const { runDailyImport } = require('./src/runImport');
+const {
+  reportImportFailure,
+  flushFailureOutbox,
+} = require('./src/reportImportFailure');
+const { redactSecrets } = require('./src/mapRow');
 
 function parseArgs(argv) {
   const out = { cmd: 'run', dryRun: false, provider: null, feed: null, config: null };
@@ -30,7 +37,22 @@ function parseArgs(argv) {
   return out;
 }
 
-async function main() {
+/**
+ * FR #4943: refuse silent sandbox default for scheduled runs.
+ * IMPORT_ALLOW_DEFAULT_DB=1 keeps unit/dev convenience.
+ */
+function resolveDatabase(env) {
+  const e = env || process.env;
+  const raw = e.MSSQL_DATABASE != null ? String(e.MSSQL_DATABASE).trim() : '';
+  if (raw) return { ok: true, database: raw.toLowerCase() };
+  if (e.IMPORT_ALLOW_DEFAULT_DB === '1' || e.IMPORT_MEMORY === '1') {
+    return { ok: true, database: 'a_search_sandbox' };
+  }
+  return { ok: false, code: 'precheck_db', detail: 'MSSQL_DATABASE_required' };
+}
+
+async function main(envVars) {
+  const env = envVars || process.env;
   const opts = parseArgs(process.argv);
   if (opts.help || opts.cmd === 'help') {
     process.stdout.write(
@@ -44,20 +66,45 @@ async function main() {
   }
 
   const repoRoot = path.resolve(__dirname, '..', '..');
-  const database = String(process.env.MSSQL_DATABASE || 'a_search_sandbox').toLowerCase();
+  const dbRes = resolveDatabase(env);
+  if (!dbRes.ok) {
+    process.stderr.write(`precheck_failed ${dbRes.code} ${dbRes.detail}\n`);
+    await reportImportFailure({
+      provider: '_run',
+      feedKey: '_precheck',
+      errorCode: dbRes.code,
+      errorDetail: dbRes.detail,
+      database: '',
+      host: os.hostname(),
+      token: env.A_SEARCH_GH_TOKEN || env.GITHUB_TOKEN,
+      outboxRoot: env.A_SEARCH_IMPORT_FAILURE_OUTBOX,
+    }).catch(() => {});
+    process.exit(2);
+  }
+  const database = dbRes.database;
   const affiliatesRoot =
-    process.env.A_AFFILIATES_ROOT || path.join('D:', 's3', 'a-affiliates');
+    env.A_AFFILIATES_ROOT || path.join('D:', 's3', 'a-affiliates');
   const merchantsRoot =
-    process.env.A_MERCHANTS_ROOT || path.join('D:', 's3', 'a-merchants');
+    env.A_MERCHANTS_ROOT || path.join('D:', 's3', 'a-merchants');
 
   const partEnv = database.includes('sandbox') ? 'sandbox' : 'live';
   // FR #4520: real SQL store unless unit/dev sets IMPORT_MEMORY=1.
   const store =
-    process.env.IMPORT_MEMORY === '1'
+    env.IMPORT_MEMORY === '1'
       ? createMemoryStore({ env: partEnv })
-      : createSqlStore({ env: partEnv, database, envVars: process.env });
+      : createSqlStore({ env: partEnv, database, envVars: env });
+
+  const failureRoot =
+    env.A_SEARCH_IMPORT_FAILURE_OUTBOX ||
+    path.join(process.cwd(), 'import-failures');
 
   try {
+    // FR #4943: replay outbox from prior GH outages before this run.
+    await flushFailureOutbox({
+      outboxRoot: failureRoot,
+      token: env.A_SEARCH_GH_TOKEN || env.GITHUB_TOKEN,
+    }).catch(() => {});
+
     if (typeof store.loadPurgeRequests === 'function') {
       await store.loadPurgeRequests();
     }
@@ -68,13 +115,16 @@ async function main() {
       affiliatesRoot,
       merchantsRoot,
       mountRoots: [affiliatesRoot, merchantsRoot],
-      ftsInstalled: process.env.IMPORT_SKIP_FTS_CHECK === '1' ? true : true,
+      ftsInstalled: env.IMPORT_SKIP_FTS_CHECK === '1' ? true : true,
       store,
       dryRun: opts.dryRun,
       provider: opts.provider,
       feed: opts.feed,
-      lockPath: process.env.A_SEARCH_IMPORT_LOCK,
-      deleteOnSuccess: process.env.IMPORT_DELETE_ON_SUCCESS === '1',
+      lockPath: env.A_SEARCH_IMPORT_LOCK,
+      deleteOnSuccess: env.IMPORT_DELETE_ON_SUCCESS === '1',
+      failureRoot,
+      ghToken: env.A_SEARCH_GH_TOKEN || env.GITHUB_TOKEN,
+      host: os.hostname(),
     });
 
     process.exit(result.exitCode);
@@ -86,10 +136,25 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err) => {
-    process.stderr.write(String(err && err.stack ? err.stack : err) + '\n');
+  main().catch(async (err) => {
+    const msg = String(err && err.stack ? err.stack : err);
+    process.stderr.write(`${msg}\n`);
+    try {
+      await reportImportFailure({
+        provider: '_run',
+        feedKey: '_unhandled',
+        errorCode: 'unhandled_exception',
+        errorDetail: redactSecrets(msg).slice(0, 1800),
+        database: process.env.MSSQL_DATABASE || '',
+        host: os.hostname(),
+        token: process.env.A_SEARCH_GH_TOKEN || process.env.GITHUB_TOKEN,
+        outboxRoot: process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX,
+      });
+    } catch {
+      // last resort
+    }
     process.exit(2);
   });
 }
 
-module.exports = { parseArgs, main };
+module.exports = { parseArgs, main, resolveDatabase };

@@ -7,13 +7,68 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { acquireImportLock } = require('./lock');
 const { loadAllProviderConfigs } = require('./providerConfig');
 const { parseAndMapFeed } = require('./parseMapped');
 const { validateBeforeMerge } = require('./validateFeed');
 const { redactSecrets } = require('./mapRow');
+const {
+  reportImportFailure,
+  maybeCloseFailureIssue,
+} = require('./reportImportFailure');
 
 const WRITE_DBS = new Set(['a_search', 'a_search_sandbox']);
+
+/**
+ * FR #4943: raise (or comment) a GitHub issue for a failure fingerprint.
+ * Fail-soft: never throw into the import loop.
+ * @param {object} opts runDailyImport opts
+ * @param {object} failure
+ */
+async function raiseFailureIssue(opts, failure) {
+  const report =
+    typeof opts.reportFailure === 'function'
+      ? opts.reportFailure
+      : reportImportFailure;
+  try {
+    const result = await report({
+      ...failure,
+      database: opts.database,
+      host: opts.host || os.hostname(),
+      outboxRoot: opts.failureRoot || opts.outboxRoot,
+      token: opts.ghToken,
+      github: opts.github,
+      fetch: opts.fetch,
+      repo: opts.repo,
+    });
+    if (
+      result &&
+      result.ok &&
+      result.issueNumber != null &&
+      opts.store &&
+      typeof opts.store.stampFailureIssue === 'function'
+    ) {
+      await opts.store.stampFailureIssue({
+        RunId: failure.runId,
+        ProviderId: failure.provider,
+        FeedKey: failure.feedKey,
+        ErrorCode: failure.errorCode,
+        IssueNumber: result.issueNumber,
+        IssueUrl: result.issueUrl,
+        AgentStatus: `issue:${result.issueNumber}`,
+      });
+    }
+    return result;
+  } catch (err) {
+    if (typeof opts.log === 'function') {
+      opts.log(
+        `failure_issue_error ${redactSecrets(String((err && err.message) || err))}`,
+      );
+    }
+    return { ok: false, skipped: 'raise_threw' };
+  }
+}
 
 /**
  * @param {object} opts
@@ -94,12 +149,24 @@ async function runDailyImport(opts) {
 
   const lock = acquireImportLock(opts.lockPath, { now: opts.now });
   if (!lock.ok) {
+    // FR #4943: fresh lock_held is normal overlap — no issue.
     log('lock_held file');
     return { exitCode: 2, code: 'lock_held' };
+  }
+  if (lock.staleTakeover) {
+    log(`lock_held_stale ageMs=${lock.ageMs || ''}`);
+    await raiseFailureIssue(opts, {
+      provider: '_run',
+      feedKey: '_lock',
+      errorCode: 'lock_held_stale',
+      errorDetail: `stale import.lock taken over after ${lock.ageMs || '?'}ms`,
+      runId: null,
+    });
   }
 
   if (!(await store.tryAppLock())) {
     lock.release();
+    // Fresh applock contention — normal overlap, no issue.
     log('lock_held applock');
     return { exitCode: 2, code: 'lock_held' };
   }
@@ -108,6 +175,13 @@ async function runDailyImport(opts) {
     const pc = precheck(opts);
     if (!pc.ok) {
       log(`precheck_failed ${pc.code} ${pc.detail || ''}`);
+      await raiseFailureIssue(opts, {
+        provider: '_run',
+        feedKey: '_precheck',
+        errorCode: pc.code,
+        errorDetail: pc.detail || '',
+        runId: null,
+      });
       return { exitCode: 2, code: pc.code, detail: pc.detail };
     }
 
@@ -234,6 +308,20 @@ async function runDailyImport(opts) {
                 ProviderJsonSha: cfg._sha256,
                 AgentStatus: null,
               });
+              await raiseFailureIssue(opts, {
+                provider: cfg.provider,
+                feedKey,
+                fileKey: f.fileKey,
+                version: f.version,
+                errorCode: gate.code,
+                errorDetail: gate.detail || '',
+                sampleBadRowsPath: samplePath,
+                providerJsonSha: cfg._sha256,
+                runId: run.runId,
+                rowsRead: parsed.rowsRead,
+                rowsStaged: parsed.staged.length,
+                rowsRejected: parsed.rejects.length,
+              });
               if (typeof opts.launchAgent === 'function') {
                 const launched = await opts.launchAgent({
                   provider: cfg.provider,
@@ -316,6 +404,16 @@ async function runDailyImport(opts) {
               ErrorDetail: redactSecrets(String(err && err.message)),
               ProviderJsonSha: cfg._sha256,
             });
+            await raiseFailureIssue(opts, {
+              provider: cfg.provider,
+              feedKey,
+              fileKey: f.fileKey,
+              version: f.version,
+              errorCode: code,
+              errorDetail: String(err && err.message),
+              providerJsonSha: cfg._sha256,
+              runId: run.runId,
+            });
             if (typeof opts.launchAgent === 'function') {
               await opts.launchAgent({
                 provider: cfg.provider,
@@ -354,6 +452,13 @@ async function runDailyImport(opts) {
               ErrorCode: 'fts_failed',
               ErrorDetail: 'containstable_probe_miss',
             });
+            await raiseFailureIssue(opts, {
+              provider: r.provider,
+              feedKey: r.feedKey,
+              errorCode: 'fts_failed',
+              errorDetail: 'containstable_probe_miss',
+              runId: run.runId,
+            });
           }
         }
       }
@@ -366,6 +471,13 @@ async function runDailyImport(opts) {
         ErrorCode: (err && err.code) || 'fts_failed',
         ErrorDetail: String(err && err.message),
       });
+      await raiseFailureIssue(opts, {
+        provider: '_run',
+        feedKey: '_fts',
+        errorCode: (err && err.code) || 'fts_failed',
+        errorDetail: String(err && err.message),
+        runId: run.runId,
+      });
       if (typeof opts.launchAgent === 'function') {
         await opts.launchAgent({
           provider: '_run',
@@ -374,6 +486,63 @@ async function runDailyImport(opts) {
           version: String(run.runId),
           errorCode: 'fts_failed',
         });
+      }
+    }
+
+    // FR #4943: staging left non-empty after the run (#4941 class).
+    if (typeof store.countStagingLeftovers === 'function') {
+      try {
+        const leftovers = await store.countStagingLeftovers(run.runId);
+        const n = Number(leftovers && leftovers.count) || 0;
+        if (n > 0) {
+          anyFail = true;
+          const detail = `staging_rows=${n} feeds=${JSON.stringify(
+            (leftovers && leftovers.feeds) || [],
+          )}`;
+          await store.addFailure({
+            RunId: run.runId,
+            ProviderId: '_run',
+            FeedKey: '_staging',
+            ErrorCode: 'staging_leftover',
+            ErrorDetail: redactSecrets(detail).slice(0, 2000),
+          });
+          await raiseFailureIssue(opts, {
+            provider: '_run',
+            feedKey: '_staging',
+            errorCode: 'staging_leftover',
+            errorDetail: detail,
+            runId: run.runId,
+          });
+        }
+      } catch (err) {
+        log(
+          `staging_leftover_check_error ${redactSecrets(String((err && err.message) || err))}`,
+        );
+      }
+    }
+
+    // FR #4943 optional: close open fingerprint issues when a feed imports OK.
+    if (!dryRun && typeof maybeCloseFailureIssue === 'function') {
+      for (const r of results) {
+        if (r.status !== 'ok' || !r.provider || !r.feedKey) continue;
+        try {
+          const closer =
+            typeof opts.closeFailureIssue === 'function'
+              ? opts.closeFailureIssue
+              : maybeCloseFailureIssue;
+          await closer({
+            provider: r.provider,
+            feedKey: r.feedKey,
+            errorCode: 'gate_failed',
+            runId: run.runId,
+            github: opts.github,
+            token: opts.ghToken,
+            fetch: opts.fetch,
+            repo: opts.repo,
+          });
+        } catch {
+          // optional path
+        }
       }
     }
 
@@ -392,5 +561,6 @@ module.exports = {
   precheck,
   listFeedFiles,
   runDailyImport,
+  raiseFailureIssue,
   WRITE_DBS,
 };
