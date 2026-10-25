@@ -141,25 +141,34 @@ dbimport
 
 ## invite / invite.ps1
 
-Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tools`). Loads `{provider}/_invite/`.
+Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tools`). Loads `{provider}/_invite/` + `config.json`.
 
 | Cwd | Behaviour |
 |-----|-----------|
 | `S:\a-affiliates` | Run invite for every provider with `enabled=1` |
 | `S:\a-affiliates\{provider}` | That provider only when `enabled=1`; else `provider_disabled` (exit 3) |
 
-An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Today only **awin** is registered (`awin-agent\scripts\invite.mjs`). Do not enable other providers until their invite exists.
+An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered today: **awin** and **cj** (FR #5066). Keep the CJ marker `enabled=0` until publisher activation (#5057); root `invite` then skips CJ.
 
 ```powershell
 cd S:\a-affiliates\awin
 invite -Max 3           # dry-run (default)
 invite -Live -Max 20    # submit joins
 invite -Live -Max 1 -Otp 123456
+cd S:\a-affiliates\cj
+invite -Max 3           # CJ Advertiser Lookup dry-run (needs token file)
 cd S:\a-affiliates
 invite -Max 3           # all enabled=1 providers
 ```
 
-Exit `2` = needs OTP (stop and ask Simon). See `C:\ai\a-search\awin-agent\README-invite.md`.
+| Exit | Meaning |
+|------|---------|
+| `2` | Needs OTP / captcha (stop and ask Simon) |
+| `3` | Wrong cwd or `provider_disabled` |
+| `4` | `invite_not_implemented` |
+| `5` | `cj_account_not_active` (CJ 403; no records written) |
+
+Awin: `C:\ai\a-search\awin-agent\README-invite.md`. CJ: seed `redqueen/affiliate-agent/seed/a-affiliates/cj/AGENT.md` and backend `redqueen/cj-invite/` (copy to `C:\ai\a-search\cj-invite` on redqueen). Reports: `logs\{provider}-invite\{yyyy-mm-dd}.json`.
 
 ## Tests
 

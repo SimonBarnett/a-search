@@ -1,0 +1,10 @@
+{
+  "name": "a-search-cj-invite",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "CJ Advertiser Lookup + Account Manager invite (FR #5066)",
+  "engines": {
+    "node": ">=20"
+  }
+}

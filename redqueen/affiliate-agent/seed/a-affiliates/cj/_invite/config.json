@@ -1,0 +1,12 @@
+{
+  "agentRoot": "C:\\ai\\a-search\\cj-invite",
+  "entry": "invite.mjs",
+  "runFromAgentRoot": true,
+  "secretFile": "C:\\passwords\\cj.secret.txt",
+  "companyId": "8103947",
+  "websiteId": "101908183",
+  "reportDir": "C:\\ai\\a-search\\logs\\cj-invite",
+  "lockPath": "C:\\ProgramData\\a-search\\cj-invite.lock",
+  "messageMax": 500,
+  "notes": "Copy redqueen/cj-invite/ to C:\\ai\\a-search\\cj-invite on redqueen. Keep provider marker enabled=0 until #5057 activation."
+}
