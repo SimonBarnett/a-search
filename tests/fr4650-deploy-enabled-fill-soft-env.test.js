@@ -247,8 +247,12 @@ describe('FR #4650 deploy fill gated + soft missing env', () => {
     assert.ok(queues.some((q) => String(q).includes('kelkoo')));
     const joined = warns.join('\n');
     assert.match(joined, /providers disabled \(missing credentials\)/);
-    assert.match(joined, /kelkoo: missing KELKOO_API_KEY/);
-    assert.match(joined, /etsy: missing ETSY_API_KEY/);
+    // FR #5058: softCheck message names missing file + Required keys (not only
+    // "kelkoo: missing KEY").
+    assert.match(joined, /kelkoo:.*KELKOO_API_KEY/);
+    assert.match(joined, /kelkoo:.*missing file/);
+    assert.match(joined, /etsy:.*ETSY_API_KEY/);
+    assert.match(joined, /etsy:.*missing file/);
     assert.equal(joined.includes('FAKE_'), false);
   });
 });
