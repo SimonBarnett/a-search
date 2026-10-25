@@ -86,6 +86,40 @@ describe('FR #4942 null LastSeenRunId skip-delete', () => {
     assert.equal(out.deleted, 0);
   });
 
+  it('memoryStore dry-run wouldDelete skips null LastSeenRunId (MRB #4944)', async () => {
+    const store = createMemoryStore({ env: 'live' });
+    store.seedPart({
+      Source: 'awin',
+      FeedKey: 'f1',
+      MerchantProductId: 'orphan',
+      LastSeenRunId: null,
+    });
+    store.seedPart({
+      Source: 'awin',
+      FeedKey: 'f1',
+      MerchantProductId: 'stamped',
+      LastSeenRunId: 1,
+    });
+    const out = await store.mergeFeed({
+      runId: 3,
+      providerId: 'awin',
+      feedKey: 'f1',
+      className: 'affiliate',
+      staged: [
+        {
+          MerchantProductId: 'keep',
+          title: 'A',
+          ContentHash: 'h1',
+        },
+      ],
+      deleteMissing: 'soft',
+      dryRun: true,
+    });
+    // stamped missing from staged => wouldDelete 1; orphan NULL LastSeen skipped
+    assert.equal(out.wouldDelete, 1);
+    assert.equal(out.deleted, 0);
+  });
+
   it('023 DeleteMissingParts requires LastSeenRunId IS NOT NULL', () => {
     const sql023 = fs.readFileSync(
       path.join(ROOT, 'db', 'migrations', '023_DeleteMissingParts_null_lastseen.sql'),

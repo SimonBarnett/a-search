@@ -100,6 +100,8 @@ function createMemoryStore(opts = {}) {
     }
     if (deleteMissing === 'soft' || deleteMissing === 'hard') {
       for (const a of active) {
+        // FR #4942 / MRB #4944: dry-run must match DeleteMissing (skip NULL LastSeen).
+        if (a.LastSeenRunId == null) continue;
         if (!stagedKeys.has(a.MerchantProductId)) wouldDelete += 1;
       }
     }
