@@ -13,7 +13,7 @@
 **Check, in this order, and record each result:**
 1. **Empty or truncated download:** zero bytes, size much smaller than `lastsize`, missing trailing newline / unterminated XML or JSON, row count far below `LastGoodRowCount`. Download `laststatus` isn't `ok`.
 2. **Feed or credentials expired:** the file is actually an HTML/login page or an error body; `laststatus` shows `http_401`/`http_403`/`missing_credentials`; the merchant is unpaid or uninstalled.
-3. **Format changed:** csv vs tsv vs json vs xml, or the delimiter or quoting changed, or it's still compressed even though the marker says decompressed.
+3. **Format changed:** csv vs tsv vs json vs xml, or the delimiter or quoting changed, or it's still compressed even though the marker says decompressed. `schema_drift` that lists **every** `expectedColumns` name is leftover gzip (1f8b) on a `.csv` key — `parseAndMapFeed` gunzips that itself (FR #4961); do not remap columns.
 4. **Encoding:** BOM or UTF-16, mojibake, windows-1252 characters.
 5. **Columns renamed, added or removed:** diff the header/field set against `validation.expectedColumns` and `mapping`.
 6. **Data quality:** which `requiredFields` are blank, duplicate keys, prices that don't parse, currency changes.
