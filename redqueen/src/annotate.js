@@ -396,7 +396,12 @@ async function annotateOneGuid(args) {
       if (published.reposted) {
         return { action: 'guid_searched', detail: 'search_reposted' };
       }
-      if (published.idempotent && !published.wrote) {
+      if (
+        published.idempotent &&
+        !published.wrote &&
+        published.reason !== 'searches_empty_seed' &&
+        !published.skipped
+      ) {
         return { action: 'noop', detail: 'guid_unchanged' };
       }
     } catch (err) {

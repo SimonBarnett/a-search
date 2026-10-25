@@ -100,6 +100,13 @@ async function handleChangeEvent(opts) {
       guid: event.guid,
       repostExisting: true,
     });
+    if (published && published.reason === 'searches_empty_seed') {
+      return {
+        action: 'skipped',
+        detail: 'searches_empty_seed',
+        key: event.key,
+      };
+    }
     return {
       action: published && published.idempotent && !published.wrote ? 'skipped' : 'search_posted',
       detail: published && published.wrote ? 'searches_posted' : 'searches_unchanged',

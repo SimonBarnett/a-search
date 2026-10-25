@@ -91,6 +91,11 @@ the queue's max receives. A GUID that is already `annotated=1` and has
 The reviews are not run again for that retry, including when
 `REDQUEEN_REANNOTATE=1`. An existing `searchid` still skips the POST.
 
+FR #4889: a `/parts` seed `searches.json` (`queries: []`) change event is a
+clean skip (`searches_empty_seed`). It must not POST `/search` and must not
+throw (that retried into `a-clubs-changes-dlq`). A throw on one drain
+message maps to `retry` for that message only.
+
 The service needs `A_SEARCH_API_URL` and `A_SEARCH_AGENT_API_KEY_FILE` (or
 `A_SEARCH_AGENT_API_KEY`). `Register-AClubsQueueService.ps1` always sets both
 on the nssm service: `-SearchApiUrl` (else the process env, else
