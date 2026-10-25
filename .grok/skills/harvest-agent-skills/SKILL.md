@@ -673,3 +673,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
 - GUID marker ready-flag is enabled (not init); /parts must not promote IN→live — promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
 - a-search #4881 smoke runs inside CDK deploy, SearchApiUrl from stack outputs, POST /search IAM SigV4; missing A_SEARCH_* on a seat is never a GIVEUP reason.
+- When FR #4891 (or any /parts contract) drops ?host= for Origin host, update tests/fr195-components-piece-docs.test.js pin from GET /parts?host&widgetGuid&offset&n to GET /parts?widgetGuid&offset&n plus Origin/PartsGatewayApiUrl/enabled/status needles before push.
