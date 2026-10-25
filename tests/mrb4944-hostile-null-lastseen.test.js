@@ -35,4 +35,13 @@ describe('MRB #4944 hostile NULL LastSeenRunId', () => {
     const hard = src.slice(src.indexOf("deleteMissing === 'hard'"));
     assert.match(hard, /LastSeenRunId\s+IS\s+NOT\s+NULL/);
   });
+
+  it('runImport pre-merge wouldDelete skips NULL LastSeenRunId', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', 'walrus', 'import', 'src', 'runImport.js'),
+      'utf8',
+    );
+    const chunk = src.slice(src.indexOf('let wouldDelete = 0'));
+    assert.match(chunk, /LastSeenRunId\s*!=\s*null/);
+  });
 });
