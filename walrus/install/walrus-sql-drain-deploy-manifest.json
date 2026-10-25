@@ -1,0 +1,14 @@
+{
+  "name": "walrus-sql-drain-deploy",
+  "description": "FR #5023: relative paths copied onto the walrus SQL drain install root",
+  "note": "FR #5022 moved pageSelect into shared/widgets; shared/** covers promoteInToLive. Do not copy redqueen/src for the SQL drain path. Exclude walrus/aws and secrets.",
+  "paths": [
+    "walrus/src",
+    "providers",
+    "shared",
+    "worker",
+    "package.json",
+    "package-lock.json",
+    "VERSION"
+  ]
+}
