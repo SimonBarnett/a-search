@@ -136,6 +136,35 @@ function isMissingObject(err) {
   return status === 404 || code === 'NotFound' || code === 'NoSuchKey';
 }
 
+/**
+ * @param {unknown} err
+ * @returns {AgentSearchError}
+ */
+function wrapS3HeadFailure(err) {
+  const wrapped = new AgentSearchError('s3_head_failed', 503);
+  const name = err && (err.name || err.code);
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  if (name) wrapped.s3Name = String(name);
+  if (status) wrapped.s3Status = status;
+  return wrapped;
+}
+
+/**
+ * Log affiliates HeadObject failure without dumping SDK XML/body.
+ * @param {{ info?: Function }} log
+ * @param {string} id
+ * @param {unknown} err
+ */
+function logAffiliatesS3Error(log, id, err) {
+  if (!log || typeof log.info !== 'function') return;
+  const name = err && (err.name || err.code) ? String(err.name || err.code) : 'Error';
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  const statusBit = status ? ` status=${status}` : '';
+  log.info(
+    `[agentSearch] skip fan-out ${id}: affiliates_s3_error name=${name}${statusBit}`,
+  );
+}
+
 async function readStoredFanout(getObject, Key) {
   if (typeof getObject !== 'function') return null;
   try {
@@ -362,7 +391,10 @@ async function applyAffiliatesEnabledFilter(targets, deps = {}) {
         }
         continue;
       }
-      throw err;
+      // FR #5090: Unknown / AccessDenied / redirect must not 500 the POST.
+      skipped.push({ id, reason: 'affiliates_s3_error' });
+      logAffiliatesS3Error(log, id, err);
+      continue;
     }
   }
   return { queued: kept, skipped };
@@ -416,7 +448,7 @@ async function handleAgentSearch(opts) {
     if (isMissingObject(err)) {
       throw new AgentSearchError('guid_not_found', 404);
     }
-    throw err;
+    throw wrapS3HeadFailure(err);
   }
 
   // FR #4415: tracked outbound links need userid from a-clubs host marker.
@@ -429,7 +461,7 @@ async function handleAgentSearch(opts) {
       (hostHead && (hostHead.Metadata || hostHead.metadata)) || {};
     hostUserid = useridFromHostMetadata(md);
   } catch (err) {
-    if (!isMissingObject(err)) throw err;
+    if (!isMissingObject(err)) throw wrapS3HeadFailure(err);
   }
   if (!hostUserid) {
     throw new AgentSearchError('userid_required', 400);

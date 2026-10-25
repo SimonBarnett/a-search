@@ -25,7 +25,8 @@ search. `/search` enqueues only to the enabled search-provider queues plus the
 SQL queue.
 
 After validating that `a-clubs/{hostkey}/{guid}/` exists (404 `guid_not_found`
-otherwise), entry reads `userid` from the host marker `a-clubs/{hostkey}/`
+otherwise; opaque S3 `Unknown`/`UnknownError` is **503 `s3_head_failed`**,
+FR #5090, not a 500 intake `Unknown`), entry reads `userid` from the host marker `a-clubs/{hostkey}/`
 Metadata (FR #4415 / #4287). Missing userid is **400 `userid_required`** ---
 never enqueue jobs that would crash workers with `TrackedUrlError`. Then entry
 mints a `searchid` and enqueues:
@@ -35,8 +36,9 @@ mints a `searchid` and enqueues:
    - `providers/registry.json` live/sandbox enabled + `awsSearch: true`
    - deploy queue URL present (`SQS_<X>_LIVE_URL` / soft-env FR #4650)
    - `s3://a-affiliates/<provider>/` folder metadata `enabled=1` (shared
-     `parseEnabledFlag` / `isEnabledOne`; missing folder or `enabled=0` is
-     skipped and logged). Candidate ids include amazon, ebay, rakuten, cj,
+     `parseEnabledFlag` / `isEnabledOne`; missing folder, `enabled=0`, or
+     HeadObject `Unknown` / other S3 errors (FR #5090) are skipped and logged
+     --- they must not 500 the POST). Candidate ids include amazon, ebay, rakuten, cj,
      kelkoo, etsy; aliexpress and bol when registry-enabled. Creating amazon /
      ebay folders needs Simon's go before deploy, or they stop being searched.
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env
