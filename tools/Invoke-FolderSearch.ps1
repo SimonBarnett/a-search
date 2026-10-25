@@ -46,7 +46,10 @@ param(
     [scriptblock]$RcloneLsJson,
     [scriptblock]$RcloneCat,
     [scriptblock]$InvokeSearch,
-    [scriptblock]$ListGuidChildren
+    [scriptblock]$ListGuidChildren,
+    # FR #5078: injectable AWS credential resolver + curl argv runner (tests / alternate clients)
+    [scriptblock]$ResolveAwsCredentials,
+    [scriptblock]$CurlInvoke
 )
 
 Set-StrictMode -Version Latest
@@ -109,13 +112,83 @@ function Resolve-AwsProfileName {
     return 'a-search-redqueen-annotator'
 }
 
+# FR #5078: resolve real AK/SK/(session) from a named profile. Never log the values.
+# Default: `aws configure export-credentials --profile <p> --format process`.
+function Resolve-AwsCliCredentials {
+    param(
+        [Parameter(Mandatory = $true)][string]$ProfileName,
+        [scriptblock]$Resolver
+    )
+    if ($Resolver) {
+        $doc = & $Resolver $ProfileName
+        # Scriptblocks may emit arrays; take the last non-null object with keys.
+        if ($doc -is [System.Array]) {
+            $picked = $null
+            foreach ($item in @($doc)) {
+                if ($null -ne $item) { $picked = $item }
+            }
+            $doc = $picked
+        }
+    }
+    else {
+        if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+            throw 'aws_cli_required: need aws CLI to resolve profile credentials for SigV4'
+        }
+        $raw = & aws configure export-credentials --profile $ProfileName --format process 2>&1
+        $code = $LASTEXITCODE
+        if ($code -ne 0) {
+            throw ("aws_credentials_failed: export-credentials exit {0}" -f $code)
+        }
+        $text = (($raw | Out-String) -replace '[\u0000-\u0008\u000B\u000C\u000E-\u001F]', '').Trim()
+        try {
+            $doc = $text | ConvertFrom-Json
+        }
+        catch {
+            throw 'aws_credentials_failed: export-credentials JSON parse failed'
+        }
+    }
+    $ak = ''
+    $sk = ''
+    $tok = ''
+    if ($null -ne $doc) {
+        if ($doc -is [System.Collections.IDictionary]) {
+            if ($doc.Contains('AccessKeyId')) { $ak = [string]$doc['AccessKeyId'] }
+            if ($doc.Contains('SecretAccessKey')) { $sk = [string]$doc['SecretAccessKey'] }
+            if ($doc.Contains('SessionToken') -and $doc['SessionToken']) {
+                $tok = [string]$doc['SessionToken']
+            }
+        }
+        else {
+            if ($doc.PSObject.Properties['AccessKeyId']) { $ak = [string]$doc.AccessKeyId }
+            if ($doc.PSObject.Properties['SecretAccessKey']) { $sk = [string]$doc.SecretAccessKey }
+            if ($doc.PSObject.Properties['SessionToken'] -and $doc.SessionToken) {
+                $tok = [string]$doc.SessionToken
+            }
+        }
+    }
+    if (-not $ak -or -not $sk) {
+        throw 'aws_credentials_incomplete: AccessKeyId/SecretAccessKey missing'
+    }
+    # Guard: never treat the profile name as an access key (the pre-#5078 curl bug).
+    if ($ak -eq $ProfileName) {
+        throw 'aws_credentials_invalid: AccessKeyId must not equal the profile name'
+    }
+    return @{
+        AccessKeyId     = $ak
+        SecretAccessKey = $sk
+        SessionToken    = $tok
+    }
+}
+
 function Invoke-AgentSearchHttp {
     param(
         [Parameter(Mandatory = $true)][string]$Endpoint,
         [Parameter(Mandatory = $true)][hashtable]$Body,
         [Parameter(Mandatory = $true)][string]$AgentApiKey,
         [string]$AwsProfile,
-        [scriptblock]$InvokeSearch
+        [scriptblock]$InvokeSearch,
+        [scriptblock]$ResolveAwsCredentials,
+        [scriptblock]$CurlInvoke
     )
     if ($InvokeSearch) {
         return & $InvokeSearch $Endpoint $Body $AgentApiKey $AwsProfile
@@ -130,18 +203,32 @@ function Invoke-AgentSearchHttp {
     # Never log headers/body with secrets --- Write-Verbose only endpoint + hostkey/guid
     Write-Verbose ("POST {0} hostkey={1} guid={2}" -f $uri, $Body.hostkey, $Body.guid)
 
-    if ($AwsProfile -and (Get-Command curl.exe -ErrorAction SilentlyContinue)) {
+    if ($AwsProfile -and ($CurlInvoke -or (Get-Command curl.exe -ErrorAction SilentlyContinue))) {
         $tmp = [System.IO.Path]::GetTempFileName()
         try {
             [System.IO.File]::WriteAllText($tmp, $json)
-            $out = & curl.exe -sS -X POST $uri `
-                -H 'content-type: application/json' `
-                -H ("x-agent-api-key: {0}" -f $AgentApiKey) `
-                --aws-sigv4 "aws:amz:eu-west-2:execute-api" `
-                --user ("{0}:" -f $AwsProfile) `
-                --data-binary ("@{0}" -f $tmp) 2>&1
-            $code = $LASTEXITCODE
-            if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
+            # FR #5078: resolve real credentials; never pass the profile name as --user.
+            $creds = Resolve-AwsCliCredentials -ProfileName $AwsProfile -Resolver $ResolveAwsCredentials
+            $userPair = '{0}:{1}' -f $creds.AccessKeyId, $creds.SecretAccessKey
+            $curlArgs = @(
+                '-sS', '-X', 'POST', $uri,
+                '-H', 'content-type: application/json',
+                '-H', ('x-agent-api-key: {0}' -f $AgentApiKey),
+                '--aws-sigv4', 'aws:amz:eu-west-2:execute-api',
+                '--user', $userPair
+            )
+            if ($creds.SessionToken) {
+                $curlArgs += @('-H', ('x-amz-security-token: {0}' -f $creds.SessionToken))
+            }
+            $curlArgs += @('--data-binary', ('@{0}' -f $tmp))
+            if ($CurlInvoke) {
+                $out = & $CurlInvoke $curlArgs
+            }
+            else {
+                $out = & curl.exe @curlArgs 2>&1
+                $code = $LASTEXITCODE
+                if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
+            }
             return $out
         }
         finally {
@@ -195,6 +282,8 @@ function Invoke-OneGuidSearch {
         $AwsGetObject,
         $RcloneCat,
         $InvokeSearch,
+        $ResolveAwsCredentials,
+        $CurlInvoke,
         [switch]$WhatIf
     )
     $guid = Get-FolderS3Guid -Location $GuidLocation
@@ -233,7 +322,8 @@ function Invoke-OneGuidSearch {
     }
 
     $raw = Invoke-AgentSearchHttp -Endpoint $Endpoint -Body $body `
-        -AgentApiKey $AgentApiKey -AwsProfile $AwsProfile -InvokeSearch $InvokeSearch
+        -AgentApiKey $AgentApiKey -AwsProfile $AwsProfile -InvokeSearch $InvokeSearch `
+        -ResolveAwsCredentials $ResolveAwsCredentials -CurlInvoke $CurlInvoke
 
     $parsed = $null
     try { $parsed = ConvertFrom-FolderS3Json $raw } catch { $parsed = $raw }
@@ -278,7 +368,9 @@ try {
             $one = Invoke-OneGuidSearch -GuidLocation $loc -HostMeta $hostMarker.Metadata `
             -Endpoint $endpoint -AgentApiKey $apiKey -AwsProfile $profile `
             -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat `
-            -InvokeSearch $InvokeSearch -WhatIf:$WhatIf
+            -InvokeSearch $InvokeSearch `
+            -ResolveAwsCredentials $ResolveAwsCredentials -CurlInvoke $CurlInvoke `
+            -WhatIf:$WhatIf
         $results += $one
     }
     else {
@@ -311,7 +403,9 @@ try {
                 $results += Invoke-OneGuidSearch -GuidLocation $g -HostMeta $hostMarker.Metadata `
                 -Endpoint $endpoint -AgentApiKey $apiKey -AwsProfile $profile `
                 -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat `
-                -InvokeSearch $InvokeSearch -WhatIf:$WhatIf
+                -InvokeSearch $InvokeSearch `
+                -ResolveAwsCredentials $ResolveAwsCredentials -CurlInvoke $CurlInvoke `
+                -WhatIf:$WhatIf
         }
     }
 

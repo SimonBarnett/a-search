@@ -30,7 +30,7 @@ Backends: `aws` (redqueen: `head-object` + `get-object-tagging` + annotation API
 
 ## search / Invoke-FolderSearch.ps1
 
-POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, SigV4-signs with the redqueen agents profile. Never writes S3. Never prints credentials.
+POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, SigV4-signs via curl --aws-sigv4 using credentials from ws configure export-credentials --profile <p> --format process (AccessKeyId/SecretAccessKey; x-amz-security-token when a session token is present). Never pass the profile name as --user (FR #5078). Never writes S3. Never prints credentials. Deploy smoke (scripts/smoke-deploy.js) already signs via awsExecuteApiSigV4.js.
 
 ```powershell
 # GUID folder
