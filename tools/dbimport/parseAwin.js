@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const zlib = require('node:zlib');
 const { parse } = require('csv-parse/sync');
+const { resolveAwinPartKey } = require('./parseAwinKey');
 
 /**
  * Some Awin feeds are gzip (or zip) even when saved as .csv — e.g. compression=none
@@ -79,8 +80,7 @@ function parseAwinPartsCsv(raw) {
     for (const [k, v] of Object.entries(row)) {
       lower[String(k).trim().toLowerCase()] = v == null ? '' : String(v).trim();
     }
-    const merchantProductId =
-      lower.merchant_product_id || lower.aw_product_id || lower.product_id || '';
+    const { merchantProductId, merchantSku } = resolveAwinPartKey(lower);
     if (!merchantProductId) continue;
     const priceRaw = lower.search_price || lower.store_price || lower.display_price || '';
     const priceNum = priceRaw === '' ? null : Number(String(priceRaw).replace(/[^0-9.-]/g, ''));
@@ -93,6 +93,7 @@ function parseAwinPartsCsv(raw) {
     const brand = lower.brand_name || lower.brand || lower.merchant_name || '';
     out.push({
       MerchantProductId: merchantProductId.slice(0, 256),
+      MerchantSku: merchantSku.slice(0, 256),
       Title: title.slice(0, 512),
       Description: lower.description || '',
       Url: url.slice(0, 2048),
@@ -154,6 +155,7 @@ function readFileIfExists(p) {
 module.exports = {
   parseAwinPartsCsv,
   parseAwinCouponsJson,
+  resolveAwinPartKey,
   readFileIfExists,
   maybeDecompressFeed,
 };

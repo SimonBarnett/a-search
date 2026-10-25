@@ -70,3 +70,14 @@ Rows in `ingest.PurgeRequests` are hard-deleted for that `(provider, feedKey)` a
 ## Manual UAT
 
 Sandbox (Recommended FR-146/FR-251 DB `a_search_sandbox`) with real `awin/1902` and one Shopify shop first. Simon gives go before registering the live task.
+
+## Failure issues (FR #4943)
+
+Every failed load POSTs bobiverse intake (`POST https://irc.ntsa.uk/bob/v1/intake`,
+or `A_SEARCH_INTAKE_URL`) with `kind: fr`, title
+`import failure: {provider}/{feedKey}: {errorCode}`, `dedupe_key` =
+`sha256(provider|feedKey|errorCode)`, and a hidden `<!-- import-fp:... -->`
+marker in the body. No GitHub token required for the intake path.
+If intake is down, payloads land under `import-failures/<runId>/issue-*.json`
+and are replayed on the next run. `MSSQL_DATABASE` must be set explicitly (no silent
+sandbox default for scheduled runs); use `IMPORT_ALLOW_DEFAULT_DB=1` only for local tests.
