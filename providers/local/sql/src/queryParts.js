@@ -187,18 +187,152 @@ function searchTextFromMsg(msg) {
 }
 
 /**
- * Quote one CONTAINS term (phrase or word). User text is never concatenated
- * into SQL --- only into the @contains parameter.
+ * SQL Server English system stoplist (noise). Tokens matching these are
+ * dropped so CONTAINS does not raise noise-word informational errors (FR #5004).
+ */
+const ENGLISH_FT_NOISE_WORDS = new Set(
+  (
+    'a an and are as at be but by for from had has have he her here him his ' +
+    'how i if in into is it its me my no not of on or our out she so that the ' +
+    'their them then there these they this to too up us was we were what when ' +
+    'where which who will with would you your about after all also another any ' +
+    'because been before being between both came can come could did do each get ' +
+    'got here himself like make many might more most much must never now only ' +
+    'other over said same see should since some still such take than their ' +
+    'through under very way well what while'
+  ).split(/\s+/),
+);
+
+const CONTAINS_OPERATORS = new Set([
+  'and',
+  'or',
+  'not',
+  'near',
+  'formsof',
+  'inflectional',
+  'thesaurus',
+  'isabout',
+  'weight',
+  'true',
+  'false',
+]);
+
+/**
+ * Split raw query text into CONTAINS word tokens: strip punctuation and
+ * operators, drop English noise words. Never concatenated into SQL text.
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function sanitizeContainsTokens(raw) {
+  const cleaned = String(raw || '')
+    .replace(/"/g, ' ')
+    .replace(/[^A-Za-z0-9.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return [];
+  const out = [];
+  for (const part of cleaned.split(' ')) {
+    const token = part.replace(/^\.+|\.+$/g, '');
+    if (!token || token.length < 2) continue;
+    const lower = token.toLowerCase();
+    if (CONTAINS_OPERATORS.has(lower) || ENGLISH_FT_NOISE_WORDS.has(lower)) {
+      continue;
+    }
+    out.push(token);
+  }
+  return out;
+}
+
+/**
+ * Quote sanitised tokens for one include/exclude query (AND within the query).
  * @param {string} raw
  * @returns {string}
  */
 function quoteContainsTerm(raw) {
-  const cleaned = String(raw || '')
-    .replace(/"/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!cleaned) return '';
-  return `"${cleaned}"`;
+  const tokens = sanitizeContainsTokens(raw);
+  if (!tokens.length) return '';
+  return tokens.map((t) => `"${t}"`).join(' AND ');
+}
+
+/**
+ * @param {unknown} err
+ * @returns {object[]}
+ */
+function collectSqlErrorInfos(err) {
+  const infos = [];
+  const seen = new Set();
+  function walk(node) {
+    if (!node || typeof node !== 'object' || seen.has(node)) return;
+    seen.add(node);
+    if (node.info && typeof node.info === 'object') infos.push(node.info);
+    if (Array.isArray(node.precedingErrors)) {
+      for (const p of node.precedingErrors) walk(p);
+    }
+    if (node.originalError) walk(node.originalError);
+  }
+  walk(err);
+  return infos;
+}
+
+/**
+ * Severity < 11 (informational) including noise-word notices.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isInformationalSqlError(err) {
+  const infos = collectSqlErrorInfos(err);
+  if (infos.length) {
+    return infos.every((info) => {
+      const sev = Number(info.class != null ? info.class : info.severity);
+      return Number.isFinite(sev) && sev < 11;
+    });
+  }
+  const message = String((err && err.message) || err || '');
+  return /noise word/i.test(message);
+}
+
+/**
+ * Log line / Error for a real SQL failure (never bare EREQUEST).
+ * @param {unknown} err
+ * @param {string} contains
+ * @returns {Error}
+ */
+function firstSqlNumber(err) {
+  const infos = collectSqlErrorInfos(err);
+  for (const info of infos) {
+    if (info && info.number != null && info.number !== '') return info.number;
+  }
+  let node = err;
+  for (let i = 0; i < 8 && node && typeof node === 'object'; i += 1) {
+    if (node.sqlNumber != null && node.sqlNumber !== '') return node.sqlNumber;
+    if (node.number != null && node.number !== '') return node.number;
+    node = node.originalError;
+  }
+  return '';
+}
+
+function formatSqlQueryError(err, contains) {
+  if (err && err.code === 'sql_query_failed' && err.message) {
+    return String(err.message);
+  }
+  const infos = collectSqlErrorInfos(err);
+  const info = infos[0] || {};
+  const number = firstSqlNumber(err);
+  const message = String(
+    info.message ||
+      (err && err.sqlMessage) ||
+      (err && err.message) ||
+      err ||
+      'sql_error',
+  ).replace(/\s+/g, ' ').trim();
+  const containsSafe = String(contains || '').slice(0, 500);
+  const line = `sql_query_failed number=${number === '' ? '?' : number} message=${message} contains=${containsSafe}`;
+  const out = new Error(line);
+  out.code = 'sql_query_failed';
+  out.sqlNumber = number === '' ? undefined : number;
+  out.sqlMessage = message;
+  out.containsQuery = containsSafe;
+  return out;
 }
 
 /**
@@ -318,14 +452,21 @@ async function defaultQueryParts(msg, deps) {
   }
 
   try {
-    const result = await pool
-      .request()
-      .input('env', sqlTypes.NVarChar, env)
-      .input('contains', sqlTypes.NVarChar, contains)
-      .input('n', sqlTypes.Int, topN)
-      .query(SELECT_SQL);
-    const rows = (result && result.recordset) || [];
-    return Array.isArray(rows) ? rows : [];
+    try {
+      const result = await pool
+        .request()
+        .input('env', sqlTypes.NVarChar, env)
+        .input('contains', sqlTypes.NVarChar, contains)
+        .input('n', sqlTypes.Int, topN)
+        .query(SELECT_SQL);
+      const rows = (result && result.recordset) || [];
+      return Array.isArray(rows) ? rows : [];
+    } catch (err) {
+      if (isInformationalSqlError(err)) {
+        return [];
+      }
+      throw formatSqlQueryError(err, contains);
+    }
   } finally {
     if (pool && typeof pool.close === 'function') {
       await Promise.resolve(pool.close()).catch(() => {});
@@ -343,9 +484,13 @@ module.exports = {
   includeTermsFromMsg,
   excludeTermsFromMsg,
   quoteContainsTerm,
+  sanitizeContainsTokens,
   buildContainsQuery,
   sqlTopLimit,
   SELECT_SQL,
   defaultQueryParts,
   defaultConnect,
+  isInformationalSqlError,
+  formatSqlQueryError,
+  ENGLISH_FT_NOISE_WORDS,
 };

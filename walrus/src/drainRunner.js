@@ -176,11 +176,13 @@ function createDrainRunner(opts) {
       const once = {
         ok: false,
         error:
-          err && err.code
-            ? err.code
-            : err && err.message
-              ? err.message
-              : 'job_failed',
+          err && err.code === 'sql_query_failed'
+            ? err.message
+            : err && err.code
+              ? err.code
+              : err && err.message
+                ? err.message
+                : 'job_failed',
         disposition: 'error',
         productCount: 0,
         durationMs,
