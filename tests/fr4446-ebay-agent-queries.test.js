@@ -171,6 +171,9 @@ describe('FR #4446 eBay agent queries', () => {
     assert.equal(out.ok, true);
     assert.deepEqual(out.products, []);
     assert.equal(out.key, null);
-    assert.equal(puts.length, 0);
+    // FR #4917: zero-product / empty-query finish still writes DONE/; never IN/ (FR #4823).
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 0);
+    assert.ok(puts.some((p) => /\/DONE\//i.test(String(p.Key || ''))));
   });
 });
