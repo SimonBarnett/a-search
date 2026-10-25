@@ -142,7 +142,7 @@ VALUES (@Host, N'run', N'running');
     Clear-DbImportPartsStaging -Connection $Connection -Source $Source -FeedKey $FeedKey -Env $Env
 
     $table = New-Object System.Data.DataTable
-    foreach ($col in @('Source', 'FeedKey', 'MerchantProductId', 'Env', 'Title', 'Description', 'Url', 'ImageUrl', 'Currency', 'Stock', 'ContentHash')) {
+    foreach ($col in @('Source', 'FeedKey', 'MerchantProductId', 'MerchantSku', 'Env', 'Title', 'Description', 'Url', 'ImageUrl', 'Currency', 'Stock', 'ContentHash')) {
         [void]$table.Columns.Add($col, [string])
     }
     $priceCol = $table.Columns.Add('Price', [decimal])
@@ -150,6 +150,7 @@ VALUES (@Host, N'run', N'running');
     $table.Columns['Source'].MaxLength = 64
     $table.Columns['FeedKey'].MaxLength = 128
     $table.Columns['MerchantProductId'].MaxLength = 256
+    $table.Columns['MerchantSku'].MaxLength = 256
     $table.Columns['Env'].MaxLength = 16
     $table.Columns['Title'].MaxLength = 512
     $table.Columns['Url'].MaxLength = 2048
@@ -163,6 +164,7 @@ VALUES (@Host, N'run', N'running');
         $row['Source'] = Clip-DbImportNvarchar $Source 64
         $row['FeedKey'] = Clip-DbImportNvarchar $FeedKey 128
         $row['MerchantProductId'] = Clip-DbImportNvarchar $r.MerchantProductId 256
+        $row['MerchantSku'] = Clip-DbImportNvarchar $r.MerchantSku 256
         $row['Env'] = Clip-DbImportNvarchar $Env 16
         $row['Title'] = Clip-DbImportNvarchar $r.Title 512
         $row['Description'] = Clip-DbImportNvarchar $r.Description 0
@@ -184,7 +186,7 @@ VALUES (@Host, N'run', N'running');
     $bulk.DestinationTableName = 'dbo.PartsStaging'
     $bulk.BatchSize = 2000
     $bulk.BulkCopyTimeout = 600
-    foreach ($c in @('Source', 'FeedKey', 'MerchantProductId', 'Env', 'Title', 'Description', 'Url', 'ImageUrl', 'Price', 'Currency', 'Stock', 'ContentHash')) {
+    foreach ($c in @('Source', 'FeedKey', 'MerchantProductId', 'MerchantSku', 'Env', 'Title', 'Description', 'Url', 'ImageUrl', 'Price', 'Currency', 'Stock', 'ContentHash')) {
         [void]$bulk.ColumnMappings.Add($c, $c)
     }
     $bulk.WriteToServer($table)
@@ -192,21 +194,21 @@ VALUES (@Host, N'run', N'running');
     [void](Invoke-DbImportNonQuery -Connection $Connection -TimeoutSec 600 -Sql @"
 MERGE dbo.Parts AS t
 USING (
-  SELECT Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
+  SELECT Source, FeedKey, MerchantProductId, MerchantSku, Env, Title, Description, Url, ImageUrl,
          Price, Currency, Stock, ContentHash
   FROM dbo.PartsStaging
   WHERE Source=@Source AND FeedKey=@FeedKey AND Env=@Env
 ) AS s
 ON t.Source=s.Source AND t.FeedKey=s.FeedKey AND t.MerchantProductId=s.MerchantProductId AND t.Env=s.Env
 WHEN MATCHED THEN UPDATE SET
-  Title=s.Title, Description=s.Description, Url=s.Url, ImageUrl=s.ImageUrl,
+  MerchantSku=s.MerchantSku, Title=s.Title, Description=s.Description, Url=s.Url, ImageUrl=s.ImageUrl,
   Price=s.Price, Currency=s.Currency, Stock=s.Stock, ContentHash=s.ContentHash,
   DeletedAt=NULL, LastSeenRunId=@RunId, UpdatedAt=SYSUTCDATETIME()
 WHEN NOT MATCHED BY TARGET THEN INSERT
-  (Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
+  (Source, FeedKey, MerchantProductId, MerchantSku, Env, Title, Description, Url, ImageUrl,
    Price, Currency, Stock, ContentHash, DeletedAt, LastSeenRunId)
   VALUES
-  (s.Source, s.FeedKey, s.MerchantProductId, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
+  (s.Source, s.FeedKey, s.MerchantProductId, s.MerchantSku, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
    s.Price, s.Currency, s.Stock, s.ContentHash, NULL, @RunId);
 "@ -Params @{ '@Source' = $Source; '@FeedKey' = $FeedKey; '@Env' = $Env; '@RunId' = $runId })
 
