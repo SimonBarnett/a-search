@@ -1,17 +1,25 @@
 'use strict';
 
 /**
- * FR #4195: daily orchestration --- enabled providers/affiliates whose last
- * successful download (lastok) is >= refreshdays (default 7) old, or never
- * downloaded. Failed downloads do not move lastok. Paginate listObjectsV2.
+ * FR #4195 / #4931: daily orchestration --- enabled providers/affiliates whose
+ * lastdownload is missing/unparseable or age (UTC days) >= shared defaultage
+ * (merchant > provider > _root/). Missing `_root/` self-heals defaultage=7;
+ * existing invalid `_root/` throws needs_defaultage (FR #4931 12:49).
+ * Paginate listObjectsV2. Skip the `_root/` config marker as a provider.
  */
 
-const { downloadOne } = require('./downloadOne');
+const { downloadOne: defaultDownloadOne } = require('./downloadOne');
 const { coerceStringMap } = require('../../shared/affiliates/metadata');
 const {
-  needsRefresh,
-  refreshDaysFromMeta,
-} = require('../../shared/affiliates/feedFormat');
+  resolveDefaultAge,
+  isDueByLastDownload,
+  NeedsDefaultAgeError,
+  ensureRootDefaultAge,
+} = require('../../shared/defaultAge');
+
+/** Bucket-root config marker; never treated as a provider slug. */
+const ROOT_MARKER_KEY = '_root/';
+const ROOT_PROVIDER_SLUG = '_root';
 
 /**
  * @param {object} s3
@@ -46,14 +54,23 @@ async function listProviderSlugs(s3, bucket) {
   for (const cp of listed.CommonPrefixes || []) {
     const p = String(cp.Prefix || '');
     const m = /^([a-z0-9._-]+)\/$/.exec(p);
-    if (m) slugs.add(m[1]);
+    if (m && m[1] !== ROOT_PROVIDER_SLUG) slugs.add(m[1]);
   }
   for (const c of listed.Contents || []) {
     const k = String(c.Key || '');
     const m = /^([a-z0-9._-]+)\/$/.exec(k);
-    if (m) slugs.add(m[1]);
+    if (m && m[1] !== ROOT_PROVIDER_SLUG) slugs.add(m[1]);
   }
   return [...slugs].sort();
+}
+
+/**
+ * @param {object} s3
+ * @param {string} bucket
+ * @returns {Promise<Record<string, string>>}
+ */
+async function loadRootMeta(s3, bucket, log) {
+  return ensureRootDefaultAge(s3, bucket, { log, rootKey: ROOT_MARKER_KEY });
 }
 
 /**
@@ -99,6 +116,7 @@ function escapeRe(s) {
  *   now?: Date,
  *   log?: Function,
  *   onImport?: Function,
+ *   downloadOne?: Function,
  * }} opts
  */
 async function runDaily(opts) {
@@ -106,7 +124,10 @@ async function runDaily(opts) {
   const bucket = opts.bucket;
   const log = opts.log || ((msg) => console.log(msg));
   const now = opts.now || new Date();
+  const downloadOne =
+    typeof opts.downloadOne === 'function' ? opts.downloadOne : defaultDownloadOne;
 
+  const rootMeta = await loadRootMeta(s3, bucket, log);
   const providers = await listProviderSlugs(s3, bucket);
   /** @type {object[]} */
   const results = [];
@@ -134,7 +155,6 @@ async function runDaily(opts) {
       continue;
     }
 
-    const refreshDays = refreshDaysFromMeta(providerMeta);
     const affiliateIds = await listAffiliateIds(s3, bucket, provider);
 
     for (const affiliateId of affiliateIds) {
@@ -170,7 +190,23 @@ async function runDaily(opts) {
         continue;
       }
 
-      if (!needsRefresh(meta, now, refreshDays)) {
+      let defaultAge;
+      try {
+        defaultAge = resolveDefaultAge({
+          affiliateMeta: meta,
+          providerMeta,
+          rootMeta,
+        });
+      } catch (err) {
+        if (err && err.code === 'needs_defaultage') {
+          throw err instanceof NeedsDefaultAgeError
+            ? err
+            : new NeedsDefaultAgeError(err.message);
+        }
+        throw err;
+      }
+
+      if (!isDueByLastDownload(meta, now, defaultAge)) {
         skippedFresh += 1;
         log(`affiliate ${affiliateId} skip: fresh`);
         results.push({
@@ -249,6 +285,7 @@ module.exports = {
   runWeekly,
   listProviderSlugs,
   listAffiliateIds,
-  needsRefresh,
-  refreshDaysFromMeta,
+  loadRootMeta,
+  ROOT_MARKER_KEY,
+  NeedsDefaultAgeError,
 };

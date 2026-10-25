@@ -122,7 +122,12 @@ async function main(argv) {
   });
 
   process.stdout.write(JSON.stringify(redactResult(result)) + '\n');
-  if (!result.ok && result.status !== 'exists' && result.status !== 'parts_exists') {
+  if (
+    !result.ok &&
+    result.status !== 'exists' &&
+    result.status !== 'parts_exists' &&
+    result.status !== 'skipped_nofeed'
+  ) {
     process.exit(1);
   }
   process.exit(0);
