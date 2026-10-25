@@ -45,7 +45,7 @@ Config (optional): copy `folder-tools.config.example.json` to `tools/folder-tool
 or `%ProgramData%\a-search\folder-tools.config.json`, or set:
 
 - `A_SEARCH_SEARCH_API_URL`
-- `A_SEARCH_AGENT_API_KEY` (or name in config `AgentApiKeyEnv`)
+- IAM SigV4 (`-AwsProfile`, default `a-search-redqueen-annotator`); no `x-agent-api-key` (FR #5086)
 - `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
 

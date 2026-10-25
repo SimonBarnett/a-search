@@ -291,13 +291,13 @@ Optional manual follow-up: confirm a results object appears under `{env}/{source
 success; if blocked, expect CloudWatch `intake_egress_blocked` on the next fatal
 path - see [intake-on-exception.md](intake-on-exception.md) and section FR-158 below.
 
-**Caller impact (FR #4888):** API Gateway requires SigV4 on `/search` and
-`/selftest`. Unsigned JWT or `x-agent-api-key` requests stop at the gateway
-(403). Lambda still accepts JWT or agent-key when the request is already
-IAM-signed (local tests without APIGW unchanged). The annotator identity
+**Caller impact (FR #4888 / #5086):** API Gateway requires SigV4 on `/search` and
+`/selftest`. Unsigned requests stop at the gateway (403). Entry `/search` agent
+fan-out does **not** require `x-agent-api-key` (IAM only). Legacy JWT body shape
+on `/search` still accepts IAM identity first, then JWT. The annotator identity
 `a-search-redqueen-annotator` is granted `execute-api:Invoke` in CDK.
-`redqueen/src/guidSearch.js` signs with that default chain. Club-cwd
-`Invoke-FolderSearch.ps1` defaults to the same profile.
+`redqueen/src/guidSearch.js` and club-cwd `tools/search.ps1` /
+`Invoke-FolderSearch.ps1` sign with that profile and need no agent key file.
 
 Do **not** wire this against production from CI without an explicit approval gate.
 

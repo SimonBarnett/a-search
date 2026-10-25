@@ -11,14 +11,12 @@ Describe 'FR #5078 Invoke-FolderSearch SigV4 credentials' {
     BeforeEach {
         if (Test-Path $mount) { Remove-Item -LiteralPath $mount -Recurse -Force -ErrorAction SilentlyContinue }
         New-Item -ItemType Directory -Force -Path (Join-Path $mount 'a-clubs\hostkey1\guid-aaa') | Out-Null
-        [System.IO.File]::WriteAllText($keyFile, "FAKE_FILE_KEY`n")
-        $env:A_SEARCH_AGENT_API_KEY_FILE = $keyFile
+        Remove-Item Env:A_SEARCH_AGENT_API_KEY_FILE -ErrorAction SilentlyContinue
+        Remove-Item Env:A_SEARCH_AGENT_API_KEY -ErrorAction SilentlyContinue
         $env:A_SEARCH_API_URL = 'https://example.test/'
     }
     AfterEach {
-        Remove-Item Env:A_SEARCH_AGENT_API_KEY_FILE -ErrorAction SilentlyContinue
         Remove-Item Env:A_SEARCH_API_URL -ErrorAction SilentlyContinue
-        if (Test-Path $keyFile) { Remove-Item -LiteralPath $keyFile -Force -ErrorAction SilentlyContinue }
     }
 
     $head = {
@@ -62,12 +60,12 @@ Describe 'FR #5078 Invoke-FolderSearch SigV4 credentials' {
         $joined | Should Match 'FAKEACCESSKEYIDEXAMPLE:FAKESECRETKEYEXAMPLE000'
         $joined | Should Not Match 'fake-annotator-profile:'
         $joined | Should Match 'x-amz-security-token: FAKESESSIONTOKENEXAMPLE'
+        $joined | Should Not Match 'x-agent-api-key'
         $text = ($out | Out-String)
         $text | Should Match 'searchid=sid-sigv4'
         $text | Should Not Match 'FAKEACCESSKEYIDEXAMPLE'
         $text | Should Not Match 'FAKESECRETKEYEXAMPLE'
         $text | Should Not Match 'FAKESESSIONTOKENEXAMPLE'
-        $text | Should Not Match 'FAKE_FILE_KEY'
     }
 
     It 'fails clearly when credential resolver returns no AccessKeyId' {

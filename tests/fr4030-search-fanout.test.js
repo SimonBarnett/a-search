@@ -211,7 +211,7 @@ describe('FR #4030 agent fan-out', () => {
     assert.equal(sent[0].source, 'sql');
   });
 
-  it('unknown GUID returns 404; missing agent key returns 401', async () => {
+  it('unknown GUID returns 404; missing userid returns 400', async () => {
     await assert.rejects(
       () =>
         handleAgentSearch({
@@ -235,6 +235,7 @@ describe('FR #4030 agent fan-out', () => {
       (e) => e instanceof AgentSearchError && e.code === 'guid_not_found',
     );
 
+    // FR #5086: no agent key required; empty host marker => userid_required
     const res = await handleSearch(
       {
         headers: {},
@@ -245,13 +246,13 @@ describe('FR #4030 agent fan-out', () => {
         }),
       },
       {
-        env: { A_SEARCH_AGENT_API_KEY: FAKE_KEY },
+        env: {},
         headObject: async () => ({}),
         sendMessage: async () => {},
       },
     );
-    assert.equal(res.statusCode, 401);
-    assert.equal(JSON.parse(res.body).error, 'unauthorized');
+    assert.equal(res.statusCode, 400);
+    assert.equal(JSON.parse(res.body).error, 'userid_required');
   });
 
   it('handleSearch agent path returns 202 and never logs secrets', async () => {

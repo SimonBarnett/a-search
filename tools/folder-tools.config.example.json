@@ -1,5 +1,5 @@
 {
   "SearchApiUrl": "https://EXAMPLE.execute-api.eu-west-2.amazonaws.com",
   "AwsProfile": "a-search-redqueen-annotator",
-  "AgentApiKeyEnv": "A_SEARCH_AGENT_API_KEY"
+  "SearchStackName": "ASearchStack"
 }
