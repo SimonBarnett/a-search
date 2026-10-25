@@ -128,12 +128,81 @@ async function loadPartsStaging(pool, rows) {
   }
 }
 
-async function mergePartsFromStaging(pool, source, feedKey, env) {
+async function beginImportRun(pool, opts) {
+  const mode = opts && opts.mode === 'dry-run' ? 'dry-run' : 'run';
+  const host = String((opts && opts.host) || '').slice(0, 128);
+  const r = await pool
+    .request()
+    .input('Host', sql.NVarChar(128), host || null)
+    .input('Mode', sql.NVarChar(16), mode)
+    .query(
+      `INSERT INTO ingest.ImportRuns (Host, Mode, Status)
+       OUTPUT INSERTED.RunId
+       VALUES (@Host, @Mode, N'running');`,
+    );
+  return { runId: Number(r.recordset[0] && r.recordset[0].RunId), mode };
+}
+
+async function finishImportRun(pool, runId, status, exitCode) {
+  await pool
+    .request()
+    .input('RunId', sql.BigInt, runId)
+    .input('Status', sql.NVarChar(32), status)
+    .input('ExitCode', sql.Int, exitCode)
+    .query(
+      `UPDATE ingest.ImportRuns
+       SET EndedAt = SYSUTCDATETIME(), Status = @Status, ExitCode = @ExitCode
+       WHERE RunId = @RunId;`,
+    );
+}
+
+async function recordImportRunFeed(pool, row) {
+  await pool
+    .request()
+    .input('RunId', sql.BigInt, row.runId)
+    .input('ProviderId', sql.NVarChar(64), row.providerId)
+    .input('FeedKey', sql.NVarChar(128), row.feedKey)
+    .input('FileKey', sql.NVarChar(512), row.fileKey || null)
+    .input('Status', sql.NVarChar(32), row.status)
+    .input('RowsStaged', sql.Int, row.rowsStaged != null ? row.rowsStaged : null)
+    .input('RowsInserted', sql.Int, row.rowsInserted != null ? row.rowsInserted : null)
+    .input('RowsDeleted', sql.Int, row.rowsDeleted != null ? row.rowsDeleted : null)
+    .input('ErrorCode', sql.NVarChar(64), row.errorCode || null)
+    .query(
+      `INSERT INTO ingest.ImportRunFeeds (
+         RunId, ProviderId, FeedKey, FileKey, Status, RowsStaged, RowsInserted, RowsDeleted, ErrorCode
+       ) VALUES (
+         @RunId, @ProviderId, @FeedKey, @FileKey, @Status, @RowsStaged, @RowsInserted, @RowsDeleted, @ErrorCode
+       );`,
+    );
+}
+
+async function markImportFileOk(pool, fileKey, version, providerId, feedKey) {
+  if (!fileKey) return;
+  await pool
+    .request()
+    .input('FileKey', sql.NVarChar(512), fileKey)
+    .input('Version', sql.NVarChar(128), version || 'folder-dbimport')
+    .input('ProviderId', sql.NVarChar(64), providerId)
+    .input('FeedKey', sql.NVarChar(128), feedKey)
+    .query(
+      `MERGE ingest.ImportFiles AS T
+       USING (SELECT @FileKey AS FileKey, @Version AS Version) AS S
+       ON T.FileKey = S.FileKey AND T.Version = S.Version
+       WHEN MATCHED THEN UPDATE SET Status = N'ok', OkAt = SYSUTCDATETIME(),
+         ProviderId = @ProviderId, FeedKey = @FeedKey
+       WHEN NOT MATCHED THEN INSERT (FileKey, Version, ProviderId, FeedKey, Status, OkAt)
+         VALUES (@FileKey, @Version, @ProviderId, @FeedKey, N'ok', SYSUTCDATETIME());`,
+    );
+}
+
+async function mergePartsFromStaging(pool, source, feedKey, env, runId) {
   const result = await pool
     .request()
     .input('Source', sql.NVarChar(64), source)
     .input('FeedKey', sql.NVarChar(128), feedKey)
     .input('Env', sql.NVarChar(16), env)
+    .input('RunId', sql.BigInt, runId)
     .query(`
 MERGE dbo.Parts AS t
 USING (
@@ -154,13 +223,14 @@ WHEN MATCHED THEN UPDATE SET
   ContentHash=s.ContentHash,
   Category=NULL,
   DeletedAt=NULL,
+  LastSeenRunId=@RunId,
   UpdatedAt=SYSUTCDATETIME()
 WHEN NOT MATCHED BY TARGET THEN INSERT
   (Source, FeedKey, MerchantProductId, Env, Title, Description, Url, ImageUrl,
-   Price, Currency, Stock, ContentHash, DeletedAt)
+   Price, Currency, Stock, ContentHash, DeletedAt, LastSeenRunId)
   VALUES
   (s.Source, s.FeedKey, s.MerchantProductId, s.Env, s.Title, s.Description, s.Url, s.ImageUrl,
-   s.Price, s.Currency, s.Stock, s.ContentHash, NULL);
+   s.Price, s.Currency, s.Stock, s.ContentHash, NULL, @RunId);
 
 SELECT @@ROWCOUNT AS MergeRows;
 `);
@@ -238,9 +308,20 @@ async function importParts(pool, opts) {
     Env: env,
     Stock: r.Stock || null,
   }));
+  const run = await beginImportRun(pool, {
+    host: opts.host,
+    mode: 'run',
+  });
+  try {
   await clearStaging(pool, source, feedKey, env);
   await loadPartsStaging(pool, staged);
-  const upserted = await mergePartsFromStaging(pool, source, feedKey, env);
+  const upserted = await mergePartsFromStaging(
+    pool,
+    source,
+    feedKey,
+    env,
+    run.runId,
+  );
   // Also patch Category/Brand in a second pass (staging table lacks those cols)
   await pool
     .request()
@@ -257,6 +338,24 @@ async function importParts(pool, opts) {
     );
   const deleted = await softDeleteMissingParts(pool, source, feedKey, env);
   await clearStaging(pool, source, feedKey, env);
+  await recordImportRunFeed(pool, {
+    runId: run.runId,
+    providerId: source,
+    feedKey,
+    fileKey: opts.fileKey || null,
+    status: 'ok',
+    rowsStaged: rows.length,
+    rowsInserted: upserted,
+    rowsDeleted: deleted,
+  });
+  await markImportFileOk(
+    pool,
+    opts.fileKey,
+    opts.fileVersion,
+    source,
+    feedKey,
+  );
+  await finishImportRun(pool, run.runId, 'ok', 0);
   return {
     dryRun: false,
     parsed: rows.length,
@@ -264,7 +363,24 @@ async function importParts(pool, opts) {
     wouldRemove,
     upserted,
     deleted,
+    runId: run.runId,
   };
+  } catch (err) {
+    try {
+      await recordImportRunFeed(pool, {
+        runId: run.runId,
+        providerId: source,
+        feedKey,
+        fileKey: opts.fileKey || null,
+        status: 'failed',
+        errorCode: (err && err.code) || 'sql_error',
+      });
+      await finishImportRun(pool, run.runId, 'failed', 1);
+    } catch {
+      /* keep original */
+    }
+    throw err;
+  }
 }
 
 async function ensureAffiliateOffers(pool) {
@@ -419,6 +535,10 @@ WHERE Source=@Source AND FeedKey=@FeedKey AND Env=@Env AND DeletedAt IS NOT NULL
 
 module.exports = {
   connectIntegrated,
+  beginImportRun,
+  finishImportRun,
+  recordImportRunFeed,
+  markImportFileOk,
   importParts,
   importOffers,
   ensureAffiliateOffers,
