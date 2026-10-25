@@ -158,7 +158,7 @@ Aliases: `deployAccount` / `deployRegion`. Fallback env:
 `CDK_DEFAULT_ACCOUNT` / `CDK_DEFAULT_REGION`. Stack default: `ASearchStack`
 (or `A_SEARCH_STACK`).
 
-Or call CDK directly from repo root (skips the automatic smoke — then run
+Or call CDK directly from repo root (skips the automatic smoke --- then run
 section 7 manually). Provider secret ARNs are optional and must be real; omit
 them on a first deploy:
 
@@ -265,7 +265,7 @@ aws cloudformation describe-stacks --stack-name ASearchStack \
 smoke host default AWS credential chain signs the request. No JWT.
 
 **Automatic:** `npm run deploy` already runs this smoke after a successful
-`cdk deploy` (FR #4881) using stack output **SearchApiUrl** — no hand-set
+`cdk deploy` (FR #4881) using stack output **SearchApiUrl** --- no hand-set
 `A_SEARCH_API_URL` needed for that path.
 
 **Manual re-smoke** (same SigV4 path; keep `npm run smoke-deploy` for ops):
