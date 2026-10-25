@@ -651,3 +651,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #4891 after canonical /parts=APartsGateway is decided: ACK then GIVEUP needs_human until Simon stamps enabled vs init and zero-product searching behaviour.
 - Imported a-clubs EventBridge: use Bucket.fromBucketName + enableEventBridgeNotification (Managed=false merges existing Topic/Queue/Lambda); do not hand-put EventBridgeConfiguration.
 - When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.
+- After a living-tracker FR has one decision stamped, ACK then GIVEUP needs_human for the remaining owner stamps; do not invent product behaviour.
