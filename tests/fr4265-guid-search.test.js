@@ -301,13 +301,14 @@ describe('FR #4265 annotator writes searches.json and calls /search', () => {
   });
 });
 
-describe('FR #4265 /search is idempotent per GUID', () => {
-  it('a second POST returns the same searchid and does not send again', async () => {
+describe('FR #4265 / FR #4916 /search fans out on every POST', () => {
+  it('a second POST fans out again (no per-GUID short-circuit)', async () => {
     const s3 = createMemoryS3();
     const host = 'club.example';
     // FR #4415: host marker userid required before fan-out.
     await seed(s3, host, GUID);
     const sent = [];
+    let n = 0;
     const opts = {
       event: {
         headers: { 'x-agent-api-key': FAKE_KEY },
@@ -330,7 +331,10 @@ describe('FR #4265 /search is idempotent per GUID', () => {
       sendMessage: async (p) => {
         sent.push(p);
       },
-      newSearchId: () => 'srch_fixed',
+      newSearchId: () => {
+        n += 1;
+        return n === 1 ? 'srch_first' : 'srch_second';
+      },
       enabled: () => ['ebay'],
       loadRegistry: () => ({
         sources: [{ id: 'ebay', kind: 'live', awsSearch: true, queueEnv: 'SQS_EBAY_URL' }],
@@ -338,10 +342,10 @@ describe('FR #4265 /search is idempotent per GUID', () => {
     };
     const first = await handleAgentSearch(opts);
     const second = await handleAgentSearch(opts);
-    assert.equal(first.searchid, 'srch_fixed');
+    assert.equal(first.searchid, 'srch_first');
     assert.equal(first.idempotent, false);
-    assert.equal(second.searchid, 'srch_fixed');
-    assert.equal(second.idempotent, true);
-    assert.equal(sent.length, 2);
+    assert.equal(second.searchid, 'srch_second');
+    assert.equal(second.idempotent, false);
+    assert.equal(sent.length, 4);
   });
 });

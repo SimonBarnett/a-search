@@ -129,15 +129,23 @@ async function ensureRootDefaultAge(s3, bucket, opts) {
     if (!isMissingObject(err)) throw err;
   }
   try {
+    const healName =
+      (opts && opts.name != null && String(opts.name).trim()) ||
+      String(bucket || 'a-clubs');
+    const healMeta = {
+      defaultage: '7',
+      name: healName,
+      kind: 'root',
+    };
     await s3.putObject({
       Bucket: bucket,
       Key: key,
       Body: '',
       IfNoneMatch: '*',
-      Metadata: { defaultage: '7' },
+      Metadata: healMeta,
     });
     log('self_heal _root/ defaultage=7');
-    return coerceMeta({ defaultage: '7' });
+    return coerceMeta(healMeta);
   } catch (err) {
     const status = err && err.$metadata && err.$metadata.httpStatusCode;
     const code = String(err.name || err.Code || err.code || '');
@@ -153,14 +161,26 @@ async function ensureRootDefaultAge(s3, bucket, opts) {
   }
 }
 
-function isDueByLastDownload(meta, now, days) {
+/**
+ * True when age clock is empty/unparseable or age in UTC days >= defaultage.
+ * @param {Record<string, string>|null|undefined} meta
+ * @param {Date|string|number} now
+ * @param {number} days positive whole days from resolveDefaultAge
+ * @param {{ timestampKey?: string }} [opts] default lastdownload; a-searches uses lastsearch
+ * @returns {boolean}
+ */
+function isDueByAge(meta, now, days, opts) {
   const d =
     Number.isFinite(Number(days)) && Number(days) > 0
       ? Math.floor(Number(days))
       : 0;
   if (d <= 0) return true;
+  const key =
+    opts && opts.timestampKey != null && String(opts.timestampKey).trim()
+      ? String(opts.timestampKey).trim().toLowerCase()
+      : 'lastdownload';
   const m = coerceMeta(meta);
-  const raw = m.lastdownload != null ? String(m.lastdownload).trim() : '';
+  const raw = m[key] != null ? String(m[key]).trim() : '';
   if (!raw) return true;
   const t = Date.parse(raw);
   if (!Number.isFinite(t)) return true;
@@ -174,11 +194,21 @@ function isDueByLastDownload(meta, now, days) {
   return nowMs - t >= d * 86400000;
 }
 
+function isDueByLastDownload(meta, now, days) {
+  return isDueByAge(meta, now, days, { timestampKey: 'lastdownload' });
+}
+
+function isDueByLastSearch(meta, now, days) {
+  return isDueByAge(meta, now, days, { timestampKey: 'lastsearch' });
+}
+
 module.exports = {
   NeedsDefaultAgeError,
   parseDefaultAge,
   resolveDefaultAge,
+  isDueByAge,
   isDueByLastDownload,
+  isDueByLastSearch,
   coerceMeta,
   ensureRootDefaultAge,
   isMissingObject,

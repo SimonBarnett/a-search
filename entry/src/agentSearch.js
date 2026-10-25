@@ -309,14 +309,8 @@ async function handleAgentSearch(opts) {
   }
 
   const fanoutKey = searchFanoutKey(hostkey, guid);
-  const prior = await readStoredFanout(io.getObject, fanoutKey);
-  if (prior && prior.searchid) {
-    return {
-      searchid: String(prior.searchid),
-      queued: Array.isArray(prior.queued) ? prior.queued : [],
-      idempotent: true,
-    };
-  }
+  // FR #4916 (Simon 2026-10-25): no per-GUID search limit — every POST /search
+  // fans out again (rewrites search-fanout.json). FR #4265 idempotent short-circuit removed.
 
   const searchid = body.searchid
     ? String(body.searchid)

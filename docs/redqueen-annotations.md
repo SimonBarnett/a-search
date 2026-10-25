@@ -80,10 +80,11 @@ terms shorter than 3 characters are dropped. Exclude matching is whole-word,
 so `IC` does not drop "electric". The shape is
 `{ queries: [{ q, intent, maxResults }], exclude: [...], market, currency }`.
 
-`/search` records `search-fanout.json` for that GUID and returns the same
-`searchid` on a retry without sending again. On a **new** fan-out (FR #4563),
+`/search` always fans out and rewrites `search-fanout.json` (FR #4916;
+the FR #4265 per-GUID short-circuit is removed). On each fan-out (FR #4563),
 entry also writes that `searchid` (and normalized `market`/`currency`) into
-`searches.json` so both files agree. If the write or the POST fails, the
+`searches.json` so both files agree. Hourly age-based re-search is the
+`a-searches` walrus service. If the write or the POST fails, the
 folder message stays on the queue (visibility change, not delete) until
 `searchid` is saved. It is not deleted early, so it reaches the DLQ only after
 the queue's max receives. A GUID that is already `annotated=1` and has
