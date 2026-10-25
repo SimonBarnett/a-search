@@ -2,7 +2,7 @@
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
-on **walrus**, and writes `a-clubs/{host}/{guid}/IN/{searchid}-sql.json`.
+on **walrus**, and writes `a-clubs/{host}/{guid}/IN/sql.json` (overwritten each search).
 No AWS Lambda connects to MSSQL. No inbound ports on walrus.
 
 ## Install
@@ -85,7 +85,7 @@ On `D:\s3\a-clubs`, wildcard paths like `D:\s3\a-clubs\*\*\IN` return nothing.
 Use a recursive listing or the S3 API:
 
 ```powershell
-Get-ChildItem -LiteralPath 'D:\s3\a-clubs' -Recurse -Filter '*-sql.json'
+Get-ChildItem -LiteralPath 'D:\s3\a-clubs' -Recurse -Filter 'sql.json'
 ```
 
 ## Per-message outcomes

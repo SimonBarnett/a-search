@@ -668,3 +668,9 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Awin folder dbimport keys Parts on aw_product_id (not merchant_product_id); keep merchant sku as MerchantSku; MSSQL_DATABASE wins over _import/config.json and must not silently default a_search.
 - FIX after MRB FAIL on FR#4943: land GG fixture fix then switch reportImportFailure to POST /bob/v1/intake (dedupe_key); guard tools/dbimport/reportFailure.js with require.main; wire Invoke-FolderDbImport catch fail-soft
 - schema_drift listing every expectedColumns name on awin/*.csv is leftover gzip (1f8b); gunzip in parseAndMapFeed, do not remap columns.
+- a-search UAT S1: if SearchApiUrl and smoke JWT are unset, ACK then GIVEUP needs_human with a deploy-host checklist; never invent POST /search 200.
+- a-sqlsearch IN file is always sql.json (overwrite). Match with CONTAINSTABLE on Title/Description; TOP from A_SEARCH_SQL_TOP (500); empty queries must not scan Parts.
+- a-searches: hourly due GUIDs via shared/defaultAge (club then _root self-heal); every POST /search fans out again (no FR#4265 short-circuit); SEA a-searches.exe + Register-ASearchWalrusServices A_SEARCHES_LOOP_MS=3600000
+- GUID marker ready-flag is enabled (not init); /parts must not promote IN→live — promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.
+- a-search #4881 smoke runs inside CDK deploy, SearchApiUrl from stack outputs, POST /search IAM SigV4; missing A_SEARCH_* on a seat is never a GIVEUP reason.
+- When FR #4891 (or any /parts contract) drops ?host= for Origin host, update tests/fr195-components-piece-docs.test.js pin from GET /parts?host&widgetGuid&offset&n to GET /parts?widgetGuid&offset&n plus Origin/PartsGatewayApiUrl/enabled/status needles before push.

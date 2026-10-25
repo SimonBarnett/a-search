@@ -1,22 +1,31 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Register a-annotator and a-sqlsearch as Windows services via nssm (FR #4827).
+  Register a-annotator, a-sqlsearch, and a-searches as Windows services via nssm (FR #4827 / #4916).
 
 .DESCRIPTION
-  Idempotent installer for both SEA exes. SERVICE_AUTO_START, restart on failure,
+  Idempotent installer for the SEA exes. SERVICE_AUTO_START, restart on failure,
   rotating logs under InstallRoot\logs. Removes legacy service a-search-walrus-sql-drain
-  when it is installed. -Unregister removes a-annotator, a-sqlsearch, and that legacy name.
+  when it is installed. -Unregister removes a-annotator, a-sqlsearch, a-searches, and that legacy name.
   Compatible with Windows PowerShell 5.1. Never prints passwords or API keys.
 
 .PARAMETER InstallRoot
-  Folder that contains dist\sea\a-annotator.exe and dist\sea\a-sqlsearch.exe.
+  Folder that contains dist\sea\a-annotator.exe, a-sqlsearch.exe, and a-searches.exe.
 
 .PARAMETER AnnotatorExe
   Override path to a-annotator.exe.
 
 .PARAMETER SqlSearchExe
   Override path to a-sqlsearch.exe.
+
+.PARAMETER SearchesExe
+  Override path to a-searches.exe (FR #4916).
+
+.PARAMETER SearchesAwsProfile
+  Named profile for a-searches (default a-search-redqueen-annotator).
+
+.PARAMETER SearchesLoopMs
+  A_SEARCHES_LOOP_MS for the hourly loop (default 3600000).
 
 .PARAMETER NssmExe
   Path to nssm.exe. Default C:\ai\bob\third_party\nssm\win64\nssm.exe or PATH.
@@ -84,13 +93,16 @@
   Print nssm commands with secrets masked. Do not change the machine.
 
 .PARAMETER Unregister
-  Stop and remove a-annotator, a-sqlsearch, and a-search-walrus-sql-drain.
+  Stop and remove a-annotator, a-sqlsearch, a-searches, and a-search-walrus-sql-drain.
 #>
 [CmdletBinding(SupportsShouldProcess = $false)]
 param(
   [string]$InstallRoot = 'C:\ai\a-search',
   [string]$AnnotatorExe,
   [string]$SqlSearchExe,
+  [string]$SearchesExe,
+  [string]$SearchesAwsProfile = 'a-search-redqueen-annotator',
+  [string]$SearchesLoopMs = '3600000',
   [string]$NssmExe,
   [string]$AwsProfile = 'a-search-redqueen-annotator',
   [string]$SqlAwsProfile = 'a-search-walrus-sql-drain',
@@ -127,6 +139,7 @@ $ErrorActionPreference = 'Stop'
 $DryRun = [bool]$WhatIf
 $AnnotatorService = 'a-annotator'
 $SqlService = 'a-sqlsearch'
+$SearchesService = 'a-searches'
 $LegacySqlService = 'a-search-walrus-sql-drain'
 
 function Resolve-NssmPath {
@@ -193,6 +206,7 @@ $nssm = Resolve-NssmPath -NssmExe $NssmExe
 if ($Unregister) {
   Remove-NssmService -Nssm $nssm -Name $AnnotatorService
   Remove-NssmService -Nssm $nssm -Name $SqlService
+  Remove-NssmService -Nssm $nssm -Name $SearchesService
   Remove-NssmService -Nssm $nssm -Name $LegacySqlService
   return
 }
@@ -202,6 +216,9 @@ if (-not $AnnotatorExe) {
 }
 if (-not $SqlSearchExe) {
   $SqlSearchExe = Join-Path $InstallRoot 'dist\sea\a-sqlsearch.exe'
+}
+if (-not $SearchesExe) {
+  $SearchesExe = Join-Path $InstallRoot 'dist\sea\a-searches.exe'
 }
 
 if (-not $FolderQueueUrl) { throw 'FolderQueueUrl_required' }
@@ -238,6 +255,7 @@ if ($useTrusted) {
 if (-not $DryRun) {
   if (-not (Test-Path -LiteralPath $AnnotatorExe)) { throw "annotator_exe_missing: $AnnotatorExe" }
   if (-not (Test-Path -LiteralPath $SqlSearchExe)) { throw "sqlsearch_exe_missing: $SqlSearchExe" }
+  if (-not (Test-Path -LiteralPath $SearchesExe)) { throw "searches_exe_missing: $SearchesExe" }
 }
 
 $logDir = Join-Path $InstallRoot 'logs'
@@ -365,4 +383,22 @@ Install-OneService -Nssm $nssm -Name $SqlService -Exe $SqlSearchExe `
   -EnvPairs $sqlEnv.ToArray()
 Set-ObjectNameIfPassword -Nssm $nssm -Name $SqlService -Account $ServiceAccount
 
-Write-Host "Registered $AnnotatorService and $SqlService (InstallRoot=$InstallRoot)"
+$searchesEnv = New-Object System.Collections.Generic.List[string]
+Add-Env $searchesEnv 'AWS_PROFILE' $SearchesAwsProfile
+Add-Env $searchesEnv 'AWS_REGION' $AwsRegion
+Add-Env $searchesEnv 'AWS_SHARED_CREDENTIALS_FILE' $AwsSharedCredentialsFile
+Add-Env $searchesEnv 'AWS_CONFIG_FILE' $AwsConfigFile
+Add-Env $searchesEnv 'A_CLUBS_BUCKET' $AClubsBucket
+Add-Env $searchesEnv 'A_SEARCH_API_URL' $SearchApiUrl
+Add-Env $searchesEnv 'A_SEARCHES_LOOP_MS' $SearchesLoopMs
+
+Install-OneService -Nssm $nssm -Name $SearchesService -Exe $SearchesExe `
+  -DisplayName 'a-searches' `
+  -Description 'FR #4916: hourly a-clubs re-search by defaultage' `
+  -Stdout (Join-Path $logDir 'a-searches.out.log') `
+  -Stderr (Join-Path $logDir 'a-searches.err.log') `
+  -EnvPairs $searchesEnv.ToArray()
+Set-ObjectNameIfPassword -Nssm $nssm -Name $SearchesService -Account $AnnotatorAccount
+
+Write-Host "Registered $AnnotatorService, $SqlService, and $SearchesService (InstallRoot=$InstallRoot)"
+

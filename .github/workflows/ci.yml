@@ -156,15 +156,17 @@ jobs:
         run: |
           node scripts/sea/annotator-entry.js --version
           node scripts/sea/sqlsearch-entry.js --version
+          node scripts/sea/searches-entry.js --version
 
       - name: Build SEA exes
         run: node scripts/build-a-search-sea.js --smoke
 
-      - name: Upload a-annotator.exe and a-sqlsearch.exe
+      - name: Upload a-annotator.exe, a-sqlsearch.exe, and a-searches.exe
         uses: actions/upload-artifact@v4
         with:
           name: a-search-sea-windows
           path: |
             dist/sea/a-annotator.exe
             dist/sea/a-sqlsearch.exe
+            dist/sea/a-searches.exe
           if-no-files-found: error

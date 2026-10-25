@@ -131,7 +131,7 @@ async function runDrainJob(msg, deps) {
     throw new Error(`local_worker_missing:${source}`);
   }
 
-  // FR #4447: sql IN files are {searchid}-sql.json (inResultSchema).
+  // FR #4976: SQL IN is always IN/sql.json (worker Key). Keep searchid for DONE/.
   let writeMsg = msg;
   if (source.toLowerCase() === 'sql') {
     const base = String(
@@ -140,7 +140,7 @@ async function runDrainJob(msg, deps) {
       .trim()
       .replace(/-sql$/i, '');
     if (base) {
-      writeMsg = { ...msg, searchId: `${base}-sql`, searchid: base, source: 'sql' };
+      writeMsg = { ...msg, searchid: base, source: 'sql' };
     }
   }
 

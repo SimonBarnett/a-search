@@ -117,14 +117,12 @@ function termText(term) {
 }
 
 /**
- * Build search text from fan-out payload (`queries` / `exclude`, or legacy
- * `q` / `searchterms`). Agent `/search` sends searches.json-shaped `{ q }`
- * objects — string-only filters must not drop them (MRB #4455 / FR #4446 class).
+ * Include terms from fan-out (`queries`, or legacy `q` / `searchterms`).
  * @param {object} msg
- * @returns {string}
+ * @returns {string[]}
  */
-function searchTextFromMsg(msg) {
-  if (!msg || typeof msg !== 'object') return '';
+function includeTermsFromMsg(msg) {
+  if (!msg || typeof msg !== 'object') return [];
   const parts = [];
   if (Array.isArray(msg.queries)) {
     for (const row of msg.queries) {
@@ -148,44 +146,111 @@ function searchTextFromMsg(msg) {
   ) {
     parts.push(msg.searchterms.trim());
   }
+  return parts;
+}
+
+/**
+ * Exclude terms (AND NOT). Skip shorter than 3 chars (same as LIKE path).
+ * @param {object} msg
+ * @returns {string[]}
+ */
+function excludeTermsFromMsg(msg) {
+  if (!msg || typeof msg !== 'object' || !Array.isArray(msg.exclude)) return [];
+  const out = [];
+  for (const row of msg.exclude) {
+    const t = termText(row);
+    if (!t || t.length < 3) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Build search text from fan-out payload (`queries` / `exclude`, or legacy
+ * `q` / `searchterms`). Agent `/search` sends searches.json-shaped `{ q }`
+ * objects — string-only filters must not drop them (MRB #4455 / FR #4446 class).
+ * @param {object} msg
+ * @returns {string}
+ */
+function searchTextFromMsg(msg) {
+  const parts = includeTermsFromMsg(msg);
   if (!parts.length) return '';
   let q = parts.join(' ');
-  if (Array.isArray(msg.exclude)) {
-    for (const row of msg.exclude) {
-      const t = termText(row);
-      if (!t || t.length < 3) continue;
-      if (/\s/.test(t)) q += ` -"${t.replace(/"/g, '')}"`;
-      else q += ` -${t}`;
-    }
+  for (const t of excludeTermsFromMsg(msg)) {
+    if (/\s/.test(t)) q += ` -"${t.replace(/"/g, '')}"`;
+    else q += ` -${t}`;
   }
   return q.trim();
 }
 
 /**
- * Cross-source SELECT on a-search-owned dbo.Parts (FR-120).
+ * Quote one CONTAINS term (phrase or word). User text is never concatenated
+ * into SQL --- only into the @contains parameter.
+ * @param {string} raw
+ * @returns {string}
+ */
+function quoteContainsTerm(raw) {
+  const cleaned = String(raw || '')
+    .replace(/"/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return '';
+  return `"${cleaned}"`;
+}
+
+/**
+ * FR #4976: CONTAINS predicate --- each include OR, each exclude AND NOT.
+ * @param {object} msg
+ * @returns {string} empty when there are no include terms
+ */
+function buildContainsQuery(msg) {
+  const includes = includeTermsFromMsg(msg)
+    .map(quoteContainsTerm)
+    .filter(Boolean);
+  if (!includes.length) return '';
+  let q = includes.join(' OR ');
+  for (const t of excludeTermsFromMsg(msg)) {
+    const quoted = quoteContainsTerm(t);
+    if (quoted) q += ` AND NOT ${quoted}`;
+  }
+  return q;
+}
+
+/**
+ * FR #4976: TOP limit from env/config. Default 500. Not hard-coded in SQL.
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @returns {number}
+ */
+function sqlTopLimit(envVars) {
+  const raw = envVars && envVars.A_SEARCH_SQL_TOP;
+  const n = parseInt(String(raw == null ? '' : raw).trim(), 10);
+  if (!Number.isFinite(n) || n < 1) return 500;
+  return Math.min(n, 10000);
+}
+
+/**
+ * Cross-source SELECT on a-search-owned dbo.Parts (FR-120 / FR #4976).
+ * Full-text CONTAINSTABLE on Title/Description; TOP (@n) by rank.
  * No Source filter --- sql aggregates all ingested Parts for the env.
  */
 const SELECT_SQL = `
-SELECT
-  Source,
-  FeedKey,
-  MerchantProductId,
-  Env,
-  Title,
-  Description,
-  Url,
-  ImageUrl,
-  Price,
-  Currency,
-  Stock
-FROM dbo.Parts
-WHERE Env = @env
-  AND DeletedAt IS NULL
-  AND (
-    @q = N''
-    OR Title LIKE @like
-    OR Description LIKE @like
-  )
+SELECT TOP (@n)
+  p.Source,
+  p.FeedKey,
+  p.MerchantProductId,
+  p.Env,
+  p.Title,
+  p.Description,
+  p.Url,
+  p.ImageUrl,
+  p.Price,
+  p.Currency,
+  p.Stock
+FROM CONTAINSTABLE(dbo.Parts, (Title, Description), @contains) AS ft
+INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
+WHERE p.Env = @env
+  AND p.DeletedAt IS NULL
+ORDER BY ft.[RANK] DESC
 `.trim();
 
 /**
@@ -224,7 +289,6 @@ async function defaultConnect(config) {
  */
 async function defaultQueryParts(msg, deps) {
   const envVars = (deps && deps.env) || process.env;
-  const config = mssqlConfigFromEnv(envVars);
   const env =
     msg && msg.env != null
       ? String(msg.env).trim()
@@ -234,8 +298,15 @@ async function defaultQueryParts(msg, deps) {
       `message.env must be live or sandbox (got ${JSON.stringify(msg && msg.env)})`,
     );
   }
-  const q = searchTextFromMsg(msg || {});
-  const like = q === '' ? '%' : `%${q.replace(/[%_[\]]/g, '')}%`;
+  const contains = buildContainsQuery(msg || {});
+  if (!contains) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[a-search]', 'WARN', 'sql_empty_queries_no_select');
+    }
+    return [];
+  }
+  const config = mssqlConfigFromEnv(envVars);
+  const topN = sqlTopLimit(envVars);
   const connect =
     deps && typeof deps.connect === 'function' ? deps.connect : defaultConnect;
   const pool = await connect(config);
@@ -249,8 +320,8 @@ async function defaultQueryParts(msg, deps) {
     const result = await pool
       .request()
       .input('env', sqlTypes.NVarChar, env)
-      .input('q', sqlTypes.NVarChar, q)
-      .input('like', sqlTypes.NVarChar, like)
+      .input('contains', sqlTypes.NVarChar, contains)
+      .input('n', sqlTypes.Int, topN)
       .query(SELECT_SQL);
     const rows = (result && result.recordset) || [];
     return Array.isArray(rows) ? rows : [];
@@ -268,6 +339,11 @@ module.exports = {
   resolveMssqlRequirePath,
   loadMssqlModule,
   searchTextFromMsg,
+  includeTermsFromMsg,
+  excludeTermsFromMsg,
+  quoteContainsTerm,
+  buildContainsQuery,
+  sqlTopLimit,
   SELECT_SQL,
   defaultQueryParts,
   defaultConnect,

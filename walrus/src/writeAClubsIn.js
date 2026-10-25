@@ -53,7 +53,7 @@ function writeAClubsIn(opts) {
 /**
  * putObject shim so existing local workers' writeResults land on a-clubs IN/.
  * When Key is `{host}/{guid}/IN/{stem}.json` (FR #4030 / #4447), that path wins
- * over msg.searchId so sql can write `{searchid}-sql.json`.
+ * over msg.searchId so sql can write `IN/sql.json` (FR #4976).
  * @param {{ root: string, msg: object }} opts
  */
 function createAClubsPutObject(opts) {
