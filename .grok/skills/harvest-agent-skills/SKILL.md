@@ -680,3 +680,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search SQL CONTAINS: strip punctuation and operators, drop English noise words, quote remaining tokens (OR includes, AND NOT excludes). Severity < 11 including noise-word notices is 0 rows. Real errors log number, message, and sanitised contains --- never bare EREQUEST. GRANT SELECT ON dbo.Parts only for WONDERLAND\a-search-drain.
 - FR #4881: npm run deploy must run IAM SigV4 smoke-deploy via scripts/cdk-deploy-with-smoke.js after cdk exit 0 (SearchApiUrl from stack; fail closed; no JWT); keep manual npm run smoke-deploy for re-smoke.
 - Walrus Node SQL drain deploy must copy every require-graph folder (include redqueen/src until pageSelect moves to shared #5022); run assert-walrus-sql-drain-graph.js before restarting a-search-walrus-sql-drain.
+- Walrus Parts full-text: FREETEXTTABLE ranked match; bind NVarChar(4000) not nvarchar(max); keep multi-word excludes as one quoted CONTAINS phrase.
