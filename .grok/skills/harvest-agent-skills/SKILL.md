@@ -690,4 +690,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - CJ invite: Advertiser Lookup XML (25/min, page 100) for notjoined; 403 => cj_account_not_active exit 5 no writes; apply is Account Manager UI only --- generalise tools/invite.ps1 InviteProviders + runFromAgentRoot; keep marker enabled=0 until activation
 - FR #5070 a-affiliates S3-to-git import requires redqueen (profile a-search-redqueen-agents + S:\a-affiliates); flamingo seats GIVEUP require_machine=redqueen
 - FIX after covering tip merged: verify main for the CI fix (GitGuardian JWT via fakeSecrets parts); do not reopen closed product tip --- DONE FIX with covering PR URL
+- Folder-search curl --aws-sigv4 must use export-credentials AK:SK (and session token header), never the profile name as --user; inject ResolveAwsCredentials/CurlInvoke for Pester; PATH node v8 lacks --test --- use D:\Tools\node
 - POST /search live fan-out: registry enabled + queue env + a-affiliates/<id>/ enabled=1 (shared isEnabledOne); missing/0 skip+log; sql always; amazon/ebay folders need Simon before deploy
