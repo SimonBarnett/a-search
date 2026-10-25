@@ -48,7 +48,7 @@ or `%ProgramData%\a-search\folder-tools.config.json`, or set:
 
 - `A_SEARCH_API_URL` (base URL; `/search` is appended). Fallback: `A_SEARCH_SEARCH_API_URL`, then config `SearchApiUrl`, then `-SearchApiUrl`
 - `A_SEARCH_AGENT_API_KEY_FILE` (file contents, trimmed). Fallback: `A_SEARCH_AGENT_API_KEY` (or name in config `AgentApiKeyEnv`)
-- `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
+- `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-annotator` for search; download still defaults to `a-search-redqueen-agents`)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
 
 Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`. `Get-FolderMeta` also uses `5` for bucket root (FR #4087).

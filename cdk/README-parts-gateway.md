@@ -14,6 +14,7 @@ Lambdas.
 | SQS FIFO `a-clubs-new-folders.fifo` | SSE-SQS; visibility 90s; `MessageGroupId=hostkey` |
 | SQS FIFO DLQ `a-clubs-new-folders-dlq.fifo` | maxReceiveCount 5 |
 | IAM user `a-search-redqueen-annotator` | consume queue + S3 Get/Put/List on `a-clubs` |
+| EventBridge on imported `a-clubs` (FR #4890) | `fromBucketName` + `enableEventBridgeNotification()`; unmanaged merge keeps existing Topic/Queue/Lambda configs; no hand-run enable script |
 
 This stack hardcodes CORS `allowOrigins: ['*']`. It does **not** call
 `resolveCorsOrigins` (that helper rejects `*` for `ASearchStack` FR-153).
@@ -21,7 +22,7 @@ Preflight `allowHeaders` includes `content-type` and `x-parent-origin` so
 embedded widgets (FR #4107) that send `X-Parent-Origin` are not blocked by
 browsers (FR #4177).
 
-The Lambda expects the **existing** bucket `a-clubs` in the deploy account. It
+The Lambda expects the **existing** bucket `a-clubs` in the deploy account. Deploying this stack enables EventBridge notifications on that imported bucket via CDK (`enableEventBridgeNotification`, Managed=false merge). Do not run a hand put of `EventBridgeConfiguration`. It
 auto-creates `a-clubs/{hostkey}/` (Madeira checksum userid metadata;
 `customerNumber` === `userid`, plus `lastmod`, empty `email` / `passwordhash` /
 `stripeaccountid` / `stripecustomerid`) and `a-clubs/{hostkey}/{guid}/` seeded

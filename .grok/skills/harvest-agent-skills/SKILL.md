@@ -626,7 +626,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon Creators live: do not derive token URL or marketplace from AMAZON_HOST/REGION leftovers; mint LwA only; fill /madeira/amazon/* from /madeira/aws-region and treat CHANGE_ME as missing
 - After FR #4816 ignores AMAZON_CREATORS_CREDENTIAL, Creators fixture pins that mock fetch 503 must set deps.creatorsCredential so the call hits searchItems not the token URL
 - Node SEA prep of the AWS SDK bundle Zone-OOMs on the default heap; spawn node --experimental-sea-config with NODE_OPTIONS --max-old-space-size=4096. PowerShell 5.1 rejects "$code:$text"; write "${code}". Reannotate stays a searches.json repost; only lastmod greater than lastupdate re-reviews.
-- EventBridge on imported a-clubs is Enable-AClubsEventBridge.ps1 not CDK; dual-poll WaitTimeSeconds 20 with no post-empty sleep; searcheshash avoids mass repost when searchid exists without hash (FR #4827).
+- Dual-poll WaitTimeSeconds 20 with no post-empty sleep; searcheshash avoids mass repost when searchid exists without hash (FR #4827). EventBridge on imported a-clubs is CDK (FR #4890), not a hand put.
 - Disk-capacity via-intake on a-search is GIVEUP not a product PR; file bobiverse Clear/SeatDisk FR for dead-pid a-search worktree reclaim; prefer E: job trees (FR #4945).
 - EventBridge suffix slash over-matches; route marker Object Created through a filter Lambda that keeps only hostkey/ and hostkey/uuid/ before a-clubs-changes
 - FR #4827 register tests: skip powershell.exe parse/WhatIf when process.platform is not win32; Linux CI has no WinPS 5.1.
@@ -643,3 +643,11 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - UAT S1 live smoke-deploy FR on a shop without A_SEARCH_API_URL/A_SEARCH_SMOKE_JWT: ACK then GIVEUP reason=needs_human; comment a deploy-host checklist; never invent POST /search 200.
 - UAT S19 live /selftest is npm run smoke-selftest (GET then POST) with A_SEARCH_API_URL and A_SEARCH_SMOKE_JWT; fail-closed when unset; never print the JWT; do not use POST /search for the S19 probe.
 - When publishGuidSearch returns searches_empty_seed (idempotent, wrote=false), annotateOneGuid must fall through to re-review, not treat it as guid_unchanged noop.
+- Markdown section pins that use (?=\n\n) fail on Windows CRLF checkouts; normalize \\r\\n first and bound on the next ## heading.
+- HttpIamAuthorizer on /search means JWT never reaches Lambda; treat that as intended when the FR says IAM-only, not as a missing authorizer bug.
+- A parent e2e tracker whose acceptance is all children closed plus live UAT is GIVEUP needs_human while those children still have open PRs/issues; comment the blockers; do not invent a covering PR that Closes the tracker.
+- a-search /parts e2e tracker #4892 is a living umbrella: ACK, comment the child matrix, GIVEUP; never Closes it from a child PR
+- A /parts seed searches.json with empty queries must skip (searches_empty_seed), delete the change message, and never POST /search; a throw on one drain batch message retries only that message
+- FR #4891 after canonical /parts=APartsGateway is decided: ACK then GIVEUP needs_human until Simon stamps enabled vs init and zero-product searching behaviour.
+- Imported a-clubs EventBridge: use Bucket.fromBucketName + enableEventBridgeNotification (Managed=false merges existing Topic/Queue/Lambda); do not hand-put EventBridgeConfiguration.
+- When /search becomes IAM at APIGW, land CDK authorizer, annotator execute-api:Invoke, smoke SigV4, and redqueen guidSearch signing in the same PR; mock fetch only; never require A_SEARCH_SMOKE_JWT.

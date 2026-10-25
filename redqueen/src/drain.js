@@ -144,6 +144,12 @@ async function drainOnce(opts) {
     } else {
       result = await processFolderEvent({ ...shared, body: msg.Body });
     }
+    } catch (err) {
+      // FR #4889: one bad message must not abort the rest of the receive batch.
+      result = {
+        action: 'retry',
+        detail: (err && (err.code || err.message)) || 'handler_error',
+      };
     } finally {
       if (beat) clearInterval(beat);
     }

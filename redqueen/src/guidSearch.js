@@ -311,9 +311,15 @@ async function publishGuidSearch(opts) {
   if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
     const queries = Array.isArray(existing.queries) ? existing.queries : [];
     if (!queries.length) {
-      const err = new Error('searches_missing');
-      err.code = 'searches_missing';
-      throw err;
+      // FR #4889: /parts seed (or not-yet-annotated GUID) has empty queries.
+      // Never POST /search; never throw (that retried into a-clubs-changes-dlq).
+      return {
+        ok: true,
+        idempotent: true,
+        wrote: false,
+        skipped: true,
+        reason: 'searches_empty_seed',
+      };
     }
     const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
     const posted = await postSearchBody(opts, {
@@ -454,14 +460,27 @@ function readAgentKey(env) {
 }
 
 /**
- * POST {base}/search with the agent key. Never logs the key or the body.
+ * POST {base}/search with IAM SigV4 (same default chain as S3 meta write).
+ * Never logs credentials or the body. Agent key is not required (FR #4888).
  * @param {NodeJS.ProcessEnv} [env]
  */
 function createHttpPostSearch(env = process.env) {
   return async function postSearch(body) {
     const base = String(env.A_SEARCH_API_URL || '').trim().replace(/\/+$/, '');
-    const key = readAgentKey(env);
-    if (!base || !key) {
+    if (!base) {
+      const err = new Error('search_not_configured');
+      err.code = 'search_not_configured';
+      throw err;
+    }
+    const {
+      defaultCredentials,
+      requireCredentials,
+      signExecuteApiRequest,
+    } = require('../../scripts/awsExecuteApiSigV4');
+    let creds;
+    try {
+      creds = requireCredentials(defaultCredentials(env));
+    } catch {
       const err = new Error('search_not_configured');
       err.code = 'search_not_configured';
       throw err;
@@ -472,20 +491,26 @@ function createHttpPostSearch(env = process.env) {
       err.code = 'search_not_configured';
       throw err;
     }
-    const res = await fetchImpl(`${base}/search`, {
+    const payload = JSON.stringify({
+      hostkey: body.hostkey,
+      guid: body.guid,
+      queries: body.queries,
+      exclude: body.exclude || [],
+      ...(body.market ? { market: body.market } : {}),
+      ...(body.currency ? { currency: body.currency } : {}),
+    });
+    const url = `${base}/search`;
+    const headers = signExecuteApiRequest({
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-agent-api-key': key,
-      },
-      body: JSON.stringify({
-        hostkey: body.hostkey,
-        guid: body.guid,
-        queries: body.queries,
-        exclude: body.exclude || [],
-        ...(body.market ? { market: body.market } : {}),
-        ...(body.currency ? { currency: body.currency } : {}),
-      }),
+      url,
+      body: payload,
+      credentials: creds,
+      extraHeaders: { 'content-type': 'application/json' },
+    });
+    const res = await fetchImpl(url, {
+      method: 'POST',
+      headers,
+      body: payload,
     });
     let parsed = {};
     try {
