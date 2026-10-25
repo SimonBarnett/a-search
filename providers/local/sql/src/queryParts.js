@@ -153,7 +153,7 @@ function includeTermsFromMsg(msg) {
 }
 
 /**
- * Exclude terms (AND NOT). Skip shorter than 3 chars (same as LIKE path).
+ * Exclude terms as whole phrases (FR #5024). Keep short tokens like IC.
  * @param {object} msg
  * @returns {string[]}
  */
@@ -162,7 +162,7 @@ function excludeTermsFromMsg(msg) {
   const out = [];
   for (const row of msg.exclude) {
     const t = termText(row);
-    if (!t || t.length < 3) continue;
+    if (!t) continue;
     out.push(t);
   }
   return out;
@@ -335,22 +335,98 @@ function formatSqlQueryError(err, contains) {
   return out;
 }
 
+const FT_NVARCHAR_LEN = 4000;
+
 /**
- * FR #4976: CONTAINS predicate --- each include OR, each exclude AND NOT.
+ * @param {string} raw
+ * @returns {string}
+ */
+function truncateFt(raw) {
+  const t = String(raw || '');
+  return t.length <= FT_NVARCHAR_LEN ? t : t.slice(0, FT_NVARCHAR_LEN);
+}
+
+/**
+ * mssql.NVarChar(4000) when the type is a factory; tests may pass a sentinel.
+ * @param {{ NVarChar?: unknown }} sqlTypes
+ * @param {number} [len]
+ */
+function bindNVarChar(sqlTypes, len) {
+  const Nv = sqlTypes && sqlTypes.NVarChar;
+  const n = len != null ? len : FT_NVARCHAR_LEN;
+  if (typeof Nv === 'function') return Nv(n);
+  return Nv;
+}
+
+/**
+ * FR #5024: ranked FREETEXT string --- join queries as natural language.
+ * Empty when no useful (non-noise) tokens remain.
  * @param {object} msg
- * @returns {string} empty when there are no include terms
+ * @returns {string}
+ */
+function buildFreetextQuery(msg) {
+  const raw = includeTermsFromMsg(msg)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!raw) return '';
+  if (!sanitizeContainsTokens(raw).length) return '';
+  return truncateFt(raw);
+}
+
+/**
+ * CONTAINS exclude phrase: whole string quoted, not word-AND.
+ * @param {string} raw
+ * @returns {string}
+ */
+function quoteExcludePhrase(raw) {
+  const cleaned = String(raw || '')
+    .replace(/"/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return '';
+  return `"${truncateFt(cleaned)}"`;
+}
+
+/**
+ * Legacy helper (FR #4976 / #5004): word-AND CONTAINS for one query.
+ * Matching now uses FREETEXT; excludes use quoteExcludePhrase.
+ * @param {object} msg
+ * @returns {string}
  */
 function buildContainsQuery(msg) {
-  const includes = includeTermsFromMsg(msg)
-    .map(quoteContainsTerm)
-    .filter(Boolean);
-  if (!includes.length) return '';
-  let q = includes.join(' OR ');
-  for (const t of excludeTermsFromMsg(msg)) {
-    const quoted = quoteContainsTerm(t);
-    if (quoted) q += ` AND NOT ${quoted}`;
+  return buildFreetextQuery(msg);
+}
+
+/**
+ * @param {number} excludeCount
+ * @returns {string}
+ */
+function buildSelectSql(excludeCount) {
+  const n = Math.max(0, Number(excludeCount) || 0);
+  let extra = '';
+  for (let i = 0; i < n; i += 1) {
+    extra += `\n  AND NOT CONTAINS((p.Title, p.Description), @ex${i})`;
   }
-  return q;
+  return `
+SELECT TOP (@n)
+  p.Source,
+  p.FeedKey,
+  p.MerchantProductId,
+  p.Env,
+  p.Title,
+  p.Description,
+  p.Url,
+  p.ImageUrl,
+  p.Price,
+  p.Currency,
+  p.Stock
+FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q, @top) AS ft
+INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
+WHERE p.Env = @env
+  AND p.DeletedAt IS NULL${extra}
+ORDER BY ft.[RANK] DESC
+`.trim();
 }
 
 /**
@@ -366,29 +442,11 @@ function sqlTopLimit(envVars) {
 }
 
 /**
- * Cross-source SELECT on a-search-owned dbo.Parts (FR-120 / FR #4976).
- * Full-text CONTAINSTABLE on Title/Description; TOP (@n) by rank.
- * No Source filter --- sql aggregates all ingested Parts for the env.
+ * Cross-source SELECT on a-search-owned dbo.Parts (FR-120 / FR #4976 / #5024).
+ * Ranked FREETEXTTABLE on Title/Description; TOP (@n) by rank.
+ * Phrase excludes are AND NOT CONTAINS(..., @exN). Never nvarchar(max).
  */
-const SELECT_SQL = `
-SELECT TOP (@n)
-  p.Source,
-  p.FeedKey,
-  p.MerchantProductId,
-  p.Env,
-  p.Title,
-  p.Description,
-  p.Url,
-  p.ImageUrl,
-  p.Price,
-  p.Currency,
-  p.Stock
-FROM CONTAINSTABLE(dbo.Parts, (Title, Description), @contains) AS ft
-INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
-WHERE p.Env = @env
-  AND p.DeletedAt IS NULL
-ORDER BY ft.[RANK] DESC
-`.trim();
+const SELECT_SQL = buildSelectSql(0);
 
 /**
  * @param {object} config
@@ -433,13 +491,16 @@ async function defaultQueryParts(msg, deps) {
       `message.env must be live or sandbox (got ${JSON.stringify(msg && msg.env)})`,
     );
   }
-  const contains = buildContainsQuery(msg || {});
-  if (!contains) {
+  const q = buildFreetextQuery(msg || {});
+  if (!q) {
     if (typeof console !== 'undefined' && console.warn) {
       console.warn('[a-search]', 'WARN', 'sql_empty_queries_no_select');
     }
     return [];
   }
+  const excludePhrases = excludeTermsFromMsg(msg || {})
+    .map(quoteExcludePhrase)
+    .filter(Boolean);
   const config = mssqlConfigFromEnv(envVars);
   const topN = sqlTopLimit(envVars);
   const connect =
@@ -450,22 +511,27 @@ async function defaultQueryParts(msg, deps) {
   if (!sqlTypes) {
     sqlTypes = loadMssqlModule(config);
   }
+  const nv = bindNVarChar(sqlTypes, FT_NVARCHAR_LEN);
+  const sqlText = buildSelectSql(excludePhrases.length);
 
   try {
     try {
-      const result = await pool
-        .request()
-        .input('env', sqlTypes.NVarChar, env)
-        .input('contains', sqlTypes.NVarChar, contains)
-        .input('n', sqlTypes.Int, topN)
-        .query(SELECT_SQL);
+      let req = pool.request();
+      req = req.input('env', nv, truncateFt(env));
+      req = req.input('q', nv, q);
+      req = req.input('top', sqlTypes.Int, topN);
+      req = req.input('n', sqlTypes.Int, topN);
+      for (let i = 0; i < excludePhrases.length; i += 1) {
+        req = req.input(`ex${i}`, nv, excludePhrases[i]);
+      }
+      const result = await req.query(sqlText);
       const rows = (result && result.recordset) || [];
       return Array.isArray(rows) ? rows : [];
     } catch (err) {
       if (isInformationalSqlError(err)) {
         return [];
       }
-      throw formatSqlQueryError(err, contains);
+      throw formatSqlQueryError(err, q);
     }
   } finally {
     if (pool && typeof pool.close === 'function') {
@@ -484,8 +550,14 @@ module.exports = {
   includeTermsFromMsg,
   excludeTermsFromMsg,
   quoteContainsTerm,
+  quoteExcludePhrase,
   sanitizeContainsTokens,
   buildContainsQuery,
+  buildFreetextQuery,
+  buildSelectSql,
+  bindNVarChar,
+  truncateFt,
+  FT_NVARCHAR_LEN,
   sqlTopLimit,
   SELECT_SQL,
   defaultQueryParts,
