@@ -8,6 +8,7 @@
 
 const { setHasResults } = require('../widgets/hostFolderMeta');
 const { promoteInToLive } = require('../widgets/promoteInToLive');
+const { recordNoResultsIfEmpty } = require('./noResultsFeedback');
 
 /**
  * @param {Record<string, string|undefined>} [envVars]
@@ -266,7 +267,36 @@ async function maybeSetHasResults(opts) {
     }
     promote = { error: String((err && err.message) || err) };
   }
-  return { hasresults: true, promote };
+  // FR #5047: empty live after hasresults => no-results signal + sector ledger.
+  let noResults = null;
+  try {
+    const liveLen =
+      promote && Array.isArray(promote.live) ? promote.live.length : null;
+    noResults = await recordNoResultsIfEmpty({
+      host: hostkey,
+      guid,
+      searchid: wantSid,
+      live: promote && Array.isArray(promote.live) ? promote.live : undefined,
+      partCount: liveLen,
+      bucket,
+      now: opts.now,
+      putObject: opts.putObject,
+      getObject: opts.getObject,
+      getObjectAnnotation: opts.getObjectAnnotation,
+      logError: opts.logError,
+    });
+  } catch (err) {
+    if (typeof opts.logError === 'function') {
+      opts.logError(
+        '[a-search]',
+        'WARN',
+        'no_results_feedback_failed',
+        String((err && err.message) || err),
+      );
+    }
+    noResults = { recorded: false, reason: 'error' };
+  }
+  return { hasresults: true, promote, noResults };
 }
 
 /**

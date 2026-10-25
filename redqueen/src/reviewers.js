@@ -463,6 +463,7 @@ function guidReviewPrompt(input) {
     'Describe ONLY this URI. Do not copy host about, keywords, exclusions or identity_terms.',
     'page_purpose/page_description must be what this page covers that other site pages do not.',
     'search_queries[].q is keyword-only: no location, market, currency or club identity.',
+    'File enough search_queries for a reasonable chance of relevant parts: brand/model, product type, and close alternatives (FR #5047). 0 results is still a valid outcome (need more vendors in that sector); providers never widen matches to fill a page.',
     'selection is the IN/ parts-selection brief for this GUID only.',
     JSON.stringify(PAGE_SKELETON),
   ].join('\n');

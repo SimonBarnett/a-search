@@ -3,7 +3,8 @@
 /**
  * FR #4827: a-clubs EventBridge / S3 / compact change events.
  * Maps an object key to { hostkey, guid?, kind, key, etag? }.
- * Keys under IN/, DONE/ (FR #4917), and search-fanout.json are skipped (service output).
+ * Keys under IN/, DONE/ (FR #4917), feedback/ and _ops/ (FR #5047), and
+ * search-fanout.json are skipped (service output).
  */
 
 const KINDS = new Set(['marker', 'widget', 'searches', 'other']);
@@ -47,7 +48,9 @@ function isExcludedKey(key) {
   const parts = decoded.split('/');
   for (let i = 0; i < parts.length; i += 1) {
     const seg = parts[i].toLowerCase();
-    if (seg === 'in' || seg === 'done') return true;
+    if (seg === 'in' || seg === 'done' || seg === 'feedback' || seg === '_ops') {
+      return true;
+    }
   }
   const base = parts[parts.length - 1] || '';
   if (base.toLowerCase() === 'search-fanout.json') return true;
