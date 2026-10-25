@@ -92,7 +92,8 @@ describe('FR #4976 contains + TOP helpers', () => {
     const types = {};
     let sqlText = '';
     const rows = await defaultQueryParts(
-      { env: 'live', queries: ['servo', 'arm'], exclude: ['junkxx'] },
+      // FR #5046: brand/model gate required (bare servo/arm would skip SELECT)
+      { env: 'live', queries: ['VOLANTEXRC', 'servo'], exclude: ['junkxx'] },
       {
         env: {
           MSSQL_SERVER: 'walrus\\ASEARCH',
@@ -120,12 +121,13 @@ describe('FR #4976 contains + TOP helpers', () => {
       },
     );
     assert.equal(rows.length, 1);
-    assert.equal(inputs.q, 'servo arm');
+    assert.equal(inputs.q, 'VOLANTEXRC servo');
     assert.equal(inputs.ex0, '"junkxx"');
     assert.equal(inputs.n, 12);
     assert.equal(inputs.top, 12);
     assert.match(sqlText, /FREETEXTTABLE/);
     assert.match(sqlText, /@ex0/);
+    assert.match(sqlText, /@gate0/);
     assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'like'), false);
   });
 });

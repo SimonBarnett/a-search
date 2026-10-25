@@ -100,7 +100,7 @@ describe('FR #5041 maxResults and min RANK', () => {
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
   });
 
-  it('defaultQueryParts binds n from maxResults and minRank; stripped q', async () => {
+  it('defaultQueryParts binds n from maxResults and minRank; stripped q; gates', async () => {
     /** @type {Record<string, unknown>} */
     const inputs = {};
     let sqlText = '';
@@ -130,12 +130,11 @@ describe('FR #5041 maxResults and min RANK', () => {
               },
               async query(text) {
                 sqlText = text;
-                // 12 fake rows; caller must only keep TOP @n via SQL --- we
-                // simulate SQL honouring TOP by returning n rows.
+                // Simulate TOP @n; FR #5046 also binds @gateN (admission in SQL).
                 const n = Number(inputs.n) || 0;
                 return {
                   recordset: Array.from({ length: n }, (_, i) => ({
-                    Title: `row-${i}`,
+                    Title: `Volantex Sport Cub row-${i}`,
                     RANK: 100 - i,
                   })),
                 };
@@ -152,6 +151,8 @@ describe('FR #5041 maxResults and min RANK', () => {
     assert.doesNotMatch(String(inputs.q), /United\s+Kingdom/i);
     assert.doesNotMatch(String(inputs.q), /\bGBP\b/i);
     assert.match(sqlText, /@minRank/);
+    assert.match(sqlText, /@gate0/);
+    assert.ok(Object.keys(inputs).some((k) => /^gate\d+$/.test(k)));
     assert.equal(rows.length, 10);
   });
 
@@ -167,7 +168,7 @@ describe('FR #5041 maxResults and min RANK', () => {
   });
 
   it(
-    'optional local: VOLANTEXRC top row is not an Xbox card',
+    'optional local: VOLANTEXRC returns 0 rows (FR #5046 exact gate; no stock)',
     {
       skip:
         process.env.A_SEARCH_SQL_INTEGRATION === '1'
@@ -182,11 +183,8 @@ describe('FR #5041 maxResults and min RANK', () => {
         },
         { env: process.env },
       );
-      assert.ok(rows.length <= 10);
-      if (rows.length > 0) {
-        const title = String(rows[0].Title || '');
-        assert.doesNotMatch(title, /xbox/i);
-      }
+      // FR #5046: no Volantex/Sport Cub/761-14 stock => empty, not junk
+      assert.equal(rows.length, 0);
     },
   );
 });
