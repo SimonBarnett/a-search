@@ -391,7 +391,7 @@ async function applyAffiliatesEnabledFilter(targets, deps = {}) {
         }
         continue;
       }
-      // FR #5095 / #5090: 403 (no ListBucket) / Unknown must not 500 the POST.
+      // FR #5095 / #5090: 403 (no ListBucket) / Unknown / AccessDenied must not 500 the POST.
       skipped.push({ id, reason: 'affiliates_s3_error' });
       logAffiliatesS3Error(log, id, err);
       continue;
