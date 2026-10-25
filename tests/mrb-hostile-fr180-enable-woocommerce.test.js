@@ -59,11 +59,11 @@ describe('hostile FR-180 enable woocommerce', () => {
     assert.match(stack, /woocommerce:\s*\[/);
     assert.match(stack, /WOOCOMMERCE_CONSUMER_KEY/);
     assert.doesNotMatch(stack, /WOOCOMMERCE_AFFILIATE_ID/);
-    const matrix = fs.readFileSync(
-      path.join(root, 'docs', 'secrets-matrix.md'),
-      'utf8',
-    );
-    const omit = matrix.match(/Stay-dark omitted[\s\S]*?(?=\n\n|\nPublic)/);
+    const matrix = fs
+      .readFileSync(path.join(root, 'docs', 'secrets-matrix.md'), 'utf8')
+      .replace(/\r\n/g, '\n');
+    // FR #4898: CRLF checkouts break (?=\n\n); bound on next ## heading.
+    const omit = matrix.match(/Stay-dark omitted[\s\S]*?(?=\n## |\nPublic)/);
     assert.ok(omit);
     assert.doesNotMatch(omit[0], /\bwoocommerce\b/);
     assert.doesNotMatch(omit[0], /\bwix\b/);
