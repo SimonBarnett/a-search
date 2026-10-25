@@ -687,3 +687,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When hasresults flips with empty live.json, write GUID feedback/no-results.json and upsert a-clubs/_ops/need-vendors-by-sector.json (sector count++ dedupe); annotator must file enough brand/model/type searches; 0 results means need more vendors --- providers never widen
 - a-search Kelkoo: no /madeira SSM; enable requires gitignored providers/live/kelkoo/.env with KELKOO_API_KEY+KELKOO_PUBLISHER_ID on deploy host; synth soft-disable warning must name missing file path and keys
 - Rakuten invite: list/status via Advertisers and Partnerships APIs; apply is Playwright only; records under rakuten/_invites/{mid}/; never invent Christow MID.
+- Rakuten invite: list/status via Advertisers and Partnerships APIs; apply is UI (exit 2 captcha); invite.ps1 registers rakuten beside awin; RAKUTEN_USE_INVITE=1 skips password temp
