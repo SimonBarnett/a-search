@@ -1,4 +1,4 @@
-# AGENT --- Rakuten publisher signup (FR #4701)
+# AGENT --- Rakuten publisher signup (FR #4701 / #5065)
 
 Publisher id: **4766177**. Daily agent applies to advertisers, tracks approvals, and records applications. **No SQL download folders or feeds** for Rakuten (live Product Search is separate).
 
@@ -11,9 +11,9 @@ Publisher id: **4766177**. Daily agent applies to advertisers, tracks approvals,
 
 Each application message is unique per advertiser and must fit this limit.
 
-## Records (`rakuten/_applications/{mid|slug}/`)
+## Records (`rakuten/_invites/{mid}/`)
 
-Zero-byte S3 marker with metadata: `mid`, `name`, `status` (`pending|approved|declined`), `appliedat`, `firstappliedat`, `applycount`, `lastchecked`, `approvedat`, `source` (`agent|merc-manual`), `message` (truncated ASCII). Never invent MIDs --- key by name slug until the dashboard shows a MID.
+FR #5065 uses the Awin-shaped `_invites/{mid}/` marker (not a second `_applications/` tree). Metadata: `invitedat`, `firstinvitedat`, `invitecount`, `name`, `invitemsg`, `source`. Reconcile MIDs from Partnerships API --- never invent Christow's MID.
 
 ## Dedupe
 

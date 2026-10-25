@@ -148,7 +148,7 @@ Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tool
 | `S:\a-affiliates` | Run invite for every provider with `enabled=1` |
 | `S:\a-affiliates\{provider}` | That provider only when `enabled=1`; else `provider_disabled` (exit 3) |
 
-An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Today only **awin** is registered (`awin-agent\scripts\invite.mjs`). Do not enable other providers until their invite exists.
+An **`enabled=1` provider must have a registered invite backend**; otherwise `invite_not_implemented` (exit 4). Registered: **awin**, **rakuten** (FR #5065). Do not enable download/dbimport for Rakuten (no `_import/`, no merchant feeds).
 
 ```powershell
 cd S:\a-affiliates\awin

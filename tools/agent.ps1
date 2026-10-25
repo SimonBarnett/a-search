@@ -54,6 +54,8 @@ if (-not $node) {
 
 $argList = @($runJs, '-Cwd', $Cwd)
 if ($DryRun) { $argList += '-DryRun' }
+# FR #5065: scheduled/interactive rakuten agent uses invite backend (no password temp).
+$env:RAKUTEN_USE_INVITE = '1'
 
 # Interactive fuel hint: Grok agent.exe first (ops), then this node runner.
 $grokAgent = Join-Path $env:USERPROFILE '.grok\bin\agent.exe'

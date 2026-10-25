@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Provider invite dispatcher for a-affiliates (Awin Join Programmes today).
+Provider invite dispatcher for a-affiliates (Awin + Rakuten).
 
 .DESCRIPTION
 From bucket root: run invite for every provider with enabled=1.
@@ -45,7 +45,7 @@ $here = $PSScriptRoot
 
 # Providers that have an invite implementation under {provider}/_invite/.
 # enabled=1 without _invite => invite_not_implemented.
-$script:InviteProviders = @('awin')
+$script:InviteProviders = @('awin', 'rakuten')
 
 function Get-InviteProviderNames {
     param([string]$Bucket)
@@ -102,13 +102,26 @@ function Resolve-InviteProviderRoots {
         $cfg = Get-Content -LiteralPath $cfgPath -Raw | ConvertFrom-Json
     }
     $agentRoot = 'C:\ai\a-search\awin-agent'
+    if ($Provider -eq 'rakuten') { $agentRoot = 'C:\ai\a-search' }
     if ($cfg -and $cfg.agentRoot) { $agentRoot = [string]$cfg.agentRoot }
     $entry = 'invite.mjs'
     if ($cfg -and $cfg.entry) { $entry = [string]$cfg.entry }
     $script = Join-Path $inviteRoot $entry
-    if ($cfg -and $cfg.profile) { $env:AWIN_PROFILE = [string]$cfg.profile }
-    if ($cfg -and $cfg.secretFile) { $env:AWIN_SECRET_FILE = [string]$cfg.secretFile }
-    if ($cfg -and $cfg.publisherId) { $env:AWIN_PUBLISHER_ID = [string]$cfg.publisherId }
+    $prefix = $Provider.ToUpperInvariant()
+    if ($cfg -and $cfg.profile) {
+        Set-Item -Path ("Env:{0}_PROFILE" -f $prefix) -Value ([string]$cfg.profile)
+    }
+    if ($cfg -and $cfg.secretFile) {
+        Set-Item -Path ("Env:{0}_SECRET_FILE" -f $prefix) -Value ([string]$cfg.secretFile)
+    }
+    if ($cfg -and $cfg.publisherId) {
+        Set-Item -Path ("Env:{0}_PUBLISHER_ID" -f $prefix) -Value ([string]$cfg.publisherId)
+    }
+    if ($Provider -eq 'awin') {
+        if ($cfg -and $cfg.profile) { $env:AWIN_PROFILE = [string]$cfg.profile }
+        if ($cfg -and $cfg.secretFile) { $env:AWIN_SECRET_FILE = [string]$cfg.secretFile }
+        if ($cfg -and $cfg.publisherId) { $env:AWIN_PUBLISHER_ID = [string]$cfg.publisherId }
+    }
     return [pscustomobject]@{
         InviteRoot = $inviteRoot
         Script     = $script
@@ -155,7 +168,7 @@ function Invoke-AwinInvite {
     try {
         & node @nodeArgs
         $code = [int]$LASTEXITCODE
-        Write-InviteReportSummary
+        Write-InviteReportSummary -Provider 'awin'
         return $code
     }
     finally {
@@ -165,7 +178,9 @@ function Invoke-AwinInvite {
 }
 
 function Write-InviteReportSummary {
-    $reportPath = Join-Path 'C:\ai\a-search\logs\awin-invite' ((Get-Date).ToString('yyyy-MM-dd') + '.json')
+    param([string]$Provider = 'awin')
+    $slug = if ($Provider) { $Provider.ToLowerInvariant() } else { 'awin' }
+    $reportPath = Join-Path ("C:\ai\a-search\logs\{0}-invite" -f $slug) ((Get-Date).ToString('yyyy-MM-dd') + '.json')
     if (-not (Test-Path -LiteralPath $reportPath)) {
         [Console]::Error.WriteLine('         (no invite report file yet)')
         return
@@ -211,6 +226,48 @@ function Write-InviteReportSummary {
     }
 }
 
+function Invoke-RakutenInvite {
+    param(
+        [switch]$Live,
+        [switch]$Headed,
+        [int]$Max,
+        [string]$Otp,
+        [string]$MountRoot
+    )
+    $roots = Resolve-InviteProviderRoots -Provider 'rakuten' -MountRoot $MountRoot
+    if (-not (Test-Path -LiteralPath $roots.InviteRoot)) {
+        [Console]::Error.WriteLine(("invite_not_implemented: rakuten missing _invite/ at {0}" -f $roots.InviteRoot))
+        return 4
+    }
+    if (-not (Test-Path -LiteralPath $roots.Script)) {
+        [Console]::Error.WriteLine(("invite_script_missing: {0}" -f $roots.Script))
+        return 1
+    }
+    if (-not $env:AWS_PROFILE) { $env:AWS_PROFILE = 'a-search-redqueen-agents' }
+    $env:RAKUTEN_USE_INVITE = '1'
+    $nodeArgs = @($roots.Script)
+    if ($Live) { $nodeArgs += '--live' }
+    if ($Headed) { $nodeArgs += '--headed' }
+    if ($Max -gt 0) { $nodeArgs += ("--max={0}" -f $Max) }
+    $mode = if ($Live) { 'LIVE (will submit applies)' } else { 'dry-run (pass -Live to submit applies)' }
+    [Console]::Error.WriteLine(('[{0}] invite provider=rakuten mode={1} max={2} otp={3} entry={4}' -f `
+                (Get-Date).ToString('HH:mm:ss'),
+                $mode,
+                $(if ($Max -gt 0) { $Max } else { '(default)' }),
+                $(if ($Otp) { 'set' } else { 'none' }),
+                $roots.Script))
+    Push-Location $roots.AgentRoot
+    try {
+        & node @nodeArgs
+        $code = [int]$LASTEXITCODE
+        Write-InviteReportSummary -Provider 'rakuten'
+        return $code
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Invoke-ProviderInvite {
     param(
         [Parameter(Mandatory = $true)][string]$Provider,
@@ -228,6 +285,9 @@ function Invoke-ProviderInvite {
     switch ($slug) {
         'awin' {
             return (Invoke-AwinInvite -Live:$Live -Headed:$Headed -Max $Max -Otp $Otp -MountRoot $MountRoot)
+        }
+        'rakuten' {
+            return (Invoke-RakutenInvite -Live:$Live -Headed:$Headed -Max $Max -Otp $Otp -MountRoot $MountRoot)
         }
         default {
             [Console]::Error.WriteLine(("invite_not_implemented: {0}" -f $slug))
