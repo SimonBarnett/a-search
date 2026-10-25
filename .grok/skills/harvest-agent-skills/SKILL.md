@@ -694,3 +694,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - POST /search live fan-out: registry enabled + queue env + a-affiliates/<id>/ enabled=1 (shared isEnabledOne); missing/0 skip+log; sql always; amazon/ebay folders need Simon before deploy
 - MRB /search fan-out tips: production must wire defaultAffiliatesIo when a-clubs head not injected; sql always queued; do not fold merely-behind MERGEABLE tips (FR #4649); ACCEPTABLE live gap when sibling SigV4 tip still open
 - /search agent fan-out: API Gateway HttpIamAuthorizer only; entry must not require x-agent-api-key; folder tools SigV4 with profile, no agent key file
+- POST /search must not fatal on S3 HeadObject name Unknown/UnknownError: skip that a-affiliates provider and keep sql; wrap a-clubs head as 503 s3_head_failed so intake is not code Unknown
