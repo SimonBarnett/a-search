@@ -74,45 +74,10 @@ function feedDatedKey(provider, affiliateId, yyyyMmDd, ext) {
   return `${p}/${a}/${date}.${e}`;
 }
 
-/**
- * @param {Record<string, string>} meta
- * @param {Date} now
- * @param {number} refreshDays
- * @returns {boolean}
- */
-function needsRefresh(meta, now, refreshDays) {
-  const days =
-    Number.isFinite(refreshDays) && refreshDays >= 0
-      ? Math.floor(refreshDays)
-      : 7;
-  const m = coerceStringMap(meta);
-  let lastOk = m.lastok ? String(m.lastok) : '';
-  if (!lastOk && String(m.laststatus || '').toLowerCase() === 'ok') {
-    lastOk = m.lastdownload ? String(m.lastdownload) : '';
-  }
-  if (!lastOk) return true;
-  const t = Date.parse(lastOk);
-  if (!Number.isFinite(t)) return true;
-  return now.getTime() - t >= days * 86400000;
-}
-
-/**
- * @param {Record<string, string>} providerMeta
- * @returns {number}
- */
-function refreshDaysFromMeta(providerMeta) {
-  const m = coerceStringMap(providerMeta);
-  const n = Number(m.refreshdays);
-  if (Number.isFinite(n) && n >= 0) return Math.floor(n);
-  return 7;
-}
-
 module.exports = {
   FORMATS,
   COMPRESSIONS,
   CONTENT_TYPES,
   resolveFeedFormat,
   feedDatedKey,
-  needsRefresh,
-  refreshDaysFromMeta,
 };
