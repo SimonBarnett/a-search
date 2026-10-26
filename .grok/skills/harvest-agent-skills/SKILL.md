@@ -700,3 +700,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR #5079 a-affiliates enabled=1 gate: amazon/ebay folders must be created with Simon go before deploy or /search stops queuing them; CJ/Kelkoo stay folderless until #5057/#5058
 - a-search SQL brand/model gate: when Brand/Category are NULL, CONTAINS on a single phrase word (Cub, Wolf) leaks apparel --- treat those as GATE_GENERIC_WORDS, require ALLCAPS 5+ / Title-case >=6 for brand-like, and re-admit with contiguous phrase/prefix checks (admitRowsByExactGates) after SQL; deploy walrus drain tip to confirm live.
 - After admitRowsByExactGates, SQL mock fixtures must include the brand/model needle (e.g. VOLANTEXRC) or fr4976-style binding tests admit 0
+- When FIX CI is fr4197 harvest-agent-skills non-ASCII and main already has the ASCII row, fold origin/main (FR #4649) onto the product tip; do not reopen MRB
