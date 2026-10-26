@@ -54,4 +54,19 @@ describe('MRB #5123 hostile FR #5122 DLQ read IAM', () => {
     assert.match(doc, /ListQueues/);
     assert.match(doc, /Do not redrive or purge/);
   });
+
+  it('search-fanout FIFO sentence not split by FR #5122 insert', () => {
+    const doc = fs.readFileSync(
+      path.join(ROOT, 'docs', 'search-fanout.md'),
+      'utf8',
+    );
+    assert.match(
+      doc,
+      /MessageDeduplicationId` on those FIFO\s+URLs only\./,
+    );
+    assert.doesNotMatch(
+      doc,
+      /MessageDeduplicationId` on those FIFO\s+FR #5122/,
+    );
+  });
 });
