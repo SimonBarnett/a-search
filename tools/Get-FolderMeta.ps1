@@ -223,16 +223,15 @@ try {
     if ($useInject) {
         $marker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key -Backend $Backend `
             -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-            -RcloneLsJson $RcloneLsJson
+            -RcloneLsJson $RcloneLsJson -AwsProfile $profileName
     }
     else {
         $marker = Invoke-FolderToolWithSpinner -Label 'Reading folder marker metadata/tags' -ArgumentList @(
             $here, $loc.Bucket, $loc.Key, $Backend, $profileName
         ) -ScriptBlock {
             param($toolsDir, $bucket, $key, $backend, $awsProfile)
-            if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
             . (Join-Path $toolsDir 'FolderS3.ps1')
-            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend -AwsProfile $awsProfile)
         }
     }
 
@@ -240,16 +239,16 @@ try {
     $reviewFull = [bool]$Full -or ($loc.Kind -eq 'guid')
     if ($useInject) {
         $ann = Get-FolderS3Annotations -Bucket $loc.Bucket -Key $loc.Key -Full:$reviewFull `
-            -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+            -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation `
+            -AwsProfile $profileName
     }
     else {
         $ann = Invoke-FolderToolWithSpinner -Label 'Reading object annotations' -ArgumentList @(
             $here, $loc.Bucket, $loc.Key, [bool]$reviewFull, $profileName
         ) -ScriptBlock {
             param($toolsDir, $bucket, $key, $full, $awsProfile)
-            if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
             . (Join-Path $toolsDir 'FolderS3.ps1')
-            return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+            return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full -AwsProfile $awsProfile)
         }
     }
 
@@ -263,16 +262,16 @@ try {
         if ($hostKey) {
             if ($useInject) {
                 $hostAnns = Get-FolderS3Annotations -Bucket $loc.Bucket -Key ($hostKey + '/') -Full:$reviewFull `
-                    -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+                    -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation `
+                    -AwsProfile $profileName
             }
             else {
                 $hostAnns = Invoke-FolderToolWithSpinner -Label 'Reading parent host annotations' -ArgumentList @(
                     $here, $loc.Bucket, ($hostKey + '/'), [bool]$reviewFull, $profileName
                 ) -ScriptBlock {
                     param($toolsDir, $bucket, $key, $full, $awsProfile)
-                    if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
                     . (Join-Path $toolsDir 'FolderS3.ps1')
-                    return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+                    return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full -AwsProfile $awsProfile)
                 }
             }
             $hostAnn = @($hostAnns.Items) | Where-Object { $_.Name -eq 'annotation' } | Select-Object -First 1
@@ -289,7 +288,7 @@ try {
             try {
                 $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key ($hostLabel + '/') -Backend $Backend `
                     -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-                    -RcloneLsJson $RcloneLsJson
+                    -RcloneLsJson $RcloneLsJson -AwsProfile $profileName
                 if ($hostMarker -and $hostMarker.Metadata) { $hostMeta = $hostMarker.Metadata }
             }
             catch {

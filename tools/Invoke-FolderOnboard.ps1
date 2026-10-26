@@ -423,18 +423,22 @@ function Write-AffiliateFolderMarker {
 }
 
 function Get-AffiliateFolderMeta {
-    param([string]$Bucket, [string]$Provider, [string]$AffiliateId)
+    param([string]$Bucket, [string]$Provider, [string]$AffiliateId, [string]$AwsProfile)
     $key = "{0}/{1}/" -f $Provider, $AffiliateId
-    $raw = aws s3api head-object --bucket $Bucket --key $key --output json 2>&1
-    if ($LASTEXITCODE -ne 0) { return $null }
-    $head = ConvertFrom-FolderS3Json $raw
-    $h = @{}
-    if ($head.Metadata) {
-        foreach ($p in $head.Metadata.PSObject.Properties) {
-            $h[$p.Name] = [string]$p.Value
+    # FR #5174: use FolderS3 helper so --profile is always set.
+    try {
+        $marker = Get-FolderS3ObjectMeta -Bucket $Bucket -Key $key -Backend aws -SkipTags -AwsProfile $AwsProfile
+        $h = @{}
+        if ($marker -and $marker.Metadata) {
+            foreach ($k in @($marker.Metadata.Keys)) {
+                $h[[string]$k] = [string]$marker.Metadata[$k]
+            }
         }
+        return $h
     }
-    return $h
+    catch {
+        return $null
+    }
 }
 
 function Invoke-AwinOnboard {
