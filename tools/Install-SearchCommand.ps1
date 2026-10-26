@@ -1,27 +1,29 @@
 <#
 .SYNOPSIS
-Install a-search folder tools (`search` + `meta`) into a tools folder on PATH (FR #5145 / #5148).
+Install a-search folder tools (`search` + `meta`) into a tools folder on PATH (FR #5145 / #5148 / #5164).
 
 .DESCRIPTION
-Copies search + meta shims and helpers into -ToolsDir (default C:\ai\tools):
+Copies search + meta shims, helpers, ToolFailure stack, and shared/intake into
+-ToolsDir (default: this script's folder, typically C:\ai\a-search\tools on redqueen):
 search.ps1, Invoke-FolderSearch.ps1, meta.ps1, Get-FolderMeta.ps1,
-FolderProgress.ps1, FolderS3.ps1, search.cmd, meta.cmd, and search.config.json.
+FolderProgress.ps1, FolderS3.ps1, ToolFailure.ps1, reportToolFailure.js,
+search.cmd, meta.cmd, search.config.json, plus ../shared/intake relative to ToolsDir.
 Creates the directory and a User PATH entry when missing. On redeploy, keeps an
 existing search.config.json (does not overwrite AwsProfile / SearchApiUrl). No nssm.
 
 Run from the deploy checkout on redqueen:
   .\tools\Install-SearchCommand.ps1
-  .\tools\Install-SearchCommand.ps1 -ToolsDir C:\ai\tools
+  .\tools\Install-SearchCommand.ps1 -ToolsDir C:\ai\a-search\tools
 
 .PARAMETER ToolsDir
-Install directory (default C:\ai\tools).
+Install directory (default: $PSScriptRoot / this tools folder).
 
 .PARAMETER ForceConfig
 Overwrite search.config.json even when one already exists.
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$ToolsDir = 'C:\ai\tools',
+    [string]$ToolsDir = $PSScriptRoot,
     [switch]$ForceConfig,
     [switch]$SkipPath
 )
@@ -39,6 +41,8 @@ $required = @(
     'Get-FolderMeta.ps1',
     'FolderProgress.ps1',
     'FolderS3.ps1',
+    'ToolFailure.ps1',
+    'reportToolFailure.js',
     'search.config.json'
 )
 foreach ($name in $required) {
@@ -61,7 +65,9 @@ $copyNames = @(
     'meta.ps1',
     'Get-FolderMeta.ps1',
     'FolderProgress.ps1',
-    'FolderS3.ps1'
+    'FolderS3.ps1',
+    'ToolFailure.ps1',
+    'reportToolFailure.js'
 )
 foreach ($name in $copyNames) {
     $src = Join-Path $here $name
@@ -70,6 +76,18 @@ foreach ($name in $copyNames) {
         Copy-Item -LiteralPath $src -Destination $dst -Force
         Write-Host "Copied $name -> $dst"
     }
+}
+
+# FR #5164: reportToolFailure.js requires ../shared/intake relative to ToolsDir.
+$sharedSrc = Join-Path (Split-Path -Parent $here) 'shared\intake'
+$sharedDstRoot = Join-Path (Split-Path -Parent $ToolsDir) 'shared\intake'
+if (-not (Test-Path -LiteralPath $sharedSrc)) {
+    throw "install_source_missing: $sharedSrc"
+}
+if ($PSCmdlet.ShouldProcess($sharedDstRoot, 'Copy shared/intake')) {
+    New-Item -ItemType Directory -Force -Path $sharedDstRoot | Out-Null
+    Copy-Item -Path (Join-Path $sharedSrc '*') -Destination $sharedDstRoot -Recurse -Force
+    Write-Host "Copied shared/intake -> $sharedDstRoot"
 }
 
 $cfgSrc = Join-Path $here 'search.config.json'

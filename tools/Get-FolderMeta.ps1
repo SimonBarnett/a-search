@@ -23,9 +23,10 @@ Show complete annotation payloads (default truncates long ones).
 Force aws | rclone | auto for head-object / tagging.
 
 .PARAMETER AwsProfile
-AWS profile for head-object / tagging / annotations (FR #5148). Precedence:
--AwsProfile, then A_SEARCH_AGENTS_AWS_PROFILE, then AWS_PROFILE, then
-a-search-redqueen-agents (same as download / onboard).
+AWS profile for head-object / tagging / annotations (FR #5148 / #5164). Precedence:
+-AwsProfile, then AwsProfile in search.config.json next to this script, then
+a-search-redqueen-annotator. Does NOT use A_SEARCH_AGENTS_AWS_PROFILE or AWS_PROFILE
+(those identities lack a-clubs read on redqueen).
 #>
 [CmdletBinding()]
 param(
@@ -51,13 +52,38 @@ $here = $PSScriptRoot
 . (Join-Path $here 'ToolFailure.ps1')
 
 
+function Get-FolderMetaSearchConfig {
+    # FR #5164: reuse search.config.json next to meta / Get-FolderMeta.ps1.
+    param([string]$ConfigPath)
+    $candidates = @()
+    if ($ConfigPath) { $candidates += $ConfigPath }
+    if ($env:A_SEARCH_FOLDER_TOOLS_CONFIG) { $candidates += $env:A_SEARCH_FOLDER_TOOLS_CONFIG }
+    $candidates += (Join-Path $here 'search.config.json')
+    foreach ($c in $candidates) {
+        if ($c -and (Test-Path -LiteralPath $c)) {
+            try {
+                return (Get-Content -LiteralPath $c -Raw -Encoding UTF8 | ConvertFrom-Json)
+            } catch {
+                return $null
+            }
+        }
+    }
+    return $null
+}
+
 function Resolve-FolderMetaAwsProfile {
-    # FR #5148: same precedence as Invoke-FolderDownload / onboard.
-    param([string]$AwsProfile)
+    # FR #5164: -AwsProfile, then search.config.json AwsProfile, then annotator.
+    # Never A_SEARCH_AGENTS_AWS_PROFILE / AWS_PROFILE (no a-clubs read on redqueen).
+    param(
+        [string]$AwsProfile,
+        $Config
+    )
     if ($AwsProfile) { return $AwsProfile }
-    if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-    if ($env:AWS_PROFILE) { return $env:AWS_PROFILE }
-    return 'a-search-redqueen-agents'
+    if ($Config -and $Config.PSObject.Properties['AwsProfile']) {
+        $p = [string]$Config.AwsProfile
+        if ($p -and $p.Trim()) { return $p.Trim() }
+    }
+    return 'a-search-redqueen-annotator'
 }
 
 function Get-MarkerMetaValue {
@@ -180,7 +206,8 @@ function Write-HumanMeta {
 }
 
 try {
-    $profileName = Resolve-FolderMetaAwsProfile -AwsProfile $AwsProfile
+    $metaCfg = Get-FolderMetaSearchConfig
+    $profileName = Resolve-FolderMetaAwsProfile -AwsProfile $AwsProfile -Config $metaCfg
     $prevAwsProfile = [Environment]::GetEnvironmentVariable('AWS_PROFILE', 'Process')
     [Environment]::SetEnvironmentVariable('AWS_PROFILE', $profileName, 'Process')
     try {
