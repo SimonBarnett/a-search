@@ -727,6 +727,8 @@ class ASearchStack extends cdk.Stack {
     // they share the single a-search-db-backed queue created below.
     /** @type {Array<{ id: string, missingKeys: string[] }>} */
     const credentialDisabled = [];
+    /** @type {string[]} FR #5122: annotator/agents GetQueueAttributes targets */
+    const opsReadSqsArns = [];
     for (const src of enabledSources) {
       // FR #4451: per-source AWS queues/Lambdas only for awsSearch providers.
       // Local/SQL sources (including skimlinks) share the db-backed queue.
@@ -791,6 +793,7 @@ class ASearchStack extends cdk.Stack {
             maxReceiveCount: 3,
           },
         });
+        opsReadSqsArns.push(queue.queueArn, dlq.queueArn);
 
         // FR #4650: missing credentials => provider off for fan-out (resources kept).
         if (envReady) {
@@ -924,6 +927,7 @@ class ASearchStack extends cdk.Stack {
     // FR #4030: alias for agent fan-out SQL target (same queue; redqueen drains).
     entry.addEnvironment('SQS_SQL_URL', dbBackedQueue.queueUrl);
     dbBackedQueue.grantSendMessages(entry);
+    opsReadSqsArns.push(dbBackedQueue.queueArn, dbBackedDlq.queueArn);
 
     // FR #4311: generate the agent API key in Secrets Manager (RETAIN).
     // FR #5086: /search no longer requires the key (API Gateway IAM only).
@@ -1160,6 +1164,32 @@ class ASearchStack extends cdk.Stack {
         ],
       }),
     );
+    // FR #5122: overnight verification needs DLQ depth without redrive/purge.
+    const redqueenAgents = iam.User.fromUserName(
+      this,
+      'ImportedRedqueenAgents',
+      'a-search-redqueen-agents',
+    );
+    const grantOpsSqsRead = (principal) => {
+      if (opsReadSqsArns.length) {
+        principal.addToPrincipalPolicy(
+          new iam.PolicyStatement({
+            sid: 'OpsReadProviderDlq',
+            actions: ['sqs:GetQueueAttributes'],
+            resources: opsReadSqsArns,
+          }),
+        );
+      }
+      principal.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          sid: 'OpsListQueues',
+          actions: ['sqs:ListQueues'],
+          resources: ['*'],
+        }),
+      );
+    };
+    grantOpsSqsRead(redqueenAnnotator);
+    grantOpsSqsRead(redqueenAgents);
 
     // FR #4891: GET /parts removed from ASearchStack --- canonical route is
     // APartsGateway only (PartsGatewayApiUrl). Do not re-add path: '/parts' here.
