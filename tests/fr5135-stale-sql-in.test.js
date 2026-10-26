@@ -24,7 +24,7 @@ function tmpRoot() {
 }
 
 describe('FR #5135 stale IN/sql.json', () => {
-  it('search A products then search B 0 products deletes IN/sql.json and writes DONE B', async () => {
+  it('search A products then search B 0 products deletes IN/sql.json and writes _search-done/ B', async () => {
     const root = tmpRoot();
     const searchA = 'srch_5135_gloves';
     const searchB = 'srch_5135_empty';
@@ -95,8 +95,13 @@ describe('FR #5135 stale IN/sql.json', () => {
       },
     );
     assert.equal(fs.existsSync(sqlAbs), false);
-    const doneB = path.join(root, HOST, GUID, 'DONE', `${searchB}-sql.json`);
+    // FR #5198: terminals live at _search-done/{searchid}/{source}.json (not GUID DONE/).
+    const doneB = path.join(root, '_search-done', searchB, 'sql.json');
     assert.equal(fs.existsSync(doneB), true);
+    assert.equal(
+      fs.existsSync(path.join(root, HOST, GUID, 'DONE', `${searchB}-sql.json`)),
+      false,
+    );
     const done = JSON.parse(fs.readFileSync(doneB, 'utf8'));
     assert.equal(done.status, 'serviced');
     assert.equal(Number(done.products), 0);

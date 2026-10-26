@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * FR #4917: hasresults=0 on new GUID markers; DONE/{searchid}-{source}.json terminal
- * records; flip hasresults=1 when every fan-out source is serviced or dlq'd.
- * Zero-product finishes still write DONE (FR #4823: still no IN/).
+ * FR #4917 / FR #5198: hasresults=0 on new GUID markers; terminal records at
+ * _search-done/{searchid}/{source}.json; flip hasresults=1 when every fan-out
+ * source is serviced or dlq'd. Zero-product finishes still write terminals
+ * (FR #4823: still no IN/). FR #5198: never under {host}/{guid}/DONE/.
  */
 
 const { describe, it, beforeEach } = require('node:test');
@@ -71,14 +72,14 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
     assert.equal(isExcludedKey(`${HOST}/${GUID}/widget.json`), false);
   });
 
-  it('doneObjectKey shape matches host/guid/DONE/searchid-source.json', () => {
+  it('doneObjectKey shape matches _search-done/searchid/source.json (FR #5198)', () => {
     assert.equal(
       doneObjectKey(HOST, GUID, SEARCHID, 'Amazon'),
-      `${HOST}/${GUID}/DONE/${SEARCHID}-amazon.json`,
+      `_search-done/${SEARCHID}/amazon.json`,
     );
   });
 
-  it('zero products still writes DONE serviced and never IN/', async () => {
+  it('zero products still writes _search-done serviced and never IN/ or GUID DONE/', async () => {
     const puts = [];
     const putObject = async (args) => {
       puts.push(args);
@@ -111,13 +112,18 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
       copyObject: s3.copyObject,
       getObjectTagging: async () => ({ TagSet: [] }),
       putObjectTagging: async () => ({}),
+      recheckDelayMs: 0,
     });
     assert.equal(out.skipped, 'no_products');
     assert.equal(out.key, null);
     const doneKeys = puts
       .map((p) => String(p.Key || ''))
-      .filter((k) => k.includes('/DONE/'));
-    assert.ok(doneKeys.some((k) => k.endsWith(`${SEARCHID}-cj.json`)));
+      .filter((k) => k.startsWith('_search-done/'));
+    assert.ok(doneKeys.some((k) => k === `_search-done/${SEARCHID}/cj.json`));
+    assert.equal(
+      puts.map((p) => String(p.Key || '')).some((k) => /\/DONE\//i.test(k)),
+      false,
+    );
     const inKeys = puts
       .map((p) => String(p.Key || ''))
       .filter((k) => /\/IN\//i.test(k));
@@ -332,7 +338,7 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
     assert.equal(String(head.Metadata.uri), '/page');
   });
 
-  it('moveMessageToDlq writes DONE status=dlq when S3 deps present', async () => {
+  it('moveMessageToDlq writes _search-done status=dlq when S3 deps present', async () => {
     await s3.putObject({
       Key: `${HOST}/${GUID}/`,
       Body: Buffer.alloc(0),
@@ -381,7 +387,7 @@ describe('FR #4917 hasresults + DONE terminal records', () => {
     assert.equal(sent.length, 1);
     assert.equal(deleted.length, 1);
     const done = await s3.getObject({
-      Key: `${HOST}/${GUID}/DONE/${SEARCHID}-cj.json`,
+      Key: `_search-done/${SEARCHID}/cj.json`,
     });
     const body = JSON.parse(Buffer.from(await streamToBuf(done.Body)).toString('utf8'));
     assert.equal(body.status, 'dlq');

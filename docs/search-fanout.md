@@ -63,29 +63,36 @@ the FIFO dedupe window also does not double-enqueue. The SQL queue is
 re-search age is owned by `a-searches` (`defaultage` / `lastsearch` or fan-out
 `at`), not by an idempotent `/search` guard.
 
-## Completion tracking (FR #4917 / FR #5142)
+## Completion tracking (FR #4917 / FR #5142 / FR #5198)
 
 Each worker writes a terminal record at
-`a-clubs/{hostkey}/{guid}/DONE/{searchid}-{source}.json` with
+`a-clubs/_search-done/{searchid}/{source}.json` with
 `status: serviced|dlq` (including zero-product finishes --- still no `IN/`
-file, FR #4823). Immediate DLQ and the final receive before SQS redrive
+file, FR #4823). **FR #5198:** do not create files under
+`a-clubs/{hostkey}/{guid}/DONE/` (Simon: no empty/zero DONE folder in the
+club GUID tree). The `_search-done/` prefix is bucket-root ops state outside
+the GUID folder; bodies still carry `hostkey`/`guid` for debugging.
+Immediate DLQ and the final receive before SQS redrive
 (`ApproximateReceiveCount >= maxReceiveCount`, including transient
 429/502-504) both write `status: dlq`. When every source in
-`search-fanout.json.queued` has a DONE record for the current `searchid`,
+`search-fanout.json.queued` has a terminal record for the current `searchid`,
 the GUID marker flips `hasresults=1` on **S3 object metadata** (starts at
 `0` with `enabled=0`).
 
-FR #5142: the last writer must win even when SQL DONE lands via walrus
-mapped-drive/rclone after live providers. Walrus writes DONE on the mapped
-drive **and** calls S3 `recordSearchTerminal` when AWS deps are present.
-`recordSearchTerminal` re-checks once if a sibling DONE was briefly missing.
-`a-searches` hourly and the redqueen `a-hasresults-monitor` also run
-`recheckIncompleteHasResults` to flip any GUID whose DONE set is complete but
-`hasresults` is still unset. Flip failures log `hasresults_flip_failed` at
-**ERROR** (still fail-soft so a search is not DLQ'd for a marker rewrite miss).
-Seeding missing `hasresults`/`enabled` on old markers:
+FR #5142: the last writer must win even when SQL terminals land via walrus
+mapped-drive/rclone after live providers. Walrus writes `_search-done/` on
+the mapped drive **and** calls S3 `recordSearchTerminal` when AWS deps are
+present. `recordSearchTerminal` re-checks once if a sibling terminal was
+briefly missing. Legacy `{host}/{guid}/DONE/` keys are still **read** during
+transition so in-flight searches can flip. `a-searches` hourly and the
+redqueen `a-hasresults-monitor` also run `recheckIncompleteHasResults` to
+flip any GUID whose terminal set is complete but `hasresults` is still
+unset. Flip failures log `hasresults_flip_failed` at **ERROR** (still
+fail-soft so a search is not DLQ'd for a marker rewrite miss). Seeding
+missing `hasresults`/`enabled` on old markers:
 `node tools/seed-guid-marker-hasresults.js` (dry-run) / `--simon-go` only with
-Simon's approval.
+Simon's approval. Deleting existing GUID `DONE/` folders also needs Simon's
+yes (FR #5198).
 
 Each job payload includes userId / userid from the host marker so live
 providers can stamp tracked outbound links (FR #4415). Payloads may carry

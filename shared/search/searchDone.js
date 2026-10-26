@@ -1,14 +1,22 @@
 'use strict';
 
 /**
- * FR #4917: per-(searchid, source) DONE records under a-clubs/{host}/{guid}/DONE/
- * and flip GUID marker hasresults=1 when every fan-out queued source is terminal
- * (serviced or dlq). Stale searchid records are ignored.
+ * FR #4917 / FR #5198: per-(searchid, source) terminal records and flip GUID
+ * marker hasresults=1 when every fan-out queued source is terminal (serviced
+ * or dlq). Stale searchid records are ignored.
+ *
+ * FR #5198: do **not** write under a-clubs/{host}/{guid}/DONE/. Completion
+ * lives at a-clubs/_search-done/{searchid}/{source}.json (bucket-root ops
+ * prefix outside the club GUID folder). Legacy host/guid/DONE/ keys are still
+ * accepted by doneExists during transition; new writes never create them.
  */
 
 const { setHasResults } = require('../widgets/hostFolderMeta');
 const { promoteInToLive } = require('../widgets/promoteInToLive');
 const { recordNoResultsIfEmpty } = require('./noResultsFeedback');
+
+/** Bucket-root prefix for search terminal records (FR #5198). */
+const SEARCH_DONE_PREFIX = '_search-done';
 
 /**
  * @param {Record<string, string|undefined>} [envVars]
@@ -24,13 +32,31 @@ function resolveAClubsBucket(envVars) {
 }
 
 /**
+ * FR #5198: terminal key outside the GUID club folder.
+ * hostkey/guid args kept for call-site compat; unused in the path.
+ * @param {string} _hostkey
+ * @param {string} _guid
+ * @param {string} searchid
+ * @param {string} source
+ * @returns {string}
+ */
+function doneObjectKey(_hostkey, _guid, searchid, source) {
+  const sid = String(searchid || '').trim();
+  const src = String(source || '')
+    .trim()
+    .toLowerCase();
+  return `${SEARCH_DONE_PREFIX}/${sid}/${src}.json`;
+}
+
+/**
+ * Legacy FR #4917 path (read-only fallback during transition).
  * @param {string} hostkey
  * @param {string} guid
  * @param {string} searchid
  * @param {string} source
  * @returns {string}
  */
-function doneObjectKey(hostkey, guid, searchid, source) {
+function legacyDoneObjectKey(hostkey, guid, searchid, source) {
   const host = String(hostkey || '').trim();
   const g = String(guid || '').trim();
   const sid = String(searchid || '').trim();
@@ -105,7 +131,15 @@ async function writeSearchDoneRecord(opts) {
     ? Math.max(0, Math.floor(Number(opts.products)))
     : 0;
   const Key = doneObjectKey(hostkey, guid, searchid, source);
-  const bodyObj = { searchid, source, status, products, at };
+  const bodyObj = {
+    searchid,
+    source,
+    status,
+    products,
+    at,
+    hostkey,
+    guid,
+  };
   const Body = `${JSON.stringify(bodyObj)}\n`;
   await opts.putObject({
     Bucket: bucket,
@@ -157,16 +191,14 @@ async function loadFanout(opts) {
  * @param {object} opts
  * @returns {Promise<boolean>}
  */
-async function doneExists(opts, source) {
-  const hostkey = String(opts.hostkey || '').trim();
-  const guid = String(opts.guid || '').trim();
-  const searchid = String(opts.searchid || '').trim();
-  const src = String(source || '')
-    .trim()
-    .toLowerCase();
+/**
+ * @param {object} opts
+ * @param {string} Key
+ * @returns {Promise<boolean>}
+ */
+async function objectExists(opts, Key) {
   const bucket =
     opts.bucket || resolveAClubsBucket(opts.envVars || process.env);
-  const Key = doneObjectKey(hostkey, guid, searchid, src);
   if (typeof opts.headObject === 'function') {
     try {
       await opts.headObject({ Bucket: bucket, Key });
@@ -202,6 +234,23 @@ async function doneExists(opts, source) {
     }
     throw err;
   }
+}
+
+async function doneExists(opts, source) {
+  const hostkey = String(opts.hostkey || '').trim();
+  const guid = String(opts.guid || '').trim();
+  const searchid = String(opts.searchid || '').trim();
+  const src = String(source || '')
+    .trim()
+    .toLowerCase();
+  const Key = doneObjectKey(hostkey, guid, searchid, src);
+  if (await objectExists(opts, Key)) return true;
+  // FR #5198 transition: accept legacy GUID DONE/ written before this change.
+  if (hostkey && guid) {
+    const legacy = legacyDoneObjectKey(hostkey, guid, searchid, src);
+    if (await objectExists(opts, legacy)) return true;
+  }
+  return false;
 }
 
 /**
@@ -363,7 +412,9 @@ async function recordSearchTerminal(opts) {
 }
 
 module.exports = {
+  SEARCH_DONE_PREFIX,
   doneObjectKey,
+  legacyDoneObjectKey,
   writeSearchDoneRecord,
   maybeSetHasResults,
   recordSearchTerminal,

@@ -77,7 +77,30 @@ function createAClubsPutObject(opts) {
 
     let writeMsg = msg;
     const keyStr = Key != null ? String(Key).trim() : '';
-    // FR #4917: DONE/{searchid}-{source}.json passthrough on the mapped drive.
+    // FR #5198: _search-done/{searchid}/{source}.json passthrough on the mapped drive.
+    const searchDoneMatch = keyStr.match(
+      /^_search-done\/([^/]+)\/([^/]+)\.json$/i,
+    );
+    if (searchDoneMatch) {
+      const abs = require('node:path').join(
+        root,
+        '_search-done',
+        searchDoneMatch[1],
+        `${searchDoneMatch[2]}.json`,
+      );
+      require('node:fs').mkdirSync(require('node:path').dirname(abs), {
+        recursive: true,
+      });
+      const raw =
+        typeof Body === 'string'
+          ? Body
+          : Buffer.isBuffer(Body)
+            ? Body.toString('utf8')
+            : `${JSON.stringify(productsBody || {})}\n`;
+      require('node:fs').writeFileSync(abs, raw.endsWith('\n') ? raw : `${raw}\n`, 'utf8');
+      return { abs, key: keyStr, bucket: 'a-clubs' };
+    }
+    // Legacy FR #4917 GUID DONE/ passthrough (read path only; new writers use _search-done).
     const doneMatch = keyStr.match(
       /^([^/]+)\/([^/]+)\/DONE\/([^/]+)\.json$/i,
     );

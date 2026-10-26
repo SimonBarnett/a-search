@@ -123,7 +123,7 @@ function minimalProduct(id) {
 }
 
 describe('FR #4823 writeLiveProviderInResult', () => {
-  it('skips IN put at 0 products, writes DONE, and logs provider_done (FR #4917)', async () => {
+  it('skips IN put at 0 products, writes _search-done/, and logs provider_done (FR #5198)', async () => {
     const puts = [];
     const { logs, result } = await withCapturedLog(() =>
       writeLiveProviderInResult({
@@ -140,9 +140,13 @@ describe('FR #4823 writeLiveProviderInResult', () => {
     assert.equal(result.skipped, 'no_products');
     assert.equal(result.key, null);
     const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
-    const donePuts = puts.filter((p) => /\/DONE\//i.test(String(p.Key || '')));
+    const donePuts = puts.filter((p) => String(p.Key || '').startsWith('_search-done/'));
     assert.equal(inPuts.length, 0);
     assert.ok(donePuts.length >= 1);
+    assert.equal(
+      puts.some((p) => /\/DONE\//i.test(String(p.Key || ''))),
+      false,
+    );
     assert.ok(logs.some((l) => /provider_done/.test(l) && /products=0/.test(l)));
     assert.ok(logs.some((l) => /\bsource=cj\b/.test(l)));
     assert.ok(logs.some((l) => /srch_4823_empty/.test(l)));
