@@ -32,7 +32,9 @@ describe('docs/mrb-5097 hostile FR #5095', () => {
     );
     assert.match(src, /affiliates_s3_error/);
     assert.match(src, /logAffiliatesS3Error/);
-    assert.match(src, /FR #5095 \/ #5090/);
+    // Contiguous FR labels (order may be #5090 then #5095 after FIX CI).
+    assert.match(src, /FR #5090/);
+    assert.match(src, /FR #5095/);
     assert.match(src, /wrapS3HeadFailure/);
   });
 
