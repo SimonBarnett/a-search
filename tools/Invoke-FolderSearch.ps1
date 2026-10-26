@@ -8,7 +8,7 @@ Payload matches the annotator: host, hostkey, guid, queries, exclude, plus
 market and currency when present, and metadata userid (never customernumber).
 Never writes S3. Never prints credentials.
 Auth is IAM SigV4 (FR #4888 / #5086); no x-agent-api-key.
-FR #5145: AwsProfile + SearchApiUrl come from search.config.json next to this
+FR #5145 / #5169: AwsProfile + SearchApiUrl come from search.config.json next to this
 script (or -ConfigPath). Flags override the config. A missing config or missing
 value fails loudly; there is no hard-coded fallback URL. Env A_SEARCH_API_URL /
 A_SEARCH_SEARCH_API_URL still override when set. Optional CloudFormation stack
@@ -163,16 +163,9 @@ function Resolve-AgentKey {
 }
 
 function Resolve-AwsProfileName {
+    # FR #5169: shared resolver — flag > config > annotator; ignore agents/AWS_PROFILE env.
     param($Config, [string]$AwsProfile)
-    if ($AwsProfile) { return $AwsProfile }
-    if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-    $cfgProfile = Get-ConfigProperty -Config $Config -Name 'AwsProfile'
-    if ($cfgProfile) {
-        $p = ([string]$cfgProfile).Trim()
-        if ($p) { return $p }
-    }
-    # FR #5145: no hard-coded profile fallback — require config or -AwsProfile.
-    throw 'aws_profile_required: set -AwsProfile or AwsProfile in search.config.json (FR #5145)'
+    return (Resolve-FolderToolsAwsProfile -AwsProfile $AwsProfile -Config $Config)
 }
 
 # FR #5078: resolve real AK/SK/(session) from a named profile. Never log the values.
@@ -526,7 +519,6 @@ try {
     $cfg = Get-FolderToolsConfig -ConfigPath $ConfigPath
     # FR #5145: when caller did not pass URL/profile/env, require a command config file.
     $hasUrlFlag = [bool]$SearchApiUrl -or [bool]$env:A_SEARCH_API_URL -or [bool]$env:A_SEARCH_SEARCH_API_URL
-    $hasProfileFlag = [bool]$AwsProfile -or [bool]$env:A_SEARCH_AGENTS_AWS_PROFILE
     if (-not $cfg -and -not $hasUrlFlag) {
         throw 'search_config_missing: need search.config.json next to the command (or -ConfigPath) with AwsProfile and SearchApiUrl (FR #5145)'
     }

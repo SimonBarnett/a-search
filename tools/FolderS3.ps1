@@ -24,6 +24,33 @@ function Get-FolderS3MountRoot {
     return $raw.TrimEnd('\', '/')
 }
 
+function Resolve-FolderToolsAwsProfile {
+    <#
+    .SYNOPSIS
+    Shared AWS profile for folder CLI tools (FR #5164 / #5169).
+    .DESCRIPTION
+    Precedence: -AwsProfile, then Config.AwsProfile (search.config.json), then
+    a-search-redqueen-annotator. Does not read A_SEARCH_AGENTS_AWS_PROFILE or
+    process AWS_PROFILE (those lack a-clubs read on redqueen).
+    #>
+    param(
+        [string]$AwsProfile,
+        $Config
+    )
+    if ($AwsProfile -and $AwsProfile.Trim()) { return $AwsProfile.Trim() }
+    if ($Config) {
+        $p = $null
+        if ($Config -is [hashtable] -and $Config.ContainsKey('AwsProfile')) {
+            $p = [string]$Config['AwsProfile']
+        }
+        elseif ($Config.PSObject -and $Config.PSObject.Properties['AwsProfile']) {
+            $p = [string]$Config.AwsProfile
+        }
+        if ($p -and $p.Trim()) { return $p.Trim() }
+    }
+    return 'a-search-redqueen-annotator'
+}
+
 function ConvertFrom-FolderS3Json {
     <#
     .SYNOPSIS

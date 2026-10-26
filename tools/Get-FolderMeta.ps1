@@ -72,18 +72,12 @@ function Get-FolderMetaSearchConfig {
 }
 
 function Resolve-FolderMetaAwsProfile {
-    # FR #5164: -AwsProfile, then search.config.json AwsProfile, then annotator.
-    # Never agents or process AWS profile env (those lack a-clubs read on redqueen).
+    # FR #5164 / #5169: delegate to shared Resolve-FolderToolsAwsProfile.
     param(
         [string]$AwsProfile,
         $Config
     )
-    if ($AwsProfile) { return $AwsProfile }
-    if ($Config -and $Config.PSObject.Properties['AwsProfile']) {
-        $p = [string]$Config.AwsProfile
-        if ($p -and $p.Trim()) { return $p.Trim() }
-    }
-    return 'a-search-redqueen-annotator'
+    return (Resolve-FolderToolsAwsProfile -AwsProfile $AwsProfile -Config $Config)
 }
 
 function Get-MarkerMetaValue {

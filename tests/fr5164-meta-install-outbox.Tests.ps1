@@ -8,34 +8,24 @@ $metaLib = Join-Path $tools 'Get-FolderMeta.ps1'
 Describe 'FR #5164 meta AWS profile (annotator / config; ignore agents env)' {
     It 'source documents annotator default, config helper, and ignores agents env' {
         $raw = Get-Content -LiteralPath $metaLib -Raw
-        $raw | Should Match 'a-search-redqueen-annotator'
         $raw | Should Match 'Get-FolderMetaSearchConfig'
-        # Synopsis / docs may name the ignored env; the resolver body must not read it.
         $raw | Should Match 'Does NOT use A_SEARCH_AGENTS_AWS_PROFILE'
-        $raw | Should Match "return 'a-search-redqueen-annotator'"
+        $raw | Should Match 'Resolve-FolderToolsAwsProfile'
         $fn = [regex]::Match($raw, '(?ms)function Resolve-FolderMetaAwsProfile\s*\{.*?^\}').Value
-        $fn | Should Match 'a-search-redqueen-annotator'
+        $fn | Should Match 'Resolve-FolderToolsAwsProfile'
         $code = [regex]::Replace($fn, '(?m)^\s*#.*$', '')
         $code | Should Not Match 'A_SEARCH_AGENTS_AWS_PROFILE'
         $code | Should Not Match '\$env:AWS_PROFILE'
         $code | Should Not Match '\$env:A_SEARCH_AGENTS_AWS_PROFILE'
     }
 
-    It 'Resolve-FolderMetaAwsProfile prefers Config then annotator (isolated scriptblock)' {
-        $fn = {
-            param($AwsProfile, $Config)
-            if ($AwsProfile) { return $AwsProfile }
-            if ($Config -and $Config.PSObject.Properties['AwsProfile']) {
-                $p = [string]$Config.AwsProfile
-                if ($p -and $p.Trim()) { return $p.Trim() }
-            }
-            return 'a-search-redqueen-annotator'
-        }
+    It 'Resolve-FolderMetaAwsProfile prefers Config then annotator via shared helper' {
+        . (Join-Path $tools 'FolderS3.ps1')
         $env:A_SEARCH_AGENTS_AWS_PROFILE = 'a-search-redqueen-agents'
         $env:AWS_PROFILE = 'shell-login-profile'
-        (& $fn -AwsProfile '' -Config $null) | Should Be 'a-search-redqueen-annotator'
-        (& $fn -AwsProfile '' -Config ([pscustomobject]@{ AwsProfile = 'from-cfg' })) | Should Be 'from-cfg'
-        (& $fn -AwsProfile 'flag' -Config ([pscustomobject]@{ AwsProfile = 'from-cfg' })) | Should Be 'flag'
+        (Resolve-FolderToolsAwsProfile -AwsProfile '' -Config $null) | Should Be 'a-search-redqueen-annotator'
+        (Resolve-FolderToolsAwsProfile -AwsProfile '' -Config ([pscustomobject]@{ AwsProfile = 'from-cfg' })) | Should Be 'from-cfg'
+        (Resolve-FolderToolsAwsProfile -AwsProfile 'flag' -Config ([pscustomobject]@{ AwsProfile = 'from-cfg' })) | Should Be 'flag'
     }
 }
 

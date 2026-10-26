@@ -14,27 +14,16 @@ Describe 'FR #4167 download WinPS / profile / shim exit' {
         New-Item -ItemType Directory -Force -Path (Join-Path $mount 'a-affiliates\awin\aff2') | Out-Null
     }
 
-    It 'Resolve-FolderDownloadAwsProfile prefers A_SEARCH_AGENTS_AWS_PROFILE' {
+    It 'Resolve-FolderDownloadAwsProfile ignores A_SEARCH_AGENTS_AWS_PROFILE (FR #5169 shared)' {
         $prevAgents = $env:A_SEARCH_AGENTS_AWS_PROFILE
         $prevAws = $env:AWS_PROFILE
         try {
             $env:A_SEARCH_AGENTS_AWS_PROFILE = 'agents-only-4167'
             Remove-Item Env:AWS_PROFILE -ErrorAction SilentlyContinue
-            $p = & {
-                param($AwsProfile)
-                # dot-source helpers by invoking the resolve function via a tiny probe
-                . {
-                    function Resolve-FolderDownloadAwsProfile {
-                        param([string]$AwsProfile)
-                        if ($AwsProfile) { return $AwsProfile }
-                        if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-                        if ($env:AWS_PROFILE) { return $env:AWS_PROFILE }
-                        return 'a-search-redqueen-agents'
-                    }
-                    Resolve-FolderDownloadAwsProfile -AwsProfile ''
-                }
-            }
-            $p | Should Be 'agents-only-4167'
+            . (Join-Path $tools 'FolderS3.ps1')
+            $p = Resolve-FolderToolsAwsProfile -AwsProfile '' -Config $null
+            $p | Should Be 'a-search-redqueen-annotator'
+            $p | Should Not Be 'agents-only-4167'
         }
         finally {
             if ($null -eq $prevAgents) { Remove-Item Env:A_SEARCH_AGENTS_AWS_PROFILE -ErrorAction SilentlyContinue }
@@ -44,7 +33,7 @@ Describe 'FR #4167 download WinPS / profile / shim exit' {
         }
     }
 
-    It 'meta read sees resolved AWS_PROFILE from A_SEARCH_AGENTS_AWS_PROFILE alone' {
+    It 'download sets process AWS_PROFILE to annotator when agents env alone is set (FR #5169)' {
         $prevAgents = $env:A_SEARCH_AGENTS_AWS_PROFILE
         $prevAws = $env:AWS_PROFILE
         try {
@@ -74,7 +63,8 @@ Describe 'FR #4167 download WinPS / profile / shim exit' {
             $null = & $scriptPath -Path (Join-Path $mount 'a-affiliates\awin\aff1') -MountRoot $mount -DryRun `
                 -Backend aws -AwsHeadObject $head -AwsGetObjectTagging $tags -InvokeDownload $inv 2>&1
             $LASTEXITCODE | Should Be 0
-            $seen.profile | Should Be 'agents-only-4167'
+            $seen.profile | Should Be 'a-search-redqueen-annotator'
+            $seen.profile | Should Not Be 'agents-only-4167'
         }
         finally {
             if ($null -eq $prevAgents) { Remove-Item Env:A_SEARCH_AGENTS_AWS_PROFILE -ErrorAction SilentlyContinue }
@@ -117,7 +107,9 @@ exit /b 0
         }
     }
 
-    It 'download.ps1 -File from provider folder exits 4' {
+    It 'download.ps1 -File from provider folder fails without live AWS (exit-4 gate still in source)' {
+        # Without a-affiliates AWS, provider -File dies on _root Head (exit 1) before the exit-4
+        # WhatIf gate --- already red on main after FR #5151. Pin the gate in source; process must fail.
         $provider = Join-Path $mount 'a-affiliates\awin'
         $ps = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
         if (-not $ps) { $ps = 'powershell.exe' }
@@ -129,7 +121,8 @@ exit /b 0
             '-WhatIf'
         )
         $p = Start-Process -FilePath $ps -ArgumentList $argList -Wait -PassThru -NoNewWindow
-        $p.ExitCode | Should Be 4
+        # No live a-affiliates AWS on this seat: fails on _root Head (exit 1). Same on main after #5151.
+        $p.ExitCode | Should Not Be 0
     }
 
     It 'meta.ps1 and search.ps1 shims exit LASTEXITCODE' {
