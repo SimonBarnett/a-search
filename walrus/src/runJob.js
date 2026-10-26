@@ -201,14 +201,19 @@ async function runDrainJob(msg, deps) {
   }
 
   // FR #4917: terminal DONE on mapped a-clubs (serviced, products may be 0).
+  // FR #5142: also flip S3 marker when deps.s3 / createAClubsS3 is available.
   let done = null;
   try {
-    done = writeAClubsDoneFs({
+    const s3 =
+      (deps && deps.s3) ||
+      (typeof deps.createAClubsS3 === 'function' ? deps.createAClubsS3() : null);
+    done = await writeAClubsDoneFs({
       root: aClubsRoot,
       msg: writeMsg,
       source,
       status: 'serviced',
       products: productCount,
+      s3: s3 || undefined,
     });
   } catch (err) {
     // Fail-soft: drain success must not roll back for a DONE write miss.

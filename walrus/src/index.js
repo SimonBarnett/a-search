@@ -74,14 +74,73 @@ function createWalrusDrain(opts) {
     (opts && opts.jobDeps && opts.jobDeps.touchLastmod) ||
     createTouchLastmodFs(aClubsRoot);
 
+  // FR #5142: optional real S3 client so SQL DONE flips GUID marker metadata
+  // even when rclone lags behind the mapped drive.
+  const createAClubsS3 =
+    (opts && opts.jobDeps && opts.jobDeps.createAClubsS3) ||
+    (opts && opts.createAClubsS3) ||
+    (() => {
+      try {
+        // eslint-disable-next-line global-require
+        const {
+          S3Client,
+          PutObjectCommand,
+          GetObjectCommand,
+          HeadObjectCommand,
+          CopyObjectCommand,
+          ListObjectsV2Command,
+          GetObjectTaggingCommand,
+          PutObjectTaggingCommand,
+        } = require('@aws-sdk/client-s3');
+        const region =
+          envVars.AWS_REGION || envVars.A_SEARCH_AWS_REGION || 'eu-west-2';
+        const bucket = envVars.A_CLUBS_BUCKET || 'a-clubs';
+        const s3 = new S3Client({ region, maxAttempts: 5 });
+        return {
+          bucket,
+          putObject: (p) =>
+            s3.send(new PutObjectCommand({ Bucket: bucket, ...p })),
+          getObject: (p) =>
+            s3.send(new GetObjectCommand({ Bucket: bucket, ...p })),
+          headObject: (p) =>
+            s3.send(new HeadObjectCommand({ Bucket: bucket, ...p })),
+          copyObject: (p) =>
+            s3.send(new CopyObjectCommand({ Bucket: bucket, ...p })),
+          listObjectsV2: (p) =>
+            s3.send(new ListObjectsV2Command({ Bucket: bucket, ...p })),
+          getObjectTagging: (p) =>
+            s3.send(new GetObjectTaggingCommand({ Bucket: bucket, ...p })),
+          putObjectTagging: (p) =>
+            s3.send(new PutObjectTaggingCommand({ Bucket: bucket, ...p })),
+          logError: (...args) => {
+            if (typeof console !== 'undefined' && console.error) {
+              console.error(...args);
+            }
+          },
+        };
+      } catch (err) {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn(
+            '[a-search]',
+            'WARN',
+            'walrus_s3_client_unavailable',
+            String((err && err.message) || err),
+          );
+        }
+        return null;
+      }
+    });
+
   const runner = createDrainRunner({
     queue,
     log: opts && opts.log,
     jobDeps: {
+      ...((opts && opts.jobDeps) || {}),
       aClubsRoot,
       envVars,
       touchLastmod,
-      ...((opts && opts.jobDeps) || {}),
+      createAClubsS3:
+        (opts && opts.jobDeps && opts.jobDeps.createAClubsS3) || createAClubsS3,
     },
   });
 

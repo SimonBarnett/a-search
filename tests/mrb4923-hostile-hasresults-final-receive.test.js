@@ -161,7 +161,7 @@ describe('MRB #4923 hostile: final-receive DONE + walrus FS hasresults', () => {
     );
   });
 
-  it('writeAClubsDoneFs flips hasresults=1 when fan-out DONE set is complete', () => {
+  it('writeAClubsDoneFs flips hasresults=1 when fan-out DONE set is complete', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mrb4923-aclubs-'));
     try {
       const guidDir = path.join(root, HOST, GUID);
@@ -177,7 +177,7 @@ describe('MRB #4923 hostile: final-receive DONE + walrus FS hasresults', () => {
         'utf8',
       );
 
-      const first = writeAClubsDoneFs({
+      const first = await writeAClubsDoneFs({
         root,
         msg: { host: HOST, guid: GUID, searchid: SEARCHID },
         source: 'sql',
@@ -188,7 +188,7 @@ describe('MRB #4923 hostile: final-receive DONE + walrus FS hasresults', () => {
       assert.equal(first.hasresults, false);
       assert.ok(fs.existsSync(first.abs));
 
-      const second = writeAClubsDoneFs({
+      const second = await writeAClubsDoneFs({
         root,
         msg: { host: HOST, guid: GUID, searchid: SEARCHID },
         source: 'cj',

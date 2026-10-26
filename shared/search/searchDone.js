@@ -300,8 +300,22 @@ async function maybeSetHasResults(opts) {
 }
 
 /**
+ * @param {number} ms
+ * @param {(ms: number) => Promise<void>|void} [sleepFn]
+ */
+async function sleepMs(ms, sleepFn) {
+  if (typeof sleepFn === 'function') {
+    await sleepFn(ms);
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Write one DONE record then maybe flip hasresults.
- * Fail-soft: DONE write errors are logged via opts.logError when provided.
+ * Fail-soft on DONE path (do not fail the search to DLQ for a flip miss).
+ * FR #5142: one short re-check when the first pass sees a missing sibling DONE
+ * (last-writer race / rclone lag); log flip failures at ERROR (not silent).
  */
 async function recordSearchTerminal(opts) {
   const written = await writeSearchDoneRecord(opts);
@@ -309,11 +323,40 @@ async function recordSearchTerminal(opts) {
     return { hasresults: false, written, flip: { hasresults: false, reason: written.skipped } };
   }
   try {
-    const flip = await maybeSetHasResults(opts);
+    let flip = await maybeSetHasResults(opts);
+    // FR #5142: if a sibling DONE is briefly missing, wait and re-check once.
+    if (
+      !flip.hasresults &&
+      flip.reason &&
+      String(flip.reason).startsWith('missing:')
+    ) {
+      const delayMs =
+        opts.recheckDelayMs != null ? Number(opts.recheckDelayMs) : 750;
+      if (delayMs > 0) {
+        await sleepMs(delayMs, opts.sleep);
+        flip = await maybeSetHasResults(opts);
+        if (flip.hasresults) {
+          flip.reason = flip.reason || 'recheck_ok';
+          flip.rechecked = true;
+        }
+      }
+    }
     return { hasresults: !!flip.hasresults, written, flip };
   } catch (err) {
     if (typeof opts.logError === 'function') {
-      opts.logError('[a-search]', 'WARN', 'hasresults_flip_failed', String(err && err.message || err));
+      opts.logError(
+        '[a-search]',
+        'ERROR',
+        'hasresults_flip_failed',
+        String((err && err.message) || err),
+      );
+    } else if (typeof console !== 'undefined' && console.error) {
+      console.error(
+        '[a-search]',
+        'ERROR',
+        'hasresults_flip_failed',
+        String((err && err.message) || err),
+      );
     }
     return { hasresults: false, written, flip: { hasresults: false, reason: 'flip_error' } };
   }
@@ -325,4 +368,5 @@ module.exports = {
   maybeSetHasResults,
   recordSearchTerminal,
   loadFanout,
+  doneExists,
 };
