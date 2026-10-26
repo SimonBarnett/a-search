@@ -1,0 +1,4 @@
+{
+  "AwsProfile": "a-search-redqueen-annotator",
+  "SearchApiUrl": "https://EXAMPLE.execute-api.eu-west-2.amazonaws.com"
+}
