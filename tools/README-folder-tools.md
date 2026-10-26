@@ -157,7 +157,7 @@ download -All     # every enabled provider's enabled merchants (ignore age)
 
 Env: `A_SEARCH_S3_MOUNT` (redqueen: `S:\`; default falls back to `D:\s3`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). AWS profile via shared FR #5169 resolver (default `a-search-redqueen-annotator`). Never prints feed URLs, passwords, or tokens.
 
-**AWS identity (FR #4167 / #5169):** `Invoke-FolderDownload` uses shared `Resolve-FolderToolsAwsProfile` (`-AwsProfile`, else `search.config.json` AwsProfile, else `a-search-redqueen-annotator`) and sets process `AWS_PROFILE` for the whole run so marker reads and Node S3 writes use the same identity. Agents/`AWS_PROFILE` env alone do not select the profile.
+**AWS identity (FR #4167 / #5169 / #5180):** `Invoke-FolderDownload` uses shared `Resolve-FolderToolsAwsProfile` (`-AwsProfile`, else `search.config.json` AwsProfile, else `a-search-redqueen-annotator`) and sets process `AWS_PROFILE` for the whole run so marker reads and Node S3 writes use the same identity. `Get-FolderDownloadProviderNames` list-objects-v2 also passes `--profile` on argv (never ambient `AWS_PROFILE` alone). Agents/`AWS_PROFILE` env alone do not select the profile.
 
 **WinPS 5.1 (FR #4167):** JSON args (including `affiliateMeta` / `feedurl`) are passed to Node via process env `A_SEARCH_FOLDER_DOWNLOAD_ARGS` and `run-folder-download.js --args-env`, not on the process command line (avoids 5.1 quote mangling and keeps the feed key out of Task Manager / process audit). Shims `download.ps1` / `meta.ps1` / `search.ps1` end with `exit $LASTEXITCODE` so `powershell -File` preserves tool exit codes.
 
