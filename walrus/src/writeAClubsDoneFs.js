@@ -1,11 +1,13 @@
 'use strict';
 
 /**
- * FR #4917: write DONE/{searchid}-{source}.json on the mapped a-clubs drive
- * and flip hasresults=1 in .a-search-meta.json when the fan-out is complete.
- * FR #5142: when S3 deps are provided, also write DONE + maybeSetHasResults on
- * the real a-clubs bucket so live providers / marker metadata stay race-free
- * (mapped-drive rclone lag must not leave hasresults unset).
+ * FR #4917 / FR #5198: write terminal search records on the mapped a-clubs
+ * drive and flip hasresults=1 in .a-search-meta.json when the fan-out is
+ * complete. FR #5198: path is `_search-done/{searchid}/{source}.json` (not
+ * `{host}/{guid}/DONE/`). FR #5142: when S3 deps are provided, also call
+ * recordSearchTerminal on the real a-clubs bucket so live providers / marker
+ * metadata stay race-free (mapped-drive rclone lag must not leave hasresults
+ * unset).
  */
 
 const fs = require('node:fs');
@@ -13,7 +15,10 @@ const path = require('node:path');
 
 const { hostGuidFromMessage } = require('./aClubsInPath');
 const { isoLastmod } = require('./touchLastmodFs');
-const { recordSearchTerminal } = require('../../shared/search/searchDone');
+const {
+  SEARCH_DONE_PREFIX,
+  recordSearchTerminal,
+} = require('../../shared/search/searchDone');
 
 /**
  * @param {string} root
@@ -78,10 +83,10 @@ async function writeAClubsDoneFs(opts) {
     ? Math.max(0, Math.floor(Number(opts.products)))
     : 0;
   const at = isoLastmod(opts.now);
-  const key = `${host}/${guid}/DONE/${searchid}-${source}.json`;
-  const abs = absUnder(root, [host, guid, 'DONE', `${searchid}-${source}.json`]);
+  const key = `${SEARCH_DONE_PREFIX}/${searchid}/${source}.json`;
+  const abs = absUnder(root, [SEARCH_DONE_PREFIX, searchid, `${source}.json`]);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  const body = { searchid, source, status, products, at };
+  const body = { searchid, source, status, products, at, hostkey: host, guid };
   fs.writeFileSync(abs, `${JSON.stringify(body)}\n`, 'utf8');
 
   let hasresults = maybeSetHasResultsFs({
@@ -168,13 +173,14 @@ function maybeSetHasResultsFs(opts) {
   if (!fanSid || fanSid !== wantSid || !queued.length) return false;
 
   for (const src of queued) {
-    const doneAbs = absUnder(root, [
+    const doneAbs = absUnder(root, [SEARCH_DONE_PREFIX, wantSid, `${src}.json`]);
+    const legacyAbs = absUnder(root, [
       host,
       guid,
       'DONE',
       `${wantSid}-${src}.json`,
     ]);
-    if (!fs.existsSync(doneAbs)) return false;
+    if (!fs.existsSync(doneAbs) && !fs.existsSync(legacyAbs)) return false;
   }
 
   // Reuse touchLastmodFs meta file; set hasresults=1 while preserving keys.

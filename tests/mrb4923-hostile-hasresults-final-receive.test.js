@@ -90,7 +90,7 @@ describe('MRB #4923 hostile: final-receive DONE + walrus FS hasresults', () => {
     assert.equal(sent.length, 0);
     assert.equal(deleted.length, 0);
     const donePuts = puts.filter((p) =>
-      String(p.Key || '').includes(`/DONE/${SEARCHID}-ebay.json`),
+      String(p.Key || '') === `_search-done/${SEARCHID}/ebay.json`,
     );
     assert.equal(donePuts.length, 1);
     const body = JSON.parse(String(donePuts[0].Body || ''));
@@ -149,7 +149,7 @@ describe('MRB #4923 hostile: final-receive DONE + walrus FS hasresults', () => {
     assert.equal(sent.length, 0);
     assert.equal(deleted.length, 0);
     const donePuts = puts.filter((p) =>
-      String(p.Key || '').includes(`/DONE/${SEARCHID}-amazon.json`),
+      String(p.Key || '') === `_search-done/${SEARCHID}/amazon.json`,
     );
     assert.equal(donePuts.length, 1);
     const body = JSON.parse(String(donePuts[0].Body || ''));

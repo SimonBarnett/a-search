@@ -178,7 +178,7 @@ async function recordDlqDone(args) {
 
 /**
  * Move a poison message to the sibling DLQ and delete it from the source queue.
- * FR #4917: also writes DONE/{searchid}-{source}.json status=dlq when S3 deps present.
+ * FR #4917 / FR #5198: also writes _search-done/{searchid}/{source}.json status=dlq when S3 deps present.
  * @param {{
  *   record: object,
  *   err: unknown,
