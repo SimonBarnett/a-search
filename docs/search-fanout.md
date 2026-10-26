@@ -37,8 +37,9 @@ mints a `searchid` and enqueues:
    - deploy queue URL present (`SQS_<X>_LIVE_URL` / soft-env FR #4650)
    - `s3://a-affiliates/<provider>/` folder metadata `enabled=1` (shared
      `parseEnabledFlag` / `isEnabledOne`; missing folder, `enabled=0`, or
-     HeadObject `Unknown` / other S3 errors (FR #5090) are skipped and logged
-     --- they must not 500 the POST). Candidate ids include amazon, ebay, rakuten, cj,
+     HeadObject 403/Unknown/AccessDenied (FR #5095 / #5090) is skipped and
+     logged --- never 500 the POST. Entry IAM includes s3:ListBucket on
+     a-affiliates so a missing key is 404). Candidate ids include amazon, ebay, rakuten, cj,
      kelkoo, etsy; aliexpress and bol when registry-enabled. Creating amazon /
      ebay folders needs Simon's go before deploy, or they stop being searched.
 2. one message to the **SQL SQS** queue (`a-search-db-backed`, env

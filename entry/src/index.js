@@ -512,6 +512,13 @@ async function handler(event, _context, deps = {}) {
     } catch {
       // Intake failure must not mask the original error response.
     }
+    // FR #5095: log name/code (never body/secrets) before 500.
+    const log = deps.log || console;
+    const errName = err && (err.name || err.code) ? String(err.name || err.code) : 'Error';
+    const errCode = err && err.code && err.code !== err.name ? String(err.code) : '';
+    if (typeof log.error === 'function') {
+      log.error(`[entry] ${route} ${errName}${errCode ? ` ${errCode}` : ''}`);
+    }
     return jsonResponse(500, {
       accepted: false,
       ok: false,
