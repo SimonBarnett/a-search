@@ -2,7 +2,9 @@
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
-on **walrus**, and writes `a-clubs/{host}/{guid}/IN/sql.json` (overwritten each search).
+on **walrus**, and writes `a-clubs/{host}/{guid}/IN/sql.json` (overwritten each search;
+FR #5135: deleted when this search admits 0 products so a prior search's file
+cannot linger).
 No AWS Lambda connects to MSSQL. No inbound ports on walrus.
 
 ## Runtime layout (FR #5022)

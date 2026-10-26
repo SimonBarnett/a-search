@@ -102,8 +102,20 @@ function parseAnnotationBody(resp) {
  * }} opts
  * @returns {Promise<object[]>}
  */
+function objectSearchid(body) {
+  try {
+    const raw = Buffer.isBuffer(body) ? body.toString('utf8') : String(body || '');
+    const one = JSON.parse(raw);
+    if (!one || typeof one !== 'object' || Array.isArray(one)) return '';
+    return String(one.searchid != null ? one.searchid : one.searchId || '').trim();
+  } catch {
+    return '';
+  }
+}
+
 async function loadInCandidates(opts) {
   if (typeof opts.listObjectsV2 !== 'function') return [];
+  const want = String(opts.currentSearchid || '').trim();
   /** @type {object[]} */
   const out = [];
   try {
@@ -118,6 +130,11 @@ async function loadInCandidates(opts) {
         let body = obj && obj.Body;
         if (body && typeof body.transformToString === 'function') {
           body = await body.transformToString();
+        }
+        const key = String(c.Key).replace(/\\/g, '/');
+        if (key.toLowerCase().endsWith('/in/sql.json') && want) {
+          const got = objectSearchid(body);
+          if (got && got !== want) continue;
         }
         const parsed = parseLiveBody(body);
         if (parsed.length) {
@@ -196,9 +213,30 @@ async function promoteInToLive(opts) {
     }
   }
 
+  let currentSearchid = '';
+  try {
+    const fan = await opts.getObject({
+      Key: widgetFileKey(host, guid, 'search-fanout.json'),
+    });
+    let fanBody = fan && (fan.Body != null ? fan.Body : fan.body);
+    if (fanBody && typeof fanBody.transformToString === 'function') {
+      fanBody = await fanBody.transformToString();
+    }
+    const fanObj = JSON.parse(
+      Buffer.isBuffer(fanBody) ? fanBody.toString('utf8') : String(fanBody || ''),
+    );
+    currentSearchid = String(
+      (fanObj && (fanObj.searchid != null ? fanObj.searchid : fanObj.searchId)) ||
+        '',
+    ).trim();
+  } catch {
+    currentSearchid = '';
+  }
+
   const inCandidates = await loadInCandidates({
     host,
     guid,
+    currentSearchid,
     listObjectsV2: opts.listObjectsV2,
     getObject: opts.getObject,
   });

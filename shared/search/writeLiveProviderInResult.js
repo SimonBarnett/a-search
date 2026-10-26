@@ -139,6 +139,24 @@ async function writeLiveProviderInResult(opts) {
     logProviderDoneZero({ msg, source: opts.source, logInfo: opts.logInfo });
     const bucket = pathParts ? resolveAClubsBucket(envVars) : null;
     // FR #4917 / #4823: zero products still write DONE (never IN/).
+    if (
+      pathParts &&
+      String(opts.source).trim().toLowerCase() === 'sql' &&
+      typeof opts.deleteObject === 'function'
+    ) {
+      try {
+        await opts.deleteObject({
+          Bucket: resolveAClubsBucket(envVars),
+          Key: `${pathParts.hostkey}/${pathParts.guid}/IN/sql.json`,
+        });
+      } catch (err) {
+        const status = err && err.$metadata && err.$metadata.httpStatusCode;
+        const code = err && (err.name || err.code);
+        if (status !== 404 && code !== 'NoSuchKey' && code !== 'NotFound') {
+          throw err;
+        }
+      }
+    }
     if (pathParts && typeof opts.putObject === 'function') {
       const withBucket = (fn) => {
         if (typeof fn !== 'function') return fn;
