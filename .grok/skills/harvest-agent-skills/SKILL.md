@@ -721,3 +721,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Download provider list must pass Resolve-FolderDownloadAwsProfile/--profile on list-objects-v2 argv the same way as invite/onboard/dbimport (#5176) and FolderS3 (#5174); ambient AWS_PROFILE alone is not enough.
 - a-search docs/skills-only CI skips npm test (FR-2611): put check_conflict_markers.py under scripts/ and always run it in test-and-synth after checkout so harvest SKILL markers cannot merge.
 - Search completion: write a-clubs/_search-done/{searchid}/{source}.json (not {host}/{guid}/DONE/); legacy DONE/ read-only during transition; do not delete club DONE/ without Simon yes.
+- After FR #5198, any test that pins terminal PutObject keys must assert _search-done/{searchid}/{source}.json (and that /DONE/ is absent); leave legacy GUID DONE/ reads for transition only.
