@@ -338,17 +338,32 @@ function Invoke-AgentSearchHttp {
             $out = & $CurlInvoke $curlArgs
         }
         else {
-            # FR #5157: spinner around SigV4 POST /search. Pass --user via env (not job argv).
+            # FR #5157 / #5160: spinner around SigV4 POST /search.
+            # Pass --user and x-amz-security-token via process env (not job argv).
             $prevCurlUser = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
+            $prevCurlTok = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', 'Process')
             [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $userPair, 'Process')
+            if ($creds.SessionToken) {
+                [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', [string]$creds.SessionToken, 'Process')
+            }
+            else {
+                [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $null, 'Process')
+            }
             try {
                 $curlArgsJob = @($curlArgs)
-                # Strip --user <pair> from job args; job re-adds from env.
+                # Strip --user <pair> and -H x-amz-security-token:* from job args; job re-adds from env.
                 $stripped = New-Object System.Collections.Generic.List[string]
                 for ($i = 0; $i -lt $curlArgsJob.Count; $i++) {
                     if ($curlArgsJob[$i] -eq '--user' -and ($i + 1) -lt $curlArgsJob.Count) {
                         $i++
                         continue
+                    }
+                    if ($curlArgsJob[$i] -eq '-H' -and ($i + 1) -lt $curlArgsJob.Count) {
+                        $hdr = [string]$curlArgsJob[$i + 1]
+                        if ($hdr.StartsWith('x-amz-security-token:', [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $i++
+                            continue
+                        }
                     }
                     [void]$stripped.Add([string]$curlArgsJob[$i])
                 }
@@ -356,8 +371,15 @@ function Invoke-AgentSearchHttp {
                     param($cargs)
                     $u = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
                     if (-not $u) { throw 'search_http_failed: missing curl user env' }
-                    $full = @($cargs) + @('--user', $u)
-                    $o = & curl.exe @full 2>&1
+                    $full = [System.Collections.Generic.List[string]]@($cargs)
+                    [void]$full.Add('--user')
+                    [void]$full.Add($u)
+                    $tok = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', 'Process')
+                    if ($tok) {
+                        [void]$full.Add('-H')
+                        [void]$full.Add(('x-amz-security-token: {0}' -f $tok))
+                    }
+                    $o = & curl.exe @($full.ToArray()) 2>&1
                     if ($LASTEXITCODE -ne 0) { throw ("search_http_failed: curl exit {0}" -f $LASTEXITCODE) }
                     return $o
                 }
@@ -368,6 +390,12 @@ function Invoke-AgentSearchHttp {
                 }
                 else {
                     [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $prevCurlUser, 'Process')
+                }
+                if ($null -eq $prevCurlTok) {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $null, 'Process')
+                }
+                else {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $prevCurlTok, 'Process')
                 }
             }
         }
@@ -655,7 +683,9 @@ catch {
     elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
     $s3ForIssue = ''; if (Get-Variable -Name loc -Scope 0 -ErrorAction SilentlyContinue) { if ($null -ne $loc) { $s3ForIssue = ('s3://{0}/{1}' -f $loc.Bucket, $loc.Key) } }
     if ($exitForIssue -notin @(2, 3, 4, 5)) {
-    Invoke-ASearchToolFailureReport -Tool 'search' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+    $cwdForIssue = ''
+    if (Get-Variable -Name Path -Scope 0 -ErrorAction SilentlyContinue) { $cwdForIssue = [string]$Path }
+    Invoke-ASearchToolFailureReport -Tool 'search' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -Cwd $cwdForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
     }
 
         exit 2

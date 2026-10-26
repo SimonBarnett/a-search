@@ -90,10 +90,14 @@ function Invoke-ASearchToolFailureReport {
         [scriptblock]$Reporter # injectable for tests: receives hashtable, returns object/json
     )
     # FR #5151: opt-out + never file from Pester frNNNN temp mounts (avoid intake spam).
+    # Probe Cwd/CommandLine/S3Uri/Detail AND Get-Location: callers often omit -Cwd while
+    # Path is under Temp\frNNNN-*, and MyInvocation.Line keeps unevaluated $mount.
     if ($env:A_SEARCH_TOOL_FAILURE_DISABLE -eq '1') { return }
-    if (($Cwd -and $Cwd -match 'fr\d{4}-') -or ($CommandLine -and $CommandLine -match 'fr\d{4}-') -or ($S3Uri -and $S3Uri -match 'fr\d{4}-')) {
-        return
-    }
+    $locPath = ''
+    try { $locPath = [string](Get-Location).Path } catch { }
+    if (-not $Cwd) { $Cwd = $locPath }
+    $probe = @($Cwd, $CommandLine, $S3Uri, $Detail, $locPath) -join '|'
+    if ($probe -match 'fr\d{4}-') { return }
     try {
         $safeDetail = Get-ASearchToolRedactedText $Detail
         if (-not $safeDetail) { $safeDetail = '(no error detail)' }
@@ -105,7 +109,6 @@ function Invoke-ASearchToolFailureReport {
         if ($code -eq 'error' -and $safeDetail -match '^([a-z0-9_]+)\s*:') {
             $code = $Matches[1]
         }
-        if (-not $Cwd) { $Cwd = (Get-Location).Path }
         if (-not $AwsIdentityArn) { $AwsIdentityArn = Get-ASearchAwsIdentityArn }
         $git = Get-ASearchGitCommitShort
 

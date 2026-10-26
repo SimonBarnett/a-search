@@ -1,5 +1,7 @@
 # FR #4043 --- Get-FolderMeta + Invoke-FolderSearch (Pester 3.4 / WinPS 5.1)
 $ErrorActionPreference = 'Stop'
+# FR #5151 / MRB #5154: never file intake from folder-tool Pester mounts
+$env:A_SEARCH_TOOL_FAILURE_DISABLE = '1'
 $tools = Join-Path (Split-Path $PSScriptRoot -Parent) 'tools'
 . (Join-Path $tools 'FolderS3.ps1')
 
