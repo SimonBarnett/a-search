@@ -256,7 +256,7 @@ function Invoke-FolderDownloadOneAffiliate {
             param($toolsDir, $bucket, $key, $backend, $awsProfile)
             if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
             . (Join-Path $toolsDir 'FolderS3.ps1')
-            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend -AwsProfile $awsProfile)
         }
     }
     $meta = ConvertTo-FolderDownloadMetaHashtable -Metadata $marker.Metadata
@@ -432,12 +432,14 @@ function Test-FolderDownloadAffiliateDue {
 }
 
 function Get-FolderDownloadProviderNames {
-    param([string]$Bucket)
+    param([string]$Bucket, [string]$AwsProfile)
+    # FR #5180: always pass --profile (never ambient AWS_PROFILE alone); same class as #5174/#5176.
+    $cliProfile = Resolve-FolderDownloadAwsProfile -AwsProfile $AwsProfile
     $names = New-Object 'System.Collections.Generic.List[string]'
     $token = $null
     do {
         $awsArgs = @(
-            's3api', 'list-objects-v2',
+            '--profile', $cliProfile, 's3api', 'list-objects-v2',
             '--bucket', $Bucket,
             '--delimiter', '/',
             '--output', 'json'
@@ -660,7 +662,7 @@ try {
         $providerLocs = @()
         if ($loc.Kind -eq 'a-affiliates-root') {
             Write-FolderToolStep 'Listing providers under a-affiliates/'
-            $providerNames = @(Get-FolderDownloadProviderNames -Bucket $loc.Bucket)
+            $providerNames = @(Get-FolderDownloadProviderNames -Bucket $loc.Bucket -AwsProfile $profile)
             foreach ($pn in $providerNames) {
                 $pPath = Join-Path $loc.Path $pn
                 if (-not (Test-Path -LiteralPath $pPath)) { continue }

@@ -12,6 +12,9 @@ a-affiliates root, provider, or merchant folder (default: cwd).
 
 .PARAMETER DryRun
 Alias -WhatIf. Parse and safety-check only; no SQL writes, no deletes.
+
+.PARAMETER AwsProfile
+Named AWS profile for S3 list/delete (FR #5176). Defaults via Resolve-FolderS3CliProfile.
 #>
 [CmdletBinding()]
 param(
@@ -20,7 +23,8 @@ param(
     [string]$MerchantId,
     [switch]$Force,
     [switch]$WhatIf,
-    [Alias('DryRun')][switch]$DryRunSwitch
+    [Alias('DryRun')][switch]$DryRunSwitch,
+    [string]$AwsProfile
 )
 
 Set-StrictMode -Version Latest
@@ -49,11 +53,13 @@ $here = $PSScriptRoot
 . (Join-Path $here 'ToolFailure.ps1')
 
 function Get-DbImportProviderNames {
-    param([string]$Bucket)
+    param([string]$Bucket, [string]$AwsProfile)
+    # FR #5176: always pass --profile (never ambient AWS_PROFILE alone).
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $names = New-Object 'System.Collections.Generic.List[string]'
     $token = $null
     do {
-        $awsArgs = @('s3api', 'list-objects-v2', '--bucket', $Bucket, '--delimiter', '/', '--output', 'json')
+        $awsArgs = @('--profile', $cliProfile, 's3api', 'list-objects-v2', '--bucket', $Bucket, '--delimiter', '/', '--output', 'json')
         if ($token) { $awsArgs += @('--continuation-token', $token) }
         $raw = & aws @awsArgs 2>&1
         if ($LASTEXITCODE -ne 0) { throw ("list_providers_failed: {0}" -f $raw) }
@@ -74,8 +80,9 @@ function Get-DbImportProviderNames {
 }
 
 function Get-DbImportProviderEnabled {
-    param([string]$Bucket, [string]$Provider)
-    $marker = Get-FolderS3ObjectMeta -Bucket $Bucket -Key ("{0}/" -f $Provider) -Backend aws -SkipTags
+    param([string]$Bucket, [string]$Provider, [string]$AwsProfile)
+    # FR #5176: pass -AwsProfile into FolderS3 head.
+    $marker = Get-FolderS3ObjectMeta -Bucket $Bucket -Key ("{0}/" -f $Provider) -Backend aws -SkipTags -AwsProfile $AwsProfile
     $en = ''
     if ($marker -and $marker.Metadata -and $marker.Metadata['enabled']) {
         $en = [string]$marker.Metadata['enabled']
@@ -123,11 +130,14 @@ function Invoke-DbImportParseNode {
 }
 
 function Remove-DbImportS3Object {
-    param([string]$Bucket, [string]$Key)
+    param([string]$Bucket, [string]$Key, [string]$AwsProfile)
+    # FR #5176: always pass --profile on delete-object.
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & aws s3api delete-object --bucket $Bucket --key $Key 2>&1 | Out-Null
+        $awsArgs = @('--profile', $cliProfile, 's3api', 'delete-object', '--bucket', $Bucket, '--key', $Key)
+        & aws @awsArgs 2>&1 | Out-Null
         if ($LASTEXITCODE -ne 0) {
             # fallback mount delete
             $mount = if ($env:A_SEARCH_S3_MOUNT) { $env:A_SEARCH_S3_MOUNT.TrimEnd('\') } else { 'S:' }
@@ -147,7 +157,8 @@ function Import-DbImportOneMerchant {
         [string]$Bucket,
         [System.Data.SqlClient.SqlConnection]$Connection,
         [bool]$DryRun,
-        [string]$NodeExe
+        [string]$NodeExe,
+        [string]$AwsProfile
     )
     $tmp = Join-Path $env:TEMP ("dbimport-{0}-{1}" -f $Provider, $AffiliateId)
     New-Item -ItemType Directory -Force -Path $tmp | Out-Null
@@ -191,7 +202,7 @@ function Import-DbImportOneMerchant {
                 -FeedKey $AffiliateId -Env $envName -Rows $rows -MaxRemoveRatio $maxRatio -DryRun:$DryRun
             if (-not $DryRun -and $Config.deleteAfterImport -ne $false) {
                 $key = "{0}/{1}/{2}" -f $Provider, $AffiliateId, $csv.Name
-                Remove-DbImportS3Object -Bucket $Bucket -Key $key
+                Remove-DbImportS3Object -Bucket $Bucket -Key $key -AwsProfile $AwsProfile
                 Write-FolderToolDetail ("deleted s3://{0}/{1}" -f $Bucket, $key)
             }
         }
@@ -218,7 +229,7 @@ function Import-DbImportOneMerchant {
                 -FeedKey $AffiliateId -Env $envName -Rows $offers -DryRun:$DryRun
             if (-not $DryRun -and $Config.deleteAfterImport -ne $false) {
                 $key = "{0}/{1}/{2}" -f $Provider, $AffiliateId, $coupons.Name
-                Remove-DbImportS3Object -Bucket $Bucket -Key $key
+                Remove-DbImportS3Object -Bucket $Bucket -Key $key -AwsProfile $AwsProfile
                 Write-FolderToolDetail ("deleted s3://{0}/{1}" -f $Bucket, $key)
             }
         }
@@ -238,6 +249,8 @@ function Import-DbImportOneMerchant {
 }
 
 try {
+    # FR #5176: resolve annotator (or -AwsProfile) for every aws argv --profile.
+    $dbImportProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $target = if ($Path) { $Path } else { (Get-Location).Path }
     $loc = ConvertTo-FolderS3Location -Path $target -MountRoot $MountRoot
     if ($loc.Bucket.ToLowerInvariant() -ne 'a-affiliates') {
@@ -255,7 +268,7 @@ try {
     }
     elseif ($loc.Kind -eq 'provider') {
         $pname = $loc.KeyParts[0]
-        if (-not (Get-DbImportProviderEnabled -Bucket $loc.Bucket -Provider $pname)) {
+        if (-not (Get-DbImportProviderEnabled -Bucket $loc.Bucket -Provider $pname -AwsProfile $dbImportProfile)) {
             [Console]::Error.WriteLine(("provider_disabled: {0}" -f $pname))
             exit 3
         }
@@ -270,8 +283,8 @@ try {
     }
     else {
         # root
-        foreach ($pn in Get-DbImportProviderNames -Bucket $loc.Bucket) {
-            if (-not (Get-DbImportProviderEnabled -Bucket $loc.Bucket -Provider $pn)) {
+        foreach ($pn in Get-DbImportProviderNames -Bucket $loc.Bucket -AwsProfile $dbImportProfile) {
+            if (-not (Get-DbImportProviderEnabled -Bucket $loc.Bucket -Provider $pn -AwsProfile $dbImportProfile)) {
                 Write-FolderToolDetail ("provider {0} enabled=0 - skip" -f $pn)
                 continue
             }
@@ -314,7 +327,7 @@ try {
             try {
                 $r = Import-DbImportOneMerchant -Provider $j.Provider -AffiliateId $j.AffiliateId `
                     -MerchantPath $j.Path -Config $cfg -Bucket $loc.Bucket -Connection $conn `
-                    -DryRun:$DryRun -NodeExe $null
+                    -DryRun:$DryRun -NodeExe $null -AwsProfile $dbImportProfile
                 $ok++
                 $pc = 0; $oc = 0; $pd = 0
                 if ($r.PSObject.Properties['parts'] -and $null -ne $r.parts) {

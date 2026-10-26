@@ -27,6 +27,10 @@ Show the browser window.
 
 .PARAMETER Otp
 One-shot OTP code (also accepts env AWIN_OTP / provider OTP).
+
+.PARAMETER AwsProfile
+Named AWS profile for S3 list/head (FR #5176). Defaults via Resolve-FolderS3CliProfile
+(annotator; ignores ambient AWS_PROFILE / agents).
 #>
 [CmdletBinding()]
 param(
@@ -35,7 +39,8 @@ param(
     [switch]$Live,
     [switch]$Headed,
     [int]$Max = 0,
-    [string]$Otp
+    [string]$Otp,
+    [string]$AwsProfile
 )
 
 Set-StrictMode -Version Latest
@@ -53,12 +58,14 @@ $here = $PSScriptRoot
 $script:InviteProviders = @('awin', 'rakuten', 'cj')
 
 function Get-InviteProviderNames {
-    param([string]$Bucket)
+    param([string]$Bucket, [string]$AwsProfile)
+    # FR #5176: always pass --profile (never ambient AWS_PROFILE alone).
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $names = New-Object 'System.Collections.Generic.List[string]'
     $token = $null
     do {
         $awsArgs = @(
-            's3api', 'list-objects-v2',
+            '--profile', $cliProfile, 's3api', 'list-objects-v2',
             '--bucket', $Bucket,
             '--delimiter', '/',
             '--output', 'json'
@@ -88,11 +95,12 @@ function Get-InviteProviderNames {
 }
 
 function Get-InviteProviderEnabled {
-    param([string]$Bucket, [string]$Provider)
-    $marker = Invoke-FolderToolWithSpinner -Label ("Head provider marker {0}/" -f $Provider) -ArgumentList @($PSScriptRoot, $Bucket, $Provider) -ScriptBlock {
-        param($toolsDir, $b, $p)
+    param([string]$Bucket, [string]$Provider, [string]$AwsProfile)
+    # FR #5176: pass -AwsProfile into FolderS3 head (explicit --profile on aws).
+    $marker = Invoke-FolderToolWithSpinner -Label ("Head provider marker {0}/" -f $Provider) -ArgumentList @($PSScriptRoot, $Bucket, $Provider, $AwsProfile) -ScriptBlock {
+        param($toolsDir, $b, $p, $awsProfile)
         . (Join-Path $toolsDir 'FolderS3.ps1')
-        return (Get-FolderS3ObjectMeta -Bucket $b -Key ("{0}/" -f $p) -Backend aws -SkipTags)
+        return (Get-FolderS3ObjectMeta -Bucket $b -Key ("{0}/" -f $p) -Backend aws -SkipTags -AwsProfile $awsProfile)
     }
     $meta = @{}
     if ($marker -and $marker.Metadata) {
@@ -316,12 +324,13 @@ try {
         exit 3
     }
 
-    if (-not $env:AWS_PROFILE) { $env:AWS_PROFILE = 'a-search-redqueen-agents' }
+    # FR #5176: resolve annotator (or -AwsProfile); never force agents into ambient AWS_PROFILE.
+    $inviteProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
 
     if ($loc.Kind -eq 'provider') {
         $pname = $loc.KeyParts[0]
         [Console]::Error.WriteLine(('[{0}] Reading provider marker {1}/' -f (Get-Date).ToString('HH:mm:ss'), $pname))
-        $st = Get-InviteProviderEnabled -Bucket $loc.Bucket -Provider $pname
+        $st = Get-InviteProviderEnabled -Bucket $loc.Bucket -Provider $pname -AwsProfile $inviteProfile
         if (-not $st.Enabled) {
             [Console]::Error.WriteLine(("provider_disabled: {0} has enabled!=1" -f $pname))
             exit 3
@@ -332,10 +341,10 @@ try {
 
     # Bucket root: every enabled=1 provider
     [Console]::Error.WriteLine(('[{0}] Listing providers under a-affiliates/' -f (Get-Date).ToString('HH:mm:ss')))
-    $providerNames = @(Get-InviteProviderNames -Bucket $loc.Bucket)
+    $providerNames = @(Get-InviteProviderNames -Bucket $loc.Bucket -AwsProfile $inviteProfile)
     $enabled = @()
     foreach ($pn in $providerNames) {
-        $st = Get-InviteProviderEnabled -Bucket $loc.Bucket -Provider $pn
+        $st = Get-InviteProviderEnabled -Bucket $loc.Bucket -Provider $pn -AwsProfile $inviteProfile
         if ($st.Enabled) {
             $enabled += $pn
             [Console]::Error.WriteLine(('         provider {0} enabled=1' -f $pn))

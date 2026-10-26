@@ -51,6 +51,16 @@ function Resolve-FolderToolsAwsProfile {
     return 'a-search-redqueen-annotator'
 }
 
+function Resolve-FolderS3CliProfile {
+    <#
+    .SYNOPSIS
+    FR #5174: profile for aws CLI argv --profile (never ambient AWS_PROFILE alone).
+    #>
+    param([string]$AwsProfile)
+    if ($AwsProfile -and $AwsProfile.Trim()) { return $AwsProfile.Trim() }
+    return (Resolve-FolderToolsAwsProfile)
+}
+
 function ConvertFrom-FolderS3Json {
     <#
     .SYNOPSIS
@@ -214,8 +224,11 @@ function Get-FolderS3ObjectMeta {
         [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto',
         # Selection / due-check only needs user metadata from head-object; skip the
         # second get-object-tagging round-trip (halves scan time for large providers).
-        [switch]$SkipTags
+        [switch]$SkipTags,
+        # FR #5174: explicit CLI profile (--profile); defaults to Resolve-FolderToolsAwsProfile.
+        [string]$AwsProfile
     )
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $useAws = $Backend -eq 'aws'
     $useRclone = $Backend -eq 'rclone'
     if ($Backend -eq 'auto') {
@@ -233,12 +246,14 @@ function Get-FolderS3ObjectMeta {
         $headFn = $AwsHeadObject
         if (-not $headFn) {
             # FR #5148 / #5151: keep AWS CLI text on failure (never return $null alone).
+            # FR #5174: always pass --profile (never ambient AWS_PROFILE alone).
             $headFn = {
-                param($b, $k)
+                param($b, $k, $profile)
                 $prev = $ErrorActionPreference
                 $ErrorActionPreference = 'Continue'
                 try {
-                    $raw = aws s3api head-object --bucket $b --key $k --output json 2>&1
+                    $awsArgs = @('--profile', $profile, 's3api', 'head-object', '--bucket', $b, '--key', $k, '--output', 'json')
+                    $raw = & aws @awsArgs 2>&1
                     if ($LASTEXITCODE -ne 0) {
                         $detail = (($raw | Out-String) -replace '[\x00-\x08\x0B\x0C\x0E-\x1F]', '').Trim()
                         $detail = $detail -replace '(?i)(api[_-]?key|token|password|secret|AKIA[0-9A-Z]{16})\s*[:=]?\s*\S+', '$1=***'
@@ -252,7 +267,7 @@ function Get-FolderS3ObjectMeta {
             }
         }
         try {
-            $headRaw = & $headFn $Bucket $Key
+            $headRaw = & $headFn $Bucket $Key $cliProfile
         }
         catch {
             $em = $_.Exception.Message
@@ -271,18 +286,19 @@ function Get-FolderS3ObjectMeta {
             $tagFn = $AwsGetObjectTagging
             if (-not $tagFn) {
                 $tagFn = {
-                    param($b, $k)
+                    param($b, $k, $profile)
                     $prev = $ErrorActionPreference
                     $ErrorActionPreference = 'Continue'
                     try {
-                        $raw = aws s3api get-object-tagging --bucket $b --key $k --output json 2>&1
+                        $awsArgs = @('--profile', $profile, 's3api', 'get-object-tagging', '--bucket', $b, '--key', $k, '--output', 'json')
+                        $raw = & aws @awsArgs 2>&1
                         if ($LASTEXITCODE -ne 0) { return $null }
                         return $raw
                     }
                     finally { $ErrorActionPreference = $prev }
                 }
             }
-            $tagRaw = & $tagFn $Bucket $Key
+            $tagRaw = & $tagFn $Bucket $Key $cliProfile
             if ($tagRaw) {
                 $tagDoc = ConvertFrom-FolderS3Json $tagRaw
                 foreach ($t in @($tagDoc.TagSet)) {
@@ -339,8 +355,10 @@ function Get-FolderS3TextObject {
         [Parameter(Mandatory = $true)][string]$Key,
         [scriptblock]$AwsGetObject,
         [scriptblock]$RcloneCat,
-        [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto'
+        [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto',
+        [string]$AwsProfile
     )
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     $useAws = $Backend -eq 'aws'
     $useRclone = $Backend -eq 'rclone'
     if ($Backend -eq 'auto') {
@@ -355,13 +373,15 @@ function Get-FolderS3TextObject {
             $fn = $AwsGetObject
             if (-not $fn) {
                 $fn = {
-                    param($b, $k)
+                    param($b, $k, $profile)
                     # FR #4087 / #4167: WinPS 5.1 stderr under Stop becomes terminating; use Continue + LASTEXITCODE
+                    # FR #5174: --profile on get-object
                     $tmp = [System.IO.Path]::GetTempFileName()
                     $prev = $ErrorActionPreference
                     $ErrorActionPreference = 'Continue'
                     try {
-                        aws s3api get-object --bucket $b --key $k $tmp 2>&1 | Out-Null
+                        $awsArgs = @('--profile', $profile, 's3api', 'get-object', '--bucket', $b, '--key', $k, $tmp)
+                        & aws @awsArgs 2>&1 | Out-Null
                         if ($LASTEXITCODE -ne 0) { return $null }
                         if (Test-Path -LiteralPath $tmp) {
                             return [System.IO.File]::ReadAllText($tmp)
@@ -374,7 +394,7 @@ function Get-FolderS3TextObject {
                     }
                 }
             }
-            return & $fn $Bucket $Key
+            return & $fn $Bucket $Key $cliProfile
         }
         if ($useRclone) {
             $fn = $RcloneCat
@@ -414,18 +434,21 @@ function Get-FolderS3Annotations {
         [scriptblock]$AwsListAnnotations,
         [scriptblock]$AwsGetAnnotation,
         [switch]$Full,
-        [int]$PreviewChars = 0
+        [int]$PreviewChars = 0,
+        [string]$AwsProfile
     )
     if ($PreviewChars -le 0) { $PreviewChars = $script:FolderS3AnnotationPreviewChars }
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
 
     $listFn = $AwsListAnnotations
     if (-not $listFn) {
         $listFn = {
-            param($b, $k)
+            param($b, $k, $profile)
             $prev = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
             try {
-                $raw = aws s3api list-object-annotations --bucket $b --key $k --output json 2>&1
+                $awsArgs = @('--profile', $profile, 's3api', 'list-object-annotations', '--bucket', $b, '--key', $k, '--output', 'json')
+                $raw = & aws @awsArgs 2>&1
                 if ($LASTEXITCODE -ne 0) { return $null }
                 return $raw
             }
@@ -435,13 +458,15 @@ function Get-FolderS3Annotations {
     $getFn = $AwsGetAnnotation
     if (-not $getFn) {
         $getFn = {
-            param($b, $k, $name)
+            param($b, $k, $name, $profile)
             # FR #4087 / #4167: WinPS 5.1 stderr under Stop becomes terminating; use Continue + LASTEXITCODE
+            # FR #5174: --profile on get-object-annotation
             $tmp = [System.IO.Path]::GetTempFileName()
             $prev = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
             try {
-                aws s3api get-object-annotation --bucket $b --key $k --annotation-name $name $tmp 2>&1 | Out-Null
+                $awsArgs = @('--profile', $profile, 's3api', 'get-object-annotation', '--bucket', $b, '--key', $k, '--annotation-name', $name, $tmp)
+                & aws @awsArgs 2>&1 | Out-Null
                 if ($LASTEXITCODE -ne 0) { return $null }
                 if (Test-Path -LiteralPath $tmp) {
                     return [System.IO.File]::ReadAllText($tmp)
@@ -456,7 +481,7 @@ function Get-FolderS3Annotations {
     }
 
     $listRaw = $null
-    try { $listRaw = & $listFn $Bucket $Key } catch { $listRaw = $null }
+    try { $listRaw = & $listFn $Bucket $Key $cliProfile } catch { $listRaw = $null }
     if (-not $listRaw) {
         return [pscustomobject]@{
             Items   = @()
@@ -474,7 +499,7 @@ function Get-FolderS3Annotations {
     $items = @()
     foreach ($name in $names) {
         $payload = $null
-        try { $payload = & $getFn $Bucket $Key $name } catch { $payload = $null }
+        try { $payload = & $getFn $Bucket $Key $name $cliProfile } catch { $payload = $null }
         $text = if ($null -eq $payload) { '' } else { [string]$payload }
         $truncated = (-not $Full) -and ($text.Length -gt $PreviewChars)
         $shown = $text

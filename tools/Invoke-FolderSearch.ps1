@@ -535,7 +535,7 @@ try {
         $hostKeyName = Get-FolderS3ParentHostKey -Location $loc
         $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key ($hostKeyName + '/') `
             -Backend $Backend -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-            -RcloneLsJson $RcloneLsJson
+            -RcloneLsJson $RcloneLsJson -AwsProfile $profile
             $one = Invoke-OneGuidSearch -GuidLocation $loc -HostMeta $hostMarker.Metadata `
             -Endpoint $endpoint -AgentApiKey $apiKey -AwsProfile $profile `
             -Backend $Backend -AwsGetObject $AwsGetObject -RcloneCat $RcloneCat `
@@ -552,7 +552,7 @@ try {
         }
         $hostMarker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key `
             -Backend $Backend -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
-            -RcloneLsJson $RcloneLsJson
+            -RcloneLsJson $RcloneLsJson -AwsProfile $profile
 
         $children = @()
         if ($ListGuidChildren) {
