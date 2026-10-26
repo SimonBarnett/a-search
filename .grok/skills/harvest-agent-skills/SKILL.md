@@ -715,3 +715,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When a tip Pester pin both requires and forbids an env name string, strip comments before Should Not Match and assert the synopsis separately; also reject A_SEARCH_TOOL_FAILURE_OUTBOX under a-clubs/a-affiliates in defaultOutboxRoot
 - Folder CLI AWS profile must be one shared helper (flag > search.config.json > annotator); never let A_SEARCH_AGENTS_AWS_PROFILE outrank config or HeadObject 403s on a-clubs
 - After shared profile resolve (#5169), FolderS3 default aws s3api must still pass --profile explicitly --- ambient AWS_PROFILE in the shell will otherwise 403 a-clubs HeadObject
+- Covering tip on main for stacked fr-5174/fr-5176: retarget base to main, Closes both FRs, close twin base PR superseded, cherry-pick CI pin fix onto covering tip before PASS.
