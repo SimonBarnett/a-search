@@ -166,13 +166,17 @@ function Remove-OnboardAffiliatePrefix {
         [string]$Bucket,
         [string]$Provider,
         [string]$AffiliateId,
-        [bool]$DryRun
+        [bool]$DryRun,
+        [string]$AwsProfile
     )
     $prefix = "s3://{0}/{1}/{2}/" -f $Bucket, $Provider, $AffiliateId
     if ($DryRun) {
         return [pscustomobject]@{ Action = 'would_delete'; Prefix = $prefix }
     }
-    $out = & aws s3 rm $prefix --recursive 2>&1
+    # FR #5176: always pass --profile (never ambient AWS_PROFILE alone).
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
+    $awsArgs = @('--profile', $cliProfile, 's3', 'rm', $prefix, '--recursive')
+    $out = & aws @awsArgs 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw ("delete_failed: {0} {1}" -f $prefix, ($out | Out-String))
     }
@@ -180,8 +184,9 @@ function Remove-OnboardAffiliatePrefix {
 }
 
 function Get-ProviderMetaRaw {
-    param($Location, [string]$Backend)
-    $marker = Get-FolderS3ObjectMeta -Bucket $Location.Bucket -Key $Location.Key -Backend $Backend
+    param($Location, [string]$Backend, [string]$AwsProfile)
+    # FR #5176: pass -AwsProfile into FolderS3 head.
+    $marker = Get-FolderS3ObjectMeta -Bucket $Location.Bucket -Key $Location.Key -Backend $Backend -AwsProfile $AwsProfile
     $h = @{}
     if ($marker -and $marker.Metadata) {
         foreach ($k in $marker.Metadata.Keys) {
@@ -192,17 +197,19 @@ function Get-ProviderMetaRaw {
 }
 
 function Get-ExistingAffiliateIds {
-    param([string]$Bucket, [string]$Provider)
+    param([string]$Bucket, [string]$Provider, [string]$AwsProfile)
     $prefix = "$Provider/"
     Write-OnboardStep ("Listing existing {0}/{{id}}/ folders in s3://{1}" -f $Provider, $Bucket)
+    # FR #5176: Resolve-FolderS3CliProfile so list argv always has --profile.
+    $cliProfile = Resolve-FolderS3CliProfile -AwsProfile $AwsProfile
     # Entire list in a job with spinner (aws CLI pagination inside)
-    $idList = Invoke-OnboardWithSpinner -Label ("Listing existing {0} folders" -f $Provider) -ArgumentList @($Bucket, $prefix, $Provider) -ScriptBlock {
-        param($Bucket, $prefix, $Provider)
+    $idList = Invoke-OnboardWithSpinner -Label ("Listing existing {0} folders" -f $Provider) -ArgumentList @($Bucket, $prefix, $Provider, $cliProfile) -ScriptBlock {
+        param($Bucket, $prefix, $Provider, $cliProfile)
         $ids = New-Object 'System.Collections.Generic.List[string]'
         $token = $null
         do {
             $awsArgs = @(
-                's3api', 'list-objects-v2',
+                '--profile', $cliProfile, 's3api', 'list-objects-v2',
                 '--bucket', $Bucket,
                 '--prefix', $prefix,
                 '--delimiter', '/',
@@ -453,7 +460,8 @@ function Invoke-AwinOnboard {
         [bool]$BackfillLogourl,
         [int]$Max,
         [string]$ReportDir,
-        [string]$Backend
+        [string]$Backend,
+        [string]$AwsProfile
     )
 
     $provider = [string]$Location.KeyParts[0]
@@ -473,7 +481,7 @@ function Invoke-AwinOnboard {
     $primaries = @(Select-AwinPrimaryFeeds -Rows $rows)
     Write-OnboardDetail ("Active advertisers with a feed: {0}" -f $primaries.Count)
 
-    $existing = Get-ExistingAffiliateIds -Bucket $Location.Bucket -Provider $provider
+    $existing = Get-ExistingAffiliateIds -Bucket $Location.Bucket -Provider $provider -AwsProfile $AwsProfile
 
     $activeIds = New-Object 'System.Collections.Generic.HashSet[string]'
     foreach ($p in $primaries) { [void]$activeIds.Add($p.Id) }
@@ -687,7 +695,7 @@ function Invoke-AwinOnboard {
             Write-OnboardStep $label
             try {
                 $result = Remove-OnboardAffiliatePrefix -Bucket $Location.Bucket -Provider $provider `
-                    -AffiliateId $id -DryRun:$DryRun
+                    -AffiliateId $id -DryRun:$DryRun -AwsProfile $AwsProfile
                 $deletedInactive += $id
                 Write-OnboardDetail ("{0} -> {1}" -f $id, $result.Action)
             }
@@ -706,7 +714,7 @@ function Invoke-AwinOnboard {
         $bi = 0
         foreach ($id in $stillExisting) {
             $bi++
-            $cur = Get-AffiliateFolderMeta -Bucket $Location.Bucket -Provider $provider -AffiliateId $id
+            $cur = Get-AffiliateFolderMeta -Bucket $Location.Bucket -Provider $provider -AffiliateId $id -AwsProfile $AwsProfile
             $have = ''
             if ($cur) {
                 if ($cur.ContainsKey('logourl')) { $have = [string]$cur['logourl'] }
@@ -766,6 +774,7 @@ function Invoke-AwinOnboard {
 }
 
 # ---- main ----
+# FR #5176: resolve profile for explicit --profile argv; keep env for any leftover ambient callers.
 $profileName = Resolve-OnboardAwsProfile -AwsProfile $AwsProfile
 $env:AWS_PROFILE = $profileName
 $passDir = Get-OnboardPasswordsDir -PasswordsDir $PasswordsDir
@@ -786,7 +795,7 @@ if ($loc.Kind -ne 'provider') {
 }
 
 Write-OnboardStep ("Reading provider marker meta for s3://{0}/{1}" -f $loc.Bucket, $loc.Key)
-$providerMeta = Get-ProviderMetaRaw -Location $loc -Backend $Backend
+$providerMeta = Get-ProviderMetaRaw -Location $loc -Backend $Backend -AwsProfile $profileName
 $providerName = [string]$loc.KeyParts[0]
 Write-OnboardDetail ("provider={0} name={1}" -f $providerName, $(if ($providerMeta['name']) { $providerMeta['name'] } else { '?' }))
 
@@ -797,7 +806,7 @@ try {
                 -PasswordsDir $passDir -DryRun:$DryRun -SkipDownload:$SkipDownload `
                 -ForceDownload:$ForceDownload -SkipDeleteInactive:$SkipDeleteInactive `
                 -BackfillLogourl:$BackfillLogourl `
-                -Max $Max -ReportDir $ReportDir -Backend $Backend
+                -Max $Max -ReportDir $ReportDir -Backend $Backend -AwsProfile $profileName
         }
         default {
             Write-Error "provider_not_supported: $providerName (onboard currently implements awin)"
