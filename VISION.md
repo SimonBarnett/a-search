@@ -24,9 +24,11 @@ search contract for Club Madeira / a-search.
   source message on the first failure** (FR #4782) --- do not wait for
   maxReceiveCount. A successful call that returns 0 matches writes **no** IN file
   (FR #4823: log `provider_done ... products=0`, ack normally).
-- Completion without an IN file is a `DONE/{searchid}-{source}.json` marker
-  (`serviced` or `dlq`) under the same guid prefix. EventBridge changeEvents
-  skip `DONE/` (any case) so markers do not look like lastmod reviews (FR #4917).
+- Completion without an IN file is tracked at
+  `a-clubs/_search-done/{searchid}/{source}.json` (`serviced` or `dlq`) outside
+  the GUID club folder (FR #5198; never `a-clubs/{host}/{guid}/DONE/`).
+  EventBridge changeEvents skip `DONE/` and `_search-done/` so markers do not
+  look like lastmod reviews (FR #4917 / #5198).
 - Per-source secrets stay isolated; fatals intake to `SimonBarnett/a-search`.
 
 See Success rows S1-S20, Architecture, and Environments in `docs/vision.md`.
