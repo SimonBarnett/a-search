@@ -256,7 +256,7 @@ function Invoke-FolderDownloadOneAffiliate {
             param($toolsDir, $bucket, $key, $backend, $awsProfile)
             if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
             . (Join-Path $toolsDir 'FolderS3.ps1')
-            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend -AwsProfile $awsProfile)
         }
     }
     $meta = ConvertTo-FolderDownloadMetaHashtable -Metadata $marker.Metadata
