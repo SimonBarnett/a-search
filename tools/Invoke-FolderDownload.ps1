@@ -816,7 +816,9 @@ catch {
     if ($detailForIssue -match '^path_outside_mount') { $exitForIssue = 2 }
     elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
     $s3ForIssue = ''
-    Invoke-ASearchToolFailureReport -Tool 'download' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+    $cwdForIssue = ''
+    if (Get-Variable -Name Path -Scope 0 -ErrorAction SilentlyContinue) { $cwdForIssue = [string]$Path }
+    Invoke-ASearchToolFailureReport -Tool 'download' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -Cwd $cwdForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
 
         exit 2
     }

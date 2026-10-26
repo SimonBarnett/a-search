@@ -622,7 +622,9 @@ catch {
     elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
     $s3ForIssue = ''; if (Get-Variable -Name loc -Scope 0 -ErrorAction SilentlyContinue) { if ($null -ne $loc) { $s3ForIssue = ('s3://{0}/{1}' -f $loc.Bucket, $loc.Key) } }
     if ($exitForIssue -notin @(2, 3, 4, 5)) {
-    Invoke-ASearchToolFailureReport -Tool 'search' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+    $cwdForIssue = ''
+    if (Get-Variable -Name Path -Scope 0 -ErrorAction SilentlyContinue) { $cwdForIssue = [string]$Path }
+    Invoke-ASearchToolFailureReport -Tool 'search' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -Cwd $cwdForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
     }
 
         exit 2
