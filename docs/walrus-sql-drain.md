@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041 / #5046)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041 / #5046 / #5106)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -146,10 +146,20 @@ including short tokens like IC. Informational SQL messages (severity < 11, inclu
 notices) are 0-row results, not errors. A real SQL error is logged as
 `sql_query_failed number=... message=... contains=...` (never bare `EREQUEST`).
 
-**Simon rule (FR #5046):** if no part is a relevant match, write **no results**.
+**Simon rule (FR #5046 / #5106):** if no part is a relevant match, write **no results**.
 Relevance beats showing something. There is no best-guess FREETEXT-only fallback
 and no "similar product" fallback. Zero qualifying matches => empty product list
 (0 products), DONE serviced, not an error, not DLQ.
+
+**False friends (FR #5106):** when `Brand` / `Category` are NULL, titles alone can
+share a single word with a model phrase (Cub in "Cub Paw" gloves, Wolf in apparel).
+Admission requires an **exact multi-word model phrase** (e.g. `Sport Cub`) or a
+**real brand** token (ALLCAPS 5+ / PascalCase compound / Title-case length >= 6).
+Words like cub/wolf/glove/shirt are gate-generic and never brand gates alone.
+After SQL `CONTAINS`, `admitRowsByExactGates` post-admits rows with contiguous
+phrase / word-prefix checks so a loose full-text hit cannot leak apparel.
+Deployed walrus must run this `providers/local/sql` tip (log
+`sql_gate_admit gates=N sql_rows=... admitted=...` when rows are dropped).
 
 **Brand/model gate heuristic** (`extractBrandModelGateTokens` in
 `providers/local/sql/src/queryParts.js`):
