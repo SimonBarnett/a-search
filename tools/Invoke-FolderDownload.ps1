@@ -48,7 +48,7 @@ Same as -WhatIf.
 Force aws | rclone | auto for head-object.
 
 .PARAMETER AwsProfile
-AWS profile for the Node S3 client (default a-search-redqueen-agents or env).
+AWS profile for the Node S3 client (shared FR #5169 resolver; default a-search-redqueen-annotator).
 
 .PARAMETER NodeExe
 Optional path to node.exe (default: node on PATH, then D:\tools\node\node.exe).
@@ -92,11 +92,9 @@ function Resolve-FolderDownloadNode {
 }
 
 function Resolve-FolderDownloadAwsProfile {
-    param([string]$AwsProfile)
-    if ($AwsProfile) { return $AwsProfile }
-    if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-    if ($env:AWS_PROFILE) { return $env:AWS_PROFILE }
-    return 'a-search-redqueen-agents'
+    # FR #5169: shared resolver (annotator default; ignore agents env).
+    param([string]$AwsProfile, $Config)
+    return (Resolve-FolderToolsAwsProfile -AwsProfile $AwsProfile -Config $Config)
 }
 
 function ConvertTo-FolderDownloadMetaHashtable {
@@ -244,12 +242,22 @@ function Invoke-FolderDownloadOneAffiliate {
 
     Write-FolderToolStep ("Download starting provider={0} affiliateid={1} force={2} dryRun={3}" -f $provider, $affiliateId, $Force, $DryRun)
     Write-FolderToolStep 'Reading affiliate marker metadata'
-    $marker = Invoke-FolderToolWithSpinner -Label ("Head marker {0}/{1}" -f $provider, $affiliateId) -ArgumentList @(
-        $here, $Location.Bucket, $Location.Key, $Backend
-    ) -ScriptBlock {
-        param($toolsDir, $bucket, $key, $backend)
-        . (Join-Path $toolsDir 'FolderS3.ps1')
-        return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+    # FR #5151 / #5169: injectables cannot cross Start-Job — sync path for Pester.
+    $useInject = [bool]$AwsHeadObject -or [bool]$AwsGetObjectTagging -or [bool]$RcloneLsJson
+    if ($useInject) {
+        $marker = Get-FolderS3ObjectMeta -Bucket $Location.Bucket -Key $Location.Key -Backend $Backend `
+            -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
+            -RcloneLsJson $RcloneLsJson
+    }
+    else {
+        $marker = Invoke-FolderToolWithSpinner -Label ("Head marker {0}/{1}" -f $provider, $affiliateId) -ArgumentList @(
+            $here, $Location.Bucket, $Location.Key, $Backend, $AwsProfile
+        ) -ScriptBlock {
+            param($toolsDir, $bucket, $key, $backend, $awsProfile)
+            if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
+            . (Join-Path $toolsDir 'FolderS3.ps1')
+            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+        }
     }
     $meta = ConvertTo-FolderDownloadMetaHashtable -Metadata $marker.Metadata
     Write-FolderToolDetail ("enabled={0} disabledreason={1} feedurl={2}" -f `

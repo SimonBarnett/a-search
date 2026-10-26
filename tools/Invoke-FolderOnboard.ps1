@@ -99,11 +99,9 @@ function Invoke-OnboardWithSpinner {
 
 
 function Resolve-OnboardAwsProfile {
-    param([string]$AwsProfile)
-    if ($AwsProfile) { return $AwsProfile }
-    if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-    if ($env:AWS_PROFILE) { return $env:AWS_PROFILE }
-    return 'a-search-redqueen-agents'
+    # FR #5169: shared resolver (annotator default; ignore agents env).
+    param([string]$AwsProfile, $Config)
+    return (Resolve-FolderToolsAwsProfile -AwsProfile $AwsProfile -Config $Config)
 }
 
 function Get-OnboardPasswordsDir {

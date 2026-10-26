@@ -12,6 +12,7 @@ All folder CLI tools (`meta`, `search`, `download`, `dbimport`, `onboard`, `invi
 - Payload includes tool, VERSION, git commit, machine, cwd, s3 URI, redacted command line, exit code, and AWS identity **ARN only** (from `sts get-caller-identity`). No keys/tokens.
 - Dedupe fingerprint: `sha256(tool|errorCode|normalizedFirstLine)`. Matching open issues get a comment instead of a new issue.
 - FR #5164: failure outbox never writes under `a-clubs` / `a-affiliates` (cwd or env outbox roots) (uses `<repo>/logs/tool-failures` or `%TEMP%\a-search-tool-failures`). Intake egress failure falls back to GitHub when `A_SEARCH_GH_TOKEN` / `GITHUB_TOKEN` is set. `meta` profile: `-AwsProfile` > `search.config.json` AwsProfile > `a-search-redqueen-annotator` (ignores agents/AWS_PROFILE env). `Install-SearchCommand` defaults to this tools folder and copies ToolFailure + `shared/intake`.
+- FR #5169: shared `Resolve-FolderToolsAwsProfile` in `FolderS3.ps1` for meta/search/download/onboard — `-AwsProfile` > `search.config.json` AwsProfile > `a-search-redqueen-annotator`; ignores `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE`.
 - Opt-out: `A_SEARCH_TOOL_FAILURE_DISABLE=1`. Filing also skips when Cwd / CommandLine / S3Uri / Detail / Get-Location matches a Pester `frNNNN-` temp mount (MRB #5154). Validation exits 2/3/4/5 do not file.
 - Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner.
 - FR #5157: `search` wraps `aws export-credentials` and the SigV4 curl POST in the spinner (curl `--user` via `A_SEARCH_SEARCH_CURL_USER` so secrets stay out of job argv); `invite` wraps list-objects / provider Head / node invite; `agent` wraps `node run.js`. Injectables (`-Resolver`, `-CurlInvoke`) stay sync for Pester.
@@ -49,7 +50,7 @@ POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` 
 
 **FR #5145 --- command config + PATH install**
 
-`search` reads `AwsProfile` and `SearchApiUrl` from `search.config.json` next to the command (shipped under `tools/`; installed copy under `C:\ai\tools` on redqueen). Flags override the config. A missing config or missing value fails with `search_config_missing` / `search_api_url_required` / `aws_profile_required` --- there is no hard-coded fallback URL or profile. The config holds no secrets.
+`search` reads `AwsProfile` and `SearchApiUrl` from `search.config.json` next to the command (shipped under `tools/`; installed under `C:\ai\a-search\tools` on redqueen). Flags override the config. Profile resolution is shared (`Resolve-FolderToolsAwsProfile`): `-AwsProfile` > config `AwsProfile` > `a-search-redqueen-annotator` (FR #5169); agents/`AWS_PROFILE` env are ignored. A missing config fails with `search_config_missing` when no URL flag is set. The config holds no secrets.
 
 Shipped redqueen values (also in `tools/search.config.example.json` as a template with an EXAMPLE URL):
 
@@ -81,11 +82,11 @@ search -SearchApiUrl 'https://EXAMPLE.execute-api.eu-west-2.amazonaws.com' -AwsP
 .\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111'
 ```
 
-Precedence: `-SearchApiUrl` / `-AwsProfile` > env (`A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL` / `A_SEARCH_AGENTS_AWS_PROFILE`) > `search.config.json` > `folder-tools.config.json` / `%ProgramData%\a-search\folder-tools.config.json` > optional CloudFormation stack output when a profile is set. Or set:
+Precedence for URL: `-SearchApiUrl` > env (`A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL`) > `search.config.json` > `folder-tools.config.json` / `%ProgramData%\a-search\folder-tools.config.json` > optional CloudFormation stack output when a profile is set. Profile: shared FR #5169 resolver (not agents env). Or set:
 
 - `A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL`
 - IAM SigV4 (`-AwsProfile` or config `AwsProfile`); no `x-agent-api-key` (FR #5086)
-- `A_SEARCH_AGENTS_AWS_PROFILE`
+- (legacy) `A_SEARCH_AGENTS_AWS_PROFILE` --- ignored for folder-tool profile resolve (FR #5169)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG` / `-ConfigPath`
 
 Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`,
@@ -154,9 +155,9 @@ download          # every enabled provider's due merchants
 download -All     # every enabled provider's enabled merchants (ignore age)
 ```
 
-Env: `A_SEARCH_S3_MOUNT` (redqueen: `S:\`; default falls back to `D:\s3`), `A_SEARCH_AGENTS_AWS_PROFILE` / `AWS_PROFILE` (default `a-search-redqueen-agents`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). Never prints feed URLs, passwords, or tokens.
+Env: `A_SEARCH_S3_MOUNT` (redqueen: `S:\`; default falls back to `D:\s3`), `A_AFFILIATES_BUCKET` (default `a-affiliates`). AWS profile via shared FR #5169 resolver (default `a-search-redqueen-annotator`). Never prints feed URLs, passwords, or tokens.
 
-**AWS identity (FR #4167):** `Invoke-FolderDownload` resolves one profile (`-AwsProfile`, else `A_SEARCH_AGENTS_AWS_PROFILE`, else `AWS_PROFILE`, else `a-search-redqueen-agents`) and sets process `AWS_PROFILE` for the whole run so marker metadata reads (`aws s3api head-object` / tagging) and Node S3 writes use the same identity. Setting `A_SEARCH_AGENTS_AWS_PROFILE` alone is enough.
+**AWS identity (FR #4167 / #5169):** `Invoke-FolderDownload` uses shared `Resolve-FolderToolsAwsProfile` (`-AwsProfile`, else `search.config.json` AwsProfile, else `a-search-redqueen-annotator`) and sets process `AWS_PROFILE` for the whole run so marker reads and Node S3 writes use the same identity. Agents/`AWS_PROFILE` env alone do not select the profile.
 
 **WinPS 5.1 (FR #4167):** JSON args (including `affiliateMeta` / `feedurl`) are passed to Node via process env `A_SEARCH_FOLDER_DOWNLOAD_ARGS` and `run-folder-download.js --args-env`, not on the process command line (avoids 5.1 quote mangling and keeps the feed key out of Task Manager / process audit). Shims `download.ps1` / `meta.ps1` / `search.ps1` end with `exit $LASTEXITCODE` so `powershell -File` preserves tool exit codes.
 
