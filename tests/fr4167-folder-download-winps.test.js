@@ -114,13 +114,18 @@ describe('fr4167 run-folder-download args handoff', () => {
       'utf8',
     );
     assert.match(text, /function Get-FolderS3TextObject/);
-    // Default get-object / rclone cat / get-object-annotation blocks must set Continue
-    const getObjectIdx = text.indexOf('aws s3api get-object --bucket');
+    // FR #5174: aws argv is @('--profile', ..., 's3api', 'get-object', '--bucket', ...)
+    // not a single 'aws s3api get-object --bucket' string. Still require Continue + LASTEXITCODE.
+    const getObjectIdx = text.indexOf(
+      "'s3api', 'get-object', '--bucket'",
+    );
     const rcloneCatIdx = text.indexOf('rclone cat');
-    const getAnnIdx = text.indexOf('aws s3api get-object-annotation');
-    assert.ok(getObjectIdx > 0);
-    assert.ok(rcloneCatIdx > 0);
-    assert.ok(getAnnIdx > 0);
+    const getAnnIdx = text.indexOf(
+      "'s3api', 'get-object-annotation', '--bucket'",
+    );
+    assert.ok(getObjectIdx > 0, 'get-object argv needle missing');
+    assert.ok(rcloneCatIdx > 0, 'rclone cat needle missing');
+    assert.ok(getAnnIdx > 0, 'get-object-annotation argv needle missing');
     for (const idx of [getObjectIdx, rcloneCatIdx, getAnnIdx]) {
       const window = text.slice(Math.max(0, idx - 320), idx + 220);
       assert.match(
@@ -129,6 +134,15 @@ describe('fr4167 run-folder-download args handoff', () => {
         'native call missing Continue wrapper near offset ' + idx,
       );
       assert.match(window, /\$LASTEXITCODE/, 'native call missing LASTEXITCODE');
+    }
+    // FR #5174: get-object / get-object-annotation argv always include --profile
+    for (const idx of [getObjectIdx, getAnnIdx]) {
+      const window = text.slice(Math.max(0, idx - 120), idx + 80);
+      assert.match(
+        window,
+        /@\('--profile'/,
+        'aws argv missing --profile near offset ' + idx,
+      );
     }
   });
 });
