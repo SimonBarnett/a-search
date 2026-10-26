@@ -3,6 +3,17 @@
 PowerShell helpers for the mapped S3 drive (`D:\s3` by default, or `A_SEARCH_S3_MOUNT`).
 First path segment under the mount is the bucket (`a-clubs`, `a-affiliates`, `a-merchants`).
 
+
+## Failure filing + progress (FR #5151)
+
+All folder CLI tools (`meta`, `search`, `download`, `dbimport`, `onboard`, `invite`, `agent`, `Install-SearchCommand`) file an a-search issue on unhandled failure via `tools/ToolFailure.ps1` -> `tools/reportToolFailure.js` -> `shared/intake/reportToolFailure.js` (bobiverse intake by default).
+
+- The **real error** is printed first (never empty). Filing is fail-soft: original exit code is kept. On filing success stderr shows `issue_filed: <url|intake_id>`; on filing failure `issue_report_failed: <reason>` and an outbox JSON under `tool-failures/` (or `A_SEARCH_TOOL_FAILURE_OUTBOX`).
+- Payload includes tool, VERSION, git commit, machine, cwd, s3 URI, redacted command line, exit code, and AWS identity **ARN only** (from `sts get-caller-identity`). No keys/tokens.
+- Dedupe fingerprint: `sha256(tool|errorCode|normalizedFirstLine)`. Matching open issues get a comment instead of a new issue.
+- Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner.
+
+
 ## meta / Get-FolderMeta.ps1
 
 Progress (`[HH:mm:ss] …` + `/|\|` spinner while waiting on S3) goes to **stderr**; the human/JSON report goes to **stdout**.

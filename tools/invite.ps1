@@ -43,6 +43,8 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
+. (Join-Path $here 'FolderProgress.ps1')
+. (Join-Path $here 'ToolFailure.ps1')
 
 # Providers that have an invite implementation under {provider}/_invite/.
 # enabled=1 without _invite => invite_not_implemented.
@@ -160,6 +162,7 @@ function Write-InviteReportSummary {
         return
     }
     try {
+    Write-FolderToolStep ('invite starting cwd={0}' -f (Get-Location).Path)
         $r = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     }
     catch {
@@ -356,5 +359,8 @@ catch {
     $safe = $msg -replace '(?i)(api[_-]?key|token|password|secret|feedurl)\s*[:=]\s*\S+', '$1=***'
     [Console]::Error.WriteLine($safe)
     if ($safe -match '^path_outside_mount') { exit 3 }
+    $detailForIssue = if ($_.Exception) { $_.Exception.Message } else { [string]$_ }
+    Invoke-ASearchToolFailureReport -Tool 'invite' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode 1 -CommandLine ([string]$MyInvocation.Line)
+
     exit 1
 }

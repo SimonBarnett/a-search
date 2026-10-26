@@ -62,6 +62,8 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
+. (Join-Path $here 'FolderProgress.ps1')
+. (Join-Path $here 'ToolFailure.ps1')
 
 function Get-FolderToolsConfig {
     param([string]$ConfigPath)
@@ -447,7 +449,9 @@ function Invoke-OneGuidSearch {
 
 try {
     $target = if ($Path) { $Path } else { (Get-Location).Path }
+    Write-FolderToolStep ("search starting path={0}" -f $target)
     $loc = ConvertTo-FolderS3Location -Path $target -MountRoot $MountRoot
+    Write-FolderToolStep ("Resolved s3://{0}/{1} kind={2}" -f $loc.Bucket, $loc.Key, $loc.Kind)
 
     if ($loc.Bucket.ToLowerInvariant() -ne 'a-clubs') {
         [Console]::Error.WriteLine("not_a_clubs: Invoke-FolderSearch only works under a-clubs host/GUID folders (got bucket=$($loc.Bucket) kind=$($loc.Kind))")
@@ -465,8 +469,10 @@ try {
     if (-not $cfg -and -not $hasUrlFlag) {
         throw 'search_config_missing: need search.config.json next to the command (or -ConfigPath) with AwsProfile and SearchApiUrl (FR #5145)'
     }
+    Write-FolderToolStep 'Resolving AwsProfile and SearchApiUrl'
     $profile = Resolve-AwsProfileName -Config $cfg -AwsProfile $AwsProfile
     $endpoint = Resolve-SearchEndpoint -Config $cfg -SearchApiUrl $SearchApiUrl -AwsProfile $profile
+    Write-FolderToolStep ("Using profile={0} endpoint={1}" -f $profile, $endpoint)
     # FR #5086: key unused for IAM /search; still resolve for injectable -InvokeSearch tests.
     $apiKey = Resolve-AgentKey -Config $cfg -AgentApiKey $AgentApiKey
 
@@ -607,6 +613,18 @@ catch {
     $safe = $msg -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***'
     [Console]::Error.WriteLine($safe)
     if ($safe -match '^path_outside_mount') {
+    $detailForIssue = $null
+    if (Get-Variable -Name safe -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $safe }
+    elseif (Get-Variable -Name msg -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $msg }
+    else { $detailForIssue = $_.Exception.Message }
+    $exitForIssue = 1
+    if ($detailForIssue -match '^path_outside_mount') { $exitForIssue = 2 }
+    elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
+    $s3ForIssue = ''; if (Get-Variable -Name loc -Scope 0 -ErrorAction SilentlyContinue) { if ($null -ne $loc) { $s3ForIssue = ('s3://{0}/{1}' -f $loc.Bucket, $loc.Key) } }
+    if ($exitForIssue -notin @(2, 3, 4, 5)) {
+    Invoke-ASearchToolFailureReport -Tool 'search' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+    }
+
         exit 2
     }
     exit 1
