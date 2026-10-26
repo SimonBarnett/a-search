@@ -8,9 +8,13 @@ Payload matches the annotator: host, hostkey, guid, queries, exclude, plus
 market and currency when present, and metadata userid (never customernumber).
 Never writes S3. Never prints credentials.
 Auth is IAM SigV4 (FR #4888 / #5086); no x-agent-api-key.
-Env: A_SEARCH_API_URL / A_SEARCH_SEARCH_API_URL, folder-tools.config.json SearchApiUrl,
-or (when -AwsProfile is set) CloudFormation stack output SearchApiUrl.
-Missing searches.json, a non-GUID folder, or a missing URL fails clearly. Non-2xx /search (or 2xx without searchid) exits 5 and prints http status/error (FR #5096).
+FR #5145: AwsProfile + SearchApiUrl come from search.config.json next to this
+script (or -ConfigPath). Flags override the config. A missing config or missing
+value fails loudly; there is no hard-coded fallback URL. Env A_SEARCH_API_URL /
+A_SEARCH_SEARCH_API_URL still override when set. Optional CloudFormation stack
+output remains a last resort when -AwsProfile is set and the config URL is absent.
+Missing searches.json, a non-GUID folder, or a missing URL fails clearly. Non-2xx
+/search (or 2xx without searchid) exits 5 and prints http status/error (FR #5096).
 -WhatIf prints the payload and does not POST. -Json prints searchid, query_count,
 and providers_queued. A host folder still needs -All.
 
@@ -27,7 +31,7 @@ Print one JSON object per GUID (searchid, query_count, providers_queued). No key
 Print the POST payload and do not call /search. No key.
 
 .PARAMETER ConfigPath
-JSON config with SearchApiUrl (and optional AwsProfile / SearchStackName).
+JSON config with SearchApiUrl and AwsProfile (search.config.json by default).
 #>
 [CmdletBinding()]
 param(
@@ -61,16 +65,27 @@ $here = $PSScriptRoot
 
 function Get-FolderToolsConfig {
     param([string]$ConfigPath)
+    # FR #5145: explicit -ConfigPath that is missing fails loudly (no silent sibling fallback).
+    if ($ConfigPath) {
+        if (-not (Test-Path -LiteralPath $ConfigPath)) {
+            throw ("search_config_missing: -ConfigPath not found: {0}" -f $ConfigPath)
+        }
+        $script:FolderToolsConfigPath = $ConfigPath
+        return (Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json)
+    }
     $candidates = @()
-    if ($ConfigPath) { $candidates += $ConfigPath }
     if ($env:A_SEARCH_FOLDER_TOOLS_CONFIG) { $candidates += $env:A_SEARCH_FOLDER_TOOLS_CONFIG }
+    # FR #5145: command config next to search.ps1 / Invoke-FolderSearch.ps1
+    $candidates += (Join-Path $here 'search.config.json')
     $candidates += (Join-Path $here 'folder-tools.config.json')
     $candidates += (Join-Path $env:ProgramData 'a-search\folder-tools.config.json')
     foreach ($c in $candidates) {
         if ($c -and (Test-Path -LiteralPath $c)) {
+            $script:FolderToolsConfigPath = $c
             return (Get-Content -LiteralPath $c -Raw -Encoding UTF8 | ConvertFrom-Json)
         }
     }
+    $script:FolderToolsConfigPath = $null
     return $null
 }
 
@@ -95,7 +110,9 @@ function Resolve-SearchEndpoint {
     $cfgUrl = Get-ConfigProperty -Config $Config -Name 'SearchApiUrl'
     if ($cfgUrl) {
         $fromCfg = ([string]$cfgUrl).Trim()
-        if ($fromCfg -and $fromCfg -notmatch 'EXAMPLE') { return $fromCfg.TrimEnd('/') }
+        # FR #5145: reject uppercase EXAMPLE placeholder only (case-sensitive);
+        # allow hostnames like config.example.test
+        if ($fromCfg -and $fromCfg -cnotmatch 'EXAMPLE') { return $fromCfg.TrimEnd('/') }
     }
     # FR #5086: optional stack output when aws CLI can describe ASearchStack
     $stackName = 'ASearchStack'
@@ -120,7 +137,7 @@ function Resolve-SearchEndpoint {
             }
         } catch { }
     }
-    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_API_URL, A_SEARCH_SEARCH_API_URL, folder-tools.config.json SearchApiUrl, or ensure stack SearchApiUrl is readable via aws cloudformation describe-stacks'
+    throw 'search_api_url_required: set -SearchApiUrl, A_SEARCH_API_URL, A_SEARCH_SEARCH_API_URL, or SearchApiUrl in search.config.json (FR #5145); no hard-coded fallback URL'
 }
 
 # FR #5086: agent key optional / unused for IAM /search. Kept for inject/tests only.
@@ -148,8 +165,12 @@ function Resolve-AwsProfileName {
     if ($AwsProfile) { return $AwsProfile }
     if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
     $cfgProfile = Get-ConfigProperty -Config $Config -Name 'AwsProfile'
-    if ($cfgProfile) { return [string]$cfgProfile }
-    return 'a-search-redqueen-annotator'
+    if ($cfgProfile) {
+        $p = ([string]$cfgProfile).Trim()
+        if ($p) { return $p }
+    }
+    # FR #5145: no hard-coded profile fallback — require config or -AwsProfile.
+    throw 'aws_profile_required: set -AwsProfile or AwsProfile in search.config.json (FR #5145)'
 }
 
 # FR #5078: resolve real AK/SK/(session) from a named profile. Never log the values.
@@ -284,7 +305,7 @@ function Invoke-AgentSearchHttp {
     Write-Verbose ("POST {0} hostkey={1} guid={2}" -f $uri, $Body.hostkey, $Body.guid)
 
     if (-not $AwsProfile) {
-        throw 'aws_profile_required: IAM SigV4 needs -AwsProfile (default a-search-redqueen-annotator)'
+        throw 'aws_profile_required: IAM SigV4 needs -AwsProfile or AwsProfile in search.config.json (FR #5145)'
     }
     if (-not ($CurlInvoke -or (Get-Command curl.exe -ErrorAction SilentlyContinue))) {
         throw 'curl_required: need curl.exe for --aws-sigv4 POST /search'
@@ -438,6 +459,12 @@ try {
     }
 
     $cfg = Get-FolderToolsConfig -ConfigPath $ConfigPath
+    # FR #5145: when caller did not pass URL/profile/env, require a command config file.
+    $hasUrlFlag = [bool]$SearchApiUrl -or [bool]$env:A_SEARCH_API_URL -or [bool]$env:A_SEARCH_SEARCH_API_URL
+    $hasProfileFlag = [bool]$AwsProfile -or [bool]$env:A_SEARCH_AGENTS_AWS_PROFILE
+    if (-not $cfg -and -not $hasUrlFlag) {
+        throw 'search_config_missing: need search.config.json next to the command (or -ConfigPath) with AwsProfile and SearchApiUrl (FR #5145)'
+    }
     $profile = Resolve-AwsProfileName -Config $cfg -AwsProfile $AwsProfile
     $endpoint = Resolve-SearchEndpoint -Config $cfg -SearchApiUrl $SearchApiUrl -AwsProfile $profile
     # FR #5086: key unused for IAM /search; still resolve for injectable -InvokeSearch tests.

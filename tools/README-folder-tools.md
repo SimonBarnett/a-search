@@ -30,27 +30,48 @@ Backends: `aws` (redqueen: `head-object` + `get-object-tagging` + annotation API
 
 ## search / Invoke-FolderSearch.ps1
 
-POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, SigV4-signs via curl --aws-sigv4 using credentials from ws configure export-credentials --profile <p> --format process (AccessKeyId/SecretAccessKey; x-amz-security-token when a session token is present). Never pass the profile name as --user (FR #5078). Never writes S3. Never prints credentials. Deploy smoke (scripts/smoke-deploy.js) already signs via awsExecuteApiSigV4.js.
+POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` (not the path hostkey) and GUID, loads `searches.json`, SigV4-signs via curl --aws-sigv4 using credentials from `aws configure export-credentials --profile <p> --format process` (AccessKeyId/SecretAccessKey; x-amz-security-token when a session token is present). Never pass the profile name as --user (FR #5078). Never writes S3. Never prints credentials. Deploy smoke (scripts/smoke-deploy.js) already signs via awsExecuteApiSigV4.js.
+
+**FR #5145 --- command config + PATH install**
+
+`search` reads `AwsProfile` and `SearchApiUrl` from `search.config.json` next to the command (shipped under `tools/`; installed copy under `C:\ai\tools` on redqueen). Flags override the config. A missing config or missing value fails with `search_config_missing` / `search_api_url_required` / `aws_profile_required` --- there is no hard-coded fallback URL or profile. The config holds no secrets.
+
+Shipped redqueen values (also in `tools/search.config.example.json` as a template with an EXAMPLE URL):
+
+- `AwsProfile`: `a-search-redqueen-annotator`
+- `SearchApiUrl`: `https://axy0jgpkee.execute-api.eu-west-2.amazonaws.com`
+
+Install / update from the deploy checkout (no nssm; keeps an existing config unless `-ForceConfig`):
 
 ```powershell
-# GUID folder
-.\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111' `
-  -SearchApiUrl 'https://EXAMPLE.execute-api.eu-west-2.amazonaws.com'
-
-# Host folder: require -All (one POST per GUID child)
-.\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com' -All
+.\tools\Install-SearchCommand.ps1
+# or: .\tools\Install-SearchCommand.ps1 -ToolsDir C:\ai\tools
 ```
 
-Config (preferred for annotator, FR #5096): copy `folder-tools.config.example.json` to
-`tools/folder-tools.config.json` or `%ProgramData%\a-search\folder-tools.config.json` and set a real
-`SearchApiUrl` (not the EXAMPLE placeholder). That avoids `cloudformation:DescribeStacks` for
-`a-search-redqueen-annotator`. After CDK deploy of FR #5096 the annotator may also resolve the URL
-via stack output. Or set:
+That copies `search.ps1`, `Invoke-FolderSearch.ps1`, `FolderS3.ps1`, `search.cmd`, and (when missing) `search.config.json` into `C:\ai\tools`, and appends that folder to the User PATH. New shells can then run `search` from any club GUID or host folder on `S:`.
+
+```powershell
+# After install: from a GUID folder on the S: mount
+cd S:\a-clubs\www.example.com\11111111-1111-1111-1111-111111111111
+search
+
+# Host folder: require -All (one POST per GUID child)
+cd S:\a-clubs\www.example.com
+search -All
+
+# Flags still override config
+search -SearchApiUrl 'https://EXAMPLE.execute-api.eu-west-2.amazonaws.com' -AwsProfile a-search-redqueen-annotator
+
+# From a repo checkout (without PATH install)
+.\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com\11111111-1111-1111-1111-111111111111'
+```
+
+Precedence: `-SearchApiUrl` / `-AwsProfile` > env (`A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL` / `A_SEARCH_AGENTS_AWS_PROFILE`) > `search.config.json` > `folder-tools.config.json` / `%ProgramData%\a-search\folder-tools.config.json` > optional CloudFormation stack output when a profile is set. Or set:
 
 - `A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL`
-- IAM SigV4 (`-AwsProfile`, default `a-search-redqueen-annotator`); no `x-agent-api-key` (FR #5086)
-- `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
-- `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
+- IAM SigV4 (`-AwsProfile` or config `AwsProfile`); no `x-agent-api-key` (FR #5086)
+- `A_SEARCH_AGENTS_AWS_PROFILE`
+- `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG` / `-ConfigPath`
 
 Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`,
 `5` /search non-2xx or 2xx without `searchid` (FR #5096; prints `search_http_status=` / `search_error=`).
