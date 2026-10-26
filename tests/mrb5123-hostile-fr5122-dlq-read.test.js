@@ -17,12 +17,14 @@ describe('MRB #5123 hostile FR #5122 DLQ read IAM', () => {
       path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    const i = src.indexOf('FR #5122: overnight verification needs DLQ depth');
-    assert.ok(i >= 0, 'FR #5122 comment missing');
-    const window = src.slice(i, i + 900);
+    const i = src.indexOf('overnight verification needs DLQ depth');
+    assert.ok(i >= 0, 'FR #5122/#5131 DLQ depth comment missing');
+    const window = src.slice(Math.max(0, i - 80), i + 1400);
     assert.match(window, /sid: 'OpsReadProviderDlq'/);
     assert.match(window, /sqs:GetQueueAttributes/);
-    assert.match(window, /opsReadSqsArns/);
+    assert.match(window, /opsReadSqsWildcard/);
+    assert.match(window, /a-search-\*/);
+    assert.match(window, /#5131/);
     assert.match(window, /grantOpsSqsRead\(redqueenAnnotator\)/);
     assert.match(window, /grantOpsSqsRead\(redqueenAgents\)/);
     assert.match(window, /a-search-redqueen-agents/);
@@ -32,16 +34,16 @@ describe('MRB #5123 hostile FR #5122 DLQ read IAM', () => {
     assert.doesNotMatch(window, /sqs:PurgeQueue/);
   });
 
-  it('opsReadSqsArns collects provider queue+DLQ and db-backed pair', () => {
+  it('GetQueueAttributes uses stack queue-name prefix wildcard (FR #5131)', () => {
     const src = fs.readFileSync(
       path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    assert.match(src, /opsReadSqsArns\.push\(queue\.queueArn, dlq\.queueArn\)/);
     assert.match(
       src,
-      /opsReadSqsArns\.push\(dbBackedQueue\.queueArn, dbBackedDlq\.queueArn\)/,
+      /opsReadSqsWildcard =\s*`arn:aws:sqs:\$\{this\.region\}:\$\{this\.account\}:a-search-\*`/,
     );
+    assert.doesNotMatch(src, /opsReadSqsArns/);
   });
 
   it('search-fanout.md documents read-only depths and no redrive', () => {

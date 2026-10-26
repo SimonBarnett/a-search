@@ -94,10 +94,13 @@ URLs only. `entry/src/sqsSend.js` defaults `MessageGroupId` to the payload
 (FR #4411). Deploy replaces existing standard
 provider queue names (SQS cannot convert standard -> FIFO in place).
 
-FR #5122: `a-search-redqueen-annotator` and `a-search-redqueen-agents` get
-read-only `sqs:GetQueueAttributes` on those queues+DLQs (plus the SQL
-db-backed pair) and `sqs:ListQueues` so overnight verification can report
-depths. Do not redrive or purge from that identity. Rakuten (and other live
+FR #5122 / FR #5131: `a-search-redqueen-annotator` and `a-search-redqueen-agents`
+get read-only `sqs:GetQueueAttributes` on `arn:aws:sqs:<region>:<account>:a-search-*`
+(provider queues+DLQs and the SQL db-backed pair share that name prefix) and
+`sqs:ListQueues` so overnight verification can report depths. The resource is a
+single wildcard because IAM **user** inline policies are capped at **2048**
+bytes --- enumerating every queue ARN blew the limit and rolled back deploy
+(#5131). Do not redrive or purge from that identity. Rakuten (and other live
 workers) still write `DONE` via `writeLiveProviderInResult` on 0 products.
 
 ## One job at a time (no 429 storms)

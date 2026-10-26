@@ -23,6 +23,9 @@ describe('FR #5122 ops read-only DLQ IAM', () => {
     assert.match(src, /a-search-redqueen-annotator/);
     assert.match(src, /a-search-redqueen-agents/);
     assert.match(src, /ImportedRedqueenAgents/);
+    // FR #5131: one a-search-* wildcard (inline policy 2048 limit).
+    assert.match(src, /opsReadSqsWildcard/);
+    assert.match(src, /a-search-\*/);
     assert.doesNotMatch(src, /sqs:SendMessage[\s\S]{0,80}OpsReadProviderDlq/);
   });
 
