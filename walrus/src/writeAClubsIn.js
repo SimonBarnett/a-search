@@ -121,7 +121,49 @@ function createAClubsPutObject(opts) {
   };
 }
 
+/**
+ * @param {{ root: string, msg: object }} opts
+ * @returns {(input: { Key?: string }) => Promise<{ abs: string, removed: boolean }>}
+ */
+function createAClubsDeleteObject(opts) {
+  const root = opts && opts.root != null ? String(opts.root).trim() : '';
+  if (!root) throw new Error('empty_a_clubs_root');
+  const msg = opts.msg;
+  return async function deleteObject(input) {
+    const keyStr = input && input.Key != null ? String(input.Key).replace(/\\/g, '/') : '';
+    const m = keyStr.match(/^([^/]+)\/([^/]+)\/IN\/sql\.json$/i);
+    if (m) {
+      const abs = path.join(root, m[1], m[2], 'IN', 'sql.json');
+      if (fs.existsSync(abs)) {
+        fs.unlinkSync(abs);
+        return { abs, removed: true };
+      }
+      return { abs, removed: false };
+    }
+    return removeAClubsSqlIn({ root, msg });
+  };
+}
+
+/**
+ * FR #5135: drop stale IN/sql.json when this SQL search admits 0 rows.
+ * @param {{ root: string, msg: object }} opts
+ * @returns {{ abs: string, removed: boolean }}
+ */
+function removeAClubsSqlIn(opts) {
+  const root = opts && opts.root != null ? String(opts.root).trim() : '';
+  if (!root) throw new Error('empty_a_clubs_root');
+  const { host, guid } = hostGuidFromMessage(opts.msg);
+  const abs = path.join(root, host, guid, 'IN', 'sql.json');
+  if (fs.existsSync(abs)) {
+    fs.unlinkSync(abs);
+    return { abs, removed: true };
+  }
+  return { abs, removed: false };
+}
+
 module.exports = {
   writeAClubsIn,
   createAClubsPutObject,
+  createAClubsDeleteObject,
+  removeAClubsSqlIn,
 };

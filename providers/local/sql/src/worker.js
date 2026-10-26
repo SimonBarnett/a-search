@@ -154,6 +154,21 @@ async function run(msg, deps) {
 
   if (products.length === 0) {
     logProviderDoneZero({ msg, source: 'sql' });
+    const staleKey = sqlInResultKey({ hostkey, guid });
+    if (deps && typeof deps.deleteObject === 'function') {
+      try {
+        await deps.deleteObject({
+          Bucket: envVars.S3_RESULTS_BUCKET || 'a-clubs',
+          Key: staleKey,
+        });
+      } catch (err) {
+        const status = err && err.$metadata && err.$metadata.httpStatusCode;
+        const code = err && (err.name || err.code);
+        if (status !== 404 && code !== 'NoSuchKey' && code !== 'NotFound') {
+          throw err;
+        }
+      }
+    }
     return {
       ok: true,
       source: 'sql',

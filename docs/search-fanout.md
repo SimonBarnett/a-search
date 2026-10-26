@@ -136,7 +136,10 @@ the database search against the a-search DB on **walrus** over the LAN (**never
 madeiradb** — madeiradb stays SELECT-only via `mdb.*` views), and writes
 `a-clubs/{hostkey}/{guid}/IN/sql.json` in the common IN/ format onto
 the drive mapped to the a-search S3 bucket. The message is deleted only after a
-successful write.
+successful write. FR #5135: a 0-product SQL search **deletes** `IN/sql.json`
+instead of leaving an older search's rows; `promoteInToLive` also ignores
+`IN/sql.json` whose `searchid` is not the current `search-fanout.json` search.
+Per-searchid live files (`IN/{searchid}-{source}.json`) are unchanged.
 
 **No AWS Lambda connects to MSSQL.** The a-search database lives on walrus and
 inbound SQL ports stay closed; Lambda only enqueues. Install the on-box service

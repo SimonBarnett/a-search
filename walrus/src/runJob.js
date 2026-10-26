@@ -7,7 +7,12 @@
 const path = require('node:path');
 
 const { assertWritableDatabaseFromEnv } = require('./dbWriterGuard');
-const { createAClubsPutObject, writeAClubsIn } = require('./writeAClubsIn');
+const {
+  createAClubsPutObject,
+  createAClubsDeleteObject,
+  writeAClubsIn,
+  removeAClubsSqlIn,
+} = require('./writeAClubsIn');
 const { hostGuidFromMessage } = require('./aClubsInPath');
 const { writeAClubsDoneFs } = require('./writeAClubsDoneFs');
 
@@ -145,6 +150,7 @@ async function runDrainJob(msg, deps) {
   }
 
   const putObject = createAClubsPutObject({ root: aClubsRoot, msg: writeMsg });
+  const deleteObject = createAClubsDeleteObject({ root: aClubsRoot, msg: writeMsg });
   const workerEnv = {
     ...envVars,
     S3_RESULTS_BUCKET: envVars.S3_RESULTS_BUCKET || 'a-clubs',
@@ -153,6 +159,7 @@ async function runDrainJob(msg, deps) {
   const result = await worker.run(msg, {
     env: workerEnv,
     putObject,
+    deleteObject,
     queryParts: deps && deps.queryParts,
     connect: deps && deps.connect,
     touchLastmod: deps && deps.touchLastmod,
@@ -174,12 +181,28 @@ async function runDrainJob(msg, deps) {
     });
   }
 
+  // FR #5135: fixed-name IN/sql.json must not keep an older search's rows.
+  const productCount = Array.isArray(result && result.products)
+    ? result.products.length
+    : 0;
+  if (source.toLowerCase() === 'sql' && productCount === 0) {
+    try {
+      removeAClubsSqlIn({ root: aClubsRoot, msg: writeMsg });
+    } catch (err) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn(
+          '[a-search]',
+          'WARN',
+          'sql_in_stale_remove_failed',
+          String((err && err.message) || err),
+        );
+      }
+    }
+  }
+
   // FR #4917: terminal DONE on mapped a-clubs (serviced, products may be 0).
   let done = null;
   try {
-    const productCount = Array.isArray(result && result.products)
-      ? result.products.length
-      : 0;
     done = writeAClubsDoneFs({
       root: aClubsRoot,
       msg: writeMsg,
