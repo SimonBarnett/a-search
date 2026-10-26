@@ -704,3 +704,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search SQL brand/model gate: colour words (Yellow/Grey/...) are GATE_GENERIC and bare dimensions (615mm) are not model numbers --- otherwise apparel false friends survive admitRowsByExactGates after #5106/#5109; keep multi-word phrases like Waco Yellow.
 - a-search docs/search-fanout.md: never insert an FR note between a wrapped markdown sentence (MessageDeduplicationId ... FIFO / URLs only.); place the note as its own paragraph after the sentence completes --- MRB #5126 / FIX #5129.
 - IAM user inline policies are 2048 bytes: never list every SQS queue ARN on imported users; use arn:aws:sqs:region:account:a-search-* for read-only GetQueueAttributes (FR #5131)
+- Fixed-name IN/sql.json must be deleted on 0-product SQL (walrus removeAClubsSqlIn / worker deleteObject); promoteInToLive ignores sql.json whose searchid is not the current search-fanout
