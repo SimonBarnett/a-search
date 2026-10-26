@@ -88,19 +88,24 @@ function isDataMountPath(p) {
 }
 
 function defaultOutboxRoot(root) {
-  if (root) return root;
-  if (process.env.A_SEARCH_TOOL_FAILURE_OUTBOX) {
-    return String(process.env.A_SEARCH_TOOL_FAILURE_OUTBOX).trim();
-  }
-  if (process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX) {
-    return String(process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX).trim();
-  }
+  const tmp = path.join(require('os').tmpdir(), 'a-search-tool-failures');
+  const pick = (candidate) => {
+    const c = String(candidate || '').trim();
+    if (!c) return null;
+    if (isDataMountPath(c)) return null;
+    return c;
+  };
+  const fromArg = pick(root);
+  if (fromArg) return fromArg;
+  const fromEnv = pick(process.env.A_SEARCH_TOOL_FAILURE_OUTBOX);
+  if (fromEnv) return fromEnv;
+  const fromImport = pick(process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX);
+  if (fromImport) return fromImport;
   // Prefer <repo>/logs/tool-failures (__dirname = shared/intake).
   const repoLogs = path.join(path.resolve(__dirname, '..', '..'), 'logs', 'tool-failures');
   if (!isDataMountPath(repoLogs)) {
     return repoLogs;
   }
-  const tmp = path.join(require('os').tmpdir(), 'a-search-tool-failures');
   const cwd = process.cwd();
   if (isDataMountPath(cwd)) {
     return tmp;

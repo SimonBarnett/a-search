@@ -69,6 +69,26 @@ describe('FR #5164 outbox never under a-clubs', () => {
     }
   });
 
+  it('defaultOutboxRoot rejects A_SEARCH_TOOL_FAILURE_OUTBOX under a-clubs', () => {
+    const prev = process.env.A_SEARCH_TOOL_FAILURE_OUTBOX;
+    const prevImport = process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX;
+    try {
+      process.env.A_SEARCH_TOOL_FAILURE_OUTBOX = 'S:\\a-clubs\\host\\tool-failures';
+      delete process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX;
+      const root = defaultOutboxRoot();
+      assert.ok(!isDataMountPath(root), root);
+      assert.ok(
+        root.includes('logs') || root.includes('a-search-tool-failures'),
+        root,
+      );
+    } finally {
+      if (prev === undefined) delete process.env.A_SEARCH_TOOL_FAILURE_OUTBOX;
+      else process.env.A_SEARCH_TOOL_FAILURE_OUTBOX = prev;
+      if (prevImport === undefined) delete process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX;
+      else process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX = prevImport;
+    }
+  });
+
   it('reportViaIntake falls back to github when intake fetch throws and github client set', async () => {
     const issues = [];
     const github = {

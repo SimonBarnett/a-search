@@ -10,13 +10,15 @@ Describe 'FR #5164 meta AWS profile (annotator / config; ignore agents env)' {
         $raw = Get-Content -LiteralPath $metaLib -Raw
         $raw | Should Match 'a-search-redqueen-annotator'
         $raw | Should Match 'Get-FolderMetaSearchConfig'
-        $raw | Should Match 'Never A_SEARCH_AGENTS_AWS_PROFILE'
+        # Synopsis / docs may name the ignored env; the resolver body must not read it.
+        $raw | Should Match 'Does NOT use A_SEARCH_AGENTS_AWS_PROFILE'
         $raw | Should Match "return 'a-search-redqueen-annotator'"
-        # Must not prefer agents env in Resolve-FolderMetaAwsProfile body.
-        $fn = [regex]::Match($raw, 'function Resolve-FolderMetaAwsProfile[\s\S]*?\n\}').Value
+        $fn = [regex]::Match($raw, '(?ms)function Resolve-FolderMetaAwsProfile\s*\{.*?^\}').Value
         $fn | Should Match 'a-search-redqueen-annotator'
-        $fn | Should Not Match 'A_SEARCH_AGENTS_AWS_PROFILE'
-        $fn | Should Not Match '\$env:AWS_PROFILE'
+        $code = [regex]::Replace($fn, '(?m)^\s*#.*$', '')
+        $code | Should Not Match 'A_SEARCH_AGENTS_AWS_PROFILE'
+        $code | Should Not Match '\$env:AWS_PROFILE'
+        $code | Should Not Match '\$env:A_SEARCH_AGENTS_AWS_PROFILE'
     }
 
     It 'Resolve-FolderMetaAwsProfile prefers Config then annotator (isolated scriptblock)' {

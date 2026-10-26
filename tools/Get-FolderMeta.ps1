@@ -73,7 +73,7 @@ function Get-FolderMetaSearchConfig {
 
 function Resolve-FolderMetaAwsProfile {
     # FR #5164: -AwsProfile, then search.config.json AwsProfile, then annotator.
-    # Never A_SEARCH_AGENTS_AWS_PROFILE / AWS_PROFILE (no a-clubs read on redqueen).
+    # Never agents or process AWS profile env (those lack a-clubs read on redqueen).
     param(
         [string]$AwsProfile,
         $Config
