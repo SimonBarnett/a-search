@@ -1,4 +1,4 @@
-# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041 / #5046 / #5106)
+# Walrus SQL drain service (FR #4447 / #4511 / #4534 / #4548 / #4570 / #4976 / #5004 / #5023 / #5024 / #5041 / #5046 / #5106 / #5121)
 
 On-box Windows service that long-polls `a-search-db-backed` over outbound HTTPS,
 runs the SELECT-only `providers/local/sql` worker against the a-search database
@@ -151,11 +151,14 @@ Relevance beats showing something. There is no best-guess FREETEXT-only fallback
 and no "similar product" fallback. Zero qualifying matches => empty product list
 (0 products), DONE serviced, not an error, not DLQ.
 
-**False friends (FR #5106):** when `Brand` / `Category` are NULL, titles alone can
+**False friends (FR #5106 / #5121):** when `Brand` / `Category` are NULL, titles alone can
 share a single word with a model phrase (Cub in "Cub Paw" gloves, Wolf in apparel).
 Admission requires an **exact multi-word model phrase** (e.g. `Sport Cub`) or a
 **real brand** token (ALLCAPS 5+ / PascalCase compound / Title-case length >= 6).
 Words like cub/wolf/glove/shirt are gate-generic and never brand gates alone.
+**FR #5121:** colour words (Yellow, Grey, ...) are also gate-generic so `"yellow*"`
+cannot admit Yellow/Grey apparel; bare dimensions (`615mm`, `12cm`) are not model
+numbers. Multi-word phrases that include a colour (e.g. `Waco Yellow`) stay valid.
 After SQL `CONTAINS`, `admitRowsByExactGates` post-admits rows with contiguous
 phrase / word-prefix checks so a loose full-text hit cannot leak apparel.
 Deployed walrus must run this `providers/local/sql` tip (log

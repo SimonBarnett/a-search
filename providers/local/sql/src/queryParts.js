@@ -446,9 +446,24 @@ const GATE_GENERIC_WORDS = new Set(
     // FR #5106: single common words that appear in apparel titles must never
     // be brand/model gates on their own (multi-word phrases like Sport Cub OK).
     'cub wolf fox cat dog bear tiger lion paw paws glove gloves shirt shirts ' +
-    'tee tees longsleeve guardian athletic crew cotton black white kids children'
+    'tee tees longsleeve guardian athletic crew cotton black white kids children ' +
+    // FR #5121: colour words never solo brand gates (phrase "Waco Yellow" OK).
+    'yellow grey gray red blue green orange purple pink brown silver gold beige ' +
+    'khaki navy maroon cyan magenta olive tan cream ivory'
   ).toLowerCase().split(/\s+/),
 );
+
+/** Bare size/unit tokens (615mm, 12cm) --- never model gates (FR #5121). */
+const GATE_DIMENSION_RE =
+  /^\d+(?:\.\d+)?(?:mm|cm|m|km|in|inch|inches|ft|kg|g|oz|lb|lbs|mah|ah|v|w|wh|kw|rpm|kv|mhz|ghz|hz|deg|c|f)$/i;
+
+/**
+ * @param {string} token
+ * @returns {boolean}
+ */
+function isDimensionToken(token) {
+  return GATE_DIMENSION_RE.test(String(token || '').trim());
+}
 
 /**
  * @param {string} token
@@ -457,6 +472,8 @@ const GATE_GENERIC_WORDS = new Set(
 function isModelNumberToken(token) {
   const t = String(token || '');
   if (!t || t.length < 3) return false;
+  // FR #5121: 615mm / 12cm are sizes, not SKUs
+  if (isDimensionToken(t)) return false;
   // 761-14, EFLU53550Y, ABC-12-3 --- must include a digit
   if (!/\d/.test(t)) return false;
   if (/^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$/.test(t)) return true;
@@ -1019,6 +1036,7 @@ module.exports = {
   formatExactGate,
   isBrandLikeToken,
   isModelNumberToken,
+  isDimensionToken,
   GATE_GENERIC_WORDS,
   bindNVarChar,
   truncateFt,
