@@ -79,6 +79,7 @@ $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
 . (Join-Path $here 'FolderProgress.ps1')
+. (Join-Path $here 'ToolFailure.ps1')
 
 function Resolve-FolderDownloadNode {
     param([string]$NodeExe)
@@ -807,6 +808,16 @@ catch {
     $safe = $msg -replace '(?i)(api[_-]?key|token|password|secret|feedurl)\s*[:=]\s*\S+', '$1=***'
     [Console]::Error.WriteLine($safe)
     if ($safe -match '^path_outside_mount') {
+    $detailForIssue = $null
+    if (Get-Variable -Name safe -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $safe }
+    elseif (Get-Variable -Name msg -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $msg }
+    else { $detailForIssue = $_.Exception.Message }
+    $exitForIssue = 1
+    if ($detailForIssue -match '^path_outside_mount') { $exitForIssue = 2 }
+    elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
+    $s3ForIssue = ''
+    Invoke-ASearchToolFailureReport -Tool 'download' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+
         exit 2
     }
     if ($safe -match '^needs_defaultage') {

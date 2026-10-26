@@ -32,14 +32,11 @@ function Invoke-DbImportFailureReport {
         [string]$ErrorCode = 'dbimport_error',
         [string]$Detail = ''
     )
-    # FR #4943: same bobiverse intake path as walrus/import (fail-soft).
-    $reporter = Join-Path $PSScriptRoot 'dbimport\reportFailure.js'
-    if (-not (Test-Path -LiteralPath $reporter)) { return }
-    $node = Get-Command node -ErrorAction SilentlyContinue
-    if (-not $node) { return }
-    $safeDetail = [string]$Detail
-    if ($safeDetail.Length -gt 1500) { $safeDetail = $safeDetail.Substring(0, 1500) }
-    & $node.Source $reporter --provider $Provider --feedKey $AffiliateId --errorCode $ErrorCode --detail $safeDetail 2>$null | Out-Null
+    # FR #5151: shared tool failure filer (prints URL / issue_report_failed).
+    $detail = if ($Provider -or $AffiliateId) {
+        ("provider={0} feed={1}: {2}" -f $Provider, $AffiliateId, $Detail)
+    } else { [string]$Detail }
+    Invoke-ASearchToolFailureReport -Tool 'dbimport' -ErrorCode $ErrorCode -Detail $detail -ExitCode 1 -CommandLine ([string]$MyInvocation.Line)
 }
 
 $ErrorActionPreference = 'Stop'
@@ -49,6 +46,7 @@ $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
 . (Join-Path $here 'FolderProgress.ps1')
 . (Join-Path $here 'DbImportSql.ps1')
+. (Join-Path $here 'ToolFailure.ps1')
 
 function Get-DbImportProviderNames {
     param([string]$Bucket)

@@ -23,6 +23,9 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$here = $PSScriptRoot
+. (Join-Path $here 'ToolFailure.ps1')
+. (Join-Path $here 'FolderProgress.ps1')
 
 if ($Help) {
   Write-Host @"
@@ -42,16 +45,21 @@ Secrets: C:\passwords\awin.secret.txt | C:\passwords\rakuten.secret.txt --- neve
 
 $runJs = Join-Path $InstallRoot 'redqueen\affiliate-agent\src\run.js'
 if (-not (Test-Path -LiteralPath $runJs)) {
-  Write-Error "affiliate-agent run.js missing at $runJs"
+  $msg = "affiliate-agent run.js missing at $runJs"
+  Write-Error $msg
+  Invoke-ASearchToolFailureReport -Tool 'agent' -ErrorCode 'agent_missing_runjs' -Detail $msg -ExitCode 1 -CommandLine ([string]$MyInvocation.Line)
   exit 1
 }
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 if (-not $node) {
-  Write-Error 'node.exe not on PATH'
+  $msg = 'node.exe not on PATH'
+  Write-Error $msg
+  Invoke-ASearchToolFailureReport -Tool 'agent' -ErrorCode 'node_missing' -Detail $msg -ExitCode 1 -CommandLine ([string]$MyInvocation.Line)
   exit 1
 }
 
+Write-FolderToolStep ('agent starting cwd={0}' -f $Cwd)
 $argList = @($runJs, '-Cwd', $Cwd)
 if ($DryRun) { $argList += '-DryRun' }
 # FR #5065: scheduled/interactive rakuten agent uses invite backend (no password temp).

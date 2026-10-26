@@ -67,18 +67,20 @@ $ErrorActionPreference = 'Stop'
 
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
+. (Join-Path $here 'FolderProgress.ps1')
+. (Join-Path $here 'ToolFailure.ps1')
 
 # Progress goes to the host (not the success JSON pipeline). Spinner chars: / | \ -
 $script:OnboardSpinChars = @('/', '|', '\', '-')
 
 function Write-OnboardStep {
     param([Parameter(Mandatory = $true)][string]$Message)
-    Write-Host ("[{0}] {1}" -f (Get-Date).ToString('HH:mm:ss'), $Message)
+    Write-FolderToolStep -Message $Message
 }
 
 function Write-OnboardDetail {
     param([Parameter(Mandatory = $true)][string]$Message)
-    Write-Host ("         {0}" -f $Message)
+    Write-FolderToolDetail -Message $Message
 }
 
 function Clear-OnboardSpinnerLine {
@@ -86,47 +88,15 @@ function Clear-OnboardSpinnerLine {
 }
 
 function Invoke-OnboardWithSpinner {
-    <#
-    .SYNOPSIS
-    Run a scriptblock in a background job while showing Label + /|\| spinner.
-    Pass data via -ArgumentList only (job has no parent scope).
-    #>
+    # FR #5151: use shared FolderProgress spinner (stderr steps + real job failure text).
     param(
         [Parameter(Mandatory = $true)][string]$Label,
         [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock,
         [object[]]$ArgumentList = @()
     )
-    $job = if ($ArgumentList -and $ArgumentList.Count) {
-        Start-Job -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
-    }
-    else {
-        Start-Job -ScriptBlock $ScriptBlock
-    }
-    $i = 0
-    try {
-        while ($job.State -eq 'Running') {
-            $ch = $script:OnboardSpinChars[$i % 4]
-            Write-Host ("`r[{0}] {1} {2}  " -f (Get-Date).ToString('HH:mm:ss'), $Label, $ch) -NoNewline
-            Start-Sleep -Milliseconds 120
-            $i++
-        }
-        Clear-OnboardSpinnerLine
-        if ($job.State -eq 'Failed') {
-            $err = Receive-Job -Job $job -ErrorAction SilentlyContinue
-            Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
-            throw ("spinner_job_failed: {0}" -f ($err | Out-String))
-        }
-        $result = Receive-Job -Job $job -ErrorAction Stop
-        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
-        Write-OnboardStep ("{0} - done" -f $Label)
-        return $result
-    }
-    catch {
-        Clear-OnboardSpinnerLine
-        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
-        throw
-    }
+    Invoke-FolderToolWithSpinner -Label $Label -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
 }
+
 
 function Resolve-OnboardAwsProfile {
     param([string]$AwsProfile)
@@ -837,6 +807,16 @@ catch {
     $msg = [string]$_.Exception.Message
     if ($msg -match 'needs_credential') {
         Write-Output $msg
+    $detailForIssue = $null
+    if (Get-Variable -Name safe -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $safe }
+    elseif (Get-Variable -Name msg -Scope 0 -ErrorAction SilentlyContinue) { $detailForIssue = $msg }
+    else { $detailForIssue = $_.Exception.Message }
+    $exitForIssue = 1
+    if ($detailForIssue -match '^path_outside_mount') { $exitForIssue = 2 }
+    elseif ($detailForIssue -match '^bucket_root') { $exitForIssue = 5 }
+    $s3ForIssue = ''
+    Invoke-ASearchToolFailureReport -Tool 'onboard' -ErrorCode 'error' -Detail ([string]$detailForIssue) -ExitCode $exitForIssue -S3Uri ([string]$s3ForIssue) -CommandLine ([string]$MyInvocation.Line)
+
         exit 2
     }
     Write-Error $msg
