@@ -696,3 +696,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - /search agent fan-out: API Gateway HttpIamAuthorizer only; entry must not require x-agent-api-key; folder tools SigV4 with profile, no agent key file
 - POST /search must not fatal on S3 HeadObject name Unknown/UnknownError: skip that a-affiliates provider and keep sql; wrap a-clubs head as 503 s3_head_failed so intake is not code Unknown
 - a-affiliates HeadObject on a missing key is 403 without s3:ListBucket on the bucket; /search must skip that provider and grant ListBucket so missing is 404; never 500 the POST
+- FIX after CONFLICTING: if tip already folded main and MERGEABLE, verify tests + Closes + re-arm --auto and DONE FIX with covering PR URL --- do not reopen MRB; do not poll CI
