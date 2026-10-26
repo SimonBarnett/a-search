@@ -77,15 +77,40 @@ function issueBody(opts) {
   return lines.join('\n');
 }
 
+function isDataMountPath(p) {
+  const s = String(p || '').replace(/\\/g, '/').toLowerCase();
+  if (!s) return false;
+  // Never write failure outbox into club/affiliate data mounts (FR #5164).
+  return (
+    /(^|\/)a-clubs(\/|$)/.test(s) ||
+    /(^|\/)a-affiliates(\/|$)/.test(s)
+  );
+}
+
 function defaultOutboxRoot(root) {
-  if (root) return root;
-  if (process.env.A_SEARCH_TOOL_FAILURE_OUTBOX) {
-    return String(process.env.A_SEARCH_TOOL_FAILURE_OUTBOX).trim();
+  const tmp = path.join(require('os').tmpdir(), 'a-search-tool-failures');
+  const pick = (candidate) => {
+    const c = String(candidate || '').trim();
+    if (!c) return null;
+    if (isDataMountPath(c)) return null;
+    return c;
+  };
+  const fromArg = pick(root);
+  if (fromArg) return fromArg;
+  const fromEnv = pick(process.env.A_SEARCH_TOOL_FAILURE_OUTBOX);
+  if (fromEnv) return fromEnv;
+  const fromImport = pick(process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX);
+  if (fromImport) return fromImport;
+  // Prefer <repo>/logs/tool-failures (__dirname = shared/intake).
+  const repoLogs = path.join(path.resolve(__dirname, '..', '..'), 'logs', 'tool-failures');
+  if (!isDataMountPath(repoLogs)) {
+    return repoLogs;
   }
-  if (process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX) {
-    return String(process.env.A_SEARCH_IMPORT_FAILURE_OUTBOX).trim();
+  const cwd = process.cwd();
+  if (isDataMountPath(cwd)) {
+    return tmp;
   }
-  return path.join(process.cwd(), 'tool-failures');
+  return path.join(cwd, 'tool-failures');
 }
 
 function writeFailureOutbox(opts) {
@@ -317,6 +342,56 @@ async function reportViaIntake(opts, fp, title, body) {
       payload,
     };
   } catch (err) {
+    // FR #5164: when intake is blocked (e.g. redqueen egress), try GitHub if client/token present.
+    try {
+      let client = opts && opts.github;
+      const token =
+        (opts && opts.token) ||
+        process.env.A_SEARCH_GH_TOKEN ||
+        process.env.GITHUB_TOKEN ||
+        '';
+      if (!client && String(token).trim()) {
+        client = createGithubIssuesClient({
+          token: String(token).trim(),
+          repo: (opts && opts.repo) || DEFAULT_REPO,
+          fetch: opts && opts.fetch,
+        });
+      }
+      if (client) {
+        const title = issueTitle({ ...opts, fingerprint: fp });
+        const body = issueBody({ ...opts, fingerprint: fp });
+        const tool = String((opts && opts.tool) || 'tool').toLowerCase();
+        const labels = ['tool-failure', `tool:${tool}`];
+        const existing = await client.searchOpenByFingerprint(fp);
+        if (existing && existing.number) {
+          await client.commentIssue(
+            existing.number,
+            [`Re-occurred (intake blocked)`, '', body].join('\n'),
+          );
+          return {
+            ok: true,
+            commented: true,
+            issueNumber: existing.number,
+            issueUrl: existing.html_url || existing.url,
+            fingerprint: fp,
+            via: 'github_fallback',
+            intakeError: redactSecrets(String((err && err.message) || err)),
+          };
+        }
+        const created = await client.createIssue({ title, body, labels });
+        return {
+          ok: true,
+          commented: false,
+          issueNumber: created.number,
+          issueUrl: created.html_url || created.url,
+          fingerprint: fp,
+          via: 'github_fallback',
+          intakeError: redactSecrets(String((err && err.message) || err)),
+        };
+      }
+    } catch (_) {
+      /* fall through to outbox */
+    }
     const outboxPath = writeFailureOutbox({ ...opts, fingerprint: fp });
     return {
       ok: false,
@@ -437,6 +512,7 @@ module.exports = {
   reportViaIntake,
   buildToolIntakePayload,
   defaultOutboxRoot,
+  isDataMountPath,
   DEFAULT_REPO,
   DEFAULT_INTAKE_URL,
   FP_MARKER_RE,
