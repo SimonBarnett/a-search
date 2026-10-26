@@ -3,6 +3,9 @@
 /**
  * FR #4917: write DONE/{searchid}-{source}.json on the mapped a-clubs drive
  * and flip hasresults=1 in .a-search-meta.json when the fan-out is complete.
+ * FR #5142: when S3 deps are provided, also write DONE + maybeSetHasResults on
+ * the real a-clubs bucket so live providers / marker metadata stay race-free
+ * (mapped-drive rclone lag must not leave hasresults unset).
  */
 
 const fs = require('node:fs');
@@ -10,6 +13,7 @@ const path = require('node:path');
 
 const { hostGuidFromMessage } = require('./aClubsInPath');
 const { isoLastmod } = require('./touchLastmodFs');
+const { recordSearchTerminal } = require('../../shared/search/searchDone');
 
 /**
  * @param {string} root
@@ -31,10 +35,23 @@ function absUnder(root, parts) {
  *   status?: 'serviced'|'dlq',
  *   products?: number,
  *   now?: Date|string|number,
+ *   s3?: {
+ *     putObject: Function,
+ *     getObject?: Function,
+ *     headObject?: Function,
+ *     copyObject?: Function,
+ *     getObjectTagging?: Function,
+ *     putObjectTagging?: Function,
+ *     listObjectsV2?: Function,
+ *     bucket?: string,
+ *     logError?: Function,
+ *     recheckDelayMs?: number,
+ *     sleep?: Function,
+ *   },
  * }} opts
- * @returns {{ key: string, abs: string, hasresults: boolean }}
+ * @returns {Promise<{ key: string, abs: string, hasresults: boolean, s3?: object }>}
  */
-function writeAClubsDoneFs(opts) {
+async function writeAClubsDoneFs(opts) {
   if (!opts || typeof opts !== 'object') {
     throw new Error('write_a_clubs_done_opts_required');
   }
@@ -67,14 +84,56 @@ function writeAClubsDoneFs(opts) {
   const body = { searchid, source, status, products, at };
   fs.writeFileSync(abs, `${JSON.stringify(body)}\n`, 'utf8');
 
-  const hasresults = maybeSetHasResultsFs({
+  let hasresults = maybeSetHasResultsFs({
     root,
     host,
     guid,
     searchid,
     now: opts.now,
   });
-  return { key, abs, hasresults: !!hasresults, body };
+
+  /** @type {object|undefined} */
+  let s3Out;
+  if (opts.s3 && typeof opts.s3.putObject === 'function') {
+    try {
+      s3Out = await recordSearchTerminal({
+        putObject: opts.s3.putObject,
+        getObject: opts.s3.getObject,
+        headObject: opts.s3.headObject,
+        copyObject: opts.s3.copyObject,
+        getObjectTagging: opts.s3.getObjectTagging,
+        putObjectTagging: opts.s3.putObjectTagging,
+        listObjectsV2: opts.s3.listObjectsV2,
+        bucket: opts.s3.bucket || 'a-clubs',
+        hostkey: host,
+        guid,
+        searchid,
+        source,
+        status,
+        products,
+        now: opts.now,
+        logError: opts.s3.logError,
+        recheckDelayMs: opts.s3.recheckDelayMs,
+        sleep: opts.s3.sleep,
+      });
+      if (s3Out && s3Out.hasresults) hasresults = true;
+    } catch (err) {
+      if (typeof console !== 'undefined' && console.error) {
+        console.error(
+          '[a-search]',
+          'ERROR',
+          'hasresults_walrus_s3_flip_failed',
+          String((err && err.message) || err),
+        );
+      }
+      s3Out = {
+        hasresults: false,
+        flip: { reason: 's3_error', error: String((err && err.message) || err) },
+      };
+    }
+  }
+
+  return { key, abs, hasresults: !!hasresults, body, s3: s3Out };
 }
 
 /**

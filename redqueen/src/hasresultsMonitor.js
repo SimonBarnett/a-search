@@ -12,6 +12,9 @@ const path = require('node:path');
 const { classifyMarkerKey } = require('./staleSweep');
 const { clearHasResults } = require('../../shared/widgets/hostFolderMeta');
 const { runHasresultsAgentWork } = require('../../shared/widgets/promoteInToLive');
+const {
+  recheckIncompleteHasResults,
+} = require('../../shared/search/recheckHasResults');
 const { acquireImportLock } = require('../affiliate-import/src/lock');
 const { triggerFixingAgent } = require('../affiliate-import/src/triggerAgent');
 const { isExcludedKey, parseChangeEvent } = require('../../shared/aClubs/changeEvents');
@@ -306,9 +309,39 @@ async function processHasresultsGuid(opts) {
 
 /**
  * One monitor pass over all hasresults=1 GUIDs.
+ * FR #5142: first re-check any GUID whose DONE set is complete but hasresults
+ * is still unset (missed flip), then process hasresults=1 as before.
  * @param {object} opts
  */
 async function runHasresultsMonitorPass(opts) {
+  let recheck = null;
+  if (!opts.skipHasresultsRecheck) {
+    try {
+      recheck = await recheckIncompleteHasResults(opts);
+      if (recheck && recheck.flipped && typeof opts.log === 'function') {
+        opts.log({
+          ok: true,
+          event: 'hasresults_recheck',
+          scanned: recheck.scanned,
+          flipped: recheck.flipped,
+        });
+      }
+    } catch (err) {
+      if (typeof opts.log === 'function') {
+        opts.log({
+          ok: false,
+          event: 'hasresults_recheck_failed',
+          error: String((err && err.message) || err),
+        });
+      }
+      recheck = {
+        scanned: 0,
+        flipped: 0,
+        error: String((err && err.message) || err),
+      };
+    }
+  }
+
   const markers = await listHasresultsMarkers(opts);
   const actions = [];
   for (let i = 0; i < markers.length; i += 1) {
@@ -323,7 +356,9 @@ async function runHasresultsMonitorPass(opts) {
     });
     actions.push(result);
   }
-  return { scanned: markers.length, actions };
+  const out = { scanned: markers.length, actions };
+  if (recheck) out.recheck = recheck;
+  return out;
 }
 
 /**
