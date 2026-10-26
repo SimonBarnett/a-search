@@ -11,7 +11,8 @@ All folder CLI tools (`meta`, `search`, `download`, `dbimport`, `onboard`, `invi
 - The **real error** is printed first (never empty). Filing is fail-soft: original exit code is kept. On filing success stderr shows `issue_filed: <url|intake_id>`; on filing failure `issue_report_failed: <reason>` and an outbox JSON under `tool-failures/` (or `A_SEARCH_TOOL_FAILURE_OUTBOX`).
 - Payload includes tool, VERSION, git commit, machine, cwd, s3 URI, redacted command line, exit code, and AWS identity **ARN only** (from `sts get-caller-identity`). No keys/tokens.
 - Dedupe fingerprint: `sha256(tool|errorCode|normalizedFirstLine)`. Matching open issues get a comment instead of a new issue.
-- Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner.
+- Opt-out: `A_SEARCH_TOOL_FAILURE_DISABLE=1`. Filing also skips when Cwd / CommandLine / S3Uri / Detail / Get-Location matches a Pester `frNNNN-` temp mount (MRB #5154). Validation exits 2/3/4/5 do not file.
+- Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner. Spinner around every search/invite HTTP wait is follow-up (ACCEPTABLE drift on #5151 core filing).
 
 
 ## meta / Get-FolderMeta.ps1

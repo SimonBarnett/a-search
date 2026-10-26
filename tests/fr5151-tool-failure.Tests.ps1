@@ -52,6 +52,30 @@ Describe 'FR #5151 Invoke-ASearchToolFailureReport' {
         $seen['Detail'] | Should Not Match 'SUPERSECRETFAIL'
         $seen['Detail'] | Should Match 'password=\*\*\*'
     }
+
+    It 'skips filing when Cwd is a frNNNN Pester mount' {
+        $seen = @{ called = $false }
+        Invoke-ASearchToolFailureReport -Tool 'meta' -ErrorCode 'head_failed' `
+            -Detail 'head_failed: s3://a-clubs/h/' -ExitCode 1 `
+            -Cwd 'C:\Users\Administrator\AppData\Local\Temp\fr4087-head-mount\a-clubs\host1' `
+            -Reporter { param($h) $seen['called'] = $true; return @{ ok = $true } } | Out-Null
+        $seen['called'] | Should Be $false
+    }
+
+    It 'skips filing when DISABLE=1 even without fr mount' {
+        $prev = $env:A_SEARCH_TOOL_FAILURE_DISABLE
+        $env:A_SEARCH_TOOL_FAILURE_DISABLE = '1'
+        try {
+            $seen = @{ called = $false }
+            Invoke-ASearchToolFailureReport -Tool 'meta' -ErrorCode 'x' -Detail 'x: y' -ExitCode 1 `
+                -Cwd 'C:\work' -Reporter { param($h) $seen['called'] = $true; return @{ ok = $true } } | Out-Null
+            $seen['called'] | Should Be $false
+        }
+        finally {
+            if ($null -eq $prev) { Remove-Item Env:\A_SEARCH_TOOL_FAILURE_DISABLE -ErrorAction SilentlyContinue }
+            else { $env:A_SEARCH_TOOL_FAILURE_DISABLE = $prev }
+        }
+    }
 }
 
 Describe 'FR #5151 spinner surfaces JobStateInfo.Reason' {
