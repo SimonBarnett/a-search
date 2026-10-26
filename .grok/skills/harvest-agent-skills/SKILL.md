@@ -716,3 +716,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Folder CLI AWS profile must be one shared helper (flag > search.config.json > annotator); never let A_SEARCH_AGENTS_AWS_PROFILE outrank config or HeadObject 403s on a-clubs
 - After shared profile resolve (#5169), FolderS3 default aws s3api must still pass --profile explicitly --- ambient AWS_PROFILE in the shell will otherwise 403 a-clubs HeadObject
 - When FolderS3 aws calls move to @(--profile, s3api, get-object, --bucket) argv, retarget fr4167 Continue/LASTEXITCODE pins off contiguous aws s3api get-object --bucket strings; keep --profile assert.
+- After invite/onboard/dbimport --profile, audit download Get-FolderDownloadProviderNames for bare aws argv; pin with Pester Contains of --profile,$cliProfile before s3api.
