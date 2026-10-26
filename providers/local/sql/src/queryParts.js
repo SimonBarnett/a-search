@@ -442,7 +442,11 @@ const GATE_GENERIC_WORDS = new Set(
     'beginner intermediate advanced sport trainer plane airplane aircraft ' +
     'rc radio control ready fly kit set model hobby mini micro electric ' +
     'brushless brushed lipo nimh ni-mh battery batteries pack mode modes ' +
-    'version versions new used gift gifts offers special specials weekly'
+    'version versions new used gift gifts offers special specials weekly ' +
+    // FR #5106: single common words that appear in apparel titles must never
+    // be brand/model gates on their own (multi-word phrases like Sport Cub OK).
+    'cub wolf fox cat dog bear tiger lion paw paws glove gloves shirt shirts ' +
+    'tee tees longsleeve guardian athletic crew cotton black white kids children'
   ).toLowerCase().split(/\s+/),
 );
 
@@ -474,11 +478,13 @@ function isBrandLikeToken(token) {
     return false;
   }
   if (CURRENCY_CODES.has(lower)) return false;
-  // ALLCAPS alphanumeric brand (VOLANTEXRC, EFLITE)
-  if (/^[A-Z]{4,}[A-Z0-9]*$/.test(t)) return true;
-  // PascalCase (Xpilot, HobbyZone, Volantex)
+  // ALLCAPS alphanumeric brand (VOLANTEXRC, EFLITE). FR #5106: require 5+
+  // letters so WOLF/CUBS-style apparel tokens never become `"wolf*"`.
+  if (/^[A-Z]{5,}[A-Z0-9]*$/.test(t)) return true;
+  // PascalCase compound (HobbyZone, VolantexRC-style splits already handled)
   if (/^[A-Z][a-z]+(?:[A-Z][a-z0-9]*)+$/.test(t)) return true;
-  if (/^[A-Z][a-z]{3,}$/.test(t) && t.length >= 5) return true;
+  // Single Title-case word: FR #5106 require length >= 6 (Xpilot=6; Wolf=4 no)
+  if (/^[A-Z][a-z]{5,}$/.test(t)) return true;
   // Long mixed alphanumeric product brand code
   if (/^[A-Za-z]{5,}[A-Za-z0-9]*$/.test(t) && /[A-Z]/.test(t) && t.length >= 6) {
     return true;
@@ -528,6 +534,45 @@ function pushGate(out, gate) {
   if (!gate) return;
   if (out.includes(gate)) return;
   out.push(gate);
+}
+
+/**
+ * FR #5106: strict in-process admit after SQL CONTAINS.
+ * Phrase gates need a contiguous word-boundary match; brand prefix gates need
+ * a word-start prefix. Stops loose full-text matches on a single constituent
+ * word (Cub in "Cub Paw", Wolf in apparel) when Brand/Category are NULL.
+ * @param {object[]} rows
+ * @param {string[]} gates CONTAINS forms like `"volantex*"` / `"sport cub"`
+ * @returns {object[]}
+ */
+function admitRowsByExactGates(rows, gates) {
+  const list = Array.isArray(rows) ? rows : [];
+  const specs = (Array.isArray(gates) ? gates : []).map((g) => {
+    const inner = String(g || '').replace(/^"|"$/g, '');
+    const prefix = inner.endsWith('*');
+    const needle = (prefix ? inner.slice(0, -1) : inner).toLowerCase().trim();
+    return { needle, prefix };
+  }).filter((s) => s.needle.length > 0);
+  if (!specs.length) return [];
+  return list.filter((row) => {
+    const hay = `${row && row.Title != null ? row.Title : ''} ${
+      row && row.Description != null ? row.Description : ''
+    }`.toLowerCase();
+    return specs.some((s) => {
+      const esc = s.needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (s.prefix) {
+        return new RegExp(`(^|[^a-z0-9])${esc}[a-z0-9]*`, 'i').test(hay);
+      }
+      // Contiguous phrase / model number with word edges (not bare substring
+      // of a longer token alone — "cub" must not admit via gate "sport cub").
+      const parts = s.needle.split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        return new RegExp(`(^|[^a-z0-9])${esc}([^a-z0-9]|$)`, 'i').test(hay);
+      }
+      const phrase = parts.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+      return new RegExp(`(^|[^a-z0-9])${phrase}([^a-z0-9]|$)`, 'i').test(hay);
+    });
+  });
 }
 
 /**
@@ -924,7 +969,22 @@ async function defaultQueryParts(msg, deps) {
       }
       const result = await req.query(sqlText);
       const rows = (result && result.recordset) || [];
-      return Array.isArray(rows) ? rows : [];
+      const raw = Array.isArray(rows) ? rows : [];
+      // FR #5106: re-admit with strict phrase/prefix rules (SQL CONTAINS can be
+      // loose when Brand/Category are NULL and titles only share one word).
+      const admitted = admitRowsByExactGates(raw, gateTokens);
+      if (
+        typeof console !== 'undefined' &&
+        console.info &&
+        (raw.length !== admitted.length || admitted.length === 0)
+      ) {
+        console.info(
+          '[a-search]',
+          'INFO',
+          `sql_gate_admit gates=${gateTokens.length} sql_rows=${raw.length} admitted=${admitted.length}`,
+        );
+      }
+      return admitted;
     } catch (err) {
       if (isInformationalSqlError(err)) {
         return [];
@@ -954,6 +1014,7 @@ module.exports = {
   buildFreetextQuery,
   buildSelectSql,
   extractBrandModelGateTokens,
+  admitRowsByExactGates,
   formatBrandGate,
   formatExactGate,
   isBrandLikeToken,
