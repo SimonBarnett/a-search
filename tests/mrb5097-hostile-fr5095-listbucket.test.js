@@ -17,12 +17,12 @@ describe('docs/mrb-5097 hostile FR #5095', () => {
       path.join(ROOT, 'cdk', 'lib', 'a-search-stack.js'),
       'utf8',
     );
-    const i = src.indexOf("sid: 'AgentSearchAffiliatesList'");
-    assert.ok(i >= 0, 'AgentSearchAffiliatesList missing');
-    const window = src.slice(i, i + 280);
+    const i = src.indexOf('FR #5095: HeadObject on a missing key is 403');
+    assert.ok(i >= 0, 'FR #5095 ListBucket comment missing');
+    const window = src.slice(i, i + 420);
+    assert.match(window, /AgentSearchAffiliatesList/);
     assert.match(window, /s3:ListBucket/);
-    assert.match(window, /arn:aws:s3:::a-affiliates'/);
-    assert.match(window, /FR #5095/);
+    assert.match(window, /arn:aws:s3:::a-affiliates/);
   });
 
   it('affiliates HeadObject errors skip with affiliates_s3_error (contiguous)', () => {
