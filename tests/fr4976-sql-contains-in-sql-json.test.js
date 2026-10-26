@@ -33,7 +33,9 @@ function sampleRow() {
     FeedKey: 'fk1',
     MerchantProductId: 'mp-1',
     Env: 'live',
-    Title: 'Servo arm',
+    // FR #5106: post-admit exact gates drop rows that lack the brand/model needle
+    // (VOLANTEXRC → volantex* gate). Keep a legitimate brand hit for SQL binding asserts.
+    Title: 'VOLANTEXRC Servo arm',
     Description: 'test part',
     Url: 'https://example.test/p/1',
     ImageUrl: 'https://example.test/i/1.jpg',
