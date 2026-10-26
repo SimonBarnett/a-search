@@ -1,12 +1,13 @@
 <#
 .SYNOPSIS
-Install the a-search `search` command into a tools folder on PATH (FR #5145).
+Install a-search folder tools (`search` + `meta`) into a tools folder on PATH (FR #5145 / #5148).
 
 .DESCRIPTION
-Copies search.ps1, Invoke-FolderSearch.ps1, FolderS3.ps1, search.cmd, and
-search.config.json into -ToolsDir (default C:\ai\tools). Creates the directory
-and a User PATH entry when missing. On redeploy, keeps an existing
-search.config.json (does not overwrite AwsProfile / SearchApiUrl). No nssm.
+Copies search + meta shims and helpers into -ToolsDir (default C:\ai\tools):
+search.ps1, Invoke-FolderSearch.ps1, meta.ps1, Get-FolderMeta.ps1,
+FolderProgress.ps1, FolderS3.ps1, search.cmd, meta.cmd, and search.config.json.
+Creates the directory and a User PATH entry when missing. On redeploy, keeps an
+existing search.config.json (does not overwrite AwsProfile / SearchApiUrl). No nssm.
 
 Run from the deploy checkout on redqueen:
   .\tools\Install-SearchCommand.ps1
@@ -32,6 +33,9 @@ $here = $PSScriptRoot
 $required = @(
     'search.ps1',
     'Invoke-FolderSearch.ps1',
+    'meta.ps1',
+    'Get-FolderMeta.ps1',
+    'FolderProgress.ps1',
     'FolderS3.ps1',
     'search.config.json'
 )
@@ -49,7 +53,14 @@ if (-not (Test-Path -LiteralPath $ToolsDir)) {
     }
 }
 
-$copyNames = @('search.ps1', 'Invoke-FolderSearch.ps1', 'FolderS3.ps1')
+$copyNames = @(
+    'search.ps1',
+    'Invoke-FolderSearch.ps1',
+    'meta.ps1',
+    'Get-FolderMeta.ps1',
+    'FolderProgress.ps1',
+    'FolderS3.ps1'
+)
 foreach ($name in $copyNames) {
     $src = Join-Path $here $name
     $dst = Join-Path $ToolsDir $name
@@ -77,6 +88,13 @@ if ($PSCmdlet.ShouldProcess($cmdPath, 'Write search.cmd')) {
     Write-Host "Wrote $cmdPath"
 }
 
+$metaCmdPath = Join-Path $ToolsDir 'meta.cmd'
+$metaCmdBody = "@echo off`r`nrem FR #5148: shim for meta.ps1 on PATH`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"%~dp0meta.ps1`" %*`r`nexit /b %ERRORLEVEL%`r`n"
+if ($PSCmdlet.ShouldProcess($metaCmdPath, 'Write meta.cmd')) {
+    [System.IO.File]::WriteAllText($metaCmdPath, $metaCmdBody)
+    Write-Host "Wrote $metaCmdPath"
+}
+
 if (-not $SkipPath) {
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
     if (-not $userPath) { $userPath = '' }
@@ -100,5 +118,5 @@ if (-not $SkipPath) {
     }
 }
 
-Write-Host "Install-SearchCommand done. From a club GUID folder on S: type: search"
+Write-Host "Install-SearchCommand done. From a club folder on S: type: search   or   meta"
 exit 0

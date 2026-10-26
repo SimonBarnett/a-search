@@ -5,7 +5,16 @@ First path segment under the mount is the bucket (`a-clubs`, `a-affiliates`, `a-
 
 ## meta / Get-FolderMeta.ps1
 
-Progress (`[HH:mm:ss] …` + `/|\|` spinner while waiting on S3) goes to **stderr**; the human/JSON report goes to **stdout**.
+Progress (`[HH:mm:ss] ...` + `/|\|` spinner while waiting on S3) goes to **stderr**; the human/JSON report goes to **stdout**.
+
+**FR #5148 --- spinner errors + AWS profile**
+
+- Failed spinner jobs print `spinner_job_failed: <reason>` using `JobStateInfo.Reason` (job + child jobs) and the job error stream. The message is never empty.
+- `meta` resolves AWS identity like download/onboard: `-AwsProfile`, then `A_SEARCH_AGENTS_AWS_PROFILE`, then `AWS_PROFILE`, then `a-search-redqueen-agents`, and sets process `AWS_PROFILE` for the run (including spinner jobs).
+- `head_failed` keeps the AWS CLI error text (403 / expired token / ...), with secrets scrubbed.
+- Install onto PATH with `.\tools\Install-SearchCommand.ps1` (copies `meta.ps1` / `meta.cmd` alongside `search` into `C:\ai\tools`).
+
+Read-only view of the cwd (or `-Path`) folder marker:
 
 Read-only view of the cwd (or `-Path`) folder marker:
 

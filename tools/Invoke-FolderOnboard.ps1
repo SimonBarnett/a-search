@@ -85,6 +85,55 @@ function Clear-OnboardSpinnerLine {
     Write-Host ("`r" + (' ' * 90) + "`r") -NoNewline
 }
 
+
+function Get-OnboardJobFailureText {
+    # FR #5148: mirror FolderProgress Get-FolderToolJobFailureText (copied wrapper).
+    param($Job, $ReceiveOutput, $ErrorVariableErrors)
+    $parts = New-Object System.Collections.Generic.List[string]
+    function Add-Part([string]$s) {
+        if (-not $s) { return }
+        $tr = $s.Trim()
+        if (-not $tr) { return }
+        if ($parts -contains $tr) { return }
+        [void]$parts.Add($tr)
+    }
+    if ($null -ne $ReceiveOutput) { Add-Part (($ReceiveOutput | Out-String)) }
+    foreach ($e in @($ErrorVariableErrors)) {
+        if ($null -eq $e) { continue }
+        $exProp = $e.PSObject.Properties['Exception']
+        if ($exProp -and $exProp.Value -and $exProp.Value.Message) { Add-Part ([string]$exProp.Value.Message) }
+        else { Add-Part ([string]$e) }
+    }
+    $jobs = @($Job)
+    if ($Job -and $Job.ChildJobs) { $jobs += @($Job.ChildJobs) }
+    foreach ($j in $jobs) {
+        if (-not $j) { continue }
+        if ($j.PSObject.Properties['JobStateInfo'] -and $j.JobStateInfo -and $j.JobStateInfo.PSObject.Properties['Reason'] -and $j.JobStateInfo.Reason) {
+            $reason = $j.JobStateInfo.Reason
+            if ($reason -is [System.Exception]) {
+                Add-Part ([string]$reason.Message)
+                if ($reason.InnerException -and $reason.InnerException.Message) { Add-Part ([string]$reason.InnerException.Message) }
+            }
+            else {
+                $msgProp = $reason.PSObject.Properties['Message']
+                if ($msgProp -and $msgProp.Value) { Add-Part ([string]$msgProp.Value) }
+                else { Add-Part ([string]$reason) }
+            }
+        }
+        try {
+            if (-not $j.PSObject.Properties['Error']) { continue }
+            foreach ($errRec in @($j.Error)) {
+                if ($null -eq $errRec) { continue }
+                $exP = $errRec.PSObject.Properties['Exception']
+                if ($exP -and $exP.Value -and $exP.Value.Message) { Add-Part ([string]$exP.Value.Message) }
+                else { Add-Part ([string]$errRec) }
+            }
+        } catch { }
+    }
+    if ($parts.Count -eq 0) { return '(no job error detail)' }
+    return ($parts -join '; ')
+}
+
 function Invoke-OnboardWithSpinner {
     <#
     .SYNOPSIS
@@ -112,9 +161,12 @@ function Invoke-OnboardWithSpinner {
         }
         Clear-OnboardSpinnerLine
         if ($job.State -eq 'Failed') {
-            $err = Receive-Job -Job $job -ErrorAction SilentlyContinue
+            # FR #5148: surface JobStateInfo.Reason + error stream (Receive-Job output is often empty)
+            $jobErr = $null
+            $err = Receive-Job -Job $job -ErrorAction SilentlyContinue -ErrorVariable jobErr
+            $detail = Get-OnboardJobFailureText -Job $job -ReceiveOutput $err -ErrorVariableErrors $jobErr
             Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
-            throw ("spinner_job_failed: {0}" -f ($err | Out-String))
+            throw ("spinner_job_failed: {0}" -f $detail)
         }
         $result = Receive-Job -Job $job -ErrorAction Stop
         Remove-Job -Job $job -Force -ErrorAction SilentlyContinue

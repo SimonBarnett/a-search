@@ -205,13 +205,20 @@ function Get-FolderS3ObjectMeta {
     if ($useAws) {
         $headFn = $AwsHeadObject
         if (-not $headFn) {
+            # FR #5148: keep AWS CLI stderr/stdout text on failure (never return $null alone).
             $headFn = {
                 param($b, $k)
                 $prev = $ErrorActionPreference
                 $ErrorActionPreference = 'Continue'
                 try {
                     $raw = aws s3api head-object --bucket $b --key $k --output json 2>&1
-                    if ($LASTEXITCODE -ne 0) { return $null }
+                    if ($LASTEXITCODE -ne 0) {
+                        $detail = (($raw | Out-String) -replace '[\x00-\x08\x0B\x0C\x0E-\x1F]', '').Trim()
+                        $detail = $detail -replace '(?i)(api[_-]?key|token|password|secret|AKIA[0-9A-Z]{16})\s*[:=]?\s*\S+', '$1=***'
+                        if ($detail.Length -gt 400) { $detail = $detail.Substring(0, 400) + '...' }
+                        if (-not $detail) { $detail = ('aws_exit_{0}' -f $LASTEXITCODE) }
+                        throw ("head_failed: s3://{0}/{1}: {2}" -f $b, $k, $detail)
+                    }
                     return $raw
                 }
                 finally { $ErrorActionPreference = $prev }
@@ -221,11 +228,13 @@ function Get-FolderS3ObjectMeta {
             $headRaw = & $headFn $Bucket $Key
         }
         catch {
-            throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key)
+            $em = $_.Exception.Message
+            if ($em -match '^head_failed:') { throw $em }
+            throw ("head_failed: s3://{0}/{1}: {2}" -f $Bucket, $Key, $em)
         }
         if (-not $headRaw) { throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key) }
         $head = ConvertFrom-FolderS3Json $headRaw
-        if (-not $head) { throw ("head_failed: s3://{0}/{1}" -f $Bucket, $Key) }
+        if (-not $head) { throw ("head_failed: s3://{0}/{1}: invalid_json" -f $Bucket, $Key) }
         if ($head.PSObject.Properties['Metadata'] -and $head.Metadata) {
             foreach ($p in $head.Metadata.PSObject.Properties) {
                 $metadata[$p.Name] = [string]$p.Value

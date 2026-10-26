@@ -21,6 +21,11 @@ Show complete annotation payloads (default truncates long ones).
 
 .PARAMETER Backend
 Force aws | rclone | auto for head-object / tagging.
+
+.PARAMETER AwsProfile
+AWS profile for head-object / tagging / annotations (FR #5148). Precedence:
+-AwsProfile, then A_SEARCH_AGENTS_AWS_PROFILE, then AWS_PROFILE, then
+a-search-redqueen-agents (same as download / onboard).
 #>
 [CmdletBinding()]
 param(
@@ -29,6 +34,7 @@ param(
     [switch]$Json,
     [switch]$Full,
     [ValidateSet('auto', 'aws', 'rclone')][string]$Backend = 'auto',
+    [string]$AwsProfile,
     [scriptblock]$AwsHeadObject,
     [scriptblock]$AwsGetObjectTagging,
     [scriptblock]$AwsListAnnotations,
@@ -42,6 +48,16 @@ $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
 . (Join-Path $here 'FolderS3.ps1')
 . (Join-Path $here 'FolderProgress.ps1')
+
+
+function Resolve-FolderMetaAwsProfile {
+    # FR #5148: same precedence as Invoke-FolderDownload / onboard.
+    param([string]$AwsProfile)
+    if ($AwsProfile) { return $AwsProfile }
+    if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
+    if ($env:AWS_PROFILE) { return $env:AWS_PROFILE }
+    return 'a-search-redqueen-agents'
+}
 
 function Get-MarkerMetaValue {
     param($Metadata, [string]$Name)
@@ -163,6 +179,10 @@ function Write-HumanMeta {
 }
 
 try {
+    $profileName = Resolve-FolderMetaAwsProfile -AwsProfile $AwsProfile
+    $prevAwsProfile = [Environment]::GetEnvironmentVariable('AWS_PROFILE', 'Process')
+    [Environment]::SetEnvironmentVariable('AWS_PROFILE', $profileName, 'Process')
+    try {
     $target = if ($Path) { $Path } else { (Get-Location).Path }
     if (-not $Json) {
         Write-FolderToolStep ("meta starting path={0}" -f $target)
@@ -176,22 +196,39 @@ try {
         Write-FolderToolStep ("Resolved s3://{0}/{1} kind={2}" -f $loc.Bucket, $loc.Key, $loc.Kind)
     }
 
-    $marker = Invoke-FolderToolWithSpinner -Label 'Reading folder marker metadata/tags' -ArgumentList @(
-        $here, $loc.Bucket, $loc.Key, $Backend
-    ) -ScriptBlock {
-        param($toolsDir, $bucket, $key, $backend)
-        . (Join-Path $toolsDir 'FolderS3.ps1')
-        return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+    # FR #5148: injectable scriptblocks cannot cross Start-Job; use sync path for tests.
+    $useInject = [bool]$AwsHeadObject -or [bool]$AwsGetObjectTagging -or [bool]$AwsListAnnotations -or [bool]$AwsGetAnnotation -or [bool]$RcloneLsJson
+    if ($useInject) {
+        $marker = Get-FolderS3ObjectMeta -Bucket $loc.Bucket -Key $loc.Key -Backend $Backend `
+            -AwsHeadObject $AwsHeadObject -AwsGetObjectTagging $AwsGetObjectTagging `
+            -RcloneLsJson $RcloneLsJson
+    }
+    else {
+        $marker = Invoke-FolderToolWithSpinner -Label 'Reading folder marker metadata/tags' -ArgumentList @(
+            $here, $loc.Bucket, $loc.Key, $Backend, $profileName
+        ) -ScriptBlock {
+            param($toolsDir, $bucket, $key, $backend, $awsProfile)
+            if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
+            . (Join-Path $toolsDir 'FolderS3.ps1')
+            return (Get-FolderS3ObjectMeta -Bucket $bucket -Key $key -Backend $backend)
+        }
     }
 
     # GUID reviews are always complete (FR #4270). Host folders still truncate unless -Full.
     $reviewFull = [bool]$Full -or ($loc.Kind -eq 'guid')
-    $ann = Invoke-FolderToolWithSpinner -Label 'Reading object annotations' -ArgumentList @(
-        $here, $loc.Bucket, $loc.Key, [bool]$reviewFull
-    ) -ScriptBlock {
-        param($toolsDir, $bucket, $key, $full)
-        . (Join-Path $toolsDir 'FolderS3.ps1')
-        return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+    if ($useInject) {
+        $ann = Get-FolderS3Annotations -Bucket $loc.Bucket -Key $loc.Key -Full:$reviewFull `
+            -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+    }
+    else {
+        $ann = Invoke-FolderToolWithSpinner -Label 'Reading object annotations' -ArgumentList @(
+            $here, $loc.Bucket, $loc.Key, [bool]$reviewFull, $profileName
+        ) -ScriptBlock {
+            param($toolsDir, $bucket, $key, $full, $awsProfile)
+            if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
+            . (Join-Path $toolsDir 'FolderS3.ps1')
+            return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+        }
     }
 
     $hostAnn = $null
@@ -202,12 +239,19 @@ try {
     if ($loc.Kind -eq 'guid' -or $loc.Kind -eq 'guid-child') {
         $hostKey = Get-FolderS3ParentHostKey -Location $loc
         if ($hostKey) {
-            $hostAnns = Invoke-FolderToolWithSpinner -Label 'Reading parent host annotations' -ArgumentList @(
-                $here, $loc.Bucket, ($hostKey + '/'), [bool]$reviewFull
-            ) -ScriptBlock {
-                param($toolsDir, $bucket, $key, $full)
-                . (Join-Path $toolsDir 'FolderS3.ps1')
-                return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+            if ($useInject) {
+                $hostAnns = Get-FolderS3Annotations -Bucket $loc.Bucket -Key ($hostKey + '/') -Full:$reviewFull `
+                    -AwsListAnnotations $AwsListAnnotations -AwsGetAnnotation $AwsGetAnnotation
+            }
+            else {
+                $hostAnns = Invoke-FolderToolWithSpinner -Label 'Reading parent host annotations' -ArgumentList @(
+                    $here, $loc.Bucket, ($hostKey + '/'), [bool]$reviewFull, $profileName
+                ) -ScriptBlock {
+                    param($toolsDir, $bucket, $key, $full, $awsProfile)
+                    if ($awsProfile) { $env:AWS_PROFILE = $awsProfile }
+                    . (Join-Path $toolsDir 'FolderS3.ps1')
+                    return (Get-FolderS3Annotations -Bucket $bucket -Key $key -Full:$full)
+                }
             }
             $hostAnn = @($hostAnns.Items) | Where-Object { $_.Name -eq 'annotation' } | Select-Object -First 1
             if (-not $hostAnn -and @($hostAnns.Items).Count) {
@@ -314,6 +358,15 @@ try {
         }
     }
     exit 0
+    }
+    finally {
+        if ($null -eq $prevAwsProfile) {
+            [Environment]::SetEnvironmentVariable('AWS_PROFILE', $null, 'Process')
+        }
+        else {
+            [Environment]::SetEnvironmentVariable('AWS_PROFILE', $prevAwsProfile, 'Process')
+        }
+    }
 }
 catch {
     $msg = $_.Exception.Message
