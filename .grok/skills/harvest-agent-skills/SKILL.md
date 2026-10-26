@@ -719,3 +719,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FolderS3 --profile (#5174), audit sibling tools (invite/onboard/dbimport/download) for bare aws argv; pin with Pester Contains of --profile,$cliProfile before s3api; stack follow-up PR on open parent base and note manual Closes when base is non-default.
 - Covering tips that Closes both #5174 and #5176 are fine when the earlier twin PR was closed unmerged; leave narrower follow-ups (#5180) open
 - Download provider list must pass Resolve-FolderDownloadAwsProfile/--profile on list-objects-v2 argv the same way as invite/onboard/dbimport (#5176) and FolderS3 (#5174); ambient AWS_PROFILE alone is not enough.
+- a-search docs/skills-only CI skips npm test (FR-2611): put check_conflict_markers.py under scripts/ and always run it in test-and-synth after checkout so harvest SKILL markers cannot merge.
