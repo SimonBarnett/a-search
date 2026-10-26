@@ -697,3 +697,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - POST /search must not fatal on S3 HeadObject name Unknown/UnknownError: skip that a-affiliates provider and keep sql; wrap a-clubs head as 503 s3_head_failed so intake is not code Unknown
 - a-affiliates HeadObject on a missing key is 403 without s3:ListBucket on the bucket; /search must skip that provider and grant ListBucket so missing is 404; never 500 the POST
 - tools/search.ps1: curl must capture http_code; non-2xx or missing searchid => exit 5; prefer folder-tools.config.json SearchApiUrl; grant annotator cloudformation:DescribeStacks; StrictMode use PSObject.Properties for config keys
+- FR #5079 a-affiliates enabled=1 gate: amazon/ebay folders must be created with Simon go before deploy or /search stops queuing them; CJ/Kelkoo stay folderless until #5057/#5058
+- a-search SQL brand/model gate: when Brand/Category are NULL, CONTAINS on a single phrase word (Cub, Wolf) leaks apparel --- treat those as GATE_GENERIC_WORDS, require ALLCAPS 5+ / Title-case >=6 for brand-like, and re-admit with contiguous phrase/prefix checks (admitRowsByExactGates) after SQL; deploy walrus drain tip to confirm live.
+- After admitRowsByExactGates, SQL mock fixtures must include the brand/model needle (e.g. VOLANTEXRC) or fr4976-style binding tests admit 0
