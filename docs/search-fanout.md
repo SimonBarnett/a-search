@@ -88,6 +88,12 @@ Each live marketplace provider queue is FIFO:
 with sibling DLQ `a-search-provider-{name}-{live|sandbox}-dlq.fifo`. CDK sets
 `fifo: true` and `contentBasedDeduplication: false`; senders set
 `MessageGroupId=<provider>` and a `MessageDeduplicationId` on those FIFO
+
+FR #5122: `a-search-redqueen-annotator` and `a-search-redqueen-agents` get
+read-only `sqs:GetQueueAttributes` on those queues+DLQs (plus the SQL
+db-backed pair) and `sqs:ListQueues` so overnight verification can report
+depths. Do not redrive or purge from that identity. Rakuten (and other live
+workers) still write `DONE` via `writeLiveProviderInResult` on 0 products.
 URLs only. `entry/src/sqsSend.js` defaults `MessageGroupId` to the payload
 `source` when the fan-out body omitted it (FR #4847). The SQL queue
 (`a-search-db-backed`) stays standard --- never send FIFO-only params to it
