@@ -12,7 +12,9 @@ All folder CLI tools (`meta`, `search`, `download`, `dbimport`, `onboard`, `invi
 - Payload includes tool, VERSION, git commit, machine, cwd, s3 URI, redacted command line, exit code, and AWS identity **ARN only** (from `sts get-caller-identity`). No keys/tokens.
 - Dedupe fingerprint: `sha256(tool|errorCode|normalizedFirstLine)`. Matching open issues get a comment instead of a new issue.
 - Opt-out: `A_SEARCH_TOOL_FAILURE_DISABLE=1`. Filing also skips when Cwd / CommandLine / S3Uri / Detail / Get-Location matches a Pester `frNNNN-` temp mount (MRB #5154). Validation exits 2/3/4/5 do not file.
-- Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner. Spinner around every search/invite HTTP wait is follow-up (ACCEPTABLE drift on #5151 core filing).
+- Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner.
+- FR #5157: `search` wraps `aws export-credentials` and the SigV4 curl POST in the spinner (curl `--user` via `A_SEARCH_SEARCH_CURL_USER` so secrets stay out of job argv); `invite` wraps list-objects / provider Head / node invite; `agent` wraps `node run.js`. Injectables (`-Resolver`, `-CurlInvoke`) stay sync for Pester.
+- FR #5160: spinner also moves `x-amz-security-token` into process env `A_SEARCH_SEARCH_CURL_SESSION_TOKEN` (not Start-Job ArgumentList), same finally-clear pattern as `--user`.
 
 
 ## meta / Get-FolderMeta.ps1

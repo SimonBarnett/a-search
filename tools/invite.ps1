@@ -64,8 +64,12 @@ function Get-InviteProviderNames {
             '--output', 'json'
         )
         if ($token) { $awsArgs += @('--continuation-token', $token) }
-        $raw = & aws @awsArgs 2>&1
-        if ($LASTEXITCODE -ne 0) { throw ("list_providers_failed: {0}" -f $raw) }
+        $raw = Invoke-FolderToolWithSpinner -Label 'aws s3api list-objects-v2 (providers)' -ArgumentList @(,$awsArgs) -ScriptBlock {
+            param($a)
+            $o = & aws @a 2>&1
+            if ($LASTEXITCODE -ne 0) { throw ("list_providers_failed: {0}" -f (($o | Out-String).Trim())) }
+            return $o
+        }
         $j = ConvertFrom-FolderS3Json $raw
         if (-not $j) { throw 'list_providers_failed: empty json' }
         foreach ($p in @($j.CommonPrefixes)) {
@@ -85,7 +89,11 @@ function Get-InviteProviderNames {
 
 function Get-InviteProviderEnabled {
     param([string]$Bucket, [string]$Provider)
-    $marker = Get-FolderS3ObjectMeta -Bucket $Bucket -Key ("{0}/" -f $Provider) -Backend aws -SkipTags
+    $marker = Invoke-FolderToolWithSpinner -Label ("Head provider marker {0}/" -f $Provider) -ArgumentList @($PSScriptRoot, $Bucket, $Provider) -ScriptBlock {
+        param($toolsDir, $b, $p)
+        . (Join-Path $toolsDir 'FolderS3.ps1')
+        return (Get-FolderS3ObjectMeta -Bucket $b -Key ("{0}/" -f $p) -Backend aws -SkipTags)
+    }
     $meta = @{}
     if ($marker -and $marker.Metadata) {
         foreach ($k in $marker.Metadata.Keys) {
@@ -162,7 +170,6 @@ function Write-InviteReportSummary {
         return
     }
     try {
-    Write-FolderToolStep ('invite starting cwd={0}' -f (Get-Location).Path)
         $r = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     }
     catch {
@@ -252,8 +259,19 @@ function Invoke-RegisteredInvite {
 
     Push-Location $roots.AgentRoot
     try {
-        & node @nodeArgs
-        $code = [int]$LASTEXITCODE
+        # FR #5157: spinner while invite node backend runs (Playwright / HTTP).
+        $jobOut = Invoke-FolderToolWithSpinner -Label ("invite node {0}" -f $slug) -ArgumentList @((Get-Location).Path, $nodeArgs) -ScriptBlock {
+            param($cwd, $nargs)
+            Set-Location -LiteralPath $cwd
+            $o = & node @nargs 2>&1
+            return @{ code = [int]$LASTEXITCODE; out = $o }
+        }
+        $code = [int]$jobOut.code
+        if ($jobOut.out) {
+            $safeOut = (($jobOut.out | ForEach-Object { "$_" }) -join "`n")
+            $safeOut = $safeOut -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***'
+            if ($safeOut.Trim()) { [Console]::Error.WriteLine($safeOut) }
+        }
         Write-InviteReportSummary -Provider $slug -ReportDir $roots.ReportDir
         return $code
     }
@@ -284,6 +302,7 @@ function Invoke-ProviderInvite {
 }
 
 try {
+    Write-FolderToolStep ('invite starting cwd={0}' -f (Get-Location).Path)
     $target = if ($Path) { $Path } else { (Get-Location).Path }
     $loc = ConvertTo-FolderS3Location -Path $target -MountRoot $MountRoot
 

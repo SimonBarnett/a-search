@@ -197,17 +197,21 @@ function Resolve-AwsCliCredentials {
         if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
             throw 'aws_cli_required: need aws CLI to resolve profile credentials for SigV4'
         }
-        $raw = & aws configure export-credentials --profile $ProfileName --format process 2>&1
-        $code = $LASTEXITCODE
-        if ($code -ne 0) {
-            throw ("aws_credentials_failed: export-credentials exit {0}" -f $code)
-        }
-        $text = (($raw | Out-String) -replace '[\u0000-\u0008\u000B\u000C\u000E-\u001F]', '').Trim()
-        try {
-            $doc = $text | ConvertFrom-Json
-        }
-        catch {
-            throw 'aws_credentials_failed: export-credentials JSON parse failed'
+        # FR #5157: spinner while export-credentials waits on AWS.
+        $doc = Invoke-FolderToolWithSpinner -Label ("aws export-credentials --profile {0}" -f $ProfileName) -ArgumentList @($ProfileName) -ScriptBlock {
+            param($profileName)
+            $raw = & aws configure export-credentials --profile $profileName --format process 2>&1
+            $code = $LASTEXITCODE
+            if ($code -ne 0) {
+                throw ("aws_credentials_failed: export-credentials exit {0}" -f $code)
+            }
+            $text = (($raw | Out-String) -replace '[\u0000-\u0008\u000B\u000C\u000E-\u001F]', '').Trim()
+            try {
+                return ($text | ConvertFrom-Json)
+            }
+            catch {
+                throw 'aws_credentials_failed: export-credentials JSON parse failed'
+            }
         }
     }
     $ak = ''
@@ -334,9 +338,66 @@ function Invoke-AgentSearchHttp {
             $out = & $CurlInvoke $curlArgs
         }
         else {
-            $out = & curl.exe @curlArgs 2>&1
-            $code = $LASTEXITCODE
-            if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
+            # FR #5157 / #5160: spinner around SigV4 POST /search.
+            # Pass --user and x-amz-security-token via process env (not job argv).
+            $prevCurlUser = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
+            $prevCurlTok = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', 'Process')
+            [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $userPair, 'Process')
+            if ($creds.SessionToken) {
+                [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', [string]$creds.SessionToken, 'Process')
+            }
+            else {
+                [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $null, 'Process')
+            }
+            try {
+                $curlArgsJob = @($curlArgs)
+                # Strip --user <pair> and -H x-amz-security-token:* from job args; job re-adds from env.
+                $stripped = New-Object System.Collections.Generic.List[string]
+                for ($i = 0; $i -lt $curlArgsJob.Count; $i++) {
+                    if ($curlArgsJob[$i] -eq '--user' -and ($i + 1) -lt $curlArgsJob.Count) {
+                        $i++
+                        continue
+                    }
+                    if ($curlArgsJob[$i] -eq '-H' -and ($i + 1) -lt $curlArgsJob.Count) {
+                        $hdr = [string]$curlArgsJob[$i + 1]
+                        if ($hdr.StartsWith('x-amz-security-token:', [System.StringComparison]::OrdinalIgnoreCase)) {
+                            $i++
+                            continue
+                        }
+                    }
+                    [void]$stripped.Add([string]$curlArgsJob[$i])
+                }
+                $out = Invoke-FolderToolWithSpinner -Label ("POST /search {0}" -f $uri) -ArgumentList @(,$stripped.ToArray()) -ScriptBlock {
+                    param($cargs)
+                    $u = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
+                    if (-not $u) { throw 'search_http_failed: missing curl user env' }
+                    $full = [System.Collections.Generic.List[string]]@($cargs)
+                    [void]$full.Add('--user')
+                    [void]$full.Add($u)
+                    $tok = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', 'Process')
+                    if ($tok) {
+                        [void]$full.Add('-H')
+                        [void]$full.Add(('x-amz-security-token: {0}' -f $tok))
+                    }
+                    $o = & curl.exe @($full.ToArray()) 2>&1
+                    if ($LASTEXITCODE -ne 0) { throw ("search_http_failed: curl exit {0}" -f $LASTEXITCODE) }
+                    return $o
+                }
+            }
+            finally {
+                if ($null -eq $prevCurlUser) {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $null, 'Process')
+                }
+                else {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $prevCurlUser, 'Process')
+                }
+                if ($null -eq $prevCurlTok) {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $null, 'Process')
+                }
+                else {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_SESSION_TOKEN', $prevCurlTok, 'Process')
+                }
+            }
         }
         return (ConvertTo-SearchHttpResult $out)
     }
