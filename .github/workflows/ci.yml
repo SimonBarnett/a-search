@@ -65,17 +65,24 @@ jobs:
     # Full suite includes in-process CDK synths + asset staging (FR-135 mssql).
     timeout-minutes: ${{ needs.classify.outputs.heavy == 'true' && 180 || 5 }}
     steps:
+      # FR #5193: always checkout + conflict-marker gate (docs/skills harvest tips
+      # skip heavy npm test under FR-2611 and would otherwise miss SKILL.md markers).
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check conflict markers (FR #5193)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_conflict_markers.py
+
       - name: Docs/skills-only skip (FR-2611)
         if: needs.classify.outputs.heavy != 'true'
         run: |
           echo "FR-2611: skipping heavy npm test/synth (${{ needs.classify.outputs.reason }})"
           echo "Required check test-and-synth reports success without a whiterabbit job."
-
-      - name: Checkout
-        if: needs.classify.outputs.heavy == 'true'
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node 20
         if: needs.classify.outputs.heavy == 'true'
