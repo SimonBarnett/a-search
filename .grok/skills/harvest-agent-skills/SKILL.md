@@ -706,3 +706,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - IAM user inline policies are 2048 bytes: never list every SQS queue ARN on imported users; use arn:aws:sqs:region:account:a-search-* for read-only GetQueueAttributes (FR #5131)
 - Fixed-name IN/sql.json must be deleted on 0-product SQL (walrus removeAClubsSqlIn / worker deleteObject); promoteInToLive ignores sql.json whose searchid is not the current search-fanout
 - Amazon Creators 403 AssociateNotEligible after #4816/#4817 means Associates eligibility or SSM/madeira AMAZON_* value mismatch; request shape already UK token+creatorsapi+partnerTag; GIVEUP needs_human + require_machine=redqueen; never redrive DLQ without Simon go
+- Resolve-SearchEndpoint EXAMPLE skip must be -cnotmatch (case-sensitive); config.example.test failed under case-insensitive -notmatch. Console.Error.WriteLine bypasses PS 2>&1 — assert exit + source for search_config_missing like FR #5096.
