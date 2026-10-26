@@ -1142,6 +1142,16 @@ class ASearchStack extends cdk.Stack {
         ],
       }),
     );
+    // FR #5096: annotator must resolve SearchApiUrl via describe-stacks when
+    // folder-tools.config.json is absent (no extra shared secret / URL env).
+    redqueenAnnotator.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ['cloudformation:DescribeStacks'],
+        resources: [
+          `arn:aws:cloudformation:${this.region}:${this.account}:stack/${this.stackName}/*`,
+        ],
+      }),
+    );
 
     // FR #4891: GET /parts removed from ASearchStack --- canonical route is
     // APartsGateway only (PartsGatewayApiUrl). Do not re-add path: '/parts' here.

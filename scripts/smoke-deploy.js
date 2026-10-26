@@ -12,6 +12,8 @@
  */
 
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
   defaultCredentials,
   requireCredentials,
@@ -261,6 +263,25 @@ async function main() {
   let baseUrl = fromEnv;
   if (!baseUrl) {
     baseUrl = await resolveSearchApiUrl({ stackName: stack, region });
+  }
+  // FR #5096: persist SearchApiUrl for tools/search.ps1 (annotator may lack DescribeStacks
+  // until CDK policy lands; EXAMPLE placeholder is skipped by Resolve-SearchEndpoint).
+  // Write under ProgramData so the git work tree stays clean.
+  try {
+    const dir = path.join(
+      process.env.ProgramData || 'C:\\ProgramData',
+      'a-search',
+    );
+    fs.mkdirSync(dir, { recursive: true });
+    const cfgPath = path.join(dir, 'folder-tools.config.json');
+    const doc = {
+      SearchApiUrl: String(baseUrl).replace(/\/$/, ''),
+      AwsProfile: 'a-search-redqueen-annotator',
+      SearchStackName: stack,
+    };
+    fs.writeFileSync(cfgPath, `${JSON.stringify(doc, null, 2)}\n`, 'utf8');
+  } catch (_) {
+    /* best-effort; smoke still proceeds */
   }
   const result = await runSmoke({
     baseUrl,

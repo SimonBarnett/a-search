@@ -41,15 +41,20 @@ POST `/search` (#4030) for an `a-clubs` host/GUID folder. Reads `metadata.host` 
 .\tools\search.ps1 -Path 'D:\s3\a-clubs\example.com' -All
 ```
 
-Config (optional): copy `folder-tools.config.example.json` to `tools/folder-tools.config.json`
-or `%ProgramData%\a-search\folder-tools.config.json`, or set:
+Config (preferred for annotator, FR #5096): copy `folder-tools.config.example.json` to
+`tools/folder-tools.config.json` or `%ProgramData%\a-search\folder-tools.config.json` and set a real
+`SearchApiUrl` (not the EXAMPLE placeholder). That avoids `cloudformation:DescribeStacks` for
+`a-search-redqueen-annotator`. After CDK deploy of FR #5096 the annotator may also resolve the URL
+via stack output. Or set:
 
-- `A_SEARCH_SEARCH_API_URL`
+- `A_SEARCH_API_URL` / `A_SEARCH_SEARCH_API_URL`
 - IAM SigV4 (`-AwsProfile`, default `a-search-redqueen-annotator`); no `x-agent-api-key` (FR #5086)
 - `A_SEARCH_AGENTS_AWS_PROFILE` (default `a-search-redqueen-agents`)
 - `A_SEARCH_S3_MOUNT` / `A_SEARCH_FOLDER_TOOLS_CONFIG`
 
-Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`. `Get-FolderMeta` also uses `5` for bucket root (FR #4087).
+Exit codes: `2` outside mount, `3` not a-clubs host/GUID, `4` host folder without `-All`,
+`5` /search non-2xx or 2xx without `searchid` (FR #5096; prints `search_http_status=` / `search_error=`).
+`Get-FolderMeta` also uses `5` for bucket root (FR #4087).
 
 ## onboard / Invoke-FolderOnboard.ps1
 
