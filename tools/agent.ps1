@@ -71,5 +71,15 @@ if (Test-Path -LiteralPath $grokAgent) {
   Write-Host "INFO fuel: grok agent.exe present at $grokAgent (scheduled task still uses node)"
 }
 
-& $node.Source @argList
-exit $LASTEXITCODE
+# FR #5157: spinner while node affiliate-agent run.js blocks.
+$jobOut = Invoke-FolderToolWithSpinner -Label 'agent node run.js' -ArgumentList @($node.Source, $argList) -ScriptBlock {
+    param($nodeExe, $nargs)
+    $o = & $nodeExe @nargs 2>&1
+    return @{ code = [int]$LASTEXITCODE; out = $o }
+}
+if ($jobOut.out) {
+    $text = (($jobOut.out | ForEach-Object { "$_" }) -join "`n")
+    $safe = $text -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***'
+    if ($safe.Trim()) { Write-Output $safe }
+}
+exit $jobOut.code

@@ -197,17 +197,21 @@ function Resolve-AwsCliCredentials {
         if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
             throw 'aws_cli_required: need aws CLI to resolve profile credentials for SigV4'
         }
-        $raw = & aws configure export-credentials --profile $ProfileName --format process 2>&1
-        $code = $LASTEXITCODE
-        if ($code -ne 0) {
-            throw ("aws_credentials_failed: export-credentials exit {0}" -f $code)
-        }
-        $text = (($raw | Out-String) -replace '[\u0000-\u0008\u000B\u000C\u000E-\u001F]', '').Trim()
-        try {
-            $doc = $text | ConvertFrom-Json
-        }
-        catch {
-            throw 'aws_credentials_failed: export-credentials JSON parse failed'
+        # FR #5157: spinner while export-credentials waits on AWS.
+        $doc = Invoke-FolderToolWithSpinner -Label ("aws export-credentials --profile {0}" -f $ProfileName) -ArgumentList @($ProfileName) -ScriptBlock {
+            param($profileName)
+            $raw = & aws configure export-credentials --profile $profileName --format process 2>&1
+            $code = $LASTEXITCODE
+            if ($code -ne 0) {
+                throw ("aws_credentials_failed: export-credentials exit {0}" -f $code)
+            }
+            $text = (($raw | Out-String) -replace '[\u0000-\u0008\u000B\u000C\u000E-\u001F]', '').Trim()
+            try {
+                return ($text | ConvertFrom-Json)
+            }
+            catch {
+                throw 'aws_credentials_failed: export-credentials JSON parse failed'
+            }
         }
     }
     $ak = ''
@@ -334,9 +338,38 @@ function Invoke-AgentSearchHttp {
             $out = & $CurlInvoke $curlArgs
         }
         else {
-            $out = & curl.exe @curlArgs 2>&1
-            $code = $LASTEXITCODE
-            if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
+            # FR #5157: spinner around SigV4 POST /search. Pass --user via env (not job argv).
+            $prevCurlUser = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
+            [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $userPair, 'Process')
+            try {
+                $curlArgsJob = @($curlArgs)
+                # Strip --user <pair> from job args; job re-adds from env.
+                $stripped = New-Object System.Collections.Generic.List[string]
+                for ($i = 0; $i -lt $curlArgsJob.Count; $i++) {
+                    if ($curlArgsJob[$i] -eq '--user' -and ($i + 1) -lt $curlArgsJob.Count) {
+                        $i++
+                        continue
+                    }
+                    [void]$stripped.Add([string]$curlArgsJob[$i])
+                }
+                $out = Invoke-FolderToolWithSpinner -Label ("POST /search {0}" -f $uri) -ArgumentList @(,$stripped.ToArray()) -ScriptBlock {
+                    param($cargs)
+                    $u = [Environment]::GetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', 'Process')
+                    if (-not $u) { throw 'search_http_failed: missing curl user env' }
+                    $full = @($cargs) + @('--user', $u)
+                    $o = & curl.exe @full 2>&1
+                    if ($LASTEXITCODE -ne 0) { throw ("search_http_failed: curl exit {0}" -f $LASTEXITCODE) }
+                    return $o
+                }
+            }
+            finally {
+                if ($null -eq $prevCurlUser) {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $null, 'Process')
+                }
+                else {
+                    [Environment]::SetEnvironmentVariable('A_SEARCH_SEARCH_CURL_USER', $prevCurlUser, 'Process')
+                }
+            }
         }
         return (ConvertTo-SearchHttpResult $out)
     }

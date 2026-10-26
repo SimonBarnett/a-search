@@ -12,6 +12,7 @@ All folder CLI tools (`meta`, `search`, `download`, `dbimport`, `onboard`, `invi
 - Payload includes tool, VERSION, git commit, machine, cwd, s3 URI, redacted command line, exit code, and AWS identity **ARN only** (from `sts get-caller-identity`). No keys/tokens.
 - Dedupe fingerprint: `sha256(tool|errorCode|normalizedFirstLine)`. Matching open issues get a comment instead of a new issue.
 - Progress: shared `tools/FolderProgress.ps1` (`Write-FolderToolStep` + `Invoke-FolderToolWithSpinner`). Failed spinner jobs surface `JobStateInfo.Reason` (never empty `spinner_job_failed:`). `search` and `invite` print timestamped steps; `onboard` uses the shared spinner.
+- FR #5157: `search` wraps `aws export-credentials` and the SigV4 curl POST in the spinner (curl `--user` via `A_SEARCH_SEARCH_CURL_USER` so secrets stay out of job argv); `invite` wraps list-objects / provider Head / node invite; `agent` wraps `node run.js`. Injectables (`-Resolver`, `-CurlInvoke`) stay sync for Pester.
 
 
 ## meta / Get-FolderMeta.ps1
