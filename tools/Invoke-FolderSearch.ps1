@@ -10,7 +10,7 @@ Never writes S3. Never prints credentials.
 Auth is IAM SigV4 (FR #4888 / #5086); no x-agent-api-key.
 Env: A_SEARCH_API_URL / A_SEARCH_SEARCH_API_URL, folder-tools.config.json SearchApiUrl,
 or (when -AwsProfile is set) CloudFormation stack output SearchApiUrl.
-Missing searches.json, a non-GUID folder, or a missing URL fails clearly.
+Missing searches.json, a non-GUID folder, or a missing URL fails clearly. Non-2xx /search (or 2xx without searchid) exits 5 and prints http status/error (FR #5096).
 -WhatIf prints the payload and does not POST. -Json prints searchid, query_count,
 and providers_queued. A host folder still needs -All.
 
@@ -74,6 +74,15 @@ function Get-FolderToolsConfig {
     return $null
 }
 
+
+function Get-ConfigProperty {
+    param($Config, [string]$Name)
+    if (-not $Config) { return $null }
+    $prop = $Config.PSObject.Properties[$Name]
+    if (-not $prop) { return $null }
+    return $prop.Value
+}
+
 function Resolve-SearchEndpoint {
     param(
         $Config,
@@ -83,13 +92,15 @@ function Resolve-SearchEndpoint {
     if ($SearchApiUrl) { return $SearchApiUrl.TrimEnd('/') }
     if ($env:A_SEARCH_API_URL) { return $env:A_SEARCH_API_URL.TrimEnd('/') }
     if ($env:A_SEARCH_SEARCH_API_URL) { return $env:A_SEARCH_SEARCH_API_URL.TrimEnd('/') }
-    if ($Config -and $Config.SearchApiUrl) {
-        $fromCfg = ([string]$Config.SearchApiUrl).Trim()
+    $cfgUrl = Get-ConfigProperty -Config $Config -Name 'SearchApiUrl'
+    if ($cfgUrl) {
+        $fromCfg = ([string]$cfgUrl).Trim()
         if ($fromCfg -and $fromCfg -notmatch 'EXAMPLE') { return $fromCfg.TrimEnd('/') }
     }
     # FR #5086: optional stack output when aws CLI can describe ASearchStack
     $stackName = 'ASearchStack'
-    if ($Config -and $Config.SearchStackName) { $stackName = [string]$Config.SearchStackName }
+    $cfgStack = Get-ConfigProperty -Config $Config -Name 'SearchStackName'
+    if ($cfgStack) { $stackName = [string]$cfgStack }
     if ($env:A_SEARCH_STACK_NAME) { $stackName = $env:A_SEARCH_STACK_NAME.Trim() }
     if (Get-Command aws -ErrorAction SilentlyContinue) {
         try {
@@ -125,7 +136,8 @@ function Resolve-AgentKey {
         }
     }
     $envName = 'A_SEARCH_AGENT_API_KEY'
-    if ($Config -and $Config.AgentApiKeyEnv) { $envName = [string]$Config.AgentApiKeyEnv }
+    $cfgKeyEnv = Get-ConfigProperty -Config $Config -Name 'AgentApiKeyEnv'
+    if ($cfgKeyEnv) { $envName = [string]$cfgKeyEnv }
     $v = [Environment]::GetEnvironmentVariable($envName)
     if ($v) { return $v }
     return ''
@@ -135,7 +147,8 @@ function Resolve-AwsProfileName {
     param($Config, [string]$AwsProfile)
     if ($AwsProfile) { return $AwsProfile }
     if ($env:A_SEARCH_AGENTS_AWS_PROFILE) { return $env:A_SEARCH_AGENTS_AWS_PROFILE }
-    if ($Config -and $Config.AwsProfile) { return [string]$Config.AwsProfile }
+    $cfgProfile = Get-ConfigProperty -Config $Config -Name 'AwsProfile'
+    if ($cfgProfile) { return [string]$cfgProfile }
     return 'a-search-redqueen-annotator'
 }
 
@@ -207,6 +220,49 @@ function Resolve-AwsCliCredentials {
     }
 }
 
+function ConvertTo-SearchHttpResult {
+    param($Raw)
+    # FR #5096: normalise injectable / curl results to StatusCode + Body.
+    # Legacy string body => HTTP 200. Hashtable/PSCustomObject with StatusCode/Body preferred.
+    if ($null -eq $Raw) {
+        return @{ StatusCode = 0; Body = '' }
+    }
+    if ($Raw -is [hashtable]) {
+        $code = 200
+        if ($Raw.ContainsKey('StatusCode') -and $Raw['StatusCode']) { $code = [int]$Raw['StatusCode'] }
+        $body = ''
+        if ($Raw.ContainsKey('Body')) { $body = [string]$Raw['Body'] }
+        elseif ($Raw.ContainsKey('Content')) { $body = [string]$Raw['Content'] }
+        return @{ StatusCode = $code; Body = $body }
+    }
+    if ($Raw -is [System.Management.Automation.PSObject] -and
+        ($Raw.PSObject.Properties['StatusCode'] -or $Raw.PSObject.Properties['statusCode'])) {
+        $codeProp = $Raw.PSObject.Properties['StatusCode']
+        if (-not $codeProp) { $codeProp = $Raw.PSObject.Properties['statusCode'] }
+        $bodyProp = $Raw.PSObject.Properties['Body']
+        if (-not $bodyProp) { $bodyProp = $Raw.PSObject.Properties['Content'] }
+        $code = if ($codeProp -and $codeProp.Value) { [int]$codeProp.Value } else { 200 }
+        $body = if ($bodyProp -and $null -ne $bodyProp.Value) { [string]$bodyProp.Value } else { '' }
+        return @{ StatusCode = $code; Body = $body }
+    }
+    if ($Raw -is [System.Array]) {
+        if (@($Raw).Count -eq 1) { $text = [string](@($Raw)[0]) }
+        else { $text = ((@($Raw) | ForEach-Object { [string]$_ }) -join [char]10) }
+    }
+    else { $text = [string]$Raw }
+    # curl -w marker (FR #5096)
+    $marker = '__HTTP_STATUS__:'
+    $idx = $text.LastIndexOf($marker)
+    if ($idx -ge 0) {
+        $body = $text.Substring(0, $idx).TrimEnd([char]13, [char]10)
+        $tail = $text.Substring($idx + $marker.Length).Trim()
+        $code = 0
+        if ($tail -match '^(\d{3})') { $code = [int]$Matches[1] }
+        return @{ StatusCode = $code; Body = $body }
+    }
+    return @{ StatusCode = 200; Body = $text.Trim() }
+}
+
 function Invoke-AgentSearchHttp {
     param(
         [Parameter(Mandatory = $true)][string]$Endpoint,
@@ -218,10 +274,10 @@ function Invoke-AgentSearchHttp {
         [scriptblock]$CurlInvoke
     )
     if ($InvokeSearch) {
-        return & $InvokeSearch $Endpoint $Body $AgentApiKey $AwsProfile
+        return (ConvertTo-SearchHttpResult (& $InvokeSearch $Endpoint $Body $AgentApiKey $AwsProfile))
     }
     # Prefer curl.exe with --aws-sigv4 when profile is set (FR #4888 / #5078 / #5086).
-    # Do not send x-agent-api-key — gateway IAM is the only auth.
+    # Do not send x-agent-api-key --- gateway IAM is the only auth.
     $uri = "$Endpoint/search"
     $json = $Body | ConvertTo-Json -Compress -Depth 8
     # Never log headers/body with secrets --- Write-Verbose only endpoint + hostkey/guid
@@ -249,7 +305,8 @@ function Invoke-AgentSearchHttp {
         if ($creds.SessionToken) {
             $curlArgs += @('-H', ('x-amz-security-token: {0}' -f $creds.SessionToken))
         }
-        $curlArgs += @('--data-binary', ('@{0}' -f $tmp))
+        # FR #5096: capture HTTP status (curl -f would drop the body on 4xx/5xx).
+        $curlArgs += @('--data-binary', ('@{0}' -f $tmp), '-w', "`n__HTTP_STATUS__:%{http_code}")
         if ($CurlInvoke) {
             $out = & $CurlInvoke $curlArgs
         }
@@ -258,7 +315,7 @@ function Invoke-AgentSearchHttp {
             $code = $LASTEXITCODE
             if ($code -ne 0) { throw "search_http_failed: curl exit $code" }
         }
-        return $out
+        return (ConvertTo-SearchHttpResult $out)
     }
     finally {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
@@ -345,22 +402,25 @@ function Invoke-OneGuidSearch {
         }
     }
 
-    $raw = Invoke-AgentSearchHttp -Endpoint $Endpoint -Body $body `
+    $http = Invoke-AgentSearchHttp -Endpoint $Endpoint -Body $body `
         -AgentApiKey $AgentApiKey -AwsProfile $AwsProfile -InvokeSearch $InvokeSearch `
         -ResolveAwsCredentials $ResolveAwsCredentials -CurlInvoke $CurlInvoke
 
+    $rawBody = [string]$http.Body
     $parsed = $null
-    try { $parsed = ConvertFrom-FolderS3Json $raw } catch { $parsed = $raw }
+    try { $parsed = ConvertFrom-FolderS3Json $rawBody } catch { $parsed = $rawBody }
 
     [pscustomobject]@{
-        hostkey  = $hostkey
-        host     = $hostForApi
-        guid     = $guid
-        queries  = $sq.queries
-        userid   = $userid
-        body     = $body
-        whatif   = $false
-        response = $parsed
+        hostkey     = $hostkey
+        host        = $hostForApi
+        guid        = $guid
+        queries     = $sq.queries
+        userid      = $userid
+        body        = $body
+        whatif      = $false
+        httpStatus  = [int]$http.StatusCode
+        response    = $parsed
+        rawBody     = $rawBody
     }
 }
 
@@ -434,22 +494,49 @@ try {
         }
     }
 
-    # Print results without credentials
+    # Print results without credentials. FR #5096: non-2xx or missing searchid => exit 5.
+    $searchFailed = $false
     foreach ($r in $results) {
         $queryCount = @($r.queries).Count
         $providers = ''
         $searchId = ''
-        if ($r.response) {
+        $errMsg = ''
+        if ($r.response -and -not ($r.response -is [string])) {
             $sidProp = $r.response.PSObject.Properties['searchid']
             if ($sidProp -and $sidProp.Value) { $searchId = [string]$sidProp.Value }
             $qProp = $r.response.PSObject.Properties['queued']
             if ($qProp -and $qProp.Value) { $providers = (@($qProp.Value) -join ',') }
+            foreach ($ename in @('error', 'message', 'Message')) {
+                $ep = $r.response.PSObject.Properties[$ename]
+                if ($ep -and $ep.Value) { $errMsg = [string]$ep.Value; break }
+            }
         }
         if ($r.whatif) {
             Write-Output 'whatif=1'
             Write-Output ($r.body | ConvertTo-Json -Compress -Depth 8)
             Write-Output '---'
             continue
+        }
+        $status = 0
+        if ($r.PSObject.Properties['httpStatus'] -and $r.httpStatus) { $status = [int]$r.httpStatus }
+        $badHttp = ($status -lt 200 -or $status -ge 300)
+        if ($badHttp -or -not $searchId) {
+            $searchFailed = $true
+            if ($badHttp) {
+                [Console]::Error.WriteLine(("search_http_status={0}" -f $status))
+            }
+            else {
+                [Console]::Error.WriteLine('searchid_missing')
+            }
+            if ($errMsg) {
+                $safeErr = $errMsg -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***'
+                [Console]::Error.WriteLine(("search_error={0}" -f $safeErr))
+            }
+            elseif ($r.PSObject.Properties['rawBody'] -and $r.rawBody) {
+                $safeBody = ([string]$r.rawBody) -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***'
+                if ($safeBody.Length -gt 500) { $safeBody = $safeBody.Substring(0, 500) + '...' }
+                [Console]::Error.WriteLine(("search_body={0}" -f $safeBody))
+            }
         }
         if ($Json) {
             $doc = [ordered]@{
@@ -460,6 +547,10 @@ try {
                 query_count       = $queryCount
                 searchid          = $searchId
                 providers_queued  = $providers
+                http_status       = $status
+            }
+            if ($errMsg) {
+                $doc['error'] = ($errMsg -replace '(?i)(api[_-]?key|token|password|secret)\s*[:=]\s*\S+', '$1=***')
             }
             Write-Output ($doc | ConvertTo-Json -Compress -Depth 6)
             continue
@@ -467,6 +558,7 @@ try {
         Write-Output ("host={0} hostkey={1} guid={2}" -f $r.host, $r.hostkey, $r.guid)
         Write-Output ("queries={0}" -f (($r.queries | ConvertTo-Json -Compress -Depth 5)))
         Write-Output ("query_count={0}" -f $queryCount)
+        if ($status) { Write-Output ("http_status={0}" -f $status) }
         if ($searchId) {
             Write-Output ("searchid={0}" -f $searchId)
         }
@@ -479,6 +571,7 @@ try {
         }
         Write-Output '---'
     }
+    if ($searchFailed) { exit 5 }
     exit 0
 }
 catch {
