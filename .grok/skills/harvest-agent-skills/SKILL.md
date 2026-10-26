@@ -722,3 +722,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-search docs/skills-only CI skips npm test (FR-2611): put check_conflict_markers.py under scripts/ and always run it in test-and-synth after checkout so harvest SKILL markers cannot merge.
 - Search completion: write a-clubs/_search-done/{searchid}/{source}.json (not {host}/{guid}/DONE/); legacy DONE/ read-only during transition; do not delete club DONE/ without Simon yes.
 - After FR #5198, any test that pins terminal PutObject keys must assert _search-done/{searchid}/{source}.json (and that /DONE/ is absent); leave legacy GUID DONE/ reads for transition only.
+- After FR #5198 moves terminals to _search-done/, retarget every donePuts filter from /DONE/ to startsWith('_search-done/') before CI; FIX after MRB PASS often means tip already has flamingo retarget --- verify local then DONE FIX without empty push
