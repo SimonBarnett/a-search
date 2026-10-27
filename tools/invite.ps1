@@ -57,6 +57,14 @@ $here = $PSScriptRoot
 # Rakuten from FR #5065; CJ from FR #5066.
 $script:InviteProviders = @('awin', 'rakuten', 'cj')
 
+function Test-InviteCfgValue {
+    # FR #5070 / #5206: StrictMode-safe optional config.json keys (awin config has no reportDir).
+    param($Cfg, [string]$Name)
+    if (-not $Cfg) { return $false }
+    $prop = $Cfg.PSObject.Properties[$Name]
+    return [bool]($prop -and $prop.Value)
+}
+
 function Get-InviteProviderNames {
     param([string]$Bucket, [string]$AwsProfile)
     # FR #5176: always pass --profile (never ambient AWS_PROFILE alone).
@@ -126,35 +134,41 @@ function Resolve-InviteProviderRoots {
     if ($slug -eq 'cj') { $agentRoot = 'C:\ai\a-search\cj-invite' }
     elseif ($slug -eq 'rakuten') { $agentRoot = 'C:\ai\a-search' }
     else { $agentRoot = 'C:\ai\a-search\awin-agent' }
-    if ($cfg -and $cfg.agentRoot) { $agentRoot = [string]$cfg.agentRoot }
+    if (Test-InviteCfgValue $cfg 'agentRoot') { $agentRoot = [string]$cfg.agentRoot }
     $entry = 'invite.mjs'
-    if ($cfg -and $cfg.entry) { $entry = [string]$cfg.entry }
+    if (Test-InviteCfgValue $cfg 'entry') { $entry = [string]$cfg.entry }
     $runFromAgent = $false
     if ($cfg -and $cfg.PSObject.Properties['runFromAgentRoot'] -and [bool]$cfg.runFromAgentRoot) {
         $runFromAgent = $true
     }
     if ($slug -eq 'cj') { $runFromAgent = $true }
+    # FR #5206: awin Playwright lives in awin-agent/node_modules; ESM resolves next to the
+    # script file, so never run S:\a-affiliates\awin\_invite\invite.mjs as the entry.
+    if ($slug -eq 'awin') {
+        $runFromAgent = $true
+        if ($entry -eq 'invite.mjs') { $entry = 'scripts/invite.mjs' }
+    }
     $script = if ($runFromAgent) { Join-Path $agentRoot $entry } else { Join-Path $inviteRoot $entry }
     $reportDir = Join-Path 'C:\ai\a-search\logs' ("{0}-invite" -f $slug)
-    if ($cfg -and $cfg.reportDir) { $reportDir = [string]$cfg.reportDir }
+    if (Test-InviteCfgValue $cfg 'reportDir') { $reportDir = [string]$cfg.reportDir }
 
     # Provider-specific env from config (never print values).
     if ($slug -eq 'awin') {
-        if ($cfg -and $cfg.profile) { $env:AWIN_PROFILE = [string]$cfg.profile }
-        if ($cfg -and $cfg.secretFile) { $env:AWIN_SECRET_FILE = [string]$cfg.secretFile }
-        if ($cfg -and $cfg.publisherId) { $env:AWIN_PUBLISHER_ID = [string]$cfg.publisherId }
+        if (Test-InviteCfgValue $cfg 'profile') { $env:AWIN_PROFILE = [string]$cfg.profile }
+        if (Test-InviteCfgValue $cfg 'secretFile') { $env:AWIN_SECRET_FILE = [string]$cfg.secretFile }
+        if (Test-InviteCfgValue $cfg 'publisherId') { $env:AWIN_PUBLISHER_ID = [string]$cfg.publisherId }
     }
     elseif ($slug -eq 'cj') {
-        if ($cfg -and $cfg.secretFile) { $env:CJ_SECRET_FILE = [string]$cfg.secretFile }
-        if ($cfg -and $cfg.companyId) { $env:CJ_COMPANY_ID = [string]$cfg.companyId }
-        if ($cfg -and $cfg.websiteId) { $env:CJ_WEBSITE_ID = [string]$cfg.websiteId }
-        if ($cfg -and $cfg.reportDir) { $env:CJ_INVITE_REPORT_DIR = [string]$cfg.reportDir }
-        if ($cfg -and $cfg.lockPath) { $env:CJ_INVITE_LOCK = [string]$cfg.lockPath }
+        if (Test-InviteCfgValue $cfg 'secretFile') { $env:CJ_SECRET_FILE = [string]$cfg.secretFile }
+        if (Test-InviteCfgValue $cfg 'companyId') { $env:CJ_COMPANY_ID = [string]$cfg.companyId }
+        if (Test-InviteCfgValue $cfg 'websiteId') { $env:CJ_WEBSITE_ID = [string]$cfg.websiteId }
+        if (Test-InviteCfgValue $cfg 'reportDir') { $env:CJ_INVITE_REPORT_DIR = [string]$cfg.reportDir }
+        if (Test-InviteCfgValue $cfg 'lockPath') { $env:CJ_INVITE_LOCK = [string]$cfg.lockPath }
     }
     elseif ($slug -eq 'rakuten') {
-        if ($cfg -and $cfg.secretFile) { $env:RAKUTEN_SECRET_FILE = [string]$cfg.secretFile }
-        if ($cfg -and $cfg.publisherId) { $env:RAKUTEN_PUBLISHER_ID = [string]$cfg.publisherId }
-        if ($cfg -and $cfg.profile) { $env:RAKUTEN_PROFILE = [string]$cfg.profile }
+        if (Test-InviteCfgValue $cfg 'secretFile') { $env:RAKUTEN_SECRET_FILE = [string]$cfg.secretFile }
+        if (Test-InviteCfgValue $cfg 'publisherId') { $env:RAKUTEN_PUBLISHER_ID = [string]$cfg.publisherId }
+        if (Test-InviteCfgValue $cfg 'profile') { $env:RAKUTEN_PROFILE = [string]$cfg.profile }
         $env:RAKUTEN_USE_INVITE = '1'
     }
 
