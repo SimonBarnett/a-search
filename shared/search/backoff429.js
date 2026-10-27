@@ -43,15 +43,25 @@ function isAmazonNonJsonFault(err) {
 }
 
 /**
- * FR #4562 / #4739 / #4769: permanent Amazon vendor faults (non-JSON HTML or
- * Creators AssociateNotEligible). Not transient; DLQ path (no status IN).
+ * FR #5220: Creators AssociateNotEligible is a temporary eligibility gate —
+ * treat as provider unavailable (ack + terminal serviced), not DLQ.
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isCreatorsNotEligible(err) {
+  const code = err && typeof err.code === 'string' ? err.code : '';
+  return code === 'creators_not_eligible';
+}
+
+/**
+ * FR #4562 / #4769: permanent Amazon vendor faults (non-JSON HTML).
+ * FR #5220: AssociateNotEligible is no longer a DLQ permanent fault.
  * @param {unknown} err
  * @returns {boolean}
  */
 function isAmazonPermanentVendorFault(err) {
   if (isAmazonNonJsonFault(err)) return true;
-  const code = err && typeof err.code === 'string' ? err.code : '';
-  return code === 'creators_not_eligible';
+  return false;
 }
 
 /**
@@ -119,6 +129,7 @@ module.exports = {
   httpStatusOf,
   isHttp429,
   isAmazonNonJsonFault,
+  isCreatorsNotEligible,
   isAmazonPermanentVendorFault,
   isTransientVendorHttp,
   parseRetryAfterSeconds,

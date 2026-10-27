@@ -1,8 +1,7 @@
 'use strict';
 
 /**
- * FR #4739 / #4769: Creators HTTP 403 AssociateNotEligible is permanent -
- * fail into DLQ (no status IN / intake).
+ * FR #4739 classify + throw path; FR #5220 SQS path is provider_unavailable (see fr5220).
  */
 
 const { describe, it } = require('node:test');
@@ -13,6 +12,7 @@ const path = require('node:path');
 const {
   isAmazonNonJsonFault,
   isAmazonPermanentVendorFault,
+  isCreatorsNotEligible,
   isTransientVendorHttp,
 } = require('../shared/search/backoff429');
 const { handleSqsWith429 } = require('../shared/search/handleSqsWith429');
@@ -54,11 +54,12 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
     assert.equal(classifyCreatorsHttpFault(500, {}, 'boom'), null);
   });
 
-  it('permanent helper includes creators_not_eligible; not transient', () => {
+  it('creators_not_eligible is unavailable (FR #5220), not permanent DLQ fault', () => {
     const err = new Error('Amazon Creators HTTP 403: AssociateNotEligible');
     err.status = 403;
     err.code = 'creators_not_eligible';
-    assert.equal(isAmazonPermanentVendorFault(err), true);
+    assert.equal(isCreatorsNotEligible(err), true);
+    assert.equal(isAmazonPermanentVendorFault(err), false);
     assert.equal(isAmazonNonJsonFault(err), false);
     assert.equal(isTransientVendorHttp(err), false);
   });
@@ -141,7 +142,7 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
     assert.equal(puts.length, 0);
   });
 
-  it('handleSqsWith429 throws without intake or IN on creators_not_eligible', async () => {
+  it('handleSqsWith429 acks creators_not_eligible without intake or IN (FR #5220)', async () => {
     const intake = [];
     const puts = [];
     const err = new Error('Amazon Creators HTTP 403');
@@ -149,43 +150,41 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
     err.code = 'creators_not_eligible';
     err.nonRetryable = true;
 
-    await assert.rejects(
-      () =>
-        handleSqsWith429({
-          event: {
-            Records: [
-              {
-                body: JSON.stringify({
-                  searchId: 's1',
-                  env: 'sandbox',
-                  userId: 'U1',
-                }),
-                receiptHandle: 'rh-1',
-              },
-            ],
+    const out = await handleSqsWith429({
+      event: {
+        Records: [
+          {
+            body: JSON.stringify({
+              searchId: 's1',
+              env: 'sandbox',
+              userId: 'U1',
+            }),
+            receiptHandle: 'rh-1',
           },
-          run: async () => {
-            throw err;
-          },
-          deps: {
-            putObject: async (args) => {
-              puts.push(args);
-              return {};
-            },
-          },
-          reportException: async (args) => {
-            intake.push(args);
-          },
-          route: 'providers/live/amazon/handler',
-          source: 'amazon',
-        }),
-      (e) => e === err,
-    );
+        ],
+      },
+      run: async () => {
+        throw err;
+      },
+      deps: {
+        putObject: async (args) => {
+          puts.push(args);
+          return {};
+        },
+      },
+      reportException: async (args) => {
+        intake.push(args);
+      },
+      route: 'providers/live/amazon/handler',
+      source: 'amazon',
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.results[0].skipped, 'provider_unavailable');
     assert.equal(intake.length, 0);
-    assert.equal(puts.length, 0);
+    assert.equal(puts.filter((p) => String(p.Key || '').includes('/IN/')).length, 0);
   });
 
-  it('source pins classify + permanent fault helper', () => {
+  it('source pins classify + unavailable helper (FR #5220)', () => {
     const creators = fs.readFileSync(
       path.join(ROOT, 'providers/live/amazon/src/creatorsSearch.js'),
       'utf8',
@@ -200,7 +199,7 @@ describe('FR #4739 Amazon Creators AssociateNotEligible', () => {
     );
     assert.match(creators, /creators_not_eligible/);
     assert.match(creators, /AssociateNotEligible/);
-    assert.match(backoff, /isAmazonPermanentVendorFault/);
-    assert.match(handle, /isProviderFaultForDlq/);
+    assert.match(backoff, /isCreatorsNotEligible/);
+    assert.match(handle, /provider_unavailable/);
   });
 });

@@ -568,7 +568,7 @@ function normalizeCreatorsItem(item, track) {
 }
 
 /**
- * FR #4739: permanent Creators account faults (do not DLQ / intake-fatal).
+ * FR #4739 / #5220: AssociateNotEligible -> creators_not_eligible (provider_unavailable ack; no DLQ).
  * @param {number} status
  * @param {object|null|undefined} json
  * @param {string} [text]
@@ -603,7 +603,7 @@ async function defaultCreatorsHttpRequest(req) {
     json = text ? JSON.parse(text) : {};
   } catch {
     // FR #4427 / #4562: same status attach as PA-API non-JSON path
-    // (non-retryable; FR #4769 fail into DLQ, no status IN).
+    // FR #5220: nonRetryable eligibility gate -> provider_unavailable (no DLQ).
     const err = new Error(`Amazon Creators non-JSON response (${res.status})`);
     err.status = res.status;
     err.code = 'creators_non_json';
