@@ -733,3 +733,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - GitGuardian scans full PR commit history: fixing tip tree is not enough when an ancestor commit still has contiguous Bearer/FAKESECRET; soft-reset onto main and recommit clean tree, then force-push.
 - Amazon AssociateNotEligible IN products>0 is needs_human (Associates 10-order gate). Implementable ack/no-DLQ work is a child FR; do not close the living parent or invent a live IN rerun.
 - After a handler FR lands, root VISION.md DLQ parentheticals stay stale until a follow-up pin forbids the old code list
+- a-search FIX: when tip CONFLICTING but same FR already merged on another PR (#5246), close tip superseded and DONE FIX — do not fold a dead twin
