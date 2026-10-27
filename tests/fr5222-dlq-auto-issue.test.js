@@ -347,4 +347,40 @@ describe('FR #5222 DLQ auto-issue', () => {
     });
     assert.doesNotMatch(body, /sk-live-SHOULD_NOT_APPEAR/);
   });
+
+  it('FR #5232: fixture host/queue without fetch skips live intake', async () => {
+    const { reportDlqFailure: report, isTestFixtureDlqContext } = require('../shared/intake/reportDlqFailure');
+    assert.equal(
+      isTestFixtureDlqContext({
+        host: 'club.example',
+        queueUrl: 'https://sqs.example/source.fifo',
+      }),
+      true,
+    );
+    let fetchCalls = 0;
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+      fetchCalls += 1;
+      return { status: 202, text: async () => '{}' };
+    };
+    try {
+      const out = await report({
+        provider: 'rakuten',
+        code: 'rakuten_invalid_context',
+        searchid: 'srch_4782',
+        host: 'club.example',
+        guid: 'guid-4782',
+        queueUrl: 'https://sqs.example/source.fifo',
+        dlqUrl: 'https://sqs.example/source-dlq.fifo',
+        path: 'immediate',
+        // no fetch / intakeUrl --- must not use global fetch against live intake
+      });
+      assert.equal(out.ok, true);
+      assert.equal(out.skipped, true);
+      assert.equal(out.reason, 'test_fixture_no_intake');
+      assert.equal(fetchCalls, 0);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
 });

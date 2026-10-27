@@ -23,6 +23,40 @@ const GROUPED_CODES = new Set(['creators_not_eligible']);
 const seenFp = new Set();
 
 /**
+ * Unit / hostile fixtures must never POST to live intake (class of #5227-#5232).
+ * Detect example.* / *.test hosts and sqs.example (or bare https://sqs/) queue URLs.
+ * @param {object} opts
+ * @returns {boolean}
+ */
+function isTestFixtureDlqContext(opts = {}) {
+  const host = String(opts.host || '').trim().toLowerCase();
+  const queue = String(opts.queueUrl || opts.dlqUrl || '').trim().toLowerCase();
+  if (host) {
+    if (
+      host === 'example.test' ||
+      host.endsWith('.example') ||
+      host.includes('.example.') ||
+      host.endsWith('.test') ||
+      host.includes('example-club') ||
+      host.includes('mrb4923') ||
+      host.includes('mrb4785')
+    ) {
+      return true;
+    }
+  }
+  if (queue) {
+    if (
+      queue.includes('sqs.example') ||
+      queue.includes('example.test') ||
+      /^https?:\/\/sqs(\/|$)/.test(queue)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * @param {unknown} err
  * @returns {string}
  */
@@ -166,6 +200,8 @@ async function reportDlqFailure(opts = {}) {
       opts.host || msg.hostkey || msg.host || '',
     ).trim();
     const guid = String(opts.guid || msg.guid || msg.widgetGuid || '').trim();
+    const queueUrl = String(opts.queueUrl || '').trim();
+    const dlqUrl = String(opts.dlqUrl || '').trim();
     const queries =
       opts.queries ||
       msg.queries ||
@@ -177,6 +213,20 @@ async function reportDlqFailure(opts = {}) {
     });
     if (!opts.force && seenFp.has(fingerprint)) {
       return { ok: true, skipped: true, fingerprint, reason: 'in_process_dedupe' };
+    }
+    // FR #5232: never POST fixture DLQs to live intake when fetch/intakeUrl omitted.
+    if (
+      !opts.force &&
+      isTestFixtureDlqContext({ host, queueUrl, dlqUrl }) &&
+      !opts.fetch &&
+      !opts.intakeUrl
+    ) {
+      return {
+        ok: true,
+        skipped: true,
+        fingerprint,
+        reason: 'test_fixture_no_intake',
+      };
     }
     const title = buildDlqIssueTitle({ provider, code, searchid });
     const body = buildDlqIssueBody({
@@ -235,5 +285,6 @@ module.exports = {
   buildDlqIssueBody,
   faultCode,
   GROUPED_CODES,
+  isTestFixtureDlqContext,
   clearDlqFailureDedupe,
 };
