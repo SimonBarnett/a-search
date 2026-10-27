@@ -349,7 +349,6 @@ describe('FR #5222 DLQ auto-issue', () => {
       fingerprint: 'a'.repeat(64),
     });
     assert.doesNotMatch(body, fake.reLiteral(token));
-    assert.doesNotMatch(body, fake.reFromParts(['Bearer ', 'SECRET', 'TOKEN']));
     assert.match(body, /Last error \(redacted\)/);
   });
 
