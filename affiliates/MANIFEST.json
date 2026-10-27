@@ -1,0 +1,283 @@
+{
+  "fr": 5070,
+  "source": "s3://a-affiliates/",
+  "importedAt": "2026-10-27T08:29:00Z",
+  "awsProfile": "a-search-redqueen-agents",
+  "repoRoot": "affiliates/bucket/",
+  "note": "Byte-for-byte copies of the non-data code/config/instruction objects in s3://a-affiliates at import time. ETag is the S3 single-part ETag (MD5). Excluded: merchant folders awin/{id}/ (markers + dated feeds), awin/_invites/ records, zero-byte provider markers. No .env or secret files were found.",
+  "objects": [
+    {
+      "key": ".grok/LESSONS.md",
+      "size": 384,
+      "lastModified": "2026-10-18T14:12:47+00:00",
+      "etag": "73402130b3f471a4c7d233205943fbf7",
+      "sha256": "6a88bab8d8ad34ff7d3224b052fdb6b2a056e84c873422b55e4aa15396adab13"
+    },
+    {
+      "key": "AGENTS.md",
+      "size": 20397,
+      "lastModified": "2026-10-24T14:16:46+00:00",
+      "etag": "50c4a09e047358def613cc75d5073b29",
+      "sha256": "c220b8032609f1ab156ac2a496fe475bfbe224c2d2d45c8d70942ccb0bfa489e"
+    },
+    {
+      "key": "SKILLS.md",
+      "size": 11258,
+      "lastModified": "2026-10-24T11:57:00+00:00",
+      "etag": "a53287a92d304dec2d93054be4cd8a46",
+      "sha256": "a914a5e2cd6948821066cdb9d547080d5979fd41dea60eedb4d8c00b801c1c9f"
+    },
+    {
+      "key": "admitad/AGENT.md",
+      "size": 4391,
+      "lastModified": "2026-10-18T14:26:12+00:00",
+      "etag": "d04dc44f93090fe96dd4d634a40ca0a9",
+      "sha256": "a6a0402166ac1f5a85fcfb41d06c1b391be5887f7dd820a1719b49f440e65499"
+    },
+    {
+      "key": "admitad/SKILLS.md",
+      "size": 890,
+      "lastModified": "2026-10-18T14:05:58+00:00",
+      "etag": "3e75757f83090cf0730d566a62b40e56",
+      "sha256": "d84e2c8948839674390c7e1e46082c8cab36ad96e5c7c758c3b6aae5362a0ebc"
+    },
+    {
+      "key": "avantlink/AGENT.md",
+      "size": 4327,
+      "lastModified": "2026-10-18T14:26:13+00:00",
+      "etag": "de9b5e8a92502a70dabe33ca21c14d6d",
+      "sha256": "ad591ca174ddb0b3050bd3f7acdc012e6df0fe8ff70da388985b5b61c87216d4"
+    },
+    {
+      "key": "avantlink/SKILLS.md",
+      "size": 904,
+      "lastModified": "2026-10-18T14:06:06+00:00",
+      "etag": "656ace132f367d050d3373046677a259",
+      "sha256": "fae87bc8de4f8af5b1065376ca32de27b13a1440ef8b4158849ce082e89093f7"
+    },
+    {
+      "key": "awin/.grok/SKILLS-OVERVIEW.md",
+      "size": 389,
+      "lastModified": "2026-10-18T14:12:51+00:00",
+      "etag": "36d00b7be439ce95c76058f349960517",
+      "sha256": "e8f3bd8c97fd8b4e99a6fe64f79b1fe7880445ec16a9c189e6dd19eea3ebd004"
+    },
+    {
+      "key": "awin/.grok/skills/README.md",
+      "size": 389,
+      "lastModified": "2026-10-18T14:12:54+00:00",
+      "etag": "36d00b7be439ce95c76058f349960517",
+      "sha256": "e8f3bd8c97fd8b4e99a6fe64f79b1fe7880445ec16a9c189e6dd19eea3ebd004"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-daily-signups/SKILL.md",
+      "size": 559,
+      "lastModified": "2026-10-18T14:12:57+00:00",
+      "etag": "ff919c9f443b0cd0b42e6cb1c63d4ff3",
+      "sha256": "1dc069adf19fd3509fd760767da3fd89866771186d10f12264ea71d0d181f00e"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-feed-link/SKILL.md",
+      "size": 555,
+      "lastModified": "2026-10-18T14:13:00+00:00",
+      "etag": "69a9d6bd7c82c53333ff5d977f2f4631",
+      "sha256": "893fc29e5f77a1d25e7c56b9a1d3023d26e0951400de7f6f208cfe2ff23d8990"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-invite-metrics/SKILL.md",
+      "size": 560,
+      "lastModified": "2026-10-18T14:13:03+00:00",
+      "etag": "3e8d8debec46ab6e8b02df62a8c581cc",
+      "sha256": "64944347cddf31f62818e90acdf9c0117d55ea89f53bbb56cb2cc31ac54c40b4"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-join-programme/SKILL.md",
+      "size": 560,
+      "lastModified": "2026-10-18T14:13:07+00:00",
+      "etag": "048f349ff6c50bff595811838bfa09cc",
+      "sha256": "cf6e1f780915dd87e69bb04e15ee93228a9c625345cd6bc33ba5fae7ea9e699f"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-merchant-feed-key/SKILL.md",
+      "size": 563,
+      "lastModified": "2026-10-18T14:13:10+00:00",
+      "etag": "e7764c4fa2e8ada85f694d813147bc86",
+      "sha256": "b381b2ef247be8963153d5fb194597e30aa845bcd55683a7d510e6027a72c65e"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-no-feed-follow-up/SKILL.md",
+      "size": 563,
+      "lastModified": "2026-10-18T14:13:13+00:00",
+      "etag": "4cf90e6372cea54e77bc342e5017fdf4",
+      "sha256": "93bc71d45f963a512e585d6aa040aaed7830e9f6dec1be4d65bbf78b877caed8"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-publisher-sign-in/SKILL.md",
+      "size": 563,
+      "lastModified": "2026-10-18T14:13:16+00:00",
+      "etag": "dbb6a90cbc87c22e04da8bab84098ba2",
+      "sha256": "8aca47ea21dd6d5d72307c7996e811dee35bc1509f55de69611661664be9ed35"
+    },
+    {
+      "key": "awin/.grok/skills/a-search-awin-welcome-monitor/SKILL.md",
+      "size": 561,
+      "lastModified": "2026-10-18T14:13:19+00:00",
+      "etag": "9aada956425b76329d9607f022db7350",
+      "sha256": "eeba5ee6d6638ab472a0f8e260d1ce2f2fc819daf09f5761376661033c716c2c"
+    },
+    {
+      "key": "awin/.grok/skills/merc-hostile-mrb/SKILL.md",
+      "size": 548,
+      "lastModified": "2026-10-18T14:13:22+00:00",
+      "etag": "184aac340763a331291083d5102b35ba",
+      "sha256": "2f0efcb3be6d4f025322d1ae438b8c8b00458a2c2d48d5b35c2f271a81701c9d"
+    },
+    {
+      "key": "awin/AGENT.md",
+      "size": 10689,
+      "lastModified": "2026-10-24T12:01:00+00:00",
+      "etag": "96fef53d9f60f3ef754bb9f3cbaafd29",
+      "sha256": "a2323c4a5e6335fe568defa11fa2c0fd9b825d7b3509cd72c6a7ff2176d9cfdc"
+    },
+    {
+      "key": "awin/SKILLS.md",
+      "size": 16574,
+      "lastModified": "2026-10-24T11:56:45+00:00",
+      "etag": "35cc0d30ab6b5e6ef4b1f06944d7f35a",
+      "sha256": "2054dad1390ca25ac7829e8877c114cf9cc730b6324b15837a31746aea0eceba"
+    },
+    {
+      "key": "awin/_import/IMPORT.md",
+      "size": 1790,
+      "lastModified": "2026-10-24T14:28:27+00:00",
+      "etag": "511b9deb83dbe7ce2ec1a6646e7b680b",
+      "sha256": "46efe955eb6115152886ec6dd4cc50d882e062cd62efad4675e4ddba4f16b3fe"
+    },
+    {
+      "key": "awin/_import/config.json",
+      "size": 234,
+      "lastModified": "2026-10-24T14:14:45+00:00",
+      "etag": "0e2159629edd3e38f65c8092b784fef6",
+      "sha256": "848c03aa48dd5c993bde13305f84c2a563f2a5eaf8782fc4d5d84cff137c7e17"
+    },
+    {
+      "key": "awin/_import/sql/001_AffiliateOffers.sql",
+      "size": 1565,
+      "lastModified": "2026-10-24T14:14:56+00:00",
+      "etag": "368b7c0b086b5e94084c6a79ecc25205",
+      "sha256": "c0c30f3bfadb8c4b7b63906332b40505c359e9499305d1a9436f47b08d0fa52a"
+    },
+    {
+      "key": "awin/_invite/INVITE.md",
+      "size": 438,
+      "lastModified": "2026-10-24T14:13:00+00:00",
+      "etag": "9a70d46d3baf6d334135ecb4d69930ec",
+      "sha256": "a51d118e53d5106bf3249017e0f65a63b508b5252a5f60bc84e96c506f932097"
+    },
+    {
+      "key": "awin/_invite/config.json",
+      "size": 211,
+      "lastModified": "2026-10-24T14:12:58+00:00",
+      "etag": "b8ebca9454c63b99edaef9668f7691f9",
+      "sha256": "637c889a2fa674344d1d58afe7186cdb72df7fdd52d7a71226b43f4ebd2f8d6c"
+    },
+    {
+      "key": "awin/_invite/invite.mjs",
+      "size": 26164,
+      "lastModified": "2026-10-24T14:12:57+00:00",
+      "etag": "445d81c5542c5f8d5ebc8e7f43c87052",
+      "sha256": "7a3dcadd44864c9a3f570f915399f3940a9a81e5e068bffee471b928f69fb7c8"
+    },
+    {
+      "key": "awin/_invite/lib/invite-core.mjs",
+      "size": 10281,
+      "lastModified": "2026-10-24T14:13:02+00:00",
+      "etag": "ba9ae03348a589650ba5ea7c1b5e3a07",
+      "sha256": "d464134c91e71d49b4a0955f61061825acb6afe46d1854c8712567819cdd0c62"
+    },
+    {
+      "key": "awin/_invite/lib/invite-core.test.mjs",
+      "size": 2442,
+      "lastModified": "2026-10-24T14:13:06+00:00",
+      "etag": "e84f4099b36fcb978fe966b44ae97f8b",
+      "sha256": "d55cf84d58d8d0ab2fa8224be858524803c59fde33631b174cf129258214c715"
+    },
+    {
+      "key": "awin/_invite/lib/spinner.mjs",
+      "size": 2048,
+      "lastModified": "2026-10-24T14:13:04+00:00",
+      "etag": "34e107035606299f9d6d90683280a9ba",
+      "sha256": "6044f7f134dc918dd592ce5d79d335397c21816406cb764095d46f265f5a444a"
+    },
+    {
+      "key": "flexoffers/AGENT.md",
+      "size": 4200,
+      "lastModified": "2026-10-18T14:26:17+00:00",
+      "etag": "dd815b5d3ca922b3a8653938121ff62d",
+      "sha256": "4393bb0c246628ab0f17ceacd2b1455671ef00ff3af00665ec5cb8bcc6d3ffac"
+    },
+    {
+      "key": "flexoffers/SKILLS.md",
+      "size": 911,
+      "lastModified": "2026-10-18T14:06:02+00:00",
+      "etag": "e7ed845e1e53c6b06b8f89927e5b984e",
+      "sha256": "7a5866bf7d446a387c1b346162387dfb8c12aed94c656a6bd0b011d683a2c433"
+    },
+    {
+      "key": "impact/AGENT.md",
+      "size": 11203,
+      "lastModified": "2026-10-24T11:09:16+00:00",
+      "etag": "ae7e1d9ba7e15529355dce263b101af9",
+      "sha256": "27a8157b6cdae9f5f7cb7ef5a60de940ac7643d0985f6d6ebf6df48bc0f2db34"
+    },
+    {
+      "key": "impact/SKILLS.md",
+      "size": 2936,
+      "lastModified": "2026-10-24T11:09:18+00:00",
+      "etag": "466a6ec2d78ceb99c8d525181fa44047",
+      "sha256": "1da44c2491a7d7ebe2ea26aeb20f74086cfeee73a6bc2d7192862aa0c812afd8"
+    },
+    {
+      "key": "partnerize/AGENT.md",
+      "size": 7691,
+      "lastModified": "2026-10-18T14:26:20+00:00",
+      "etag": "5478cd3718da616686fc112ac80cd088",
+      "sha256": "c4832b65cfe8cb76eef3f2499dbc920d17f0ed032062de744d3c1843214b2900"
+    },
+    {
+      "key": "partnerize/SKILLS.md",
+      "size": 911,
+      "lastModified": "2026-10-18T14:05:46+00:00",
+      "etag": "60c45446f9ce5e85854d417140699ab5",
+      "sha256": "acb7955f9d95f8c58a6a7cf36f15c080c708fd02f07796cda6881fa89d803e05"
+    },
+    {
+      "key": "tradedoubler/AGENT.md",
+      "size": 7767,
+      "lastModified": "2026-10-18T14:26:21+00:00",
+      "etag": "fef282c4c7184bd0d0add9449f8060b1",
+      "sha256": "9846f45506edd720db28ee0bb5538c788a93cbb1b09e417d0d6d0c3f2ddfc488"
+    },
+    {
+      "key": "tradedoubler/SKILLS.md",
+      "size": 925,
+      "lastModified": "2026-10-18T14:05:54+00:00",
+      "etag": "920d7489aa6e223ca7819c29a814db70",
+      "sha256": "6080d8dd7a7a9240a202de34646ca9574c593aa1ae5e5debcde45df81930c647"
+    },
+    {
+      "key": "webgains/AGENT.md",
+      "size": 8094,
+      "lastModified": "2026-10-18T14:26:23+00:00",
+      "etag": "1a2f7559770dfefafa4d958891567f19",
+      "sha256": "b2d58cfb42cafe80b1f41bbea092d33600dd9b6a1d49ae7eb0300d3e558d5673"
+    },
+    {
+      "key": "webgains/SKILLS.md",
+      "size": 897,
+      "lastModified": "2026-10-18T14:05:49+00:00",
+      "etag": "ae67ac070b23d4595a902792cfa4092d",
+      "sha256": "2eea5b07b5995d8b3a3a5e09a3378911486616957a7a413523b35316984634fc"
+    }
+  ]
+}

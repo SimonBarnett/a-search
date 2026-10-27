@@ -1,0 +1,11 @@
+{
+  "server": "walrus\\asearch",
+  "database": "a_search",
+  "env": "live",
+  "auth": "integrated",
+  "parser": "awin",
+  "partsGlob": "*.csv",
+  "couponsGlob": "*.coupons.json",
+  "deleteAfterImport": true,
+  "maxRemoveRatio": 0.5
+}
