@@ -732,3 +732,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Amazon Creators AssociateNotEligible: handleSqsWith429 acks as provider_unavailable (WARN), writes _search-done serviced products=0, never amazon-live DLQ; exclude creators_not_eligible from isProviderFaultForDlq even when nonRetryable
 - GitGuardian scans full PR commit history: fixing tip tree is not enough when an ancestor commit still has contiguous Bearer/FAKESECRET; soft-reset onto main and recommit clean tree, then force-push.
 - Amazon AssociateNotEligible IN products>0 is needs_human (Associates 10-order gate). Implementable ack/no-DLQ work is a child FR; do not close the living parent or invent a live IN rerun.
+- a-search FR #5139 living parent: AssociateNotEligible IN products>0 waits Associates 10-order gate — ACK then GIVEUP needs_human; never Closes the parent when child #5220 ack/no-DLQ lands; no invented live IN rerun
