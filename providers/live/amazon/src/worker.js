@@ -5,8 +5,9 @@
  * Default: Creators API -> normalize -> a-clubs IN/ (writeLiveProviderInResult).
  * Explicit AMAZON_SEARCH_API=paapi keeps PA-API SearchItems.
  * Fail-closed if Creators creds missing while Creators path is selected.
- * FR #4769: API failures (incl. paapi_non_json / creators_not_eligible) throw;
- * handleSqsWith429 logs and fails the receive into the DLQ (no status IN).
+ * FR #4769: API failures (incl. paapi_non_json) throw; handleSqsWith429 fails
+ * into the DLQ (no status IN). FR #5220: creators_not_eligible is acked as
+ * provider_unavailable (serviced terminal, no IN, no DLQ).
  */
 
 const path = require('node:path');

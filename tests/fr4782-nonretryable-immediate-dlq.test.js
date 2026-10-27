@@ -33,8 +33,8 @@ describe('FR #4782 nonRetryable immediate DLQ', () => {
   it('classifies permanent / nonRetryable faults for immediate DLQ', () => {
     assert.equal(
       isImmediateDlqFault({ code: 'creators_not_eligible', statusCode: 403 }),
-      true,
-    );
+      false,
+    ); // FR #5220 unavailable
     assert.equal(
       isImmediateDlqFault({
         code: 'rakuten_invalid_context',

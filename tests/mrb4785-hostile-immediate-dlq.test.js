@@ -2,7 +2,8 @@
 
 /**
  * MRB #4785 hostile: FR #4782 immediate DLQ — missing env fallback, amazon/cj
- * permanent faults, hard 5xx still redrive (no SendMessage).
+ * permanent faults (paapi_non_json), hard 5xx still redrive (no SendMessage).
+ * FR #5220: creators_not_eligible is provider_unavailable (no DLQ).
  */
 
 const { describe, it } = require('node:test');
@@ -37,11 +38,46 @@ describe('MRB #4785 hostile FR #4782', () => {
     assert.equal(isImmediateDlqFault({ statusCode: 504 }), false);
   });
 
-  it('creators_not_eligible with queue+dlq URLs: send+delete, no throw', async () => {
+  // FR #5220: AssociateNotEligible is provider_unavailable (ack), not immediate DLQ.
+  it('creators_not_eligible: ack provider_unavailable, no DLQ send (FR #5220)', async () => {
     const sent = [];
     const deleted = [];
     const err = Object.assign(new Error('not eligible'), {
       code: 'creators_not_eligible',
+      statusCode: 403,
+      nonRetryable: true,
+    });
+    const out = await handleSqsWith429({
+      event: { Records: [baseRecord(msg)] },
+      run: async () => {
+        throw err;
+      },
+      sendMessage: async (input) => {
+        sent.push(input);
+        return {};
+      },
+      deleteMessage: async (input) => {
+        deleted.push(input);
+        return {};
+      },
+      putObject: async () => ({}),
+      queueUrl: 'https://sqs.example/src.fifo',
+      dlqUrl: 'https://sqs.example/dlq.fifo',
+      logError: () => {},
+      source: 'amazon',
+    });
+    assert.equal(sent.length, 0, 'no DLQ SendMessage');
+    assert.equal(deleted.length, 0);
+    assert.equal(out.results[0].skipped, 'provider_unavailable');
+    assert.equal(out.results[0].code, 'creators_not_eligible');
+    assert.equal(out.results[0].deadLettered, undefined);
+  });
+
+  it('paapi_non_json with queue+dlq URLs: send+delete, no throw', async () => {
+    const sent = [];
+    const deleted = [];
+    const err = Object.assign(new Error('html body'), {
+      code: 'paapi_non_json',
       statusCode: 403,
       nonRetryable: true,
     });
@@ -66,7 +102,7 @@ describe('MRB #4785 hostile FR #4782', () => {
     assert.equal(sent.length, 1);
     assert.equal(deleted.length, 1);
     assert.equal(out.results[0].deadLettered, true);
-    assert.equal(out.results[0].code, 'creators_not_eligible');
+    assert.equal(out.results[0].code, 'paapi_non_json');
   });
 
   it('missing SQS_DLQ_URL falls back to throw (redeploy-safe)', async () => {

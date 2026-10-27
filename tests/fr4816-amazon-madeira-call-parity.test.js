@@ -256,7 +256,7 @@ describe('FR #4816 madeira Creators call parity', () => {
     assert.ok(disabled[0].missingKeys.includes('/madeira/amazon/access-key'));
   });
 
-  it('403 AssociateNotEligible throws to DLQ with no IN write', async () => {
+  it('403 AssociateNotEligible: worker throws no IN; SQS acks unavailable (FR #5220)', async () => {
     const puts = [];
     await assert.rejects(
       () =>
@@ -296,33 +296,30 @@ describe('FR #4816 madeira Creators call parity', () => {
     err.status = 403;
     err.code = 'creators_not_eligible';
     err.nonRetryable = true;
-    await assert.rejects(
-      () =>
-        handleSqsWith429({
-          event: {
-            Records: [
-              {
-                body: JSON.stringify({
-                  searchId: 's1',
-                  env: 'sandbox',
-                  userId: 'U1',
-                }),
-                receiptHandle: 'rh-1',
-              },
-            ],
+    const out = await handleSqsWith429({
+      event: {
+        Records: [
+          {
+            body: JSON.stringify({
+              searchId: 's1',
+              env: 'sandbox',
+              userId: 'U1',
+            }),
+            receiptHandle: 'rh-1',
           },
-          run: async () => {
-            throw err;
-          },
-          deps: { putObject: async () => ({}) },
-          reportException: async () => {
-            intakes.push(1);
-          },
-          route: 'providers/live/amazon/handler',
-          source: 'amazon',
-        }),
-      (e) => e && e.code === 'creators_not_eligible',
-    );
+        ],
+      },
+      run: async () => {
+        throw err;
+      },
+      deps: { putObject: async () => ({}) },
+      reportException: async () => {
+        intakes.push(1);
+      },
+      route: 'providers/live/amazon/handler',
+      source: 'amazon',
+    });
+    assert.equal(out.results[0].skipped, 'provider_unavailable');
     assert.equal(intakes.length, 0);
   });
 

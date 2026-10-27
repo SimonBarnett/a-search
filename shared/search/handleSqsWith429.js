@@ -7,6 +7,8 @@
  * a zero-product status IN (config skip at worker — not an API failure).
  * FR #4769: provider API failures must NOT write an IN file; log and fail into
  * the provider DLQ (no intake-fatal spam).
+ * FR #5220: Creators AssociateNotEligible acks as provider_unavailable (serviced
+ * terminal, no IN, no DLQ).
  * FR #4782: nonRetryable / permanent client faults SendMessage to the DLQ and
  * DeleteMessage on the first failure (do not burn maxReceiveCount 3 / ~18 min).
  * Retryable 429 / 502-504 keep throw + visibility backoff.
@@ -16,6 +18,7 @@
 const {
   backoffFor429,
   isAmazonPermanentVendorFault,
+  isCreatorsNotEligible,
   isTransientVendorHttp,
   httpStatusOf,
 } = require('./backoff429');
@@ -70,6 +73,8 @@ function providerFaultCode(err) {
  */
 function isProviderFaultForDlq(err) {
   if (!err || isMissingProviderCreds(err) || isEnvIsolation(err)) return false;
+  // FR #5220: eligibility gate is provider_unavailable (handled before DLQ).
+  if (isCreatorsNotEligible(err)) return false;
   if (isAmazonPermanentVendorFault(err)) return true;
   const code = providerFaultCode(err);
   if (
@@ -476,6 +481,41 @@ async function reportMissingCredentialsSkip(args) {
   return { logged: true, inWritten: false };
 }
 
+
+/**
+ * FR #5220: eligibility gate — WARN provider_unavailable, no IN, no DLQ.
+ * @param {{
+ *   err: unknown,
+ *   msg: object,
+ *   source: string,
+ *   logError?: Function,
+ * }} args
+ */
+function reportProviderUnavailable(args) {
+  const err = args.err;
+  const msg = args.msg || {};
+  const source = String(args.source || msg.source || '').trim().toLowerCase();
+  const searchid = searchidFromMsg(msg);
+  const host = String(msg.hostkey || msg.host || '').trim();
+  const guid = String(msg.guid || '').trim();
+  const code = providerFaultCode(err);
+  const log =
+    typeof args.logError === 'function' ? args.logError : console.error.bind(console);
+  const parts = [
+    '[a-search]',
+    'WARN',
+    'provider_unavailable',
+    'provider=' + (source || 'unknown'),
+    'reason=AssociateNotEligible',
+    'searchid=' + (searchid || 'unknown'),
+  ];
+  if (host) parts.push('host=' + host);
+  if (guid) parts.push('guid=' + guid);
+  if (code) parts.push('code=' + code);
+  log(...parts);
+  return { logged: true, inWritten: false };
+}
+
 /** @deprecated FR #4769 — only missing_credentials use the skip path. */
 function isNonRetryableProviderSkip(err) {
   return isMissingProviderCreds(err);
@@ -548,6 +588,55 @@ async function handleSqsWith429(opts) {
     } catch (err) {
       // FR #4427: transient vendor HTTP (429/502/503/504) uses visibility backoff above; hard faults fall through.
       const transient = backoffFor429({ err }).is429;
+
+      // FR #5220: Creators AssociateNotEligible — provider unavailable (ack, no DLQ).
+      if (isCreatorsNotEligible(err)) {
+        let msg = {};
+        try {
+          if (record && typeof record.body === 'string') {
+            msg = JSON.parse(record.body);
+          }
+        } catch {
+          msg = {};
+        }
+        const source = String(
+          opts.source || (msg && msg.source) || '',
+        ).trim();
+        reportProviderUnavailable({
+          err,
+          msg,
+          source,
+          logError: opts.logError,
+        });
+        const pathParts = resolveInPathFromMsg(msg);
+        if (pathParts) {
+          const s3 = resolveDoneS3Deps(opts);
+          if (typeof s3.putObject === 'function') {
+            try {
+              await recordSearchTerminal({
+                ...s3,
+                hostkey: pathParts.hostkey,
+                guid: pathParts.guid,
+                searchid: pathParts.searchid,
+                source,
+                status: 'serviced',
+                products: 0,
+                logError: opts.logError,
+              });
+            } catch {
+              // fail-soft
+            }
+          }
+        }
+        results.push({
+          ok: false,
+          skipped: 'provider_unavailable',
+          code: 'creators_not_eligible',
+          reason: 'AssociateNotEligible',
+          source: source || opts.source || '',
+        });
+        continue;
+      }
 
       // FR #4438 / #4561: missing provider creds — config skip, not API failure.
       if (isMissingProviderCreds(err)) {
@@ -761,6 +850,8 @@ module.exports = {
   handleSqsWith429,
   isEnvIsolation,
   isMissingProviderCreds,
+  isCreatorsNotEligible,
+  reportProviderUnavailable,
   isNonRetryableProviderSkip,
   isVendorClientSkip,
   isProviderFaultForDlq,
