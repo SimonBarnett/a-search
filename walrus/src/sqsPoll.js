@@ -64,6 +64,8 @@ function createSqsPoll(opts) {
           opts.visibilityTimeout != null
             ? Number(opts.visibilityTimeout)
             : undefined,
+        AttributeNames: ['ApproximateReceiveCount'],
+        MessageAttributeNames: ['All'],
       }),
     );
     return Array.isArray(out && out.Messages) ? out.Messages : [];
