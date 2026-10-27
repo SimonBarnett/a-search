@@ -105,7 +105,9 @@ Caller (login -> JWT)
  providers/live/*                              providers/local/*
   SQS search workers                            SQS search workers
   (remote APIs)                                 (SELECT MSSQL Parts)
-  on fatal -> intake                            onboarding/ (EventBridge drain)
+  on fatal -> intake; Amazon                    onboarding/ (EventBridge drain)
+  AssociateNotEligible is unavailable
+  (FR #5220), not DLQ
         |                                         until remaining=0; signup rows
         |                                         for daily report (clubscan)
         +------------------+--------------------------+
