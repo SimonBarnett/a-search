@@ -19,10 +19,12 @@ search contract for Club Madeira / a-search.
 - Paced SQS consumers (`batchSize: 1`, reserved concurrency 1) back off on
   real **429** / gateway 5xx; provider API failures must **not** write an IN
   file (FR #4769). Non-retryable / permanent client faults
-  (`creators_not_eligible`, `rakuten_invalid_context`, `cj_not_authorised`,
-  other `nonRetryable` 4xx) **SendMessage to the provider DLQ and delete the
-  source message on the first failure** (FR #4782) --- do not wait for
-  maxReceiveCount. A successful call that returns 0 matches writes **no** IN file
+  (`rakuten_invalid_context`, `cj_not_authorised`, other `nonRetryable` 4xx)
+  **SendMessage to the provider DLQ and delete the source message on the first
+  failure** (FR #4782) --- do not wait for maxReceiveCount. Amazon Creators
+  `creators_not_eligible` / AssociateNotEligible is **provider_unavailable**
+  (WARN, `_search-done` `serviced` with `products=0`, no DLQ; FR #5220). A
+  successful call that returns 0 matches writes **no** IN file
   (FR #4823: log `provider_done ... products=0`, ack normally).
 - Completion without an IN file is tracked at
   `a-clubs/_search-done/{searchid}/{source}.json` (`serviced` or `dlq`) outside

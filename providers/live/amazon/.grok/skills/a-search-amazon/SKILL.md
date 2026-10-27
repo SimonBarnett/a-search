@@ -62,9 +62,10 @@ See [docs/provider-shortlist.md](../../../../../docs/provider-shortlist.md) and
      `www.amazon.co.uk` (not derived from `AMAZON_HOST`/`AMAZON_REGION`); always
      mint LwA from access/secret (env `AMAZON_CREATORS_CREDENTIAL` ignored);
      `PAAPI_MAX_PAGES` paging, 429 back-off, 401 token-cache clear
-   - Permanent vendor faults (`paapi_non_json` / `creators_non_json` /
-     `creators_not_eligible` AssociateNotEligible): fail into DLQ, no status IN
-     / no intake (FR #4769 supersedes #4562 / #4739 status-IN path)
+   - Permanent vendor faults (`paapi_non_json` / `creators_non_json`): fail
+     into DLQ, no status IN / no intake (FR #4769 supersedes #4562 / #4739)
+   - FR #5220: `creators_not_eligible` AssociateNotEligible is
+     `provider_unavailable` (WARN, `_search-done` serviced 0, no Amazon DLQ)
 4. Normalize items (`src/normalize.js` / Creators normalize in `creatorsSearch.js`) - `products[]`
 5. `writeLiveProviderInResult` - a-clubs `IN/{searchid}-amazon.json`
 
