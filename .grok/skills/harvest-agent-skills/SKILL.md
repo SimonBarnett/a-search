@@ -725,3 +725,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FR #5198 moves terminals to _search-done/, retarget every donePuts filter from /DONE/ to startsWith('_search-done/') before CI; FIX after MRB PASS often means tip already has flamingo retarget --- verify local then DONE FIX without empty push
 - Partial a-affiliates import PRs use Refs not Closes so #5070 stays open for deploy/stub/playwright follow-ups; ACCEPTABLE drift with #5206
 - Awin invite must run the node entry under awin-agent (scripts/invite.mjs) so Playwright resolves from awin-agent/node_modules; never node the S:\a-affiliates\awin\_invite\invite.mjs copy as the ESM entry. StrictMode: use Test-InviteCfgValue for optional config keys like reportDir.
+- a-affiliates code deploy: MANIFEST-managed keys only; default WhatIf; skip SKILLS.md unless -IncludeSkills; never --delete or touch _invites/merchant folders
