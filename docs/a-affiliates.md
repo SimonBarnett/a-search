@@ -208,3 +208,20 @@ automatically from this signal. Per-GUID detail lives at
 - Parsing feeds into search candidates (walrus / SQS; parent #3944).
 - Adding `a-affiliates` to the walrus-rclone IAM user (raise with ops after deploy
   if the bucket is not named `a-search-affiliates`).
+
+## Git source of truth for code objects (FR #5070)
+
+Executable/config/agent-instruction keys that used to live only in s3://a-affiliates/ are mirrored under ffiliates/bucket/ (see ffiliates/MANIFEST.json). **Git is the source of truth.** Do not edit those objects directly in S3.
+
+Deploy from a checkout:
+
+`powershell
+# plan only (default)
+.\tools\deploy-a-affiliates.ps1 -WhatIf
+# drift vs live S3 (HeadObject size/ETag)
+.\tools\deploy-a-affiliates.ps1 -Check
+# write managed keys (never deletes data/records)
+.\tools\deploy-a-affiliates.ps1 -Apply
+`
+
+Default AWS profile: -search-redqueen-agents. SKILLS.md is skipped unless -IncludeSkills.

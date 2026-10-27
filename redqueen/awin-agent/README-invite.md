@@ -39,3 +39,7 @@ Register-ScheduledTask -TaskName 'a-search-awin-invite' -Action $action -Trigger
 ```
 
 Lock: `%ProgramData%\a-search\awin-invite.lock`. Second start exits 0 with `already_running`.
+
+## Git source of truth (FR #5070 / #5206)
+
+The Playwright entry in this folder (scripts/invite.mjs) is the runtime path. A mirrored copy also lives under ffiliates/bucket/awin/_invite/ for S3 deploy via 	ools/deploy-a-affiliates.ps1. Do not run S:\a-affiliates\awin\_invite\invite.mjs as the Node entry (ESM resolves playwright next to the script). Merchant data remains under AWIN_AFFILIATES_ROOT (default S:\a-affiliates\awin).
