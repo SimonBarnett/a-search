@@ -12,6 +12,7 @@
  * FR #4782: nonRetryable / permanent client faults SendMessage to the DLQ and
  * DeleteMessage on the first failure (do not burn maxReceiveCount 3 / ~18 min).
  * Retryable 429 / 502-504 keep throw + visibility backoff.
+ * FR #5222: after DLQ move / final receive, file a review issue (fail-soft).
  */
 
 const {
@@ -26,6 +27,7 @@ const {
   resolveInPathFromMsg,
 } = require('./writeLiveProviderInResult');
 const { recordSearchTerminal } = require('./searchDone');
+const { reportDlqFailure } = require('../intake/reportDlqFailure');
 
 /** CDK worker / db-backed queues use maxReceiveCount 3 (FR-142). */
 const DEFAULT_MAX_RECEIVE_COUNT = 3;
@@ -251,6 +253,27 @@ async function moveMessageToDlq(args) {
   // FR #4917: terminal DONE for immediate DLQ (after SQS move so a DONE failure
   // does not strand the poison message on the primary queue).
   await recordDlqDone({ ...args, msg, source });
+  // FR #5222: file review issue (fail-soft; never affects DLQ move).
+  await reportDlqFailure({
+    err,
+    msg,
+    provider: source,
+    source,
+    code,
+    searchid,
+    host: String(msg.hostkey || msg.host || '').trim(),
+    guid: String(msg.guid || '').trim(),
+    queueUrl: args.queueUrl,
+    dlqUrl: args.dlqUrl,
+    path: 'immediate',
+    receiveCount: receiveCountFromRecord(record),
+    queries: msg.queries,
+    q: msg.q,
+    fetch: args.fetch,
+    intakeUrl: args.intakeUrl,
+    logError: args.logError,
+    route: 'shared/search/handleSqsWith429#moveMessageToDlq',
+  });
 }
 
 /**
@@ -700,6 +723,8 @@ async function handleSqsWith429(opts) {
               queueUrl: dlqDeps.queueUrl,
               dlqUrl: dlqDeps.dlqUrl,
               ...s3,
+              fetch: opts.fetch || (opts.deps && opts.deps.fetch),
+              intakeUrl: opts.intakeUrl,
               logError: opts.logError,
             });
             results.push({
@@ -724,6 +749,26 @@ async function handleSqsWith429(opts) {
             msg,
             source,
             logError: opts.logError,
+          });
+          // FR #5222: SQS redrive will park the message; file review issue here.
+          await reportDlqFailure({
+            err,
+            msg,
+            provider: source,
+            source,
+            searchid: searchidFromMsg(msg),
+            host: String(msg.hostkey || msg.host || '').trim(),
+            guid: String(msg.guid || '').trim(),
+            queueUrl: (opts.queueUrl || (opts.deps && opts.deps.queueUrl) || ''),
+            dlqUrl: (opts.dlqUrl || (opts.deps && opts.deps.dlqUrl) || ''),
+            path: 'maxReceiveCount',
+            receiveCount: receiveCountFromRecord(record),
+            queries: msg.queries,
+            q: msg.q,
+            fetch: opts.fetch || (opts.deps && opts.deps.fetch),
+            intakeUrl: opts.intakeUrl,
+            logError: opts.logError,
+            route: 'shared/search/handleSqsWith429#maxReceiveCount',
           });
         }
         throw err;
@@ -755,6 +800,25 @@ async function handleSqsWith429(opts) {
             msg,
             source,
             logError: opts.logError,
+          });
+          await reportDlqFailure({
+            err,
+            msg,
+            provider: source,
+            source,
+            searchid: searchidFromMsg(msg),
+            host: String(msg.hostkey || msg.host || '').trim(),
+            guid: String(msg.guid || '').trim(),
+            queueUrl: (opts.queueUrl || (opts.deps && opts.deps.queueUrl) || ''),
+            dlqUrl: (opts.dlqUrl || (opts.deps && opts.deps.dlqUrl) || ''),
+            path: 'maxReceiveCount',
+            receiveCount: receiveCountFromRecord(record),
+            queries: msg.queries,
+            q: msg.q,
+            fetch: opts.fetch || (opts.deps && opts.deps.fetch),
+            intakeUrl: opts.intakeUrl,
+            logError: opts.logError,
+            route: 'shared/search/handleSqsWith429#transientMaxReceive',
           });
         }
       }

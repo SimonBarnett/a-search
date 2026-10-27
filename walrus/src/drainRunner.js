@@ -7,7 +7,24 @@
  */
 
 const { DEFAULT_WAIT_S } = require('./sqsPoll');
+
+/**
+ * FR #5222: ApproximateReceiveCount from an SQS message.
+ * @param {object} msg
+ * @returns {number}
+ */
+function receiveCountFromSqsMessage(msg) {
+  const attrs = (msg && msg.Attributes) || (msg && msg.attributes) || {};
+  const n = Number(
+    attrs.ApproximateReceiveCount != null
+      ? attrs.ApproximateReceiveCount
+      : attrs.approximateReceiveCount,
+  );
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 const { runDrainJob } = require('./runJob');
+const { reportDlqFailure } = require('../../shared/intake/reportDlqFailure');
 
 /**
  * FR #4570: one INFO JSON line per drained message (no secrets / query PII).
@@ -88,6 +105,12 @@ function createDrainRunner(opts) {
   const jobDeps = opts.jobDeps || {};
   const log =
     typeof opts.log === 'function' ? opts.log : (line) => console.log(line);
+  const maxReceive =
+    Number(opts.maxReceiveCount) > 0
+      ? Math.floor(Number(opts.maxReceiveCount))
+      : 3;
+  const queueUrl = String((opts.queue && opts.queue.queueUrl) || opts.queueUrl || '').trim();
+  const dlqUrl = String(opts.dlqUrl || '').trim();
   let stopped = false;
 
   /**
@@ -146,6 +169,38 @@ function createDrainRunner(opts) {
         return once;
       }
       // FR #4534: never delete on failure; release for retry / visibility timeout.
+      {
+        const err = new Error('drain_job_not_ok');
+        err.code = 'drain_job_not_ok';
+
+      const recvCount = receiveCountFromSqsMessage(msg);
+      if (recvCount >= maxReceive) {
+        try {
+          await reportDlqFailure({
+            err: err || new Error('drain_job_failed'),
+            msg: body,
+            provider: String((body && body.source) || 'sql').trim() || 'sql',
+            source: String((body && body.source) || 'sql').trim() || 'sql',
+            searchid: ids.searchid,
+            host: ids.host,
+            guid: ids.guid,
+            queueUrl,
+            dlqUrl,
+            path: 'maxReceiveCount',
+            receiveCount: recvCount,
+            queries: body && body.queries,
+            q: body && body.q,
+            fetch: opts.fetch,
+            intakeUrl: opts.intakeUrl,
+            logError: opts.logError,
+            route: 'walrus/src/drainRunner#maxReceiveCount',
+          });
+        } catch {
+          /* fail-soft */
+        }
+      }
+
+      }
       if (typeof opts.queue.changeVisibility === 'function') {
         try {
           await opts.queue.changeVisibility(receipt, 0);
@@ -165,6 +220,34 @@ function createDrainRunner(opts) {
       return once;
     } catch (err) {
       // FR #4534: connection/query errors must not crash the process or delete.
+
+      const recvCount = receiveCountFromSqsMessage(msg);
+      if (recvCount >= maxReceive) {
+        try {
+          await reportDlqFailure({
+            err: err || new Error('drain_job_failed'),
+            msg: body,
+            provider: String((body && body.source) || 'sql').trim() || 'sql',
+            source: String((body && body.source) || 'sql').trim() || 'sql',
+            searchid: ids.searchid,
+            host: ids.host,
+            guid: ids.guid,
+            queueUrl,
+            dlqUrl,
+            path: 'maxReceiveCount',
+            receiveCount: recvCount,
+            queries: body && body.queries,
+            q: body && body.q,
+            fetch: opts.fetch,
+            intakeUrl: opts.intakeUrl,
+            logError: opts.logError,
+            route: 'walrus/src/drainRunner#maxReceiveCount',
+          });
+        } catch {
+          /* fail-soft */
+        }
+      }
+
       if (typeof opts.queue.changeVisibility === 'function') {
         try {
           await opts.queue.changeVisibility(receipt, 0);
@@ -222,6 +305,7 @@ function createDrainRunner(opts) {
 
 module.exports = {
   createDrainRunner,
+  receiveCountFromSqsMessage,
   formatDrainMessageLog,
   messageIdsFromBody,
   productCountFromOutcome,
