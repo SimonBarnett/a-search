@@ -79,6 +79,25 @@ Immediate DLQ and the final receive before SQS redrive
 the GUID marker flips `hasresults=1` on **S3 object metadata** (starts at
 `0` with `enabled=0`).
 
+### DLQ review issues (FR #5222)
+
+When a provider Lambda or the walrus SQL drain **sends** a message to a DLQ
+(immediate nonRetryable path) or hits the **final receive** at
+`maxReceiveCount`, `shared/intake/reportDlqFailure.js` files one GitHub issue
+in SimonBarnett/a-search via bobiverse intake (same fail-soft path as
+`reportException`). Coverage: every
+`a-search-provider-*-{live|sandbox}-dlq.fifo` plus `a-search-db-backed-dlq`.
+
+Issue body includes provider/source, main+DLQ queue URLs, host/GUID,
+searchid, queries (redacted), failure code, last error (redacted),
+`ApproximateReceiveCount`, path (`immediate` | `maxReceiveCount`), GMT
+timestamp, and a CloudWatch Logs Insights hint. Dedupe key is normally
+`(searchid, provider)`; known gates such as `creators_not_eligible` group by
+`provider|code` so one open issue can take counter comments. Filing must not
+`ReceiveMessage` / `PurgeQueue` / `StartMessageMoveTask` on a DLQ --- redrive
+stays Simon-only. Intake failure logs `dlq_issue_report_failed` and does not
+change SQS/DLQ behaviour.
+
 FR #5142: the last writer must win even when SQL terminals land via walrus
 mapped-drive/rclone after live providers. Walrus writes `_search-done/` on
 the mapped drive **and** calls S3 `recordSearchTerminal` when AWS deps are
