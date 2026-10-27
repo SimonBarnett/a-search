@@ -728,3 +728,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - a-affiliates code deploy: MANIFEST-managed keys only; default WhatIf; skip SKILLS.md unless -IncludeSkills; never --delete or touch _invites/merchant folders
 - a-search hasresults/redeploy/monitor FRs that require redqueen install + live Lambda logs: GIVEUP require_machine=redqueen from flamingo; leave issue OPEN; file offer-gap intake when chair offered without pin
 - Amazon Creators AssociateNotEligible: handleSqsWith429 acks as provider_unavailable (WARN), writes _search-done serviced products=0, never amazon-live DLQ; exclude creators_not_eligible from isProviderFaultForDlq even when nonRetryable
+- a-search DLQ/intake body redaction tests must assemble Bearer/token via tests/fixtures/fakeSecrets.js and assert the assembled parts are absent — never contiguous Bearer/FAKESECRET/sk-live literals (FR #611 / MRB #5230)
