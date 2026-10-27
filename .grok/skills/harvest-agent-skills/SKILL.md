@@ -607,7 +607,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sweep all handleAgentSearch fan-out fixtures for SQS_<SOURCE>_LIVE_URL when envVars gate is live (fr4030/fr4265/fr4415/fr4563), not one file at a time.
 - docs/mrb pin new test files need a trailing newline before PASS; pin harvest lesson needles already on main.
 - a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
-- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: tag creators_not_eligible (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
+- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: still tag creators_not_eligible; FR #5220 handleSqsWith429 treats it as provider_unavailable (WARN, _search-done serviced products=0, no amazon-live DLQ). Other Creators 403s keep FR #4769 immediate DLQ.
 - CJ Product Search: after [String!]! keywords, still cap whitespace tokens at 10 or CJ HTTP 400 Too many keywords; keep short phrases as one element.
 - CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone -- a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
 - CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
