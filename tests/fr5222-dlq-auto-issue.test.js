@@ -338,14 +338,19 @@ describe('FR #5222 DLQ auto-issue', () => {
   });
 
   it('body redacts bearer-looking secrets', () => {
+    const fake = require('./fixtures/fakeSecrets');
+    const token = fake.fakeBearerTokenPlain();
+    const message = fake.authorizationBearer(token);
     const body = buildDlqIssueBody({
       provider: 'amazon',
       code: 'x',
       searchid: 's',
-      message: 'Authorization Bearer FAKESECRET_g1h2i3j4k5l6m7n8o9p0',
+      message,
       fingerprint: 'a'.repeat(64),
     });
-    assert.doesNotMatch(body, /sk-live-SHOULD_NOT_APPEAR/);
+    assert.doesNotMatch(body, fake.reLiteral(token));
+    assert.doesNotMatch(body, fake.reFromParts(['Bearer ', 'SECRET', 'TOKEN']));
+    assert.match(body, /Last error \(redacted\)/);
   });
 
   it('FR #5232: fixture host/queue without fetch skips live intake', async () => {
