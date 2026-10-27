@@ -18,6 +18,7 @@ const MIGRATED = [
   'tests/fr048b-redact.test.js',
   'tests/report-exception.test.js',
   'tests/fr059e-selftest-intake.test.js',
+  'tests/fr5222-dlq-auto-issue.test.js',
 ];
 
 describe('MRB #612 hostile fakeSecrets', () => {
