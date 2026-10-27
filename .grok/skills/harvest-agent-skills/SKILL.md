@@ -726,4 +726,5 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Partial a-affiliates import PRs use Refs not Closes so #5070 stays open for deploy/stub/playwright follow-ups; ACCEPTABLE drift with #5206
 - Awin invite must run the node entry under awin-agent (scripts/invite.mjs) so Playwright resolves from awin-agent/node_modules; never node the S:\a-affiliates\awin\_invite\invite.mjs copy as the ESM entry. StrictMode: use Test-InviteCfgValue for optional config keys like reportDir.
 - a-affiliates code deploy: MANIFEST-managed keys only; default WhatIf; skip SKILLS.md unless -IncludeSkills; never --delete or touch _invites/merchant folders
+- a-search hasresults/redeploy/monitor FRs that require redqueen install + live Lambda logs: GIVEUP require_machine=redqueen from flamingo; leave issue OPEN; file offer-gap intake when chair offered without pin
 - Amazon Creators AssociateNotEligible: handleSqsWith429 acks as provider_unavailable (WARN), writes _search-done serviced products=0, never amazon-live DLQ; exclude creators_not_eligible from isProviderFaultForDlq even when nonRetryable
