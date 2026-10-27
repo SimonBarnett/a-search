@@ -724,3 +724,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After FR #5198, any test that pins terminal PutObject keys must assert _search-done/{searchid}/{source}.json (and that /DONE/ is absent); leave legacy GUID DONE/ reads for transition only.
 - After FR #5198 moves terminals to _search-done/, retarget every donePuts filter from /DONE/ to startsWith('_search-done/') before CI; FIX after MRB PASS often means tip already has flamingo retarget --- verify local then DONE FIX without empty push
 - Awin invite must run the node entry under awin-agent (scripts/invite.mjs) so Playwright resolves from awin-agent/node_modules; never node the S:\a-affiliates\awin\_invite\invite.mjs copy as the ESM entry. StrictMode: use Test-InviteCfgValue for optional config keys like reportDir.
+- Awin invite Playwright must run from awin-agent/scripts (ESM resolves next to script); never S:\a-affiliates\_invite\invite.mjs as entry
