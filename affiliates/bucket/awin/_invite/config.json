@@ -1,0 +1,7 @@
+﻿{
+  "agentRoot": "C:\\ai\\a-search\\awin-agent",
+  "profile": "C:\\ai\\a-search\\awin-agent\\profile",
+  "publisherId": "2889699",
+  "entry": "invite.mjs",
+  "secretFile": "C:\\passwords\\awin.secret.txt"
+}
