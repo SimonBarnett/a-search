@@ -57,6 +57,14 @@ $here = $PSScriptRoot
 # Rakuten from FR #5065; CJ from FR #5066.
 $script:InviteProviders = @('awin', 'rakuten', 'cj')
 
+function Test-InviteCfgValue {
+    # FR #5070 / #5206: StrictMode-safe optional config.json keys (awin config has no reportDir).
+    param($Cfg, [string]$Name)
+    if (-not $Cfg) { return $false }
+    $prop = $Cfg.PSObject.Properties[$Name]
+    return [bool]($prop -and $prop.Value)
+}
+
 function Get-InviteProviderNames {
     param([string]$Bucket, [string]$AwsProfile)
     # FR #5176: always pass --profile (never ambient AWS_PROFILE alone).
@@ -142,6 +150,12 @@ function Resolve-InviteProviderRoots {
         $runFromAgent = $true
     }
     if ($slug -eq 'cj') { $runFromAgent = $true }
+    # FR #5206: awin Playwright lives in awin-agent/node_modules; ESM resolves next to the
+    # script file, so never run S:\a-affiliates\awin\_invite\invite.mjs as the entry.
+    if ($slug -eq 'awin') {
+        $runFromAgent = $true
+        if ($entry -eq 'invite.mjs') { $entry = 'scripts/invite.mjs' }
+    }
     $script = if ($runFromAgent) { Join-Path $agentRoot $entry } else { Join-Path $inviteRoot $entry }
     $reportDir = Join-Path 'C:\ai\a-search\logs' ("{0}-invite" -f $slug)
     if (Test-InviteCfgValue $cfg 'reportDir') { $reportDir = [string]$cfg.reportDir }

@@ -14,10 +14,10 @@ cd S:\a-affiliates
 invite -Max 3              # every enabled=1 provider (awin + rakuten; cj when enabled=1)
 ```
 
-Shim: `C:\ai\a-search\tools\invite.ps1` (on PATH). Awin backend: `s3://a-affiliates/awin/_invite/invite.mjs` (agentRoot `awin-agent`). Rakuten backend: `redqueen/invite/` (FR #5065). CJ backend: `redqueen/cj-invite/` (FR #5066; agentRoot `C:\ai\a-search\cj-invite`).
+Shim: `C:\ai\a-search\tools\invite.ps1` (on PATH). Awin node entry: `redqueen/awin-agent/scripts/invite.mjs` (FR #5206 --- Playwright resolves from `awin-agent/node_modules`; merchant data still under `S:\a-affiliates\awin`). Config on the mount (`awin/_invite/config.json`) stays the source of profile/secret/publisherId. Rakuten backend: `redqueen/invite/` (FR #5065). CJ backend: `redqueen/cj-invite/` (FR #5066; agentRoot `C:\ai\a-search\cj-invite`).
 
 - Cwd gate: `a-affiliates` root or provider folder; provider must be `enabled=1`
-- Enabled provider without a registered invite backend → `invite_not_implemented` (exit 4)
+- Enabled provider without a registered invite backend -> `invite_not_implemented` (exit 4)
 - Registered providers: `awin`, `rakuten`, `cj` (keep CJ marker `enabled=0` until #5057)
 - 90-day gate: `{provider}/_invites/{id}/` metadata `invitedat`
 - Skip existing `{provider}/{id}/` folders
