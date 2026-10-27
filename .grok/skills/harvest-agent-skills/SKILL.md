@@ -607,7 +607,7 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Sweep all handleAgentSearch fan-out fixtures for SQS_<SOURCE>_LIVE_URL when envVars gate is live (fr4030/fr4265/fr4415/fr4563), not one file at a time.
 - docs/mrb pin new test files need a trailing newline before PASS; pin harvest lesson needles already on main.
 - a-search CJ GraphQL products.keywords expects [String!]!; buildProductsQuery must declare $keywords: [String!]! and send a non-empty string array (wrap a joined keyword string as one element).
-- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: tag creators_not_eligible (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
+- Amazon Creators HTTP 403 AssociateNotEligible/AccessDeniedException: still tag creators_not_eligible; FR #5220 handleSqsWith429 treats it as provider_unavailable (WARN, _search-done serviced products=0, no amazon-live DLQ). Other Creators 403s keep FR #4769 immediate DLQ.
 - CJ Product Search: after [String!]! keywords, still cap whitespace tokens at 10 or CJ HTTP 400 Too many keywords; keep short phrases as one element.
 - CJ Product Search keyword cap must count the same way CJ does: split on non-alphanumeric (hyphen included), not whitespace alone -- a space-only 10-token string with 761-14 is 11 CJ keywords and HTTP 400
 - CJ GraphQL non-JSON 403 You are not Authorised: tag cj_not_authorised (nonRetryable); FR #4769 fail into DLQ with CloudWatch log (no status IN, no intake).
@@ -727,3 +727,6 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Awin invite must run the node entry under awin-agent (scripts/invite.mjs) so Playwright resolves from awin-agent/node_modules; never node the S:\a-affiliates\awin\_invite\invite.mjs copy as the ESM entry. StrictMode: use Test-InviteCfgValue for optional config keys like reportDir.
 - a-affiliates code deploy: MANIFEST-managed keys only; default WhatIf; skip SKILLS.md unless -IncludeSkills; never --delete or touch _invites/merchant folders
 - After wiring reportDlqFailure into handleSqsWith429, hostile/unit DLQ tests that omit fetch/intakeUrl will POST to live intake via global fetch; skip filing when host/queue look like fixtures (*.example, *.test, sqs.example) unless fetch or intakeUrl is injected.
+- FR #5222: file DLQ review issues at send/final-receive via shared/intake/reportDlqFailure (dedupe searchid|provider; group creators_not_eligible); pass fetch+intakeUrl into moveMessageToDlq; never PurgeQueue/ReceiveMessage/redrive from filer; tests must use TEST_INTAKE so missing fetch cannot hit live intake
+- a-search hasresults/redeploy/monitor FRs that require redqueen install + live Lambda logs: GIVEUP require_machine=redqueen from flamingo; leave issue OPEN; file offer-gap intake when chair offered without pin
+- Amazon Creators AssociateNotEligible: handleSqsWith429 acks as provider_unavailable (WARN), writes _search-done serviced products=0, never amazon-live DLQ; exclude creators_not_eligible from isProviderFaultForDlq even when nonRetryable
