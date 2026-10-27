@@ -211,7 +211,7 @@ automatically from this signal. Per-GUID detail lives at
 
 ## Git source of truth for code objects (FR #5070)
 
-Executable/config/agent-instruction keys that used to live only in s3://a-affiliates/ are mirrored under ffiliates/bucket/ (see ffiliates/MANIFEST.json). **Git is the source of truth.** Do not edit those objects directly in S3.
+Executable/config/agent-instruction keys that used to live only in s3://a-affiliates/ are mirrored under affiliates/bucket/ (see affiliates/MANIFEST.json). **Git is the source of truth.** Do not edit those objects directly in S3.
 
 Deploy from a checkout:
 
@@ -224,4 +224,4 @@ Deploy from a checkout:
 .\tools\deploy-a-affiliates.ps1 -Apply
 `
 
-Default AWS profile: -search-redqueen-agents. SKILLS.md is skipped unless -IncludeSkills.
+Default AWS profile: a-search-redqueen-agents. SKILLS.md is skipped unless -IncludeSkills.
