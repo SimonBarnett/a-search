@@ -184,6 +184,10 @@ dbimport
 
 ## invite / invite.ps1
 
+### Deploy a-affiliates code from git (FR #5070)
+
+tools/deploy-a-affiliates.ps1 pushes affiliates/bucket/ keys listed in affiliates/MANIFEST.json to s3://a-affiliates/ (-WhatIf default, -Check, -Apply). Never deletes; never touches _invites/, _applications/, or merchant folders. SKILLS.md skipped unless -IncludeSkills.
+
 Cwd-aware invite dispatcher for `a-affiliates` (on PATH via `C:\ai\a-search\tools`). Loads `{provider}/_invite/` + `config.json`.
 
 | Cwd | Behaviour |

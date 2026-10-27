@@ -9,5 +9,11 @@ Git is the source of truth for these files. Nobody should edit S3 directly.
 
 Not imported: data and records. That covers merchant folders `awin/{id}/` (markers and dated feeds), `awin/_invites/` records, and zero-byte provider markers. No `.env` or secret files were present.
 
-Still to do under #5070 (follow-up PRs): `tools/deploy-a-affiliates.ps1` (`-WhatIf` / `-Check` drift), replacing the `redqueen/awin-agent/scripts/invite.mjs` stub, and a merge rule for runtime-written `SKILLS.md`.
-After a deliberate re-import, update `MANIFEST.json`. The test fails on any drift.
+## Deploy (repo -> S3)
+
+`tools/deploy-a-affiliates.ps1` (default `-WhatIf`; `-Check` HeadObject drift; `-Apply` puts with `--sse AES256`).
+Managed keys come from `MANIFEST.json` only. Never deletes. Never touches `_invites/`, `_applications/`, or merchant folders.
+Runtime-written `SKILLS.md` files are **skipped** unless `-IncludeSkills` (prefer pull S3 back into git).
+Awin invite runtime entry is `redqueen/awin-agent/scripts/invite.mjs` (Playwright); merchant data stays on `S:\a-affiliates\awin` via `AWIN_AFFILIATES_ROOT`.
+
+After a deliberate re-import, update `MANIFEST.json`. The manifest test fails on any drift.
