@@ -266,7 +266,9 @@ async function searchEbay(msg, deps) {
       : await fetchAccessToken(creds, httpRequest);
 
   const host = apiHost(creds.ebayEnv);
-  const cap = 10;
+  // FR #5263: Browse page size is the vendor max (200), not maxResults.
+  // Keep every downloaded item; the agent picks the best x.
+  const pageLimit = 200;
   const merged = [];
   const seen = new Set();
   const normOpts = {
@@ -276,7 +278,6 @@ async function searchEbay(msg, deps) {
   };
 
   for (const text of texts) {
-    if (merged.length >= cap) break;
     const cleaned = keywordsOnly(
       text,
       market || (msg && msg.market),
@@ -284,8 +285,7 @@ async function searchEbay(msg, deps) {
     );
     const q = buildEbayBrowseQ(cleaned, excludeTerms);
     if (!q) continue;
-    const limit = Math.min(cap, cap - merged.length);
-    const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=${limit}`;
+    const url = `https://${host}/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=${pageLimit}`;
     const browseJson = await httpRequest({
       method: 'GET',
       url,
@@ -303,7 +303,6 @@ async function searchEbay(msg, deps) {
         seen.add(id);
       }
       merged.push(p);
-      if (merged.length >= cap) break;
     }
   }
   return merged;

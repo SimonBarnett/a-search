@@ -55,7 +55,7 @@ describe('MRB #4452 hostile FR #4446 eBay queries', () => {
     assert.deepEqual(products, []);
   });
 
-  it('one Browse call per query text; exclusions on each; shared cap 10', async () => {
+  it('one Browse call per query text; exclusions on each; no maxResults cap', async () => {
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
     const urls = [];
     // Give each call a unique item id so merge does not collapse to 1.
@@ -92,7 +92,7 @@ describe('MRB #4452 hostile FR #4446 eBay queries', () => {
       assert.notEqual(q, ' ');
     }
     assert.ok(products.length >= 1);
-    assert.ok(products.length <= 10);
+    assert.match(urls[0], /limit=200/);
   });
 
   it('excludeMatchTerms skips tokens shorter than 3 chars; phrasal gets quotes', () => {

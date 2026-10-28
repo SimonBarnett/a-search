@@ -90,8 +90,7 @@ function mockQueryParts(msg, fixtureRows) {
               .filter((k) => /^gate\d+$/.test(k))
               .sort((a, b) => Number(a.slice(4)) - Number(b.slice(4)))
               .map((k) => String(inputs[k]));
-            const n = Number(inputs.n) || 0;
-            const matched = filterRowsByGates(fixtureRows, gates).slice(0, n);
+            const matched = filterRowsByGates(fixtureRows, gates);
             return { recordset: matched };
           },
         };

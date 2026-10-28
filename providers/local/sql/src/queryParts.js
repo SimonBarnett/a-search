@@ -859,8 +859,10 @@ function buildSelectSql(excludeCount, gateCount) {
   for (let i = 0; i < n; i += 1) {
     extra += `\n  AND NOT CONTAINS((p.Title, p.Description), @ex${i})`;
   }
+  // FR #5263: no SELECT TOP (@n) and no FREETEXTTABLE top_n. Gates filter;
+  // FREETEXT only ranks the gated set. The agent picks the best x.
   return `
-SELECT TOP (@n)
+SELECT
   p.Source,
   p.FeedKey,
   p.MerchantProductId,
@@ -871,8 +873,9 @@ SELECT TOP (@n)
   p.ImageUrl,
   p.Price,
   p.Currency,
-  p.Stock
-FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q, @top) AS ft
+  p.Stock,
+  ft.[RANK] AS Rank
+FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q) AS ft
 INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
 WHERE p.Env = @env
   AND p.DeletedAt IS NULL
@@ -894,7 +897,8 @@ function sqlTopLimit(envVars) {
 }
 
 /**
- * FR #5041: per-query maxResults capped by A_SEARCH_SQL_TOP.
+ * Legacy helper: maxResults capped by A_SEARCH_SQL_TOP.
+ * FR #5263: defaultQueryParts no longer binds this as SELECT TOP.
  * @param {object} msg
  * @param {Record<string, string|undefined>|undefined} envVars
  * @returns {number}
@@ -918,8 +922,8 @@ function resolveSqlRowLimit(msg, envVars) {
 }
 
 /**
- * FR #5256: FREETEXTTABLE top_n candidate pool. Never bind maxResults here ---
- * that hid filter-matching rows past the first 10 text hits.
+ * Legacy helper (FR #5256 candidate pool). FR #5263 omits FREETEXTTABLE
+ * top_n entirely so a hit at text position 5412 is still joined.
  * @param {object} [_msg]
  * @param {Record<string, string|undefined>|undefined} envVars
  * @returns {number}
@@ -1022,8 +1026,6 @@ async function defaultQueryParts(msg, deps) {
     .map(quoteExcludePhrase)
     .filter(Boolean);
   const config = mssqlConfigFromEnv(envVars);
-  const rowLimit = resolveSqlRowLimit(msg || {}, envVars);
-  const freetextTop = resolveSqlFreetextTop(msg || {}, envVars);
   const minRank = sqlMinRankForSelect(envVars, gateTokens.length);
   const connect =
     deps && typeof deps.connect === 'function' ? deps.connect : defaultConnect;
@@ -1041,8 +1043,6 @@ async function defaultQueryParts(msg, deps) {
       let req = pool.request();
       req = req.input('env', nv, truncateFt(env));
       req = req.input('q', nv, q);
-      req = req.input('top', sqlTypes.Int, freetextTop);
-      req = req.input('n', sqlTypes.Int, rowLimit);
       req = req.input('minRank', sqlTypes.Int, minRank);
       for (let i = 0; i < gateTokens.length; i += 1) {
         req = req.input(`gate${i}`, nv, gateTokens[i]);

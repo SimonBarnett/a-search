@@ -63,8 +63,8 @@ describe('FR #4976 contains + TOP helpers', () => {
     assert.equal(sqlTopLimit({ A_SEARCH_SQL_TOP: '0' }), 500);
   });
 
-  it('SELECT_SQL is FREETEXTTABLE + TOP (@n) + RANK, SELECT-only', () => {
-    assert.match(SELECT_SQL, /SELECT\s+TOP\s+\(@n\)/i);
+  it('SELECT_SQL is FREETEXTTABLE + RANK, SELECT-only (no TOP)', () => {
+    assert.doesNotMatch(SELECT_SQL, /SELECT\s+TOP/i);
     assert.match(SELECT_SQL, /FREETEXTTABLE/i);
     assert.match(SELECT_SQL, /ORDER BY\s+ft\.\[RANK\]/i);
     assert.doesNotMatch(SELECT_SQL, /\bLIKE\b/i);
@@ -87,7 +87,7 @@ describe('FR #4976 contains + TOP helpers', () => {
     assert.equal(connected, false);
   });
 
-  it('passes @q @top @n and phrase @ex0 into FREETEXTTABLE SQL', async () => {
+  it('passes @q and phrase @ex0 into FREETEXTTABLE SQL (no @n/@top)', async () => {
     /** @type {Record<string, unknown>} */
     const inputs = {};
     /** @type {Record<string, unknown>} */
@@ -125,8 +125,8 @@ describe('FR #4976 contains + TOP helpers', () => {
     assert.equal(rows.length, 1);
     assert.equal(inputs.q, 'VOLANTEXRC servo');
     assert.equal(inputs.ex0, '"junkxx"');
-    assert.equal(inputs.n, 12);
-    assert.equal(inputs.top, 12);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
     assert.match(sqlText, /FREETEXTTABLE/);
     assert.match(sqlText, /@ex0/);
     assert.match(sqlText, /@gate0/);

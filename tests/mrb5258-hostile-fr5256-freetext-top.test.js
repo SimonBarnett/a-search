@@ -14,12 +14,12 @@ const ROOT = path.join(__dirname, '..');
 const qp = require('../providers/local/sql/src/queryParts');
 
 describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
-  it('SELECT_SQL uses SELECT TOP (@n) and FREETEXTTABLE(..., @top) separately', () => {
+  it('SELECT_SQL has no TOP and FREETEXTTABLE without top_n (FR #5263)', () => {
     const sql = qp.SELECT_SQL;
-    assert.match(sql, /SELECT\s+TOP\s*\(\s*@n\s*\)/i);
+    assert.doesNotMatch(sql, /SELECT\s+TOP/i);
     assert.match(
       sql,
-      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*\)\s*,\s*@q\s*,\s*@top\s*\)/i,
+      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*\)\s*,\s*@q\s*\)/i,
     );
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
   });
@@ -42,7 +42,7 @@ describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
     assert.equal(qp.sqlMinRankForSelect(env, 0), 50);
   });
 
-  it('defaultQueryParts never binds top === n when maxResults < A_SEARCH_SQL_TOP', async () => {
+  it('defaultQueryParts never binds n or top (FR #5263)', async () => {
     /** @type {Record<string, unknown>} */
     const inputs = {};
     await qp.defaultQueryParts(
@@ -83,9 +83,8 @@ describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
         }),
       },
     );
-    assert.equal(inputs.n, 10);
-    assert.equal(inputs.top, 500);
-    assert.notEqual(inputs.top, inputs.n);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
     assert.equal(inputs.minRank, 0);
   });
 
@@ -95,11 +94,8 @@ describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
       'utf8',
     );
     assert.match(text, /FR #5256/);
-    assert.match(
-      text,
-      /bind FREETEXTTABLE \*\*`@top`\*\* to `A_SEARCH_SQL_TOP`/i,
-    );
-    assert.match(text, /not `maxResults`/i);
+    assert.match(text, /without top_n|omit `@top`|no FREETEXTTABLE top_n/i);
+    assert.match(text, /#5263/);
     assert.match(
       text,
       /when brand\/model CONTAINS gates are present[\s\S]{0,80}`@minRank` is \*\*0\*\*/i,
@@ -115,6 +111,6 @@ describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
     assert.match(src, /function sqlMinRankForSelect/);
     assert.match(src, /resolveSqlFreetextTop,/);
     assert.match(src, /sqlMinRankForSelect,/);
-    assert.match(src, /Never bind maxResults here/);
+    assert.match(src, /omits FREETEXTTABLE/);
   });
 });
