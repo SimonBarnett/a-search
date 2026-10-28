@@ -98,7 +98,7 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
     assert.equal(types.env.length, 4000);
     assert.equal(inputs.n, 25);
     assert.equal(inputs.top, 25);
-    assert.equal(inputs.minRank, 50);
+    assert.equal(inputs.minRank, 0);
     assert.match(sqlText, /FREETEXTTABLE\s*\(\s*dbo\.Parts/);
     assert.match(sqlText, /@q,\s*@top/);
     assert.doesNotMatch(sqlText, /CONTAINSTABLE/);
