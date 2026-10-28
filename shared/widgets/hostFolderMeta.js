@@ -349,6 +349,42 @@ function isoLastmod(now) {
  *   getObjectTagging?: Function,
  * }} opts
  */
+/**
+ * FR #5255: compact S3 failure fields for ERROR logs (no secrets).
+ * @param {unknown} err
+ * @param {{ bucket?: string, Key?: string }} [ctx]
+ * @returns {string}
+ */
+function formatS3Error(err, ctx) {
+  const e = err && typeof err === 'object' ? err : {};
+  const code = e.name || e.code || e.Code || '';
+  const msg = String((e && e.message) || err || '');
+  const meta = e.$metadata || {};
+  const requestId = meta.requestId || meta.extendedRequestId || e.RequestId || '';
+  const status = meta.httpStatusCode || e.statusCode || '';
+  const parts = [
+    code && `code=${code}`,
+    msg && `message=${msg}`,
+    requestId && `requestId=${requestId}`,
+    status && `status=${status}`,
+    ctx && ctx.bucket && `bucket=${ctx.bucket}`,
+    ctx && ctx.Key && `key=${ctx.Key}`,
+  ].filter(Boolean);
+  return parts.join(' ');
+}
+
+/**
+ * @param {object} opts
+ * @param {string} Key
+ * @returns {{ Key: string, Bucket?: string }}
+ */
+function markerS3Input(opts, Key) {
+  const input = { Key };
+  const bucket = opts && opts.bucket != null ? String(opts.bucket).trim() : '';
+  if (bucket) input.Bucket = bucket;
+  return input;
+}
+
 async function readMarkerState(opts) {
   const Key = String(opts.Key || '');
   if (!Key) {
@@ -356,17 +392,18 @@ async function readMarkerState(opts) {
     err.code = 'marker_key_required';
     throw err;
   }
+  const base = markerS3Input(opts, Key);
   /** @type {Record<string, string>} */
   let metadata = {};
   /** @type {Buffer|null} */
   let body = null;
   let contentType;
   if (typeof opts.headObject === 'function') {
-    const head = await opts.headObject({ Key });
+    const head = await opts.headObject({ ...base });
     metadata = { ...(head.Metadata || head.metadata || {}) };
   }
   if (typeof opts.getObject === 'function') {
-    const obj = await opts.getObject({ Key });
+    const obj = await opts.getObject({ ...base });
     metadata = {
       ...metadata,
       ...(obj.Metadata || obj.metadata || {}),
@@ -386,7 +423,7 @@ async function readMarkerState(opts) {
   let tagSet;
   if (typeof opts.getObjectTagging === 'function') {
     try {
-      const tagged = await opts.getObjectTagging({ Key });
+      const tagged = await opts.getObjectTagging({ ...base });
       if (tagged && Array.isArray(tagged.TagSet)) {
         tagSet = tagged.TagSet.map((t) => ({
           Key: String(t.Key),
@@ -414,29 +451,33 @@ async function readMarkerState(opts) {
  *   putObjectTagging?: Function,
  * }} opts
  */
+/**
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+function isS3AccessDenied(err) {
+  const e = err && typeof err === 'object' ? err : {};
+  const code = String(e.name || e.code || e.Code || '');
+  const status = e.$metadata && e.$metadata.httpStatusCode;
+  return (
+    code === 'AccessDenied' ||
+    code === 'AccessDeniedException' ||
+    status === 403
+  );
+}
+
 async function rewriteMarkerMetadata(opts) {
   const Key = String(opts.Key || '');
   const metadata = { ...(opts.metadata || {}) };
   const tagSet = opts.tagSet;
+  const bucket = (opts.bucket && String(opts.bucket).trim()) || 'a-clubs';
   let etag;
-  if (typeof opts.copyObject === 'function') {
-    const bucket = opts.bucket || 'a-clubs';
-    const encodedKey = Key.split('/')
-      .map((p) => encodeURIComponent(p))
-      .join('/');
-    const copyResp = await opts.copyObject({
-      Key,
-      CopySource: `${bucket}/${encodedKey}`,
-      MetadataDirective: 'REPLACE',
-      Metadata: metadata,
-      ...(tagSet ? { TaggingDirective: 'COPY' } : {}),
-      ...(opts.contentType ? { ContentType: opts.contentType } : {}),
-    });
-    etag =
-      copyResp &&
-      ((copyResp.CopyObjectResult && copyResp.CopyObjectResult.ETag) ||
-        copyResp.ETag);
-  } else if (typeof opts.putObject === 'function') {
+  let usedPut = false;
+
+  async function putRewrite() {
+    if (typeof opts.putObject !== 'function') {
+      throw new Error('copyObject_or_putObject_required');
+    }
     const Body =
       opts.body == null
         ? Buffer.alloc(0)
@@ -444,6 +485,7 @@ async function rewriteMarkerMetadata(opts) {
           ? opts.body
           : Buffer.from(String(opts.body), 'utf8');
     const putResp = await opts.putObject({
+      Bucket: bucket,
       Key,
       Body,
       ContentLength: Body.length,
@@ -453,15 +495,49 @@ async function rewriteMarkerMetadata(opts) {
     etag = putResp && putResp.ETag;
     if (tagSet && typeof opts.putObjectTagging === 'function') {
       await opts.putObjectTagging({
+        Bucket: bucket,
         Key,
         Tagging: { TagSet: tagSet },
       });
     }
+    usedPut = true;
+  }
+
+  if (typeof opts.copyObject === 'function') {
+    const encodedKey = Key.split('/')
+      .map((p) => encodeURIComponent(p))
+      .join('/');
+    try {
+      // FR #5255: destination Bucket is required by AWS SDK v3 (CopySource alone is not enough).
+      const copyResp = await opts.copyObject({
+        Bucket: bucket,
+        Key,
+        CopySource: `${bucket}/${encodedKey}`,
+        MetadataDirective: 'REPLACE',
+        Metadata: metadata,
+        ...(tagSet ? { TaggingDirective: 'COPY' } : {}),
+        ...(opts.contentType ? { ContentType: opts.contentType } : {}),
+      });
+      etag =
+        copyResp &&
+        ((copyResp.CopyObjectResult && copyResp.CopyObjectResult.ETag) ||
+          copyResp.ETag);
+    } catch (err) {
+      // FR #5255: CopyObject AccessDenied (IAM/annotation edge) → PutObject fallback when available.
+      if (isS3AccessDenied(err) && typeof opts.putObject === 'function') {
+        await putRewrite();
+      } else {
+        throw err;
+      }
+    }
+  } else if (typeof opts.putObject === 'function') {
+    await putRewrite();
   } else {
     throw new Error('copyObject_or_putObject_required');
   }
   const out = { Key, metadata };
   if (etag) out.etag = String(etag).replace(/"/g, '');
+  if (usedPut) out.via = 'put';
   return out;
 }
 
@@ -567,6 +643,18 @@ async function setInit(opts) {
  *   putObjectTagging?: Function,
  * }} opts
  */
+/**
+ * @param {number} ms
+ * @param {(ms: number) => Promise<void>|void} [sleepFn]
+ */
+async function sleepHasResultsMs(ms, sleepFn) {
+  if (typeof sleepFn === 'function') {
+    await sleepFn(ms);
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function setHasResults(opts) {
   if (!opts || typeof opts !== 'object') {
     throw new Error('setHasResults opts required');
@@ -574,21 +662,60 @@ async function setHasResults(opts) {
   if (typeof opts.copyObject !== 'function' && typeof opts.getObject !== 'function') {
     throw new Error('copyObject_or_getObject_required');
   }
-  const state = await readMarkerState(opts);
-  const lastmod = isoLastmod(opts.now);
-  const metadata = { ...state.metadata, hasresults: '1', lastmod };
-  await rewriteMarkerMetadata({
-    Key: state.Key,
-    metadata,
-    body: state.body == null ? Buffer.alloc(0) : state.body,
-    contentType: state.contentType,
-    tagSet: state.tagSet,
-    bucket: opts.bucket,
-    copyObject: opts.copyObject,
-    putObject: opts.putObject,
-    putObjectTagging: opts.putObjectTagging,
-  });
-  return { Key: state.Key, hasresults: 1, lastmod, metadata };
+  const maxAttempts =
+    opts.maxAttempts != null && Number(opts.maxAttempts) > 0
+      ? Math.floor(Number(opts.maxAttempts))
+      : 3;
+  const retryDelayMs =
+    opts.retryDelayMs != null ? Math.max(0, Number(opts.retryDelayMs)) : 200;
+  const log =
+    typeof opts.logError === 'function'
+      ? opts.logError
+      : console.error.bind(console);
+  const Key = String(opts.Key || '');
+  const bucket = opts.bucket != null ? String(opts.bucket).trim() : '';
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const state = await readMarkerState(opts);
+      const lastmod = isoLastmod(opts.now);
+      const metadata = { ...state.metadata, hasresults: '1', lastmod };
+      const rewritten = await rewriteMarkerMetadata({
+        Key: state.Key,
+        metadata,
+        body: state.body == null ? Buffer.alloc(0) : state.body,
+        contentType: state.contentType,
+        tagSet: state.tagSet,
+        bucket: opts.bucket,
+        copyObject: opts.copyObject,
+        putObject: opts.putObject,
+        putObjectTagging: opts.putObjectTagging,
+      });
+      const out = {
+        Key: state.Key,
+        hasresults: 1,
+        lastmod,
+        metadata,
+        attempts: attempt,
+      };
+      if (rewritten && rewritten.via) out.via = rewritten.via;
+      return out;
+    } catch (err) {
+      lastErr = err;
+      // FR #5255: full S3 ERROR fields (code, message, requestId, bucket, key).
+      log(
+        '[a-search]',
+        'ERROR',
+        'set_hasresults_failed',
+        formatS3Error(err, { bucket, Key }),
+        `attempt=${attempt}/${maxAttempts}`,
+      );
+      if (attempt < maxAttempts && retryDelayMs >= 0) {
+        await sleepHasResultsMs(retryDelayMs, opts.sleep);
+      }
+    }
+  }
+  throw lastErr;
 }
 
 /**
@@ -834,6 +961,8 @@ module.exports = {
   setInit,
   setHasResults,
   clearHasResults,
+  rewriteMarkerMetadata,
+  formatS3Error,
   hashHostPassword,
   isHostPasswordHash,
   setHostCredentials,

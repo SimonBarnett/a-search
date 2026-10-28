@@ -278,6 +278,7 @@ async function maybeSetHasResults(opts) {
   const bucket =
     opts.bucket || resolveAClubsBucket(opts.envVars || process.env);
   const Key = `${hostkey}/${guid}/`;
+  // FR #5255: bounded retries + full S3 ERROR logging live inside setHasResults.
   await setHasResults({
     Key,
     bucket,
@@ -288,6 +289,10 @@ async function maybeSetHasResults(opts) {
     putObject: opts.putObject,
     getObjectTagging: opts.getObjectTagging,
     putObjectTagging: opts.putObjectTagging,
+    logError: opts.logError,
+    maxAttempts: opts.hasResultsMaxAttempts,
+    retryDelayMs: opts.hasResultsRetryDelayMs,
+    sleep: opts.sleep,
   });
   let promote = null;
   try {
@@ -392,19 +397,32 @@ async function recordSearchTerminal(opts) {
     }
     return { hasresults: !!flip.hasresults, written, flip };
   } catch (err) {
+    // FR #5255: log code/message/requestId/bucket/key (setHasResults already
+    // ERROR-logs each attempt; this is the terminal flip miss).
+    const e = err && typeof err === 'object' ? err : {};
+    const meta = e.$metadata || {};
+    const detail = [
+      e.name || e.code || e.Code || '',
+      String((e && e.message) || err || ''),
+      meta.requestId || '',
+      opts.bucket || resolveAClubsBucket(opts.envVars || process.env),
+      opts.hostkey && opts.guid ? `${opts.hostkey}/${opts.guid}/` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
     if (typeof opts.logError === 'function') {
       opts.logError(
         '[a-search]',
         'ERROR',
         'hasresults_flip_failed',
-        String((err && err.message) || err),
+        detail || String((err && err.message) || err),
       );
     } else if (typeof console !== 'undefined' && console.error) {
       console.error(
         '[a-search]',
         'ERROR',
         'hasresults_flip_failed',
-        String((err && err.message) || err),
+        detail || String((err && err.message) || err),
       );
     }
     return { hasresults: false, written, flip: { hasresults: false, reason: 'flip_error' } };
