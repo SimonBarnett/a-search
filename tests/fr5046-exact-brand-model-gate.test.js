@@ -131,7 +131,11 @@ describe('FR #5046 extractBrandModelGateTokens', () => {
         },
       ],
     });
-    assert.ok(gates.some((g) => /^"hobbyzone\*"$/i.test(g)), String(gates));
+    assert.equal(
+      gates.some((g) => /^"hobbyzone\*"$/i.test(g)),
+      false,
+      `FR #5257 drop loose hobbyzone* when model present: ${gates}`,
+    );
     assert.ok(gates.some((g) => /carbon cub/i.test(g)), String(gates));
     assert.ok(gates.some((g) => /HBZ3200/i.test(g)), String(gates));
   });

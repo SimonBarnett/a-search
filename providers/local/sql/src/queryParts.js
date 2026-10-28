@@ -341,6 +341,13 @@ const FT_NVARCHAR_LEN = 4000;
 const DEFAULT_SQL_MIN_RANK = 50;
 
 /**
+ * FR #5257: brand prefixes that also match non-RC catalogue (Hobbyzone furniture).
+ * These gates are dropped unless a model phrase / model number is also present;
+ * brand-only then yields zero gates (no SELECT).
+ */
+const LOOSE_BRAND_PREFIXES = new Set(['hobbyzone']);
+
+/**
  * ISO-ish currency codes stripped as whole tokens (not club-specific).
  */
 const CURRENCY_CODES = new Set(
@@ -770,7 +777,41 @@ function extractBrandModelGateTokens(msg) {
     .trim();
   if (stripped) collectHeuristicGates(stripped, out);
 
-  return out;
+  return refineLooseBrandPrefixGates(out);
+}
+
+/**
+ * @param {string} gate CONTAINS form `"hobbyzone*"` / `"sport cub"`
+ * @returns {{ prefix: boolean, core: string }}
+ */
+function gateKind(gate) {
+  const inner = String(gate || '').replace(/^"|"$/g, '');
+  const prefix = inner.endsWith('*');
+  const core = (prefix ? inner.slice(0, -1) : inner).toLowerCase().trim();
+  return { prefix, core };
+}
+
+/**
+ * FR #5257: drop loose brand prefixes when a model phrase/number exists;
+ * if the only gates are those prefixes, return [] (do not SELECT).
+ * @param {string[]} gates
+ * @returns {string[]}
+ */
+function refineLooseBrandPrefixGates(gates) {
+  const list = Array.isArray(gates) ? gates.slice() : [];
+  const exact = list.filter((g) => !gateKind(g).prefix);
+  const loose = list.filter((g) => {
+    const k = gateKind(g);
+    return k.prefix && LOOSE_BRAND_PREFIXES.has(k.core);
+  });
+  if (!loose.length) return list;
+  if (exact.length > 0) {
+    return list.filter((g) => {
+      const k = gateKind(g);
+      return !(k.prefix && LOOSE_BRAND_PREFIXES.has(k.core));
+    });
+  }
+  return [];
 }
 
 /**
@@ -1056,6 +1097,8 @@ module.exports = {
   buildFreetextQuery,
   buildSelectSql,
   extractBrandModelGateTokens,
+  refineLooseBrandPrefixGates,
+  LOOSE_BRAND_PREFIXES,
   admitRowsByExactGates,
   formatBrandGate,
   formatExactGate,

@@ -185,6 +185,10 @@ Deployed walrus must run this `providers/local/sql` tip (log
    location/currency leftovers from the stripper.
 4. If the heuristic yields **zero** gate tokens, the worker returns `[]` without
    querying (never FREETEXT-only).
+5. **FR #5257:** brand prefixes in `LOOSE_BRAND_PREFIXES` (`hobbyzone*`) match
+   non-RC Hobbyzone furniture. Those prefixes are dropped when a model phrase
+   or model number is also present. If they are the only gates, return `[]`
+   (no SELECT). Other brand prefixes (`volantex*`) are unchanged.
 
 SQL shape: `FREETEXTTABLE` ... `INNER JOIN Parts` ... `ft.[RANK] >= @minRank`
 and `( CONTAINS(..., @gate0) OR CONTAINS(..., @gate1) OR ... )` plus phrase
