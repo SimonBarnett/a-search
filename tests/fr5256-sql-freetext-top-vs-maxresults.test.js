@@ -1,9 +1,8 @@
 'use strict';
 
 /**
- * FR #5256: FREETEXTTABLE @top must be the candidate pool (A_SEARCH_SQL_TOP),
- * not maxResults. SELECT TOP (@n) still trims. Filter-matching rows with low
- * RANK are kept when brand/model gates are present (minRank 0).
+ * FR #5256 / #5263: gated minRank is 0. Output is not trimmed by maxResults
+ * or FREETEXTTABLE top_n (superseded by #5263).
  */
 
 const { describe, it } = require('node:test');
@@ -29,7 +28,7 @@ describe('FR #5256 FREETEXTTABLE top vs maxResults', () => {
     assert.equal(qp.sqlMinRankForSelect({ A_SEARCH_SQL_MIN_RANK: '50' }, 0), 50);
   });
 
-  it('defaultQueryParts binds n=maxResults, top=SQL_TOP, minRank=0 with gates', async () => {
+  it('defaultQueryParts binds minRank=0 with gates and does not bind n/top', async () => {
     /** @type {Record<string, unknown>} */
     const inputs = {};
     const rows = await qp.defaultQueryParts(
@@ -54,11 +53,9 @@ describe('FR #5256 FREETEXTTABLE top vs maxResults', () => {
                 return this;
               },
               async query() {
-                // Fixture: 10 high-rank junk + one filter hit at rank 18 (below
-                // old top_n=10 and old minRank=50). Candidate pool is @top.
-                assert.ok(Number(inputs.top) >= 500);
-                assert.equal(inputs.n, 10);
                 assert.equal(inputs.minRank, 0);
+                assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+                assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
                 return {
                   recordset: [
                     {
@@ -75,9 +72,9 @@ describe('FR #5256 FREETEXTTABLE top vs maxResults', () => {
         }),
       },
     );
-    assert.equal(inputs.n, 10);
-    assert.equal(inputs.top, 500);
     assert.equal(inputs.minRank, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
     assert.ok(rows.length >= 1);
   });
 
@@ -112,13 +109,14 @@ describe('FR #5256 FREETEXTTABLE top vs maxResults', () => {
     assert.equal(rows.length, 0);
   });
 
-  it('docs pin FR #5256 candidate @top and gated minRank 0', () => {
+  it('docs pin FR #5256/#5263 gated minRank 0 and no top_n trim', () => {
     const text = fs.readFileSync(
       path.join(__dirname, '..', 'docs', 'walrus-sql-drain.md'),
       'utf8',
     );
     assert.match(text, /FR #5256|#5256/);
-    assert.match(text, /@top/);
+    assert.match(text, /#5263/);
     assert.match(text, /minRank|min RANK/i);
+    assert.doesNotMatch(text, /Final output is still trimmed/);
   });
 });

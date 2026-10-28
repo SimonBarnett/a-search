@@ -23,10 +23,11 @@ const ANNOTATOR_Q =
   'VOLANTEXRC Sport Cub S2 761-14 3CH RTF Xpilot beginner United Kingdom (Lathom, Ormskirk, L40 4BA; .co.uk) GBP';
 
 describe('MRB #5028 hostile FR #5024 FREETEXT', () => {
-  it('SELECT uses FREETEXTTABLE @q @top and never CONTAINSTABLE', () => {
+  it('SELECT uses FREETEXTTABLE @q without top_n and never CONTAINSTABLE', () => {
     const sql = buildSelectSql(2);
     assert.match(sql, /FREETEXTTABLE\s*\(\s*dbo\.Parts/i);
-    assert.match(sql, /@q,\s*@top/);
+    assert.match(sql, /,\s*@q\s*\)/);
+    assert.doesNotMatch(sql, /@top/);
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
     assert.doesNotMatch(sql, /CONTAINSTABLE/i);
     assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);

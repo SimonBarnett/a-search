@@ -196,14 +196,15 @@ excludes; `ORDER BY ft.[RANK] DESC`.
 
 FR #5041 (SQL provider only; `searches.json` unchanged): before FREETEXT, strip
 annotator location/currency suffix (country name, parenthesised locality /
-postcode / TLD block, currency codes/symbols). Honour each query's `maxResults`
-capped by `A_SEARCH_SQL_TOP` as **`@n`** (`SELECT TOP (@n)`).
+postcode / TLD block, currency codes/symbols). `maxResults` on the query is an
+agent hint only --- the provider does not trim with it.
 
-**FR #5256:** bind FREETEXTTABLE **`@top`** to `A_SEARCH_SQL_TOP` (default 500),
-not `maxResults`. A long query's brand/model hits can sit thousands of rows
-down the text ranking (GUID 8504174c: best filter hit rank 18 at position
-5412). Capping `@top` at 10 hid them. Final output is still trimmed to
-`maxResults`.
+**FR #5256 / #5263:** FREETEXTTABLE is joined **without top_n** (omit `@top`)
+and the SELECT has **no `TOP (@n)`**. Brand/model CONTAINS gates admit rows;
+FREETEXT only ranks them. A filter-passing hit at text position 5412 (GUID
+8504174c, RANK 18) is returned. The agent picks the best x. Live Rakuten/eBay
+keep every downloaded item that already passed excludes (API page size stays
+the vendor max, not `maxResults`).
 
 **Min-rank rule (FR #5256):** when brand/model CONTAINS gates are present,
 `@minRank` is **0** so a filter-matching row with a low FREETEXT rank is kept.

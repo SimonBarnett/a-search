@@ -96,11 +96,11 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
     assert.equal(types.q.kind, 'NVarChar');
     assert.equal(types.q.length, 4000);
     assert.equal(types.env.length, 4000);
-    assert.equal(inputs.n, 25);
-    assert.equal(inputs.top, 25);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
     assert.equal(inputs.minRank, 0);
     assert.match(sqlText, /FREETEXTTABLE\s*\(\s*dbo\.Parts/);
-    assert.match(sqlText, /@q,\s*@top/);
+    assert.match(sqlText, /,\s*@q\s*\)/);
     assert.doesNotMatch(sqlText, /CONTAINSTABLE/);
     // FR #5046: exact brand/model CONTAINS gates admit; FREETEXT only orders
     assert.match(sqlText, /CONTAINS\(\(p\.Title, p\.Description\), @gate0\)/);

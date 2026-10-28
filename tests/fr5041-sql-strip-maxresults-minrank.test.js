@@ -130,12 +130,10 @@ describe('FR #5041 maxResults and min RANK', () => {
               },
               async query(text) {
                 sqlText = text;
-                // Simulate TOP @n; FR #5046 also binds @gateN (admission in SQL).
-                const n = Number(inputs.n) || 0;
                 return {
-                  recordset: Array.from({ length: n }, (_, i) => ({
+                  recordset: Array.from({ length: 15 }, (_, i) => ({
                     Title: `Volantex Sport Cub row-${i}`,
-                    RANK: 100 - i,
+                    Rank: 100 - i,
                   })),
                 };
               },
@@ -145,15 +143,15 @@ describe('FR #5041 maxResults and min RANK', () => {
         }),
       },
     );
-    assert.equal(inputs.n, 10);
-    assert.equal(inputs.top, 500);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'n'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(inputs, 'top'), false);
     assert.equal(inputs.minRank, 0);
     assert.doesNotMatch(String(inputs.q), /United\s+Kingdom/i);
     assert.doesNotMatch(String(inputs.q), /\bGBP\b/i);
     assert.match(sqlText, /@minRank/);
     assert.match(sqlText, /@gate0/);
     assert.ok(Object.keys(inputs).some((k) => /^gate\d+$/.test(k)));
-    assert.equal(rows.length, 10);
+    assert.equal(rows.length, 15);
   });
 
   it('docs mention strip location/currency, maxResults, min RANK (FR #5041)', () => {

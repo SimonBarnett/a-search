@@ -465,8 +465,9 @@ async function searchRakuten(msg, deps) {
     useCache,
   );
 
-  const capRaw = Number(msg && msg.maxResults);
-  const cap = Number.isFinite(capRaw) && capRaw > 0 ? Math.min(50, Math.floor(capRaw)) : 10;
+  // FR #5263: keep every downloaded item that passed excludes. Page size is
+  // the Linksynergy max (50), not maxResults (agent picks the best x).
+  const pageMax = 50;
   const merged = [];
   const seen = new Set();
   const normOpts = {
@@ -477,11 +478,10 @@ async function searchRakuten(msg, deps) {
   let lastInvalidContext = null;
 
   for (const keyword of texts) {
-    if (merged.length >= cap) break;
     const url = productSearchUrl(creds.endpoint, {
       keyword,
       language,
-      max: Math.min(10, cap - merged.length),
+      max: pageMax,
     });
     let res;
     try {
@@ -543,7 +543,6 @@ async function searchRakuten(msg, deps) {
         seen.add(id);
       }
       merged.push(p);
-      if (merged.length >= cap) break;
     }
   }
 
