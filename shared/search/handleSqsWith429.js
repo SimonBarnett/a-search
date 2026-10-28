@@ -150,6 +150,10 @@ async function recordDlqDone(args) {
   const msg = args.msg || {};
   const pathParts = resolveInPathFromMsg(msg);
   if (!pathParts || typeof args.putObject !== 'function') return null;
+  const envVars = args.envVars || process.env;
+  const bucket =
+    (args.bucket != null && String(args.bucket).trim()) ||
+    resolveDoneAClubsBucket(envVars);
   try {
     return await recordSearchTerminal({
       hostkey: pathParts.hostkey,
@@ -158,7 +162,8 @@ async function recordDlqDone(args) {
       source: args.source || msg.source,
       status: 'dlq',
       products: 0,
-      envVars: args.envVars || process.env,
+      bucket,
+      envVars,
       putObject: args.putObject,
       getObject: args.getObject,
       headObject: args.headObject,
@@ -346,7 +351,38 @@ function resolveImmediateDlqDeps(opts, record) {
 }
 
 /**
- * FR #4917: S3 fns for DONE writes (from opts, deps, or Lambda default chain).
+ * Resolve a-clubs bucket name (same keys as writeLiveProviderInResult / searchDone).
+ * @param {Record<string, string|undefined>} [env]
+ * @returns {string}
+ */
+function resolveDoneAClubsBucket(env) {
+  const e = env || {};
+  for (const k of ['A_CLUBS_BUCKET', 'S3_ACLUBS_BUCKET', 'S3_A_CLUBS_BUCKET']) {
+    const v = e[k] != null ? String(e[k]).trim() : '';
+    if (v) return v;
+  }
+  return 'a-clubs';
+}
+
+/**
+ * FR #4441 / #5255: inject Bucket on every S3 call (head/get/copy/tagging Key-only).
+ * @param {Function|null|undefined} fn
+ * @param {string} bucket
+ * @returns {Function|null|undefined}
+ */
+function withDoneBucket(fn, bucket) {
+  if (typeof fn !== 'function') return fn;
+  return async (args) => {
+    const a = args && typeof args === 'object' ? { ...args } : {};
+    if (!a.Bucket && bucket) a.Bucket = bucket;
+    return fn(a);
+  };
+}
+
+/**
+ * FR #4917 / #5255: S3 fns for DONE + hasresults flip (from opts, deps, or Lambda
+ * default chain). Always returns bucket and wraps every S3 fn so marker
+ * read/rewrite (Key-only) never hits "No value provided for input HTTP label: Bucket".
  * @param {object} opts
  * @returns {object}
  */
@@ -356,6 +392,10 @@ function resolveDoneS3Deps(opts) {
     (deps.env && typeof deps.env === 'object' ? deps.env : null) ||
     opts.envVars ||
     process.env;
+  const bucket =
+    (opts && opts.bucket != null && String(opts.bucket).trim()) ||
+    (deps.bucket != null && String(deps.bucket).trim()) ||
+    resolveDoneAClubsBucket(env);
   const pick = (name) => {
     if (typeof opts[name] === 'function') return opts[name];
     if (typeof deps[name] === 'function') return deps[name];
@@ -382,12 +422,13 @@ function resolveDoneS3Deps(opts) {
     }
   }
   return {
-    putObject,
-    getObject,
-    headObject,
-    copyObject,
-    getObjectTagging,
-    putObjectTagging,
+    putObject: withDoneBucket(putObject, bucket),
+    getObject: withDoneBucket(getObject, bucket),
+    headObject: withDoneBucket(headObject, bucket),
+    copyObject: withDoneBucket(copyObject, bucket),
+    getObjectTagging: withDoneBucket(getObjectTagging, bucket),
+    putObjectTagging: withDoneBucket(putObjectTagging, bucket),
+    bucket,
     envVars: env,
   };
 }
@@ -859,6 +900,8 @@ module.exports = {
   moveMessageToDlq,
   receiveCountFromRecord,
   recordDlqDone,
+  resolveDoneS3Deps,
+  resolveDoneAClubsBucket,
   DEFAULT_MAX_RECEIVE_COUNT,
   statusErrorFromSkip,
   logProviderFailure,
