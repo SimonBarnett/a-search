@@ -877,6 +877,30 @@ function resolveSqlRowLimit(msg, envVars) {
 }
 
 /**
+ * FR #5256: FREETEXTTABLE top_n candidate pool. Never bind maxResults here ---
+ * that hid filter-matching rows past the first 10 text hits.
+ * @param {object} [_msg]
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @returns {number}
+ */
+function resolveSqlFreetextTop(_msg, envVars) {
+  return sqlTopLimit(envVars);
+}
+
+/**
+ * FR #5256: when brand/model CONTAINS gates are present, do not drop
+ * filter-matching rows at the default RANK floor (evidence: rank 18 at
+ * position 5412). Ungated path still uses A_SEARCH_SQL_MIN_RANK (default 50).
+ * @param {Record<string, string|undefined>|undefined} envVars
+ * @param {number} gateCount
+ * @returns {number}
+ */
+function sqlMinRankForSelect(envVars, gateCount) {
+  if (Number(gateCount) > 0) return 0;
+  return sqlMinRank(envVars);
+}
+
+/**
  * FR #5041: minimum FREETEXTTABLE RANK (0-1000). Default 50.
  * @param {Record<string, string|undefined>|undefined} envVars
  * @returns {number}
@@ -957,8 +981,9 @@ async function defaultQueryParts(msg, deps) {
     .map(quoteExcludePhrase)
     .filter(Boolean);
   const config = mssqlConfigFromEnv(envVars);
-  const topN = resolveSqlRowLimit(msg || {}, envVars);
-  const minRank = sqlMinRank(envVars);
+  const rowLimit = resolveSqlRowLimit(msg || {}, envVars);
+  const freetextTop = resolveSqlFreetextTop(msg || {}, envVars);
+  const minRank = sqlMinRankForSelect(envVars, gateTokens.length);
   const connect =
     deps && typeof deps.connect === 'function' ? deps.connect : defaultConnect;
   const pool = await connect(config);
@@ -975,8 +1000,8 @@ async function defaultQueryParts(msg, deps) {
       let req = pool.request();
       req = req.input('env', nv, truncateFt(env));
       req = req.input('q', nv, q);
-      req = req.input('top', sqlTypes.Int, topN);
-      req = req.input('n', sqlTypes.Int, topN);
+      req = req.input('top', sqlTypes.Int, freetextTop);
+      req = req.input('n', sqlTypes.Int, rowLimit);
       req = req.input('minRank', sqlTypes.Int, minRank);
       for (let i = 0; i < gateTokens.length; i += 1) {
         req = req.input(`gate${i}`, nv, gateTokens[i]);
@@ -1045,7 +1070,9 @@ module.exports = {
   DEFAULT_SQL_MIN_RANK,
   sqlTopLimit,
   resolveSqlRowLimit,
+  resolveSqlFreetextTop,
   sqlMinRank,
+  sqlMinRankForSelect,
   SELECT_SQL,
   defaultQueryParts,
   defaultConnect,

@@ -146,8 +146,8 @@ describe('FR #5041 maxResults and min RANK', () => {
       },
     );
     assert.equal(inputs.n, 10);
-    assert.equal(inputs.top, 10);
-    assert.equal(inputs.minRank, 50);
+    assert.equal(inputs.top, 500);
+    assert.equal(inputs.minRank, 0);
     assert.doesNotMatch(String(inputs.q), /United\s+Kingdom/i);
     assert.doesNotMatch(String(inputs.q), /\bGBP\b/i);
     assert.match(sqlText, /@minRank/);
