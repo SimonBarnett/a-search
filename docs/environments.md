@@ -161,11 +161,14 @@ fallback is not available (`shared/mssql/classifyConnectError.js`).
 
 ### CDK Secrets Manager - provider credentials (FR-138)
 
-Amazon, eBay, and Etsy (FR #4336 / FR #4439) read `providers/live/<id>/.env`
-at synth. They have no Secrets Manager grant. Other enabled provider workers
-(rakuten, cj, awin, impact) and awin/impact onboarding receive marketplace
-credential env from **per-source** Secrets Manager JSON secrets. Stay-dark
-providers are omitted (no grant).
+Amazon, eBay, Etsy, and Kelkoo read `providers/live/<id>/.env` at synth. They
+have no Secrets Manager grant. Kelkoo requires non-empty `KELKOO_API_KEY` and
+`KELKOO_PUBLISHER_ID`; if its file or keys are missing, CDK retains the queue
+and worker but omits the queue URL from entry fan-out and prints a warning with
+the missing file and key names only. Other enabled provider workers (rakuten,
+cj, awin, impact) and awin/impact onboarding receive marketplace credential
+env from **per-source** Secrets Manager JSON secrets. Stay-dark providers are
+omitted (no grant).
 
 | Deploy context | Meaning |
 |----------------|---------|

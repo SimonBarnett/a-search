@@ -6,8 +6,9 @@ description: >
 
 # a-search kelkoo (live)
 
-Registry folder `providers/live/kelkoo`. Enabled: live=false, sandbox=false
-(CAST IRON stay-dark — see `docs/phase2-providers.md`).
+Registry folder `providers/live/kelkoo`. Registry flags are enabled for live
+and sandbox; CDK still keeps Kelkoo off fan-out when its bundled `.env` is
+missing or incomplete.
 
 ## Search path (FR-063)
 
@@ -46,7 +47,14 @@ is a later FR while stay-dark).
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_KELKOO_URL`. Requires `KELKOO_PUBLISHER_ID`
-for tracked landing URLs.
+See `.env.example`. The ignored `providers/live/kelkoo/.env` must contain
+`KELKOO_API_KEY` and `KELKOO_PUBLISHER_ID`; CDK bundles it into the worker only
+when both are non-empty. If it is absent or incomplete, synth keeps the queue
+and worker resources but omits the Kelkoo queue URL from entry, so `/search`
+does not enqueue Kelkoo. The synth warning identifies the missing file and
+required key names only, never credential values.
+
+Queue env: `SQS_KELKOO_URL`. `KELKOO_PUBLISHER_ID` is required for tracked
+landing URLs.
 
 File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.
