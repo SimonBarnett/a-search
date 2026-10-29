@@ -147,7 +147,7 @@ function withStructuredFields(row, fields) {
 }
 
 /**
- * FR #5283 / #5287: re-apply keywordsOnly so leftover United Kingdom / GBP /
+ * FR #5283 / FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP /
  * postcode in an older searches.json q is cleaned. Keeps FR #5281 structured
  * fields. One definition only (FIX #5286 merge).
  * @param {unknown} queries
