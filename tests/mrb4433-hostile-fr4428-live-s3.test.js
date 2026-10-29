@@ -37,7 +37,7 @@ describe('docs/mrb-4433 hostile FR #4428', () => {
       other: 1,
     };
     assert.equal(attachDefaultS3(injected), injected);
-    assert.equal(typeof injected.listObjectAnnotations, 'function');
+    assert.equal(typeof injected.listObjectAnnotations, 'undefined');
 
     const sends = [];
     const fakeClient = {

@@ -74,12 +74,19 @@ function attachDefaultS3(arg) {
     return buildDefaultS3Fns(undefined);
   }
   if (typeof arg.putObject === 'function') {
-    // FR #5275: keep injected putObject but fill missing listObjectAnnotations
-    // (and other S3_COMMANDS) so CopyObject AccessDenied can still Put when
-    // the marker has no annotations.
-    const built = buildDefaultS3Fns(arg.createS3Client);
-    for (const name of Object.keys(built)) {
-      if (typeof arg[name] !== 'function') arg[name] = built[name];
+    // FR #5275: keep injected putObject. Fill only missing listObjectAnnotations
+    // (not head/get/copy) so unit fixtures that inject putObject alone do not
+    // call a real S3Client and fail with "Region is missing".
+    // Lambda always has AWS_REGION; local tests do not.
+    if (typeof arg.listObjectAnnotations !== 'function') {
+      const canSdk =
+        typeof arg.createS3Client === 'function' ||
+        !!(process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION);
+      if (canSdk) {
+        arg.listObjectAnnotations = buildDefaultS3Fns(
+          arg.createS3Client,
+        ).listObjectAnnotations;
+      }
     }
     return arg;
   }

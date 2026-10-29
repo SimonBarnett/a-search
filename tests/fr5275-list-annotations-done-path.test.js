@@ -39,7 +39,7 @@ describe('FR #5275 listObjectAnnotations on DONE / hasresults path', () => {
       'utf8',
     );
     assert.match(liveS3, /FR #5275/);
-    assert.match(liveS3, /typeof arg\[name\] !== 'function'/);
+    assert.match(liveS3, /AWS_REGION|createS3Client/);
   });
 
   it('resolveDoneS3Deps wraps injected listObjectAnnotations with Bucket', async () => {
@@ -115,10 +115,19 @@ describe('FR #5275 listObjectAnnotations on DONE / hasresults path', () => {
     assert.equal(String(head.Metadata.hasresults), '1');
   });
 
-  it('attachDefaultS3 fills listObjectAnnotations when only putObject is injected', () => {
-    const injected = { putObject: async () => ({}) };
+  it('attachDefaultS3 fills listObjectAnnotations when putObject + createS3Client', () => {
+    const injected = {
+      putObject: async () => ({}),
+      createS3Client: () => ({ send: async () => ({ Annotations: [] }) }),
+    };
     const out = attachDefaultS3(injected);
     assert.equal(out, injected);
     assert.equal(typeof injected.listObjectAnnotations, 'function');
+  });
+
+  it('attachDefaultS3 does not attach SDK list when only putObject is injected', () => {
+    const injected = { putObject: async () => ({}) };
+    attachDefaultS3(injected);
+    assert.equal(typeof injected.listObjectAnnotations, 'undefined');
   });
 });
