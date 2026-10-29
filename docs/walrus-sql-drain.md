@@ -206,6 +206,11 @@ FREETEXT only ranks them. A filter-passing hit at text position 5412 (GUID
 keep every downloaded item that already passed excludes (API page size stays
 the vendor max, not `maxResults`).
 
+**FR #5266:** `normalizePart` copies FREETEXT `RANK` onto each IN/sql.json
+product as numeric `rank` (0 if the column is missing). Rows are never
+dropped for a low rank. Takes effect after a walrus SQL-drain redeploy
+(Simon's go).
+
 **Min-rank rule (FR #5256):** when brand/model CONTAINS gates are present,
 `@minRank` is **0** so a filter-matching row with a low FREETEXT rank is kept.
 When there are no gates the worker still returns `[]` without SELECT (FR #5046).
