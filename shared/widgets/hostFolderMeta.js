@@ -466,6 +466,53 @@ function isS3AccessDenied(err) {
   );
 }
 
+/**
+ * S3 object annotations on a folder marker (not Metadata.annotated).
+ * Unknown (no list fn / list failed) is treated as present so we never
+ * PutObject-over an annotated key (FR #5269).
+ * @param {object} opts
+ * @returns {Promise<{ known: boolean, names: string[] }>}
+ */
+async function listMarkerObjectAnnotations(opts) {
+  const Key = String(opts.Key || '');
+  const bucket = (opts.bucket && String(opts.bucket).trim()) || 'a-clubs';
+  if (typeof opts.listObjectAnnotations !== 'function') {
+    return { known: false, names: [] };
+  }
+  try {
+    const listed = await opts.listObjectAnnotations({ Bucket: bucket, Key });
+    const rows = (listed && listed.Annotations) || [];
+    const names = [];
+    for (const row of rows) {
+      const n = row && (row.AnnotationName || row.name);
+      if (n) names.push(String(n));
+    }
+    return { known: true, names };
+  } catch {
+    return { known: false, names: [] };
+  }
+}
+
+function refuseAnnotatedPut(opts, names, cause) {
+  const Key = String(opts.Key || '');
+  const bucket = (opts.bucket && String(opts.bucket).trim()) || 'a-clubs';
+  const log =
+    typeof opts.logError === 'function'
+      ? opts.logError
+      : console.error.bind(console);
+  const listed = names && names.length ? names.join(',') : 'unknown';
+  log(
+    '[a-search]',
+    'ERROR',
+    'annotated_marker_copy_denied',
+    `bucket=${bucket} key=${Key} annotations=${listed} — refusing PutObject fallback that would wipe object annotations`,
+  );
+  const err = new Error('annotated_marker_copy_denied');
+  err.code = 'annotated_marker_copy_denied';
+  err.cause = cause;
+  throw err;
+}
+
 async function rewriteMarkerMetadata(opts) {
   const Key = String(opts.Key || '');
   const metadata = { ...(opts.metadata || {}) };
@@ -523,14 +570,24 @@ async function rewriteMarkerMetadata(opts) {
         ((copyResp.CopyObjectResult && copyResp.CopyObjectResult.ETag) ||
           copyResp.ETag);
     } catch (err) {
-      // FR #5255: CopyObject AccessDenied (IAM/annotation edge) → PutObject fallback when available.
+      // FR #5255: CopyObject AccessDenied → PutObject only when the marker
+      // has no S3 object annotations. FR #5269: never PutObject-over
+      // annotation/steering (that delete is silent and unrecoverable).
       if (isS3AccessDenied(err) && typeof opts.putObject === 'function') {
+        const listed = await listMarkerObjectAnnotations(opts);
+        if (!listed.known || listed.names.length > 0) {
+          refuseAnnotatedPut(opts, listed.names, err);
+        }
         await putRewrite();
       } else {
         throw err;
       }
     }
   } else if (typeof opts.putObject === 'function') {
+    const listed = await listMarkerObjectAnnotations(opts);
+    if (listed.known && listed.names.length > 0) {
+      refuseAnnotatedPut(opts, listed.names, null);
+    }
     await putRewrite();
   } else {
     throw new Error('copyObject_or_putObject_required');
@@ -576,6 +633,8 @@ async function touchLastmod(opts) {
     copyObject: opts.copyObject,
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
+    logError: opts.logError,
   });
   return { Key: state.Key, lastmod, metadata };
 }
@@ -615,6 +674,8 @@ async function setEnabled(opts) {
     copyObject: opts.copyObject,
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
+    logError: opts.logError,
   });
   return { Key: state.Key, enabled: 1, lastmod, metadata };
 }
@@ -696,6 +757,8 @@ async function setHasResults(opts) {
         copyObject: opts.copyObject,
         putObject: opts.putObject,
         putObjectTagging: opts.putObjectTagging,
+        listObjectAnnotations: opts.listObjectAnnotations,
+        logError: opts.logError,
       });
       const out = {
         Key: state.Key,
@@ -749,6 +812,8 @@ async function clearHasResults(opts) {
     copyObject: opts.copyObject,
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
+    logError: opts.logError,
   });
   const out = { Key: state.Key, hasresults: 0, lastmod, metadata };
   if (rewritten && rewritten.etag) out.etag = rewritten.etag;
@@ -843,6 +908,8 @@ async function setHostCredentials(opts) {
     copyObject: opts.copyObject,
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
+    logError: opts.logError,
   });
   return { Key: state.Key, email, passwordhashSet: Boolean(passwordhash), lastmod, metadata };
 }
@@ -893,6 +960,8 @@ async function setHostStripe(opts) {
     copyObject: opts.copyObject,
     putObject: opts.putObject,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
+    logError: opts.logError,
   });
   return {
     Key: state.Key,

@@ -14,6 +14,7 @@ const S3_COMMANDS = {
   copyObject: 'CopyObjectCommand',
   getObjectTagging: 'GetObjectTaggingCommand',
   putObjectTagging: 'PutObjectTaggingCommand',
+  listObjectAnnotations: 'ListObjectAnnotationsCommand',
 };
 
 /**

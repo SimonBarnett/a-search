@@ -291,6 +291,7 @@ async function maybeSetHasResults(opts) {
     putObject: opts.putObject,
     getObjectTagging: opts.getObjectTagging,
     putObjectTagging: opts.putObjectTagging,
+    listObjectAnnotations: opts.listObjectAnnotations,
     logError: opts.logError,
     maxAttempts: opts.hasResultsMaxAttempts,
     retryDelayMs: opts.hasResultsRetryDelayMs,
