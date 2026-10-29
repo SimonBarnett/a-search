@@ -9,11 +9,13 @@
  * lives at a-clubs/_search-done/{searchid}/{source}.json (bucket-root ops
  * prefix outside the club GUID folder). Legacy host/guid/DONE/ keys are still
  * accepted by doneExists during transition; new writes never create them.
+ *
+ * FR #5270: search completion only sets hasresults=1. It does **not** write
+ * live.json or enabled=1 — the hasresults monitor / agent SELECTS best parts
+ * from IN/ (Simon #5256).
  */
 
 const { setHasResults } = require('../widgets/hostFolderMeta');
-const { promoteInToLive } = require('../widgets/promoteInToLive');
-const { recordNoResultsIfEmpty } = require('./noResultsFeedback');
 
 /** Bucket-root prefix for search terminal records (FR #5198). */
 const SEARCH_DONE_PREFIX = '_search-done';
@@ -255,9 +257,10 @@ async function doneExists(opts, source) {
 
 /**
  * Compare DONE set for fan-out searchid vs queued; set hasresults=1 when complete.
- * FR #4891: after hasresults flips, promote IN/ → live.json and set enabled=1
- * (empty IN still enables → widget no_parts).
- * @returns {Promise<{ hasresults: boolean, reason?: string, promote?: object }>}
+ * FR #5270: does **not** write live.json or set enabled — agent / hasresults
+ * monitor builds live.json from IN/ (best-x). FR #5047 no-results feedback
+ * runs after that agent promote (`runHasresultsAgentWork`).
+ * @returns {Promise<{ hasresults: boolean, reason?: string }>}
  */
 async function maybeSetHasResults(opts) {
   const hostkey = String(opts.hostkey || '').trim();
@@ -296,63 +299,7 @@ async function maybeSetHasResults(opts) {
     retryDelayMs: opts.hasResultsRetryDelayMs,
     sleep: opts.sleep,
   });
-  let promote = null;
-  try {
-    promote = await promoteInToLive({
-      host: hostkey,
-      guid,
-      bucket,
-      now: opts.now,
-      listObjectsV2: opts.listObjectsV2,
-      getObject: opts.getObject,
-      putObject: opts.putObject,
-      getObjectAnnotation: opts.getObjectAnnotation,
-      headObject: opts.headObject,
-      copyObject: opts.copyObject,
-      getObjectTagging: opts.getObjectTagging,
-      putObjectTagging: opts.putObjectTagging,
-    });
-  } catch (err) {
-    if (typeof opts.logError === 'function') {
-      opts.logError(
-        '[a-search]',
-        'WARN',
-        'promote_in_to_live_failed',
-        String((err && err.message) || err),
-      );
-    }
-    promote = { error: String((err && err.message) || err) };
-  }
-  // FR #5047: empty live after hasresults => no-results signal + sector ledger.
-  let noResults = null;
-  try {
-    const liveLen =
-      promote && Array.isArray(promote.live) ? promote.live.length : null;
-    noResults = await recordNoResultsIfEmpty({
-      host: hostkey,
-      guid,
-      searchid: wantSid,
-      live: promote && Array.isArray(promote.live) ? promote.live : undefined,
-      partCount: liveLen,
-      bucket,
-      now: opts.now,
-      putObject: opts.putObject,
-      getObject: opts.getObject,
-      getObjectAnnotation: opts.getObjectAnnotation,
-      logError: opts.logError,
-    });
-  } catch (err) {
-    if (typeof opts.logError === 'function') {
-      opts.logError(
-        '[a-search]',
-        'WARN',
-        'no_results_feedback_failed',
-        String((err && err.message) || err),
-      );
-    }
-    noResults = { recorded: false, reason: 'error' };
-  }
-  return { hasresults: true, promote, noResults };
+  return { hasresults: true };
 }
 
 /**

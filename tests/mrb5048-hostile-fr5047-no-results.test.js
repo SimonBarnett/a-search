@@ -12,13 +12,19 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 
 describe('MRB #5048 hostile FR #5047 no-results feedback', () => {
-  it('searchDone hooks recordNoResultsIfEmpty after promote', () => {
-    const src = fs.readFileSync(
+  it('agent path hooks recordNoResultsIfEmpty after promote (FR #5270)', () => {
+    const done = fs.readFileSync(
       path.join(ROOT, 'shared', 'search', 'searchDone.js'),
       'utf8',
     );
-    assert.match(src, /require\(['"]\.\/noResultsFeedback['"]\)/);
-    assert.match(src, /recordNoResultsIfEmpty/);
+    assert.doesNotMatch(done, /recordNoResultsIfEmpty/);
+    assert.doesNotMatch(done, /promoteInToLive/);
+    const agent = fs.readFileSync(
+      path.join(ROOT, 'shared', 'widgets', 'promoteInToLive.js'),
+      'utf8',
+    );
+    assert.match(agent, /recordNoResultsIfEmpty/);
+    assert.match(agent, /runHasresultsAgentWork/);
   });
 
   it('changeEvents excludes feedback/ and _ops/', () => {

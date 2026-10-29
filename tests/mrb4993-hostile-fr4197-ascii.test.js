@@ -21,7 +21,7 @@ const SKILL = path.join(
 );
 
 const GUID_NEEDLE =
-  'GUID marker ready-flag is enabled (not init); /parts must not promote IN->live --- promoteInToLive runs after hasresults flip; searching is HTTP 202 + Retry-After.';
+  'GUID marker ready-flag is enabled (not init); /parts must not promote IN->live --- search sets hasresults only; agent/monitor promoteInToLive builds live.json (FR #5270); searching is HTTP 202 + Retry-After.';
 
 describe('MRB #4993 hostile FR #4197 harvest-agent-skills ASCII', () => {
   it('SKILL.md is UTF-8 no-BOM and pure ASCII', () => {

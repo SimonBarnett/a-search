@@ -48,9 +48,12 @@ hosts are never stored as hostkeys (gateway resolve + `ensureAclubsHost` guard).
 `clicks=0`, `since`, `lastmod`, `annotated=0`, `enabled=0` (FR #4891; replaces
 former `init`), `hasresults=0` (FR #4917). New markers do **not** carry an `init`
 key. `hasresults` flips to `1` when every source in the current
-`search-fanout.json` has a terminal `DONE/{searchid}-{source}.json`
-(`status` `serviced` or `dlq`); that flip also runs `promoteInToLive` (IN/ →
-`live.json`, then `enabled=1`, including empty IN → empty live → `no_parts`).
+`search-fanout.json` has a terminal `_search-done/{searchid}/{source}.json`
+(`status` `serviced` or `dlq`). FR #5270: that flip does **not** write
+`live.json` or set `enabled=1` — search workers/drains only write `IN/` +
+terminals + `hasresults`. The redqueen hasresults monitor / agent SELECTS the
+best parts from `IN/` into `live.json` and sets `enabled=1` (empty IN → empty
+live → `no_parts` / FR #5047 no-results after the agent promote).
 `widget.json` is a plain seed file (no GUID folder metadata). `uri` prefers the
 `Referer` path; else `pageUri` / `uri` query. Documented choice: Referer first.
 

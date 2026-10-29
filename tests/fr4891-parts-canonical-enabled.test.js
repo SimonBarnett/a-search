@@ -373,7 +373,7 @@ describe('FR #4891 promoteInToLive + maybeSetHasResults', () => {
     assert.equal(live.length, 1);
   });
 
-  it('maybeSetHasResults path triggers promote (memory S3)', async () => {
+  it('maybeSetHasResults sets hasresults only (no live.json / enabled) — FR #5270', async () => {
     const s3 = createMemoryS3();
     const searchid = 'srch_4891';
     await s3.putObject({
@@ -402,9 +402,17 @@ describe('FR #4891 promoteInToLive + maybeSetHasResults', () => {
       Key: `${HOST}/${GUID}/IN/cand.json`,
       Body: JSON.stringify([{ id: 'from-in' }]),
     });
+    /** @type {string[]} */
+    const livePuts = [];
+    const putObject = async (input) => {
+      if (String(input.Key || '').endsWith('/live.json')) {
+        livePuts.push(String(input.Key));
+      }
+      return s3.putObject(input);
+    };
     const deps = {
       bucket: 'test-a-clubs',
-      putObject: s3.putObject,
+      putObject,
       getObject: s3.getObject,
       headObject: s3.headObject,
       listObjectsV2: s3.listObjectsV2,
@@ -423,15 +431,15 @@ describe('FR #4891 promoteInToLive + maybeSetHasResults', () => {
       products: 1,
     });
     assert.equal(flip.hasresults, true);
-    assert.ok(flip.flip && flip.flip.promote);
-    assert.equal(flip.flip.promote.enabled, 1);
+    assert.equal(flip.flip && flip.flip.promote, undefined);
+    assert.equal(livePuts.length, 0);
     const head = await s3.headObject({ Key: `${HOST}/${GUID}/` });
     assert.equal(String(head.Metadata.hasresults), '1');
-    assert.equal(String(head.Metadata.enabled), '1');
+    assert.notEqual(String(head.Metadata.enabled || '0'), '1');
     const live = JSON.parse(
       (await s3.getObject({ Key: `${HOST}/${GUID}/live.json` })).Body.toString('utf8'),
     );
-    assert.ok(live.some((p) => p && p.id === 'from-in'));
+    assert.equal(live.length, 0);
 
     // Direct maybeSetHasResults when already complete is still hasresults true.
     const again = await maybeSetHasResults({

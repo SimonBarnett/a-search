@@ -54,8 +54,9 @@ describe('MRB #4984 hostile FR #4891', () => {
     assert.match(src, /getObjectAnnotation/);
     assert.match(src, /setEnabled/);
     const done = read('shared/search/searchDone.js');
-    assert.match(done, /promoteInToLive/);
-    assert.match(done, /getObjectAnnotation: opts\.getObjectAnnotation/);
+    // FR #5270: searchDone no longer calls promoteInToLive.
+    assert.doesNotMatch(done, /promoteInToLive/);
+    assert.match(done, /setHasResults/);
   });
 
   it('pageParts searching path does not promote; handler returns 202', () => {
