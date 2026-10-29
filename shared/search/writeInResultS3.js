@@ -13,8 +13,6 @@ const { inResultKey, buildInResult, validateInResult } = require('./inResultSche
  *   searchid: string,
  *   source: string,
  *   products?: object[],
- *   queries?: unknown[],
- *   exclude?: unknown[],
  *   status?: object,
  *   error?: string,
  *   putObject: Function,
@@ -38,8 +36,6 @@ async function writeInResultToS3(opts) {
     searchid: opts.searchid,
     source: opts.source,
     products: opts.products,
-    queries: opts.queries,
-    exclude: opts.exclude,
     status: opts.status,
     error: opts.error,
   });

@@ -41,7 +41,7 @@ describe('FR-033 default S3 PutObject in writeResults', () => {
     );
     assert.equal(sends[0].ContentType, 'application/json');
     const body = JSON.parse(sends[0].Body);
-    assert.equal(body.searchId, job.searchId);
+    assert.equal(body.searchid, job.searchId);
     assert.equal(body.source, 'amazon');
     assert.deepEqual(body.products, [{ id: 'p1', title: 't' }]);
     assert.equal(result.key, expectedKey);

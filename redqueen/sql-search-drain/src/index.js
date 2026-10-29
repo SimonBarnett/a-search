@@ -37,8 +37,6 @@ function writeSqlInResult(opts, root) {
     hostkey: opts.hostkey,
     guid: opts.guid,
     products,
-    queries: opts.queries,
-    exclude: opts.exclude,
   });
   const key = inResultKey({
     hostkey: body.hostkey,

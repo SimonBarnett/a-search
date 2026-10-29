@@ -173,7 +173,9 @@ Providers and the SQL drain write:
 `a-clubs/{hostkey}/{guid}/IN/{searchid}-{source}.json`
 
 Schema: `shared/search/inResultSchema.js` (`searchid`, `source`, `hostkey`,
-`guid`, `products[]`). Affiliate links keep the existing tenant + affiliate id
+`guid`, `products[]`). **FR #5271:** do not store `queries` / `exclude` on the
+IN body (those live on `searches.json`). Each product row may carry `rank`.
+Affiliate links keep the existing tenant + affiliate id
 rules. Writers bump GUID and host `lastmod` (#3968) via
 `shared/search/writeInResultS3.js`. The SQL/walrus drain uses the schema now;
 **provider workers wire `writeInResultToS3` in #4040**.

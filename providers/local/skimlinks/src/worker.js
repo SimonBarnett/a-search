@@ -71,8 +71,6 @@ async function run(msg, deps) {
     msg,
     source: 'skimlinks',
     products,
-    queries: msg.queries,
-    exclude: msg.exclude,
     envVars,
     putObject: liveS3.putObject,
     touchLastmod: deps && deps.touchLastmod,

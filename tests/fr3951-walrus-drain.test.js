@@ -128,8 +128,10 @@ describe('FR-3951 a-clubs IN path', () => {
     );
     assert.ok(fs.existsSync(written.abs));
     const body = JSON.parse(fs.readFileSync(written.abs, 'utf8'));
-    assert.equal(body.searchId, 'srch_w');
-    assert.equal(body.host, 'club.example');
+    assert.equal(body.searchid, 'srch_w');
+    assert.equal(body.hostkey, 'club.example');
+    assert.equal(body.guid, 'guid-1');
+    assert.equal(body.source, 'shopify');
     assert.deepEqual(body.products, [{ id: 'p1' }]);
     assert.equal(
       aClubsInAbsPath({

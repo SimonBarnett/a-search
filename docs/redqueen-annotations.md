@@ -38,7 +38,8 @@ must still be on the folder-events queue (replay the host message).
 Host `annotation` is `aclubs.host.v1` (about, description, keywords, audience,
 affiliate_opportunities, exclusions, identity_terms, market ISO codes).
 GUID `annotation` is `aclubs.page.v1`, a parts-selection brief for that URI's
-IN/ folder. The model must return only that JSON; invalid JSON is retried
+IN/ folder (FR #5271: IN files hold searchid/source/hostkey/guid/products only,
+not queries/exclude). The model must return only that JSON; invalid JSON is retried
 once and then the message is not written (`action: retry`). Page fields must
 not repeat host about/keywords/identity (FR #4824). Legacy docs without
 `schema` are treated as missing.

@@ -32,9 +32,10 @@ describe('FR-009 writeResults to S3', () => {
     assert.equal(calls[0].Key, expectedKey);
     assert.equal(calls[0].ContentType, 'application/json');
     const body = JSON.parse(calls[0].Body);
-    assert.equal(body.searchId, job.searchId);
+    assert.equal(body.searchid, job.searchId);
     assert.equal(body.source, job.source);
-    assert.equal(body.userId, job.userId);
+    assert.equal(body.hostkey, job.userId);
+    assert.equal(body.guid, String(job.catalogId));
     assert.deepEqual(body.products, [{ id: 'p1' }]);
     assert.equal(result.key, expectedKey);
     assert.equal(result.bucket, 'test-bucket');
@@ -55,9 +56,10 @@ describe('FR-009 writeResults to S3', () => {
     });
     const body = JSON.parse(calls[0].Body);
     assert.deepEqual(body, {
-      searchId: 'srch_x',
+      searchid: 'srch_x',
       source: 'ebay',
-      userId: 'U1',
+      hostkey: 'U1',
+      guid: '1',
       products: [],
     });
   });
