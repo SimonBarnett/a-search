@@ -1,0 +1,5 @@
+{
+  "SearchApiUrl": "https://example.invalid",
+  "AwsProfile": "a-search-redqueen-annotator",
+  "SearchStackName": "ASearchStack"
+}

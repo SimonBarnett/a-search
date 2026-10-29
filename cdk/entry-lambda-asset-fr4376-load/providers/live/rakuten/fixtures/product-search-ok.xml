@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<result>
+  <item>
+    <productid>RK-FIX-001</productid>
+    <productname>Fixture Running Shoes</productname>
+    <price>59.99</price>
+    <currency>GBP</currency>
+    <linkurl>https://www.example.com/rk/RK-FIX-001</linkurl>
+    <imageurl>https://www.example.com/img/rk1.jpg</imageurl>
+  </item>
+  <item>
+    <productid>RK-FIX-002</productid>
+    <productname>Fixture Trail Shoes</productname>
+    <price>79.50</price>
+    <currency>GBP</currency>
+    <linkurl>https://www.example.com/rk/RK-FIX-002</linkurl>
+    <imageurl>https://www.example.com/img/rk2.jpg</imageurl>
+  </item>
+</result>

@@ -1,0 +1,29 @@
+{
+  "etsyProductAPI": {
+    "count": 2,
+    "results": [
+      {
+        "listing_id": 10001,
+        "title": "Fixture Handmade Ceramic Mug",
+        "description": "Fixture listing A",
+        "price": { "amount": 1850, "divisor": 100, "currency_code": "GBP" },
+        "url": "https://example.test/etsy/listing/10001",
+        "images": [
+          { "url_570xN": "https://example.test/img/etsy-10001.jpg" }
+        ],
+        "shop_id": 5001
+      },
+      {
+        "listing_id": 10002,
+        "title": "Fixture Leather Wallet",
+        "description": "Fixture listing B",
+        "price": { "amount": 3200, "divisor": 100, "currency_code": "GBP" },
+        "url": "https://example.test/etsy/listing/10002",
+        "images": [
+          { "url_570xN": "https://example.test/img/etsy-10002.jpg" }
+        ],
+        "shop_id": 5002
+      }
+    ]
+  }
+}

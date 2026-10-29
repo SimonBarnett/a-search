@@ -1,0 +1,960 @@
+'use strict';
+
+/**
+ * Entry HTTP accept handler (FR-005) + fan-out enqueue (FR-006) +
+ * performance stub (FR-053b) + selftest (FR-059b + FR-152 orchestrator).
+ * JWT verify (FR-004) + body validation + registry-backed SQS fan-out (injectable sendMessage).
+ * Never trusts a request-body user id.
+ */
+
+const crypto = require('node:crypto');
+const { verifyAuthorization, AuthError } = require('./auth/jwt');
+const { iamAuthorizerIdentity } = require('./auth/iam');
+const { fanOutEnqueue, EnqueueError } = require('./enqueue');
+const {
+  handleAgentSearch,
+  isAgentSearchBody,
+  AgentSearchError,
+} = require('./agentSearch');
+const {
+  emptyPerformancePayload,
+  resolvePerformanceInput,
+  queryParams,
+} = require('./performance');
+const {
+  buildSelftestPayload,
+  resolveSelftestInput,
+} = require('./selftest');
+const { createRegistrySelftestProbe } = require('./selftestProbes');
+const { aggregateClicksVisits } = require('./performanceClicksVisits');
+const { aggregateSales } = require('./performanceSales');
+const { aggregateTop } = require('./performanceTop');
+const {
+  resolvePerformanceListDeps,
+} = require('./performanceS3Read');
+const {
+  reportException: defaultReportException,
+} = require('../../shared/intake/reportException');
+const {
+  runSelftestOrchestrator: defaultRunSelftestOrchestrator,
+} = require('../../shared/selftest/orchestrator');
+const {
+  reportSelftestFailures: defaultReportSelftestFailures,
+} = require('../../shared/selftest/reportSelftestFailure');
+const { enabled: registryEnabled } = require('../../providers/loadRegistry');
+const { handleParts, isPartsRoute } = require('./parts');
+const { handleGo, isGoRoute } = require('./go');
+const { handleExtStatus, isExtStatusRoute } = require('./extStatus');
+const {
+  matchComponentsPieceRoute,
+  handleComponentsPieceStub,
+} = require('./componentsPieceRoutes');
+const {
+  matchWidgetEventsRoute,
+  handleWidgetEvents,
+} = require('./widgetEvents');
+const {
+  matchWidgetsStatsRoute,
+  handleWidgetsStats,
+} = require('./widgetsStats');
+const {
+  matchAccountPayoutsRoute,
+  handleAccountPayouts,
+} = require('./accountPayouts');
+const {
+  matchWidgetsCreateRoute,
+  handleWidgetsCreate,
+} = require('./widgetsCreate');
+const {
+  matchAccountCommissionRoute,
+  handleAccountCommission,
+} = require('./accountCommission');
+const {
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
+} = require('./clubRevenueShare');
+const {
+  matchAccountUpgradeRoute,
+  handleAccountUpgrade,
+} = require('./accountUpgrade');
+const {
+  matchWidgetsMutateRoute,
+  handleWidgetsMutate,
+} = require('./widgetsMutate');
+const {
+  matchPartnerRegisterRoute,
+  handlePartnerRegister,
+} = require('./partnerRegister');
+const {
+  matchStripeWebhookRoute,
+  handleStripeWidgetUpgradeWebhook,
+} = require('./stripeWidgetUpgradeWebhook');
+
+// FR #4376: merchant shop adapters (shared/shops + providers/local/*) must not load
+// at entry init — /search only enqueues. Lazy-require shop modules on those routes.
+function loadMerchantShops() {
+  return require('./merchantShops');
+}
+function loadShopifyWebhooks() {
+  return require('./shopifyWebhooks');
+}
+function loadWixWebhooks() {
+  return require('./wixWebhooks');
+}
+function loadEcwidWebhooks() {
+  return require('./ecwidWebhooks');
+}
+function loadBigCommerceWebhooks() {
+  return require('./bigcommerceWebhooks');
+}
+function loadStripeShopWebhook() {
+  return require('./stripeWebhook');
+}
+const {
+  matchLoginEntryRoute,
+  handleLoginEntry,
+} = require('./loginEntry');
+const {
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
+} = require('./oauthCallback');
+const {
+  matchAuthEmailRoute,
+  handleAuthEmailRequest,
+  handleAuthEmailVerify,
+  handleAuthSmsRequest,
+  handleAuthSmsVerify,
+} = require('./authEmail');
+
+const JSON_HEADERS = { 'content-type': 'application/json' };
+const ENTRY_ROUTE = 'entry/POST /search';
+const PERF_ROUTE = 'entry/account/performance';
+const SELFTEST_ROUTE = 'entry/selftest';
+const PARTS_ROUTE = 'entry/GET /parts';
+const GO_ROUTE = 'entry/GET /go';
+const EXT_STATUS_ROUTE = 'entry/GET /ext/status';
+const ACCOUNT_PAYOUTS_ROUTE = 'entry/account/payouts';
+const WIDGETS_CREATE_ROUTE = 'entry/POST /widgets';
+const PARTNER_REGISTER_ROUTE = 'entry/partner/register';
+const MERCHANT_SHOPS_ROUTE = 'entry/merchant/shops';
+const LOGIN_ENTRY_ROUTE = 'entry/auth/login';
+const OAUTH_CALLBACK_ROUTE = 'entry/auth/oauth/callback';
+const AUTH_EMAIL_ROUTE = 'entry/auth';
+const ACCOUNT_COMMISSION_ROUTE = 'entry/account/commission';
+const ACCOUNT_UPGRADE_ROUTE = 'entry/account/upgrade';
+const CLUB_REVENUE_SHARE_ROUTE = 'entry/club/revenue-share';
+const WIDGETS_MUTATE_ROUTE = 'entry/widgets/mutate';
+
+function jsonResponse(statusCode, payload) {
+  return {
+    statusCode,
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
+  };
+}
+
+function newSearchId() {
+  return `srch_${crypto.randomBytes(10).toString('hex')}`;
+}
+
+function headerGet(headers, name) {
+  if (!headers || typeof headers !== 'object') return undefined;
+  const want = name.toLowerCase();
+  for (const [k, v] of Object.entries(headers)) {
+    if (String(k).toLowerCase() === want) return v;
+  }
+  return undefined;
+}
+
+function parseBody(raw) {
+  if (raw == null || raw === '') return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {object} event
+ * @returns {{ method: string, path: string }}
+ */
+function resolveHttp(event) {
+  const method = String(
+    (event &&
+      event.requestContext &&
+      event.requestContext.http &&
+      event.requestContext.http.method) ||
+      (event && event.httpMethod) ||
+      'POST',
+  ).toUpperCase();
+  let path = String(
+    (event && event.rawPath) ||
+      (event &&
+        event.requestContext &&
+        event.requestContext.http &&
+        event.requestContext.http.path) ||
+      (event && event.path) ||
+      '/search',
+  );
+  // strip stage prefix like /prod
+  if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+  const q = path.indexOf('?');
+  if (q >= 0) path = path.slice(0, q);
+  return { method, path };
+}
+
+function isPerformanceRoute(method, path) {
+  if (path !== '/account/performance') return false;
+  return method === 'GET' || method === 'POST';
+}
+
+function isSelftestRoute(method, path) {
+  if (path !== '/selftest') return false;
+  return method === 'GET' || method === 'POST';
+}
+
+/**
+ * @param {unknown} body
+ * @returns {{ ok: true, value: object } | { ok: false, fields: string[] }}
+ */
+function validateSearchBody(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { ok: false, fields: ['body'] };
+  }
+  const fields = [];
+  const hasQ = typeof body.q === 'string' && body.q.trim() !== '';
+  const hasTerms =
+    Array.isArray(body.searchterms) &&
+    body.searchterms.some((t) => typeof t === 'string' && t.trim() !== '');
+  if (!hasQ && !hasTerms) fields.push('q', 'searchterms');
+
+  if (
+    body.catalogId === undefined ||
+    body.catalogId === null ||
+    body.catalogId === ''
+  ) {
+    fields.push('catalogId');
+  }
+  if (typeof body.category !== 'string' || body.category.trim() === '') {
+    fields.push('category');
+  }
+  if (typeof body.subcategory !== 'string' || body.subcategory.trim() === '') {
+    fields.push('subcategory');
+  }
+  if (body.sources !== undefined) {
+    if (
+      !Array.isArray(body.sources) ||
+      body.sources.some((s) => typeof s !== 'string')
+    ) {
+      fields.push('sources');
+    }
+  }
+  if (body.sandbox !== undefined && typeof body.sandbox !== 'boolean') {
+    fields.push('sandbox');
+  }
+  if (fields.length) return { ok: false, fields: [...new Set(fields)] };
+  return {
+    ok: true,
+    value: {
+      q: hasQ ? body.q.trim() : undefined,
+      searchterms: hasTerms ? body.searchterms : undefined,
+      catalogId: body.catalogId,
+      category: body.category.trim(),
+      subcategory: body.subcategory.trim(),
+      sources: body.sources,
+      sandbox: body.sandbox === true,
+    },
+  };
+}
+
+/**
+ * Default enqueue: FR-006 fan-out with FR-032 SQS SendMessage default.
+ * @param {object} args
+ * @returns {Promise<string[]>}
+ */
+async function defaultEnqueue(args) {
+  return fanOutEnqueue(args);
+}
+
+/**
+ * @param {object} event - API Gateway-style event
+ * @param {object} [_context]
+ * @param {{
+ *   env?: Record<string, string|undefined>,
+ *   verifyAuthorization?: Function,
+ *   enqueue?: (args: object) => Promise<string[]>,
+ *   newSearchId?: () => string,
+ *   sendMessage?: (payload: object) => Promise<void>,
+ *   reportException?: Function,
+ * }} [deps]
+ */
+async function handler(event, _context, deps = {}) {
+  const report = deps.reportException || defaultReportException;
+  const { method, path } = resolveHttp(event || {});
+  const payoutRoute = matchAccountPayoutsRoute(method, path);
+  const widgetsRoute = matchWidgetsCreateRoute(method, path);
+  const partnerRoute = matchPartnerRegisterRoute(method, path);
+  const stripeWebhookRoute = matchStripeWebhookRoute(method, path);
+  // FR #4376: only load shop adapter modules when the request targets those routes.
+  let merchantRoute = null;
+  let merchantShops = null;
+  if (String(path || '').startsWith('/merchant/shops')) {
+    merchantShops = loadMerchantShops();
+    merchantRoute = merchantShops.matchMerchantShopsRoute(method, path);
+  }
+  let shopifyWebhookRoute = null;
+  let shopifyWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/shopify') {
+    shopifyWebhooks = loadShopifyWebhooks();
+    shopifyWebhookRoute = shopifyWebhooks.matchShopifyWebhookRoute(method, path);
+  }
+  let wixWebhookRoute = null;
+  let wixWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/wix') {
+    wixWebhooks = loadWixWebhooks();
+    wixWebhookRoute = wixWebhooks.matchWixWebhookRoute(method, path);
+  }
+  let ecwidWebhookRoute = null;
+  let ecwidWebhooks = null;
+  if (method === 'POST' && path === '/webhooks/shop/ecwid') {
+    ecwidWebhooks = loadEcwidWebhooks();
+    ecwidWebhookRoute = ecwidWebhooks.matchEcwidWebhookRoute(method, path);
+  }
+  let bigcommerceWebhookRoute = null;
+  let bigcommerceWebhooks = null;
+  if (
+    method === 'POST' &&
+    (path === '/webhooks/shop/bigcommerce' ||
+      path === '/webhooks/shop/bigcommerce/uninstall' ||
+      path === '/webhooks/shop/bigcommerce/load')
+  ) {
+    bigcommerceWebhooks = loadBigCommerceWebhooks();
+    bigcommerceWebhookRoute = bigcommerceWebhooks.matchBigCommerceWebhookRoute(
+      method,
+      path,
+    );
+  }
+  const loginRoute = matchLoginEntryRoute(method, path);
+  const oauthRoute = matchOAuthCallbackRoute(method, path);
+  const authRoute = matchAuthEmailRoute(method, path);
+  const commissionRoute = matchAccountCommissionRoute(method, path);
+  const upgradeRoute = matchAccountUpgradeRoute(method, path);
+  const clubRevenueShareRoute = matchClubRevenueShareRoute(method, path);
+  const widgetsMutateRoute = matchWidgetsMutateRoute(method, path);
+  const widgetEventsRoute = matchWidgetEventsRoute(method, path);
+  const widgetsStatsRoute = matchWidgetsStatsRoute(method, path);
+  const cpRoute = matchComponentsPieceRoute(method, path);
+  const route = isExtStatusRoute(method, path)
+    ? EXT_STATUS_ROUTE
+    : isGoRoute(method, path)
+      ? GO_ROUTE
+      : isPartsRoute(method, path)
+        ? PARTS_ROUTE
+        : payoutRoute
+          ? ACCOUNT_PAYOUTS_ROUTE
+          : widgetsRoute
+            ? WIDGETS_CREATE_ROUTE
+            : partnerRoute
+              ? PARTNER_REGISTER_ROUTE
+              : merchantRoute
+                ? MERCHANT_SHOPS_ROUTE
+                : stripeWebhookRoute
+                  ? 'entry/POST /webhooks/stripe'
+                  : authRoute
+                  ? AUTH_EMAIL_ROUTE
+                  : loginRoute
+                  ? LOGIN_ENTRY_ROUTE
+                  : oauthRoute
+                    ? OAUTH_CALLBACK_ROUTE
+                    : commissionRoute
+                      ? ACCOUNT_COMMISSION_ROUTE
+                      : upgradeRoute
+                        ? ACCOUNT_UPGRADE_ROUTE
+                        : clubRevenueShareRoute
+                          ? CLUB_REVENUE_SHARE_ROUTE
+                          : widgetsMutateRoute
+                            ? WIDGETS_MUTATE_ROUTE
+                            : cpRoute
+                              ? `entry/${cpRoute}`
+                              : isSelftestRoute(method, path)
+                                ? SELFTEST_ROUTE
+                                : isPerformanceRoute(method, path)
+                                  ? PERF_ROUTE
+                                  : ENTRY_ROUTE;
+  try {
+    if (isExtStatusRoute(method, path)) {
+      return await handleExtStatus(event, deps);
+    }
+    if (isGoRoute(method, path)) {
+      return await handleGo(event, deps);
+    }
+    if (isPartsRoute(method, path)) {
+      return await handleParts(event, deps);
+    }
+    // FR-222 payout/stripe handlers win over FR-208 ComponentsPiece 501 stubs
+    if (
+      payoutRoute === 'POST /account/payouts' ||
+      payoutRoute === 'POST /account/stripe/link'
+    ) {
+      return await handleAccountPayouts(event, deps);
+    }
+    // #1344 extension account/widget mutate handlers win over FR-208 501 stubs
+    if (commissionRoute) {
+      return await handleAccountCommission(event, deps);
+    }
+    if (upgradeRoute) {
+      return await handleAccountUpgrade(event, deps);
+    }
+    // #1345 widget_upgrade wins; other Stripe events fall through to FR-239
+    if (stripeWebhookRoute) {
+      const upgrade = await handleStripeWidgetUpgradeWebhook(event, deps);
+      let skipped = false;
+      try {
+        skipped = JSON.parse(upgrade.body || '{}').skipped === 'not_widget_upgrade';
+      } catch (err) {
+        skipped = false;
+      }
+      if (!skipped) return upgrade;
+      return await loadStripeShopWebhook().handleStripeWebhook(event, deps);
+    }
+    // FR-249 club revenue-share (JWT club role) wins over FR-208 stubs
+    if (clubRevenueShareRoute) {
+      return await handleClubRevenueShare(event, deps);
+    }
+    if (widgetsMutateRoute) {
+      return await handleWidgetsMutate(event, widgetsMutateRoute, deps);
+    }
+    // FR-234: widget events + stats win over FR-208 501 stubs
+    if (widgetEventsRoute) {
+      return await handleWidgetEvents(event, deps);
+    }
+    if (widgetsStatsRoute) {
+      return await handleWidgetsStats(event, deps);
+    }
+    // FR-219/220 mint wins over FR-208 ComponentsPiece 501 stub for POST /widgets
+    if (widgetsRoute === 'POST /widgets') {
+      return await handleWidgetsCreate(event, deps);
+    }
+    if (oauthRoute) {
+      return await handleOAuthCallback(event, oauthRoute, deps);
+    }
+    if (loginRoute) {
+      return await handleLoginEntry(event, loginRoute, deps);
+    }
+    if (cpRoute) {
+      return await handleComponentsPieceStub(event, cpRoute);
+    }
+    if (isSelftestRoute(method, path)) {
+      return await handleSelftest(event, deps);
+    }
+    if (isPerformanceRoute(method, path)) {
+      return await handlePerformance(event, deps);
+    }
+
+    if (authRoute === 'POST /auth/email/request') {
+      return await handleAuthEmailRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/email/verify') {
+      return await handleAuthEmailVerify(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/request') {
+      return await handleAuthSmsRequest(event, deps);
+    }
+    if (authRoute === 'POST /auth/sms/verify') {
+      return await handleAuthSmsVerify(event, deps);
+    }
+
+    if (partnerRoute === 'POST /partner/register') {
+      return await handlePartnerRegister(event, deps);
+    }
+    if (shopifyWebhookRoute) {
+      return await shopifyWebhooks.handleShopifyWebhook(event, deps);
+    }
+    if (wixWebhookRoute) {
+      return await wixWebhooks.handleWixWebhook(event, deps);
+    }
+    if (ecwidWebhookRoute) {
+      return await ecwidWebhooks.handleEcwidWebhook(event, deps);
+    }
+    if (bigcommerceWebhookRoute) {
+      return await bigcommerceWebhooks.handleBigCommerceWebhook(event, deps);
+    }
+    if (
+      merchantRoute === 'GET /merchant/shops' ||
+      merchantRoute === 'DELETE /merchant/shops/{shopId}' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/subscribe' ||
+      merchantRoute === 'POST /merchant/shops/{shopId}/cancel'
+    ) {
+      return await merchantShops.handleMerchantShops(event, merchantRoute, deps);
+    }
+    if (merchantRoute === 'POST /merchant/shops/connect') {
+      return await merchantShops.handleMerchantShopsConnect(event, deps);
+    }
+    if (merchantRoute === 'GET|POST /merchant/shops/callback/{provider}') {
+      return await merchantShops.handleMerchantShopsCallback(event, deps);
+    }
+    if (merchantRoute === 'GET|POST /merchant/shops/magento/identity') {
+      return await merchantShops.handleMerchantShops(event, merchantRoute, deps);
+    }
+    return await handleSearch(event, deps);
+  } catch (err) {
+    // Client AuthError / EnqueueError are returned as 401/400 inside handlers.
+    // Unexpected fatals file a-search intake once (FR-048c).
+    try {
+      await report({
+        err,
+        route,
+        source: 'entry',
+        fetch: deps.fetch,
+      });
+    } catch {
+      // Intake failure must not mask the original error response.
+    }
+    // FR #5095: log name/code (never body/secrets) before 500.
+    const log = deps.log || console;
+    const errName = err && (err.name || err.code) ? String(err.name || err.code) : 'Error';
+    const errCode = err && err.code && err.code !== err.name ? String(err.code) : '';
+    if (typeof log.error === 'function') {
+      log.error(`[entry] ${route} ${errName}${errCode ? ` ${errCode}` : ''}`);
+    }
+    return jsonResponse(500, {
+      accepted: false,
+      ok: false,
+      error: 'internal_error',
+    });
+  }
+}
+
+/**
+ * FR-053b performance stub.
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handlePerformance(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  try {
+    const auth = await verify(authHeader, { env, body: undefined });
+    userId = auth.userId;
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return jsonResponse(401, { ok: false, error: err.code });
+    }
+    return jsonResponse(401, { ok: false, error: 'unauthorized' });
+  }
+
+  const query = queryParams(event);
+  const rawBody = event && event.body;
+  const parsed = parseBody(rawBody);
+  if (parsed === null) {
+    return jsonResponse(400, {
+      ok: false,
+      error: 'invalid_json',
+    });
+  }
+
+  // Body / query userId is never authority; if present and differs → 401
+  const bodyUser =
+    parsed.userId !== undefined && parsed.userId !== null
+      ? parsed.userId
+      : query.userId;
+  if (
+    bodyUser !== undefined &&
+    bodyUser !== null &&
+    String(bodyUser) !== String(userId)
+  ) {
+    return jsonResponse(401, { ok: false, error: 'user_id_mismatch' });
+  }
+
+  const resolved = resolvePerformanceInput(query, parsed);
+  if (!resolved.ok) {
+    return jsonResponse(400, { ok: false, error: resolved.error });
+  }
+
+  const range = resolved.value;
+  const payload = emptyPerformancePayload(userId, range);
+
+  // FR-160: when list*/events are not injected and S3_RESULTS_BUCKET is set,
+  // default to shared mapping store + documented stats key.
+  const lists = resolvePerformanceListDeps(deps, env);
+
+  // FR-053c: fill clicks/visits from injectable read model (or FR-160 S3).
+  const aggregateCv =
+    typeof deps.aggregateClicksVisits === 'function'
+      ? deps.aggregateClicksVisits
+      : aggregateClicksVisits;
+  const stats = await aggregateCv({
+    userId,
+    env: range.env,
+    from: range.from,
+    to: range.to,
+    events: lists.clickVisitEvents,
+    listEvents: lists.listClickVisitEvents,
+  });
+  payload.clicks = Number(stats && stats.clicks) || 0;
+  payload.visits = Number(stats && stats.visits) || 0;
+  payload.uniqueVisitors = Number(stats && stats.uniqueVisitors) || 0;
+
+  // FR-053d: fill sales / commission / currencies (top merchants OOS).
+  const aggregateSaleFn =
+    typeof deps.aggregateSales === 'function'
+      ? deps.aggregateSales
+      : aggregateSales;
+  const saleStats = await aggregateSaleFn({
+    userId,
+    env: range.env,
+    from: range.from,
+    to: range.to,
+    events: lists.saleEvents,
+    listEvents: lists.listSaleEvents,
+  });
+  if (saleStats && saleStats.sales) {
+    payload.sales = {
+      count: Number(saleStats.sales.count) || 0,
+      amount: Number(saleStats.sales.amount) || 0,
+      commission: Number(saleStats.sales.commission) || 0,
+      currency: saleStats.sales.currency || 'GBP',
+    };
+  }
+  payload.currencies = Array.isArray(saleStats && saleStats.currencies)
+    ? saleStats.currencies
+    : [];
+
+  // FR-053e: top links / merchants (scoped to userId+env; date filter FR-053f).
+  const aggregateTopFn =
+    typeof deps.aggregateTop === 'function' ? deps.aggregateTop : aggregateTop;
+  const topStats = await aggregateTopFn({
+    userId,
+    env: range.env,
+    from: range.from,
+    to: range.to,
+    limit: deps.topLimit,
+    events: lists.topEvents,
+    listEvents: lists.listTopEvents,
+  });
+  payload.topLinks = Array.isArray(topStats && topStats.topLinks)
+    ? topStats.topLinks
+    : [];
+  payload.topMerchants = Array.isArray(topStats && topStats.topMerchants)
+    ? topStats.topMerchants
+    : [];
+
+  return jsonResponse(200, payload);
+}
+
+/**
+ * FR-059b auth + FR-152 orchestrator: probe enabled registry sources.
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handleSelftest(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const runOrch =
+    deps.runSelftestOrchestrator || defaultRunSelftestOrchestrator;
+  const listEnabled = deps.listEnabled || registryEnabled;
+  const reportFailures =
+    deps.reportSelftestFailures || defaultReportSelftestFailures;
+  const probe =
+    deps.probe ||
+    createRegistrySelftestProbe({
+      env,
+      loadRegistry: deps.loadRegistry,
+      requireProbe: deps.requireProbe,
+      probeDeps: deps.probeDeps,
+    });
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  // FR #4888: IAM authorizer identity first, JWT fallback
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId) {
+    userId = iamId.userId;
+  } else {
+    try {
+      const auth = await verify(authHeader, { env, body: undefined });
+      userId = auth.userId;
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return jsonResponse(401, { ok: false, error: err.code });
+      }
+      return jsonResponse(401, { ok: false, error: 'unauthorized' });
+    }
+  }
+
+  const query = queryParams(event);
+  const rawBody = event && event.body;
+  const parsed = parseBody(rawBody);
+  if (parsed === null) {
+    return jsonResponse(400, {
+      ok: false,
+      error: 'invalid_json',
+    });
+  }
+
+  const bodyUser =
+    parsed.userId !== undefined && parsed.userId !== null
+      ? parsed.userId
+      : query.userId;
+  if (
+    bodyUser !== undefined &&
+    bodyUser !== null &&
+    String(bodyUser) !== String(userId)
+  ) {
+    return jsonResponse(401, { ok: false, error: 'user_id_mismatch' });
+  }
+
+  const resolved = resolveSelftestInput(query, parsed);
+  if (!resolved.ok) {
+    return jsonResponse(400, {
+      ok: false,
+      error: resolved.error,
+      fields: resolved.fields,
+    });
+  }
+
+  const selftestEnv = resolved.value.env;
+  let orch;
+  try {
+    orch = await runOrch({
+      env: selftestEnv,
+      sources: resolved.value.sources,
+      probe,
+      listEnabled,
+    });
+  } catch (err) {
+    const report = deps.reportException || defaultReportException;
+    await report({
+      err,
+      route: SELFTEST_ROUTE,
+      fetch: deps.fetch,
+    }).catch(() => {});
+    return jsonResponse(500, {
+      ok: false,
+      error: 'selftest_runner_failed',
+    });
+  }
+
+  let intakeFiled = [];
+  try {
+    const filed = await reportFailures({
+      providers: orch.providers,
+      env: selftestEnv,
+      fetch: deps.fetch,
+      intakeUrl: deps.intakeUrl,
+      reportSelftestFailure: deps.reportSelftestFailure,
+    });
+    intakeFiled = filed && filed.intakeFiled ? filed.intakeFiled : [];
+  } catch {
+    intakeFiled = [];
+  }
+
+  const payload = buildSelftestPayload(userId, {
+    env: orch.env,
+    providers: orch.providers,
+    failed: orch.failed,
+    intakeFiled,
+  });
+  return jsonResponse(200, payload);
+}
+
+/**
+ * @param {object} event
+ * @param {object} deps
+ */
+async function handleSearch(event, deps = {}) {
+  const env = deps.env || process.env;
+  const verify = deps.verifyAuthorization || verifyAuthorization;
+  const makeId = deps.newSearchId || newSearchId;
+  const enqueue =
+    deps.enqueue ||
+    ((args) =>
+      defaultEnqueue({
+        ...args,
+        sendMessage: deps.sendMessage,
+      }));
+
+  const rawBody = event && event.body;
+  const parsedEarly = parseBody(rawBody);
+  // FR #4030: agent fan-out when body carries hostkey+guid+queries.
+  if (parsedEarly && isAgentSearchBody(parsedEarly)) {
+    try {
+      // FR #4404: only pass S3 deps when injected. A throwing headObject stub
+      // is still typeof function, so agentSearch never reaches defaultAclubsIo().
+      const result = await handleAgentSearch({
+        event: {
+          ...event,
+          body: parsedEarly,
+        },
+        ...(typeof deps.headObject === 'function'
+          ? { headObject: deps.headObject }
+          : {}),
+        ...(typeof deps.getObject === 'function'
+          ? { getObject: deps.getObject }
+          : {}),
+        ...(typeof deps.putObject === 'function'
+          ? { putObject: deps.putObject }
+          : {}),
+        ...(typeof deps.headAffiliatesObject === 'function'
+          ? { headAffiliatesObject: deps.headAffiliatesObject }
+          : {}),
+        ...(deps.checkAffiliatesEnabled != null
+          ? { checkAffiliatesEnabled: deps.checkAffiliatesEnabled }
+          : {}),
+        log: deps.log,
+        sendMessage: deps.sendMessage,
+        env,
+        newSearchId: deps.newSearchId || makeId,
+        enabled: deps.enabled,
+        loadRegistry: deps.loadRegistry,
+      });
+      return jsonResponse(202, {
+        searchid: result.searchid,
+        queued: result.queued,
+        ...(result.idempotent ? { idempotent: true } : {}),
+      });
+    } catch (err) {
+      if (err instanceof AgentSearchError) {
+        return jsonResponse(err.statusCode || 400, {
+          accepted: false,
+          error: err.code,
+        });
+      }
+      throw err;
+    }
+  }
+
+  const authHeader =
+    headerGet(event && event.headers, 'authorization') ||
+    headerGet(event && event.headers, 'Authorization');
+
+  let userId;
+  // FR #4888: IAM authorizer identity first, JWT fallback
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId) {
+    userId = iamId.userId;
+  } else {
+    try {
+      const auth = await verify(authHeader, { env, body: undefined });
+      userId = auth.userId;
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return jsonResponse(401, { accepted: false, error: err.code });
+      }
+      return jsonResponse(401, { accepted: false, error: 'unauthorized' });
+    }
+  }
+
+  const parsed = parsedEarly;
+  if (parsed === null) {
+    return jsonResponse(400, {
+      accepted: false,
+      error: 'invalid_json',
+      fields: ['body'],
+    });
+  }
+
+  // Body userId is never authority; if present and differs → 401
+  if (
+    parsed.userId !== undefined &&
+    parsed.userId !== null &&
+    String(parsed.userId) !== String(userId)
+  ) {
+    return jsonResponse(401, { accepted: false, error: 'unauthorized' });
+  }
+
+  const validated = validateSearchBody(parsed);
+  if (!validated.ok) {
+    return jsonResponse(400, {
+      accepted: false,
+      error: 'missing_required_field',
+      fields: validated.fields,
+    });
+  }
+
+  const jobEnv = validated.value.sandbox ? 'sandbox' : 'live';
+  const searchId = makeId();
+  let enqueued;
+  try {
+    enqueued = await enqueue({
+      searchId,
+      userId,
+      env: jobEnv,
+      body: validated.value,
+    });
+  } catch (err) {
+    if (err instanceof EnqueueError) {
+      return jsonResponse(400, {
+        accepted: false,
+        error: err.code,
+        fields: err.fields,
+      });
+    }
+    throw err;
+  }
+
+  return jsonResponse(200, {
+    searchId,
+    accepted: true,
+    userId,
+    env: jobEnv,
+    enqueued: Array.isArray(enqueued) ? enqueued : [],
+  });
+}
+
+module.exports = {
+  handler,
+  handlePerformance,
+  handleSelftest,
+  handleSearch,
+  handleParts,
+  handleGo,
+  handleAccountPayouts,
+  handleWidgetsCreate,
+  handlePartnerRegister,
+  // FR #4376: lazy re-exports so requiring index does not load shared/shops.
+  get handleMerchantShopsConnect() {
+    return loadMerchantShops().handleMerchantShopsConnect;
+  },
+  get handleMerchantShopsCallback() {
+    return loadMerchantShops().handleMerchantShopsCallback;
+  },
+  get handleMerchantShops() {
+    return loadMerchantShops().handleMerchantShops;
+  },
+  get matchMerchantShopsRoute() {
+    return loadMerchantShops().matchMerchantShopsRoute;
+  },
+  validateSearchBody,
+  newSearchId,
+  defaultEnqueue,
+  resolveHttp,
+  isPerformanceRoute,
+  isSelftestRoute,
+  isPartsRoute,
+  isGoRoute,
+  matchAccountPayoutsRoute,
+  matchWidgetsCreateRoute,
+  matchPartnerRegisterRoute,
+  matchStripeWebhookRoute,
+  get handleStripeWebhook() {
+    return loadStripeShopWebhook().handleStripeWebhook;
+  },
+  matchLoginEntryRoute,
+  handleLoginEntry,
+  matchOAuthCallbackRoute,
+  handleOAuthCallback,
+  matchClubRevenueShareRoute,
+  handleClubRevenueShare,
+};

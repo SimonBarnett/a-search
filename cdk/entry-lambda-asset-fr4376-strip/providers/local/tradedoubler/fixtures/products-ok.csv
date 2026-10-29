@@ -1,0 +1,3 @@
+﻿merchant_product_id,title,description,url,image_url,price,currency,stock
+td-100,Widget Alpha,A fine tradedoubler widget,https://example.invalid/p/td-100,https://example.invalid/i/td-100.jpg,19.99,GBP,in_stock
+td-200,Widget Beta,Another fixture row,https://example.invalid/p/td-200,https://example.invalid/i/td-200.jpg,5.50,EUR,out_of_stock
