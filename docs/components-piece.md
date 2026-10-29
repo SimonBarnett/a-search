@@ -33,7 +33,7 @@ x:/{customerNumber}/
 `searches.json` shape: `{ queries: [{ q, intent, maxResults }] }`.
 
 `IN/{searchId}.json` envelope (FR #5271): `{ searchid, source, hostkey, guid, products[] }`
-— no `queries` / `exclude` (those stay on `searches.json`). Each product may
+- no `queries` / `exclude` (those stay on `searches.json`). Each product may
 include `rank`. Item fields: `{ id, title, price, currency, merchant, image, url, seenAt }` (FR-3344; replaces single `in.json`).
 
 ## Contracts
