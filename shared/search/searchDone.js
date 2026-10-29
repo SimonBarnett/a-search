@@ -283,6 +283,8 @@ async function maybeSetHasResults(opts) {
     Key,
     bucket,
     now: opts.now,
+    // FR #5265: remember this searchid so monitor clear + recheck do not loop.
+    promotedsearchid: wantSid,
     headObject: opts.headObject,
     getObject: opts.getObject,
     copyObject: opts.copyObject,
@@ -433,6 +435,7 @@ module.exports = {
   SEARCH_DONE_PREFIX,
   doneObjectKey,
   legacyDoneObjectKey,
+  bodyToBuffer,
   writeSearchDoneRecord,
   maybeSetHasResults,
   recordSearchTerminal,

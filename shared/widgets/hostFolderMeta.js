@@ -680,6 +680,12 @@ async function setHasResults(opts) {
       const state = await readMarkerState(opts);
       const lastmod = isoLastmod(opts.now);
       const metadata = { ...state.metadata, hasresults: '1', lastmod };
+      // FR #5265: stamp which fan-out searchid was promoted so recheck does
+      // not re-flip after the monitor clears hasresults=0.
+      const promoted = opts.promotedsearchid != null
+        ? String(opts.promotedsearchid).trim()
+        : '';
+      if (promoted) metadata.promotedsearchid = promoted;
       const rewritten = await rewriteMarkerMetadata({
         Key: state.Key,
         metadata,

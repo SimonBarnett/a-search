@@ -113,6 +113,14 @@ missing `hasresults`/`enabled` on old markers:
 Simon's approval. Deleting existing GUID `DONE/` folders also needs Simon's
 yes (FR #5198).
 
+FR #5265: after the monitor promotes and clears `hasresults=0`, recheck must
+**not** re-flip the same fan-out every pass. `maybeSetHasResults` stamps
+marker metadata `promotedsearchid=<searchid>`; recheck skips when that stamp
+matches the current `search-fanout.json` searchid (already promoted). Legacy
+markers without the stamp skip when `enabled=1` and marker `lastmod` is at
+least as new as the newest DONE `at`. A **new** fan-out searchid (newer DONE)
+is promoted again exactly once. Do not hand-set `hasresults` to test this.
+
 Each job payload includes userId / userid from the host marker so live
 providers can stamp tracked outbound links (FR #4415). Payloads may carry
 messageGroupId=<provider|sql> for app-level intent; entry/src/sqsSend.js
