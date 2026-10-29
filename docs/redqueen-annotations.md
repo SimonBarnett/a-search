@@ -79,8 +79,10 @@ suggested query is stripped by `shared/search/cleanSearchQuery.js`.
 locality cue, after a comma, leftover leading/trailing). Mid-string product
 tokens such as `S2 3CH` stay in `q`. `publishGuidSearch` re-runs
 `keywordsOnly` on an existing `searches.json` before a queries-only repost
-so leftover `United Kingdom GBP` from an older write is cleaned. A file that
-already has `searchid` and a matching hash is left untouched (no rewrite).
+so leftover `United Kingdom GBP` from an older write is cleaned.
+**FR #5287:** when `searches.json` already has a `searchid` and the hash
+matches, `publishGuidSearch` still rewrites leftover location/currency in `q`
+(`keywordsOnly`) and does not POST again. Clean files stay untouched.
 The free
 cap is 3 queries; an upgraded fullscreen widget (`upgraded=1`,
 `layout=fullscreen`) uses 15. Existing `exclude[]` entries are kept. Match
