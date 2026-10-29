@@ -53,7 +53,7 @@ describe('FR #5263 SQL keeps every filter-passing row', () => {
     assert.doesNotMatch(sql, /FREETEXTTABLE\s*\([^)]+,\s*@top\s*\)/i);
     assert.match(
       sql,
-      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*\)\s*,\s*@q\s*\)/i,
+      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*,\s*Brand\s*,\s*Mpn\s*,\s*MerchantSku\s*\)\s*,\s*@q\s*\)/i,
     );
     assert.match(sql, /ft\.\[RANK\]\s+AS\s+Rank/i);
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);

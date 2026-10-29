@@ -135,14 +135,15 @@ GRANT SELECT ON dbo.Parts TO [WONDERLAND\a-search-drain];
 -- Confirm as the drain login (read-only):
 EXECUTE AS LOGIN = 'WONDERLAND\a-search-drain';
 SELECT TOP (1) p.PartId
-FROM FREETEXTTABLE(dbo.Parts, (Title, Description), N'servo', 10) AS ft
+FROM FREETEXTTABLE(dbo.Parts, (Title, Description, Brand, Mpn, MerchantSku), N'servo') AS ft
 INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY];
 REVERT;
 ```
 
 Matching (FR #4976 / FR #5024 / FR #5041 / FR #5046): a part is admitted only
 when it hits an **exact brand or model token** from the query via `CONTAINS` on
-a quoted word/phrase across Title/Description. FREETEXTTABLE / `RANK` only
+a quoted word/phrase across Title/Description/Brand/Mpn/MerchantSku (FR #5282).
+FREETEXTTABLE / `RANK` only
 **orders** rows that already passed that gate --- it never admits a part on its
 own. `@q` and `@top` are bound as NVarChar(4000) / Int (never nvarchar(max);
 FR #5024). Excludes stay quoted phrases (`AND NOT CONTAINS(..., @exN)`),
@@ -175,9 +176,10 @@ Deployed walrus must run this `providers/local/sql` tip (log
    object when present: `brand` / `brands`, `model` / `models`, `modelNumber` /
    `model_number` / `sku` / `partNumber` (and `models[].brand|model|sku`).
 2. Else, after FR #5041 location/currency strip, scan the query text:
-   - **Brand** --- ALLCAPS / Pascal / long alphanumeric token (e.g. VOLANTEXRC).
-     Emitted as a CONTAINS prefix, trailing `RC` stripped when long enough:
-     `"volantex*"`.
+   - **Brand** --- ALLCAPS / Pascal / long alphanumeric token (e.g. VOLANTEXRC)
+     or hyphenated letter brands with no digit (e.g. `E-flite` -> `"e-flite*"`,
+     FR #5282). Emitted as a CONTAINS prefix, trailing `RC` stripped when long
+     enough: `"volantex*"`. Short tokens like `UMX` stay out.
    - **Model phrase** --- two or more consecutive Capitalised words
      (e.g. Sport Cub) => `"Sport Cub"`.
    - **Model number** --- hyphenated or alphanumeric-with-digit token
@@ -207,6 +209,14 @@ FREETEXT only ranks them. A filter-passing hit at text position 5412 (GUID
 8504174c, RANK 18) is returned. The agent picks the best x. Live Rakuten/eBay
 keep every downloaded item that already passed excludes (API page size stays
 the vendor max, not `maxResults`).
+
+**FR #5282:** FREETEXTTABLE and CONTAINS (gates and excludes) use
+`Title, Description, Brand, Mpn, MerchantSku`. Migration
+`027_Parts_FullText_Mpn_MerchantSku.sql` adds `Mpn` and `MerchantSku` to the
+existing Parts full-text index (Brand stays). Apply with the normal
+`node scripts/db-migrate.js` deploy on `a_search` / `walrus\\ASEARCH` (Simon's
+go if that box is not this seat). Hyphenated brands such as E-flite are
+gates. FR #5257 still drops `hobbyzone*` when a phrase or number exists.
 
 **FR #5266:** `normalizePart` copies FREETEXT `RANK` onto each IN/sql.json
 product as numeric `rank` (0 if the column is missing). Rows are never

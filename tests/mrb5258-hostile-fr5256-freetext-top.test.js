@@ -19,7 +19,7 @@ describe('MRB #5258 hostile: FR #5256 freetext top vs maxResults', () => {
     assert.doesNotMatch(sql, /SELECT\s+TOP/i);
     assert.match(
       sql,
-      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*\)\s*,\s*@q\s*\)/i,
+      /FREETEXTTABLE\s*\(\s*dbo\.Parts\s*,\s*\(\s*Title\s*,\s*Description\s*,\s*Brand\s*,\s*Mpn\s*,\s*MerchantSku\s*\)\s*,\s*@q\s*\)/i,
     );
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
   });

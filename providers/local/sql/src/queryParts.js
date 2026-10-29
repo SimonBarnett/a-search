@@ -502,6 +502,10 @@ function isBrandLikeToken(token) {
     return false;
   }
   if (CURRENCY_CODES.has(lower)) return false;
+  // FR #5282: hyphenated brands with no digit (E-flite). Not a model number.
+  if (/^[A-Za-z]+(?:-[A-Za-z]+)+$/.test(t) && t.replace(/-/g, '').length >= 5) {
+    return true;
+  }
   // ALLCAPS alphanumeric brand (VOLANTEXRC, EFLITE). FR #5106: require 5+
   // letters so WOLF/CUBS-style apparel tokens never become `"wolf*"`.
   if (/^[A-Z]{5,}[A-Z0-9]*$/.test(t)) return true;
@@ -581,7 +585,9 @@ function admitRowsByExactGates(rows, gates) {
   return list.filter((row) => {
     const hay = `${row && row.Title != null ? row.Title : ''} ${
       row && row.Description != null ? row.Description : ''
-    }`.toLowerCase();
+    } ${row && row.Brand != null ? row.Brand : ''} ${
+      row && row.Mpn != null ? row.Mpn : ''
+    } ${row && row.MerchantSku != null ? row.MerchantSku : ''}`.toLowerCase();
     return specs.some((s) => {
       const esc = s.needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       if (s.prefix) {
@@ -844,6 +850,10 @@ function buildContainsQuery(msg) {
  * @param {number} [gateCount] FR #5046 exact brand/model CONTAINS ORs
  * @returns {string}
  */
+/** FR #5282: CONTAINS / FREETEXT columns (Brand was indexed but unused). */
+const FT_PARTS_CONTAINS_COLS = 'p.Title, p.Description, p.Brand, p.Mpn, p.MerchantSku';
+const FT_PARTS_FREETEXT_COLS = 'Title, Description, Brand, Mpn, MerchantSku';
+
 function buildSelectSql(excludeCount, gateCount) {
   const n = Math.max(0, Number(excludeCount) || 0);
   const g = Math.max(0, Number(gateCount) || 0);
@@ -851,13 +861,13 @@ function buildSelectSql(excludeCount, gateCount) {
   if (g > 0) {
     const parts = [];
     for (let i = 0; i < g; i += 1) {
-      parts.push(`CONTAINS((p.Title, p.Description), @gate${i})`);
+      parts.push(`CONTAINS((${FT_PARTS_CONTAINS_COLS}), @gate${i})`);
     }
     gateSql = `\n  AND ( ${parts.join('\n     OR ')} )`;
   }
   let extra = '';
   for (let i = 0; i < n; i += 1) {
-    extra += `\n  AND NOT CONTAINS((p.Title, p.Description), @ex${i})`;
+    extra += `\n  AND NOT CONTAINS((${FT_PARTS_CONTAINS_COLS}), @ex${i})`;
   }
   // FR #5263: no SELECT TOP (@n) and no FREETEXTTABLE top_n. Gates filter;
   // FREETEXT only ranks the gated set. The agent picks the best x.
@@ -869,13 +879,16 @@ SELECT
   p.Env,
   p.Title,
   p.Description,
+  p.Brand,
+  p.Mpn,
+  p.MerchantSku,
   p.Url,
   p.ImageUrl,
   p.Price,
   p.Currency,
   p.Stock,
   ft.[RANK] AS Rank
-FROM FREETEXTTABLE(dbo.Parts, (Title, Description), @q) AS ft
+FROM FREETEXTTABLE(dbo.Parts, (${FT_PARTS_FREETEXT_COLS}), @q) AS ft
 INNER JOIN dbo.Parts AS p ON p.PartId = ft.[KEY]
 WHERE p.Env = @env
   AND p.DeletedAt IS NULL
@@ -1117,6 +1130,8 @@ module.exports = {
   sqlMinRank,
   sqlMinRankForSelect,
   SELECT_SQL,
+  FT_PARTS_CONTAINS_COLS,
+  FT_PARTS_FREETEXT_COLS,
   defaultQueryParts,
   defaultConnect,
   isInformationalSqlError,
