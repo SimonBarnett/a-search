@@ -20,7 +20,7 @@ describe('MRB #5051 hostile FR #5046 exact brand/model gate', () => {
     assert.match(src, /function extractBrandModelGateTokens/);
     assert.match(src, /GATE_GENERIC_WORDS/);
     assert.match(src, /sql_empty_brand_model_gate_no_select/);
-    assert.match(src, /CONTAINS\(\(p\.Title, p\.Description\), @gate/);
+    assert.match(src, /CONTAINS\(\(\$\{FT_PARTS_CONTAINS_COLS\}\), @gate/);
     assert.match(src, /FREETEXTTABLE/);
     assert.match(src, /ft\.\[RANK\]\s*>=\s*@minRank/);
     // Contiguous: FREETEXT only orders gated rows

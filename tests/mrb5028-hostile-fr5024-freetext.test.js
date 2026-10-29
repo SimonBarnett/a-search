@@ -30,8 +30,8 @@ describe('MRB #5028 hostile FR #5024 FREETEXT', () => {
     assert.doesNotMatch(sql, /@top/);
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/i);
     assert.doesNotMatch(sql, /CONTAINSTABLE/i);
-    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);
-    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex1\)/);
+    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @ex0\)/);
+    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @ex1\)/);
     assert.doesNotMatch(sql, /\b(INSERT|UPDATE|DELETE|MERGE)\b/i);
   });
 
