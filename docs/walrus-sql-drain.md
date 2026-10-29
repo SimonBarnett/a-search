@@ -58,7 +58,9 @@ Behaviour:
    and `shared/widgets/pageSelect.js`). On `MODULE_NOT_FOUND` or throw: restore
    backup, do **not** restart, exit non-zero.
 6. `npm install --omit=dev` in `-InstallRoot` (root `package.json`; deps include
-   `@a-search/shared` via `file:shared`). Pass `-SkipNpm` to skip.
+   `@a-search/shared` via `file:shared`). It resolves `npm` from PATH or uses
+   `npm.cmd` beside Node; the fallback is invoked from its path string. Pass
+   `-SkipNpm` to skip.
 7. Restart `a-search-walrus-sql-drain`. On start failure: rollback from backup,
    npm install again if needed, restart the previous tree, exit non-zero.
 

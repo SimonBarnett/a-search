@@ -1,0 +1,375 @@
+{
+  "sources": [
+    {
+      "id": "amazon",
+      "kind": "live",
+      "folder": "providers/live/amazon",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_AMAZON_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "ebay",
+      "kind": "live",
+      "folder": "providers/live/ebay",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_EBAY_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "rakuten",
+      "kind": "live",
+      "folder": "providers/live/rakuten",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_RAKUTEN_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 1000
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "cj",
+      "kind": "live",
+      "folder": "providers/live/cj",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_CJ_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "kelkoo",
+      "kind": "live",
+      "folder": "providers/live/kelkoo",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_KELKOO_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "skimlinks",
+      "kind": "local",
+      "folder": "providers/local/skimlinks",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_SKIMLINKS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "aliexpress",
+      "kind": "live",
+      "folder": "providers/live/aliexpress",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_ALIEXPRESS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "etsy",
+      "kind": "live",
+      "folder": "providers/live/etsy",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_ETSY_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "bol",
+      "kind": "live",
+      "folder": "providers/live/bol",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_BOL_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "provider",
+      "awsSearch": true
+    },
+    {
+      "id": "awin",
+      "kind": "local",
+      "folder": "providers/local/awin",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_AWIN_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "impact",
+      "kind": "local",
+      "folder": "providers/local/impact",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_IMPACT_URL",
+      "rateLimit": {
+        "maxConcurrency": 2
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "partnerize",
+      "kind": "local",
+      "folder": "providers/local/partnerize",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_PARTNERIZE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "webgains",
+      "kind": "local",
+      "folder": "providers/local/webgains",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_WEBGAINS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "tradedoubler",
+      "kind": "local",
+      "folder": "providers/local/tradedoubler",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_TRADEDOUBLER_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "admitad",
+      "kind": "local",
+      "folder": "providers/local/admitad",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_ADMITAD_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "flexoffers",
+      "kind": "local",
+      "folder": "providers/local/flexoffers",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_FLEXOFFERS_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "avantlink",
+      "kind": "local",
+      "folder": "providers/local/avantlink",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_AVANTLINK_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "affiliate"
+    },
+    {
+      "id": "shopify",
+      "kind": "local",
+      "folder": "providers/local/shopify",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_SHOPIFY_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "wix",
+      "kind": "local",
+      "folder": "providers/local/wix",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_WIX_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "woocommerce",
+      "kind": "local",
+      "folder": "providers/local/woocommerce",
+      "enabled": {
+        "live": true,
+        "sandbox": true
+      },
+      "queueEnv": "SQS_WOOCOMMERCE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "squarespace",
+      "kind": "local",
+      "folder": "providers/local/squarespace",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_SQUARESPACE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "magento",
+      "kind": "local",
+      "folder": "providers/local/magento",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_MAGENTO_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "ecwid",
+      "kind": "local",
+      "folder": "providers/local/ecwid",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_ECWID_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    },
+    {
+      "id": "bigcommerce",
+      "kind": "local",
+      "folder": "providers/local/bigcommerce",
+      "enabled": {
+        "live": false,
+        "sandbox": false
+      },
+      "queueEnv": "SQS_BIGCOMMERCE_URL",
+      "rateLimit": {
+        "maxConcurrency": 1,
+        "minIntervalMs": 250
+      },
+      "class": "merchant",
+      "merchantConnect": true
+    }
+  ]
+}

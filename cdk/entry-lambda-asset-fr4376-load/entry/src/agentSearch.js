@@ -1,0 +1,618 @@
+'use strict';
+
+/**
+ * FR #4030: agent /search fan-out --- hostkey+guid+queries to each live provider SQS + SQL SQS.
+ * Auth (FR #5086 / #4888): API Gateway HttpIamAuthorizer is the gate. Lambda does not
+ * require x-agent-api-key. When requestContext.authorizer.iam is present, log the
+ * caller ARN (never secrets). No CORS *. Returns 202 {searchid, queued}.
+ */
+
+const crypto = require('node:crypto');
+const {
+  loadRegistry,
+  enabled: registryEnabled,
+  isAwsSearchProvider,
+} = require('../../providers/loadRegistry');
+const { isDbBackedSource, queueEnvForSource } = require('./dbBackedQueue');
+const { resolveQueueUrl } = require('../../providers/resolveQueueUrl');
+const { createSqsSendMessage } = require('./sqsSend');
+const {
+  useridFromHostMetadata,
+} = require('../../shared/widgets/hostFolderMeta');
+const {
+  normalizeMarketCurrency,
+} = require('../../shared/search/cleanSearchQuery');
+const { isEnabledOne } = require('../../shared/enabledFlag');
+const { providerMarkerKey } = require('../../shared/affiliates/keys');
+const { iamAuthorizerIdentity } = require('./auth/iam');
+
+class AgentSearchError extends Error {
+  /**
+   * @param {string} code
+   * @param {number} [statusCode]
+   */
+  constructor(code, statusCode) {
+    super(code);
+    this.name = 'AgentSearchError';
+    this.code = code;
+    this.statusCode = statusCode || 400;
+  }
+}
+
+/**
+ * @param {unknown} headers
+ * @param {string} name
+ * @returns {string}
+ */
+function headerGet(headers, name) {
+  if (!headers || typeof headers !== 'object') return '';
+  const want = String(name).toLowerCase();
+  for (const [k, v] of Object.entries(headers)) {
+    if (String(k).toLowerCase() === want && v != null) return String(v);
+  }
+  return '';
+}
+
+/**
+ * Constant-time compare of agent API keys (never log either value).
+ * @param {string} provided
+ * @param {string} expected
+ * @returns {boolean}
+ */
+function agentKeyMatches(provided, expected) {
+  const a = Buffer.from(String(provided || ''), 'utf8');
+  const b = Buffer.from(String(expected || ''), 'utf8');
+  if (a.length === 0 || b.length === 0 || a.length !== b.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * Legacy agent-key check (FR #4311). Unused by handleAgentSearch after FR #5086
+ * (IAM at API Gateway). Kept exported for older unit helpers; prefer IAM.
+ * @param {object} event
+ * @param {{ env?: NodeJS.ProcessEnv }} [deps]
+ * @deprecated FR #5086 — do not call from /search; gateway IAM is the auth.
+ */
+function requireAgentAuth(event, deps = {}) {
+  const env = deps.env || process.env;
+  const expected =
+    env.A_SEARCH_AGENT_API_KEY != null ? String(env.A_SEARCH_AGENT_API_KEY) : '';
+  if (!expected) {
+    throw new AgentSearchError('agent_key_not_configured', 401);
+  }
+  const headers = (event && event.headers) || {};
+  let provided = headerGet(headers, 'x-agent-api-key');
+  if (!provided) {
+    const auth = headerGet(headers, 'authorization');
+    const m = /^Bearer\s+agent:(.+)$/i.exec(auth);
+    if (m) provided = m[1];
+  }
+  if (!agentKeyMatches(provided, expected)) {
+    throw new AgentSearchError('unauthorized', 401);
+  }
+}
+
+/**
+ * FR #5086: note IAM caller when APIGW attached identity; never require agent key.
+ * @param {object} event
+ * @param {{ log?: { info?: Function } }} [deps]
+ * @returns {{ iam: boolean, userId?: string }}
+ */
+function noteSearchCaller(event, deps = {}) {
+  const log = deps.log || console;
+  const iamId = iamAuthorizerIdentity(event);
+  if (iamId && iamId.userId) {
+    if (typeof log.info === 'function') {
+      log.info(`[agentSearch] iam caller ${iamId.userId}`);
+    }
+    return { iam: true, userId: iamId.userId };
+  }
+  return { iam: false };
+}
+
+/**
+ * @returns {string}
+ */
+function newSearchId() {
+  return `srch_${crypto.randomBytes(8).toString('hex')}`;
+}
+
+/**
+ * FR #4265: one fan-out record per GUID. A retry returns this searchid and does not send again.
+ * @param {string} hostkey
+ * @param {string} guid
+ */
+function searchFanoutKey(hostkey, guid) {
+  const host = String(hostkey).replace(/\/+$/, '');
+  const id = String(guid).trim().toLowerCase();
+  return `${host}/${id}/search-fanout.json`;
+}
+
+function isMissingObject(err) {
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  const code = err && (err.name || err.code);
+  return status === 404 || code === 'NotFound' || code === 'NoSuchKey';
+}
+
+/**
+ * @param {unknown} err
+ * @returns {AgentSearchError}
+ */
+function wrapS3HeadFailure(err) {
+  const wrapped = new AgentSearchError('s3_head_failed', 503);
+  const name = err && (err.name || err.code);
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  if (name) wrapped.s3Name = String(name);
+  if (status) wrapped.s3Status = status;
+  return wrapped;
+}
+
+/**
+ * Log affiliates HeadObject failure without dumping SDK XML/body.
+ * @param {{ info?: Function }} log
+ * @param {string} id
+ * @param {unknown} err
+ */
+function logAffiliatesS3Error(log, id, err) {
+  if (!log || typeof log.info !== 'function') return;
+  const name = err && (err.name || err.code) ? String(err.name || err.code) : 'Error';
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  const statusBit = status ? ` status=${status}` : '';
+  log.info(
+    `[agentSearch] skip fan-out ${id}: affiliates_s3_error name=${name}${statusBit}`,
+  );
+}
+
+async function readStoredFanout(getObject, Key) {
+  if (typeof getObject !== 'function') return null;
+  try {
+    const obj = await getObject({ Key });
+    let text = '';
+    const body = obj && obj.Body;
+    if (Buffer.isBuffer(body)) text = body.toString('utf8');
+    else if (typeof body === 'string') text = body;
+    else if (body && typeof body.transformToString === 'function') {
+      text = await body.transformToString();
+    } else if (body != null) text = String(body);
+    const parsed = JSON.parse(text);
+    if (!parsed || !parsed.searchid) return null;
+    return parsed;
+  } catch (err) {
+    if (isMissingObject(err) || err instanceof SyntaxError) return null;
+    throw err;
+  }
+}
+
+let defaultS3;
+/** @type {null | (() => { headObject: Function, getObject: Function, putObject: Function })} */
+let aClubsIoFactoryForTests = null;
+
+/**
+ * FR #4404 tests: inject a-clubs IO without wiring a throwing headObject stub in index.
+ * Pass null to restore the real AWS SDK client.
+ * @param {null | (() => object)} factory
+ */
+function setAclubsIoFactoryForTests(factory) {
+  aClubsIoFactoryForTests = typeof factory === 'function' ? factory : null;
+  defaultS3 = null;
+}
+
+function defaultAclubsIo() {
+  if (typeof aClubsIoFactoryForTests === 'function') {
+    return aClubsIoFactoryForTests();
+  }
+  if (defaultS3) return defaultS3;
+  const {
+    S3Client,
+    HeadObjectCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+  } = require('@aws-sdk/client-s3');
+  const client = new S3Client({});
+  const bucket = process.env.A_CLUBS_BUCKET || 'a-clubs';
+  defaultS3 = {
+    headObject: (input) =>
+      client.send(new HeadObjectCommand({ Bucket: bucket, Key: input.Key })),
+    getObject: (input) =>
+      client.send(new GetObjectCommand({ Bucket: bucket, Key: input.Key })),
+    putObject: (input) =>
+      client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: input.Key,
+          Body: input.Body,
+          ContentType: input.ContentType,
+        }),
+      ),
+  };
+  return defaultS3;
+}
+
+/**
+ * @param {unknown} raw
+ */
+function parseJsonBody(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'object' && !Buffer.isBuffer(raw)) return raw;
+  try {
+    return JSON.parse(Buffer.isBuffer(raw) ? raw.toString('utf8') : String(raw));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when body looks like the FR #4030 agent search shape (not legacy JWT search).
+ * @param {unknown} body
+ * @returns {boolean}
+ */
+function isAgentSearchBody(body) {
+  if (!body || typeof body !== 'object') return false;
+  const hostkey = body.hostkey || body.host;
+  const guid = body.guid || body.widgetGuid;
+  return (
+    hostkey != null &&
+    String(hostkey).trim() !== '' &&
+    guid != null &&
+    String(guid).trim() !== '' &&
+    Array.isArray(body.queries)
+  );
+}
+
+/**
+ * Live (non-local) provider ids enabled for env, plus always "sql".
+ * Registry + queue-env gates only. FR #5079 applies a-affiliates enabled
+ * via applyAffiliatesEnabledFilter / handleAgentSearch.
+ * @param {'live'|'sandbox'} envName
+ * @param {{ enabled?: Function, loadRegistry?: Function }} [deps]
+ * @returns {string[]}
+ */
+function resolveFanOutTargets(envName, deps = {}) {
+  const enabledFn = deps.enabled || registryEnabled;
+  const load = deps.loadRegistry || loadRegistry;
+  const { sources } = load();
+  const byId = new Map((sources || []).map((s) => [s.id, s]));
+  const envVars = deps.envVars;
+  const resolve = deps.resolveQueueUrl || resolveQueueUrl;
+  const qEnvFor = deps.queueEnvForSource || queueEnvForSource;
+  const jobEnv = envName === 'sandbox' ? 'sandbox' : 'live';
+  const live = [];
+  for (const id of enabledFn(envName)) {
+    const ent = byId.get(id);
+    if (isDbBackedSource(ent)) continue;
+    // FR #4451: only awsSearch providers get a per-source queue. SQL sources share sql.
+    if (!isAwsSearchProvider(ent)) continue;
+    // FR #4650: when envVars are supplied, skip providers with no queue URL
+    // (credentials missing at deploy => provider off for /search).
+    if (envVars && typeof envVars === 'object') {
+      try {
+        resolve({
+          queueEnv: qEnvFor(ent),
+          env: jobEnv,
+          envVars,
+        });
+      } catch {
+        continue;
+      }
+    }
+    live.push(id);
+  }
+  return [...live, 'sql'];
+}
+
+let defaultAffiliatesS3;
+
+/**
+ * HeadObject against s3://a-affiliates (FR #5079 provider enabled gate).
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ headObject: Function, bucket: string }}
+ */
+function defaultAffiliatesIo(env) {
+  if (defaultAffiliatesS3) return defaultAffiliatesS3;
+  const {
+    S3Client,
+    HeadObjectCommand,
+  } = require('@aws-sdk/client-s3');
+  const client = new S3Client({});
+  const bucket =
+    (env && env.A_AFFILIATES_BUCKET) ||
+    process.env.A_AFFILIATES_BUCKET ||
+    'a-affiliates';
+  defaultAffiliatesS3 = {
+    bucket,
+    headObject: (input) =>
+      client.send(
+        new HeadObjectCommand({
+          Bucket: input.Bucket || bucket,
+          Key: input.Key,
+        }),
+      ),
+  };
+  return defaultAffiliatesS3;
+}
+
+/**
+ * FR #5079: keep only providers whose a-affiliates/<id>/ marker has enabled=1.
+ * Missing folder or enabled=0 => skip. Always keeps trailing "sql".
+ * @param {string[]} targets
+ * @param {{
+ *   headAffiliatesObject?: Function,
+ *   log?: { info?: Function, warn?: Function },
+ * }} [deps]
+ * @returns {Promise<{ queued: string[], skipped: Array<{ id: string, reason: string }> }>}
+ */
+async function applyAffiliatesEnabledFilter(targets, deps = {}) {
+  const head = deps.headAffiliatesObject;
+  const log = deps.log || console;
+  const list = Array.isArray(targets) ? targets.map(String) : [];
+  if (typeof head !== 'function') {
+    return { queued: list, skipped: [] };
+  }
+  const skipped = [];
+  const kept = [];
+  for (const id of list) {
+    if (id === 'sql') {
+      kept.push(id);
+      continue;
+    }
+    let key;
+    try {
+      key = providerMarkerKey(id);
+    } catch {
+      skipped.push({ id, reason: 'invalid_provider_slug' });
+      if (typeof log.info === 'function') {
+        log.info(`[agentSearch] skip fan-out ${id}: invalid_provider_slug`);
+      }
+      continue;
+    }
+    try {
+      const headOut = await head({ Key: key });
+      const md =
+        (headOut && (headOut.Metadata || headOut.metadata)) || {};
+      if (!isEnabledOne(md)) {
+        skipped.push({ id, reason: 'affiliates_enabled_0' });
+        if (typeof log.info === 'function') {
+          log.info(
+            `[agentSearch] skip fan-out ${id}: a-affiliates/${id}/ enabled=0`,
+          );
+        }
+        continue;
+      }
+      kept.push(id);
+    } catch (err) {
+      if (isMissingObject(err)) {
+        skipped.push({ id, reason: 'affiliates_folder_missing' });
+        if (typeof log.info === 'function') {
+          log.info(
+            `[agentSearch] skip fan-out ${id}: a-affiliates/${id}/ missing`,
+          );
+        }
+        continue;
+      }
+      // FR #5090 / FR #5095: 403 (no ListBucket) / Unknown / AccessDenied must not 500 the POST.
+      skipped.push({ id, reason: 'affiliates_s3_error' });
+      logAffiliatesS3Error(log, id, err);
+      continue;
+    }
+  }
+  return { queued: kept, skipped };
+}
+
+/**
+ * @param {{
+ *   event: object,
+ *   headObject: Function,
+ *   sendMessage?: Function,
+ *   env?: NodeJS.ProcessEnv,
+ *   newSearchId?: () => string,
+ *   enabled?: Function,
+ *   loadRegistry?: Function,
+ *   headAffiliatesObject?: Function,
+ *   checkAffiliatesEnabled?: boolean,
+ *   log?: { info?: Function, warn?: Function },
+ * }} opts
+ */
+async function handleAgentSearch(opts) {
+  if (!opts || typeof opts !== 'object') {
+    throw new AgentSearchError('s3_required', 500);
+  }
+  const injectedAclubsHead = typeof opts.headObject === 'function';
+  const io = injectedAclubsHead ? opts : { ...opts, ...defaultAclubsIo() };
+  if (typeof io.headObject !== 'function') {
+    throw new AgentSearchError('s3_required', 500);
+  }
+  // FR #5086: do not require x-agent-api-key — HttpIamAuthorizer is the gate.
+  noteSearchCaller(io.event, { log: io.log });
+
+  const body = parseJsonBody(io.event && io.event.body);
+  if (!body || typeof body !== 'object') {
+    throw new AgentSearchError('invalid_json', 400);
+  }
+
+  const hostkey = String(body.hostkey || body.host || '')
+    .trim()
+    .toLowerCase();
+  const guid = String(body.guid || body.widgetGuid || '').trim();
+  const queries = body.queries;
+  const exclude = Array.isArray(body.exclude) ? body.exclude : [];
+  if (!hostkey) throw new AgentSearchError('hostkey_required', 400);
+  if (!guid) throw new AgentSearchError('guid_required', 400);
+  if (!Array.isArray(queries)) throw new AgentSearchError('queries_required', 400);
+
+  const markerKey = `${hostkey}/${guid}/`;
+  try {
+    await io.headObject({ Key: markerKey });
+  } catch (err) {
+    if (isMissingObject(err)) {
+      throw new AgentSearchError('guid_not_found', 404);
+    }
+    throw wrapS3HeadFailure(err);
+  }
+
+  // FR #4415: tracked outbound links need userid from a-clubs host marker.
+  // Reject at /search (4xx) rather than letting workers throw TrackedUrlError.
+  const hostMarkerKey = `${hostkey}/`;
+  let hostUserid = '';
+  try {
+    const hostHead = await io.headObject({ Key: hostMarkerKey });
+    const md =
+      (hostHead && (hostHead.Metadata || hostHead.metadata)) || {};
+    hostUserid = useridFromHostMetadata(md);
+  } catch (err) {
+    if (!isMissingObject(err)) throw wrapS3HeadFailure(err);
+  }
+  if (!hostUserid) {
+    throw new AgentSearchError('userid_required', 400);
+  }
+
+  const fanoutKey = searchFanoutKey(hostkey, guid);
+  // FR #4916 (Simon 2026-10-25): no per-GUID search limit — every POST /search
+  // fans out again (rewrites search-fanout.json). FR #4265 idempotent short-circuit removed.
+
+  const searchid = body.searchid
+    ? String(body.searchid)
+    : (io.newSearchId || newSearchId)();
+  const jobEnv = body.sandbox === true ? 'sandbox' : 'live';
+  const candidates = resolveFanOutTargets(jobEnv, {
+    enabled: io.enabled,
+    loadRegistry: io.loadRegistry,
+    envVars: io.env || process.env,
+  });
+
+  // FR #5079: queue only providers with a-affiliates/<id>/ enabled=1.
+  // Production (no injected a-clubs head) always uses defaultAffiliatesIo.
+  // Unit tests that inject headObject without headAffiliatesObject keep the
+  // registry+queue list unless they opt in with headAffiliatesObject or
+  // checkAffiliatesEnabled: true.
+  let affiliatesHead = null;
+  if (typeof io.headAffiliatesObject === 'function') {
+    affiliatesHead = io.headAffiliatesObject;
+  } else if (io.checkAffiliatesEnabled === true) {
+    affiliatesHead = defaultAffiliatesIo(io.env || process.env).headObject;
+  } else if (!injectedAclubsHead && io.checkAffiliatesEnabled !== false) {
+    affiliatesHead = defaultAffiliatesIo(io.env || process.env).headObject;
+  }
+  const { queued } = await applyAffiliatesEnabledFilter(candidates, {
+    headAffiliatesObject: affiliatesHead,
+    log: io.log,
+  });
+
+  const { market, currency } = normalizeMarketCurrency(body);
+
+  const send =
+    io.sendMessage ||
+    createSqsSendMessage({ envVars: io.env || process.env });
+
+  for (const source of queued) {
+    const payload = {
+      searchid,
+      searchId: searchid,
+      // FR #4415: workers stamp tracked URLs with this tenant (msg.userId).
+      userId: hostUserid,
+      userid: hostUserid,
+      source,
+      hostkey,
+      host: hostkey,
+      guid,
+      widgetGuid: guid,
+      queries,
+      exclude,
+      ...(market ? { market } : {}),
+      ...(currency ? { currency } : {}),
+      // FR #5281: structured brand/model gates for SQL (and safe ignore elsewhere).
+      ...(Array.isArray(body.brands) && body.brands.length ? { brands: body.brands } : {}),
+      ...(Array.isArray(body.models) && body.models.length ? { models: body.models } : {}),
+      env: jobEnv,
+      sandbox: jobEnv === 'sandbox',
+      // FIFO single-flight group per provider (FR #4030).
+      messageGroupId: source === 'sql' ? 'sql' : source,
+      // Stable per GUID+source so a lost-response retry does not double-enqueue.
+      messageDeduplicationId: `${searchid}-${source}`,
+    };
+    await send(payload);
+  }
+
+  if (typeof io.putObject === 'function') {
+    await io.putObject({
+      Key: fanoutKey,
+      Body: Buffer.from(
+        `${JSON.stringify({ searchid, queued, at: new Date().toISOString() })}\n`,
+        'utf8',
+      ),
+      ContentType: 'application/json',
+    });
+    // FR #4563: keep searches.json searchid in sync with search-fanout.json.
+    await syncSearchesSearchid(io, hostkey, guid, searchid, {
+      market,
+      currency,
+    });
+  }
+
+  return { searchid, queued, idempotent: false };
+}
+
+/**
+ * FR #4563: when a new fan-out is written, update searches.json searchid
+ * (and market/currency when known) so redqueen and fan-out agree.
+ * @param {object} io
+ * @param {string} hostkey
+ * @param {string} guid
+ * @param {string} searchid
+ * @param {{ market?: string, currency?: string }} [mc]
+ */
+async function syncSearchesSearchid(io, hostkey, guid, searchid, mc) {
+  if (!io || typeof io.putObject !== 'function') return;
+  const host = String(hostkey).replace(/\/+$/, '');
+  const id = String(guid).trim().toLowerCase();
+  const key = `${host}/${id}/searches.json`;
+  let doc = { queries: [], exclude: [] };
+  if (typeof io.getObject === 'function') {
+    try {
+      const obj = await io.getObject({ Key: key });
+      let text = '';
+      const body = obj && obj.Body;
+      if (Buffer.isBuffer(body)) text = body.toString('utf8');
+      else if (typeof body === 'string') text = body;
+      else if (body && typeof body.transformToString === 'function') {
+        text = await body.transformToString();
+      }
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        doc = parsed;
+      }
+    } catch {
+      // no searches.json yet — still write a stub with searchid for agreement
+    }
+  }
+  doc.searchid = String(searchid);
+  if (mc && mc.market) doc.market = String(mc.market);
+  if (mc && mc.currency) doc.currency = String(mc.currency);
+  if (!Array.isArray(doc.queries)) doc.queries = [];
+  if (!Array.isArray(doc.exclude)) doc.exclude = [];
+  await io.putObject({
+    Key: key,
+    Body: Buffer.from(`${JSON.stringify(doc, null, 2)}\n`, 'utf8'),
+    ContentType: 'application/json',
+  });
+}
+
+module.exports = {
+  AgentSearchError,
+  requireAgentAuth,
+  noteSearchCaller,
+  agentKeyMatches,
+  handleAgentSearch,
+  resolveFanOutTargets,
+  applyAffiliatesEnabledFilter,
+  defaultAffiliatesIo,
+  isAgentSearchBody,
+  newSearchId,
+  searchFanoutKey,
+  headerGet,
+  parseJsonBody,
+  setAclubsIoFactoryForTests,
+  useridFromHostMetadata,
+  syncSearchesSearchid,
+};

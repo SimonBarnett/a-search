@@ -1,0 +1,13 @@
+{
+  "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "title": "tool failure: meta: head_failed --- head_failed: s3://a-clubs/x/",
+  "body": "<!-- tool-fp:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -->\n\n## Tool failure (deterministic, FR #5151)\n\n- **Tool:** `meta`\n- **ErrorCode:** `head_failed`\n- **ExitCode:** n/a\n- **Machine:** runnervmtai0g\n- **VERSION:** ``\n- **Git:** ``\n- **Cwd:** ``\n- **S3:** ``\n- **Command:** ``\n- **AWS identity ARN:** ``\n\n### Detail\n\n```\nhead_failed: s3://a-clubs/x/\n```",
+  "tool": "meta",
+  "errorCode": "head_failed",
+  "labels": [
+    "tool-failure",
+    "tool:meta"
+  ],
+  "runId": null,
+  "createdAt": "2026-10-29T13:52:00.379Z"
+}

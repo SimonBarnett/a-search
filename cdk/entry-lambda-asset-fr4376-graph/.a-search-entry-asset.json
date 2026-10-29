@@ -1,0 +1,34 @@
+{
+  "fr": "037",
+  "fr152": true,
+  "handler": "entry/src/index.handler",
+  "providers": [
+    "registry.json",
+    "loadRegistry.js",
+    "queueName.js",
+    "resolveQueueUrl.js"
+  ],
+  "shared": true,
+  "fr415": "shared/intake/reportException",
+  "fr151": "node_modules/jose",
+  "fr4409": "node_modules/@aws/lambda-invoke-store",
+  "fr4848": "worker/lib/normalizeProduct",
+  "workerLib": true,
+  "selftestProbes": [
+    "amazon",
+    "ebay",
+    "rakuten",
+    "cj",
+    "kelkoo",
+    "skimlinks",
+    "etsy",
+    "awin",
+    "impact",
+    "partnerize",
+    "webgains",
+    "tradedoubler",
+    "shopify",
+    "wix",
+    "woocommerce"
+  ]
+}
