@@ -521,6 +521,9 @@ async function handleAgentSearch(opts) {
       exclude,
       ...(market ? { market } : {}),
       ...(currency ? { currency } : {}),
+      // FR #5281: structured brand/model gates for SQL (and safe ignore elsewhere).
+      ...(Array.isArray(body.brands) && body.brands.length ? { brands: body.brands } : {}),
+      ...(Array.isArray(body.models) && body.models.length ? { models: body.models } : {}),
       env: jobEnv,
       sandbox: jobEnv === 'sandbox',
       // FIFO single-flight group per provider (FR #4030).

@@ -153,10 +153,10 @@ describe('FR #5046 SQL gate + mock fixtures', () => {
     const sql = buildSelectSql(1, 3);
     assert.match(sql, /FREETEXTTABLE/);
     assert.match(sql, /ft\.\[RANK\]\s*>=\s*@minRank/);
-    assert.match(sql, /CONTAINS\(\(p\.Title, p\.Description\), @gate0\)/);
-    assert.match(sql, /OR CONTAINS\(\(p\.Title, p\.Description\), @gate1\)/);
+    assert.match(sql, /CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @gate0\)/);
+    assert.match(sql, /OR CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @gate1\)/);
     assert.match(sql, /@gate2/);
-    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);
+    assert.match(sql, /AND NOT CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @ex0\)/);
   });
 
   it('junk-only fixture returns 0 products for VOLANTEXRC query', async () => {

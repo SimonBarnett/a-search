@@ -273,10 +273,37 @@ function validatePageAnnotation(doc) {
     doc.search_queries.forEach((q, i) => {
       if (!isPlainObject(q)) fail(errors, `search_queries[${i}]`, 'object');
       else {
-        const qx = extraKeys(q, new Set(['q', 'intent', 'maxResults']));
+        // FR #5281: brand/model/sku (+ brands/models) ride with q for SQL gates.
+        const qx = extraKeys(
+          q,
+          new Set(['q', 'intent', 'maxResults', 'brand', 'model', 'sku', 'brands', 'models']),
+        );
         if (qx.length) fail(errors, `search_queries[${i}]`, `extra ${qx.join(',')}`);
         checkString(errors, `search_queries[${i}].q`, q.q, 2, 200);
         if (q.intent !== 'page') fail(errors, `search_queries[${i}].intent`, 'must be page');
+        if (q.brand != null) checkString(errors, `search_queries[${i}].brand`, q.brand, 0, 40);
+        if (q.model != null) checkString(errors, `search_queries[${i}].model`, q.model, 0, 80);
+        if (q.sku != null) checkString(errors, `search_queries[${i}].sku`, q.sku, 0, 40);
+        if (q.brands != null) {
+          checkStringArray(errors, `search_queries[${i}].brands`, q.brands, 0, 20, 1, 40);
+        }
+        if (q.models != null) {
+          if (!Array.isArray(q.models)) fail(errors, `search_queries[${i}].models`, 'must be array');
+          else {
+            q.models.forEach((m, j) => {
+              if (!isPlainObject(m)) fail(errors, `search_queries[${i}].models[${j}]`, 'object');
+              else {
+                const mx = extraKeys(m, new Set(['brand', 'model', 'sku']));
+                if (mx.length) {
+                  fail(errors, `search_queries[${i}].models[${j}]`, `extra ${mx.join(',')}`);
+                }
+                checkString(errors, `search_queries[${i}].models[${j}].brand`, m.brand, 0, 40);
+                checkString(errors, `search_queries[${i}].models[${j}].model`, m.model, 0, 80);
+                checkString(errors, `search_queries[${i}].models[${j}].sku`, m.sku, 0, 40);
+              }
+            });
+          }
+        }
         if (!Number.isFinite(Number(q.maxResults))) {
           fail(errors, `search_queries[${i}].maxResults`, 'number');
         }
@@ -387,11 +414,16 @@ function liftPageReview(review, meta) {
     if (typeof q === 'string' && q.trim()) {
       queries.push({ q: q.trim().slice(0, 200), intent: 'page', maxResults: 10 });
     } else if (q && typeof q === 'object' && q.q) {
-      queries.push({
+      const row = {
         q: String(q.q).slice(0, 200),
         intent: 'page',
         maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
-      });
+      };
+      // FR #5281
+      if (q.brand != null && String(q.brand).trim()) row.brand = String(q.brand).trim().slice(0, 40);
+      if (q.model != null && String(q.model).trim()) row.model = String(q.model).trim().slice(0, 80);
+      if (q.sku != null && String(q.sku).trim()) row.sku = String(q.sku).trim().slice(0, 40);
+      queries.push(row);
     }
   }
   if (!queries.length) {
@@ -457,8 +489,18 @@ function liftPageReview(review, meta) {
       categories: [],
       must_have: [],
       nice_to_have: [],
-      brands: [],
-      models: [],
+      brands: Array.isArray(steering.brands) ? steering.brands.slice(0, 20) : [],
+      // FR #5281: keep structured models from steering when lifting a legacy review.
+      models: Array.isArray(steering.models)
+        ? steering.models
+            .filter((m) => m && typeof m === 'object')
+            .slice(0, 20)
+            .map((m) => ({
+              brand: str(m.brand).slice(0, 40),
+              model: str(m.model).slice(0, 80),
+              sku: str(m.sku).slice(0, 40),
+            }))
+        : [],
       size: {},
       price_band: steering.priceBand && typeof steering.priceBand === 'object'
         ? {

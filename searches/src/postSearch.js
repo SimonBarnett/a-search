@@ -23,6 +23,9 @@ async function loadSearchesPayload(s3, bucket, job) {
   const out = { queries, exclude };
   if (doc.market) out.market = String(doc.market);
   if (doc.currency) out.currency = String(doc.currency);
+  // FR #5281: pass selection brands/models through /search body.
+  if (Array.isArray(doc.brands) && doc.brands.length) out.brands = doc.brands;
+  if (Array.isArray(doc.models) && doc.models.length) out.models = doc.models;
   return out;
 }
 
@@ -94,6 +97,12 @@ function createPostSearchRunner(deps) {
     };
     if (searches.market) body.market = searches.market;
     if (searches.currency) body.currency = searches.currency;
+    if (Array.isArray(searches.brands) && searches.brands.length) {
+      body.brands = searches.brands;
+    }
+    if (Array.isArray(searches.models) && searches.models.length) {
+      body.models = searches.models;
+    }
     const resp = await postJson(`${base}/search`, body);
     const queued = Array.isArray(resp.queued) ? resp.queued : [];
     return {
