@@ -33,6 +33,29 @@ describe('docs/mrb-5291 hostile FR #5287', () => {
     assert.match(src, /function cleanSearchesQueries/);
   });
 
+  it('cleanSearchesQueries keeps brand/model/sku after stripping UK/GBP', () => {
+    const rows = cleanSearchesQueries(
+      [
+        {
+          q: 'VOLANTEXRC Sport Cub 761-14 United Kingdom GBP',
+          intent: 'page',
+          maxResults: 10,
+          brand: 'VOLANTEXRC',
+          model: 'Sport Cub S2',
+          sku: '761-14',
+        },
+      ],
+      'GB',
+      'GBP',
+    );
+    assert.equal(rows.length, 1);
+    assert.doesNotMatch(rows[0].q, /United Kingdom/i);
+    assert.doesNotMatch(rows[0].q, /\bGBP\b/);
+    assert.equal(rows[0].sku, '761-14');
+    assert.equal(rows[0].brand, 'VOLANTEXRC');
+    assert.equal(rows[0].model, 'Sport Cub S2');
+  });
+
   it('docs pin FR #5287 in redqueen-annotations', () => {
     const text = fs.readFileSync(
       path.join(__dirname, '..', 'docs', 'redqueen-annotations.md'),
