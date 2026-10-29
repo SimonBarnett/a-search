@@ -3,6 +3,8 @@
 /**
  * FR #4030: shared a-clubs IN/ result schema for provider Lambdas and redqueen SQL drain.
  * File key: {hostkey}/{guid}/IN/{searchid}-{source}.json
+ * FR #5271: envelope is searchid/source/hostkey/guid/products only
+ * (optional status/error). Never queries/exclude.
  */
 
 const IN_SOURCES = Object.freeze(['sql', 'ebay', 'amazon', 'etsy', 'rakuten', 'cj', 'awin', 'impact', 'aliexpress', 'bol', 'kelkoo', 'skimlinks']);
@@ -68,8 +70,6 @@ function validateInResult(raw) {
     hostkey: String(hostkey).trim(),
     guid: String(guid).trim(),
     products,
-    queries: Array.isArray(o.queries) ? o.queries : undefined,
-    exclude: Array.isArray(o.exclude) ? o.exclude : undefined,
   };
   // FR #4562: optional vendor status (non-JSON HTML etc.) on the IN body.
   if (o.status && typeof o.status === 'object' && !Array.isArray(o.status)) {
@@ -90,8 +90,6 @@ function validateInResult(raw) {
  *   hostkey: string,
  *   guid: string,
  *   products?: object[],
- *   queries?: unknown[],
- *   exclude?: unknown[],
  *   status?: object,
  *   error?: string,
  * }} opts
@@ -103,8 +101,6 @@ function buildInResult(opts) {
     hostkey: opts.hostkey,
     guid: opts.guid,
     products: Array.isArray(opts.products) ? opts.products : [],
-    queries: opts.queries,
-    exclude: opts.exclude,
     status: opts.status,
     error: opts.error,
   });

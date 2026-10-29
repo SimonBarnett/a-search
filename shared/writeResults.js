@@ -106,9 +106,10 @@ async function writeResults(opts) {
   });
 
   const body = {
-    searchId: String(opts.searchId).trim(),
+    searchid: String(opts.searchId || opts.searchid || '').trim(),
     source: String(opts.source).trim(),
-    userId: String(opts.userId).trim(),
+    hostkey: String(opts.hostkey || opts.host || opts.userId || '').trim(),
+    guid: String(opts.guid || opts.catalogId || '').trim(),
     products: Array.isArray(opts.products) ? opts.products : [],
   };
 

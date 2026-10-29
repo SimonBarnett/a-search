@@ -70,8 +70,6 @@ async function run(msg, deps) {
   const writeOpts = {
     msg,
     source: 'amazon',
-    queries: msg.queries,
-    exclude: msg.exclude,
     envVars,
     putObject: liveS3.putObject,
     touchLastmod: deps && deps.touchLastmod,

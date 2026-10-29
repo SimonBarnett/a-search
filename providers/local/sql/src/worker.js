@@ -157,8 +157,6 @@ async function run(msg, deps) {
     hostkey,
     guid,
     products,
-    queries: Array.isArray(msg.queries) ? msg.queries : undefined,
-    exclude: Array.isArray(msg.exclude) ? msg.exclude : undefined,
   });
   const validated = validateInResult(body);
   if (!validated.ok) {

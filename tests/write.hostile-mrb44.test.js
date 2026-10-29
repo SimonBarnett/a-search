@@ -27,9 +27,10 @@ describe('MRB #44 hostile: FR-009 writeResults', () => {
     assert.equal(calls[0].Bucket, 'test-bucket');
     assert.equal(calls[0].Key, resultsKey(job));
     const body = JSON.parse(calls[0].Body);
-    assert.equal(body.searchId, job.searchId);
+    assert.equal(body.searchid, job.searchId);
     assert.equal(body.source, job.source);
-    assert.equal(body.userId, job.userId);
+    assert.equal(body.hostkey, job.userId);
+    assert.equal(body.guid, String(job.catalogId));
     assert.deepEqual(body.products, []);
   });
 

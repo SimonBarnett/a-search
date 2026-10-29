@@ -9,6 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { aClubsInAbsPath, aClubsInKey, hostGuidFromMessage } = require('./aClubsInPath');
+const { buildInResult } = require('../../shared/search/inResultSchema');
 
 /**
  * @param {{
@@ -34,17 +35,29 @@ function writeAClubsIn(opts) {
   const abs = aClubsInAbsPath({ root, host, guid, searchId });
   fs.mkdirSync(path.dirname(abs), { recursive: true });
 
-  const body =
+  const raw =
     opts.body && typeof opts.body === 'object'
       ? opts.body
       : {
-          searchId,
-          source: msg.source != null ? String(msg.source).trim() : '',
-          userId: msg.userId != null ? String(msg.userId).trim() : '',
-          host,
+          searchid: searchId,
+          source: msg.source != null ? String(msg.source).trim() : 'sql',
+          hostkey: host,
           guid,
           products: Array.isArray(opts.products) ? opts.products : [],
         };
+  const body = buildInResult({
+    searchid: raw.searchid != null ? raw.searchid : raw.searchId || searchId,
+    source: raw.source != null ? raw.source : msg.source,
+    hostkey: raw.hostkey != null ? raw.hostkey : raw.host || host,
+    guid: raw.guid != null ? raw.guid : guid,
+    products: Array.isArray(raw.products)
+      ? raw.products
+      : Array.isArray(opts.products)
+        ? opts.products
+        : [],
+    status: raw.status,
+    error: raw.error,
+  });
 
   fs.writeFileSync(abs, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
   return { abs, key, bucket: 'a-clubs' };

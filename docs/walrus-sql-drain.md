@@ -14,7 +14,9 @@ and `worker/lib`. Page selection (`filterPartsByPage`) lives in
 `shared/widgets/pageSelect.js` (still staged for other shared callers).
 FR #5270: the drain path sets `hasresults` via `shared/search/searchDone.js`
 only — it does **not** load `promoteInToLive` (the agent / hasresults monitor
-builds `live.json`). The drain does **not** need `redqueen/src` on the box.
+builds `live.json`). FR #5271: `IN/sql.json` holds `searchid`/`source`/`hostkey`/
+`guid`/`products` (rows keep `rank`); never `queries`/`exclude`.
+The drain does **not** need `redqueen/src` on the box.
 `redqueen/src/pageSelect.js` is a thin re-export for older callers.
 
 FR #4827 / #4997: the SEA package `a-sqlsearch.exe` is the intended replacement,

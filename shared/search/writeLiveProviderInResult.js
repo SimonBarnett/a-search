@@ -243,8 +243,6 @@ async function writeLiveProviderInResult(opts) {
     searchid: pathParts.searchid,
     source: String(opts.source).trim().toLowerCase(),
     products,
-    queries: opts.queries != null ? opts.queries : msg.queries,
-    exclude: opts.exclude != null ? opts.exclude : msg.exclude,
     // FR #4562: optional vendor status (e.g. paapi_non_json) on IN body.
     status: opts.status,
     // FR #4561: error string for missing_credentials / non-retryable skips.
