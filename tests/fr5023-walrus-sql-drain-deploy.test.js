@@ -98,6 +98,17 @@ describe('FR #5023 Deploy-WalrusSqlDrain.ps1', () => {
     assert.match(src, /WhatIf/);
     assert.match(src, /SkipService|Restart-DrainService/);
   });
+
+  it('uses the npm.cmd fallback path directly under StrictMode', () => {
+    const src = fs.readFileSync(DEPLOY_PS1, 'utf8');
+    const npmFunction = src.slice(
+      src.indexOf('function Invoke-NpmOmitDev'),
+      src.indexOf('function Restart-DrainService'),
+    );
+    assert.match(npmFunction, /\$npmPath = \$npmBeside/);
+    assert.match(npmFunction, /& \$npmPath install --omit=dev/);
+    assert.doesNotMatch(npmFunction, /\$npmCmd\.Source/);
+  });
 });
 
 describe('FR #5023 docs/walrus-sql-drain.md', () => {

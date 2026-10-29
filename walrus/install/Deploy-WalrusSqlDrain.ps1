@@ -333,12 +333,14 @@ function Invoke-NpmOmitDev {
     Write-Host "WhatIf: npm install --omit=dev in $InstallRoot"
     return
   }
-  $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
-  if (-not $npmCmd) {
+  $npmCommand = Get-Command npm -ErrorAction SilentlyContinue
+  if ($npmCommand) {
+    $npmPath = $npmCommand.Source
+  } else {
     # npm.cmd beside node.exe
     $npmBeside = Join-Path (Split-Path -Parent $NodePath) 'npm.cmd'
     if (Test-Path -LiteralPath $npmBeside) {
-      $npmCmd = Get-Item -LiteralPath $npmBeside
+      $npmPath = $npmBeside
     } else {
       throw 'npm not found on PATH'
     }
@@ -346,7 +348,7 @@ function Invoke-NpmOmitDev {
   Write-Host "npm install --omit=dev in $InstallRoot"
   Push-Location -LiteralPath $InstallRoot
   try {
-    & $npmCmd.Source install --omit=dev
+    & $npmPath install --omit=dev
     if ($LASTEXITCODE -ne 0) {
       throw "npm_install_failed exit=$LASTEXITCODE"
     }
