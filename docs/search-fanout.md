@@ -83,7 +83,10 @@ Immediate DLQ and the final receive before SQS redrive
 the GUID marker flips `hasresults=1` on **S3 object metadata** (starts at
 `0` with `enabled=0`). FR #5270: that flip does **not** write `live.json` or
 set `enabled=1`. Search workers and drains only write `IN/`, `_search-done/`,
-and `hasresults`. The redqueen hasresults monitor / agent SELECTS the best
+and `hasresults`. FR #5275: the DONE / hasresults path must receive
+`listObjectAnnotations` (not only put/head/get/copy/tagging) so a CopyObject
+AccessDenied on an unannotated marker still uses the PutObject fallback.
+The redqueen hasresults monitor / agent SELECTS the best
 parts from `IN/` into `live.json` and sets `enabled=1` (Simon #5256).
 
 ### DLQ review issues (FR #5222)

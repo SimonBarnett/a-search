@@ -37,6 +37,7 @@ describe('docs/mrb-4433 hostile FR #4428', () => {
       other: 1,
     };
     assert.equal(attachDefaultS3(injected), injected);
+    assert.equal(typeof injected.listObjectAnnotations, 'function');
 
     const sends = [];
     const fakeClient = {
@@ -51,6 +52,7 @@ describe('docs/mrb-4433 hostile FR #4428', () => {
     });
     assert.equal(typeof deps.putObject, 'function');
     assert.equal(typeof deps.headObject, 'function');
+    assert.equal(typeof deps.listObjectAnnotations, 'function');
     // Avoid real @aws-sdk Command classes: buildDefaultS3Fns falls back to send(input)
     await deps.putObject({ Bucket: 'b', Key: 'k' });
     assert.ok(sends.length >= 1);

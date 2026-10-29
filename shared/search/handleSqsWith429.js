@@ -170,6 +170,7 @@ async function recordDlqDone(args) {
       copyObject: args.copyObject,
       getObjectTagging: args.getObjectTagging,
       putObjectTagging: args.putObjectTagging,
+      listObjectAnnotations: args.listObjectAnnotations,
       now: args.now,
       logError: args.logError,
     });
@@ -206,6 +207,7 @@ async function recordDlqDone(args) {
  *   copyObject?: Function,
  *   getObjectTagging?: Function,
  *   putObjectTagging?: Function,
+ *   listObjectAnnotations?: Function,
  *   envVars?: Record<string, string|undefined>,
  *   logError?: Function,
  *   now?: Date|string|number,
@@ -380,9 +382,10 @@ function withDoneBucket(fn, bucket) {
 }
 
 /**
- * FR #4917 / #5255: S3 fns for DONE + hasresults flip (from opts, deps, or Lambda
- * default chain). Always returns bucket and wraps every S3 fn so marker
- * read/rewrite (Key-only) never hits "No value provided for input HTTP label: Bucket".
+ * FR #4917 / #5255 / #5275: S3 fns for DONE + hasresults flip (from opts, deps,
+ * or Lambda default chain), including listObjectAnnotations. Always returns
+ * bucket and wraps every S3 fn so marker read/rewrite (Key-only) never hits
+ * "No value provided for input HTTP label: Bucket".
  * @param {object} opts
  * @returns {object}
  */
@@ -407,16 +410,26 @@ function resolveDoneS3Deps(opts) {
   let copyObject = pick('copyObject');
   let getObjectTagging = pick('getObjectTagging');
   let putObjectTagging = pick('putObjectTagging');
-  if (!putObject) {
+  let listObjectAnnotations = pick('listObjectAnnotations');
+  if (!putObject || !listObjectAnnotations) {
     try {
       const { attachDefaultS3 } = require('./liveWorkerS3');
-      const built = attachDefaultS3({});
+      const built = attachDefaultS3({
+        putObject: putObject || undefined,
+        getObject: getObject || undefined,
+        headObject: headObject || undefined,
+        copyObject: copyObject || undefined,
+        getObjectTagging: getObjectTagging || undefined,
+        putObjectTagging: putObjectTagging || undefined,
+        listObjectAnnotations: listObjectAnnotations || undefined,
+      });
       putObject = putObject || built.putObject;
       getObject = getObject || built.getObject;
       headObject = headObject || built.headObject;
       copyObject = copyObject || built.copyObject;
       getObjectTagging = getObjectTagging || built.getObjectTagging;
       putObjectTagging = putObjectTagging || built.putObjectTagging;
+      listObjectAnnotations = listObjectAnnotations || built.listObjectAnnotations;
     } catch {
       // No AWS SDK in unit fixtures — DONE write is skipped.
     }
@@ -428,6 +441,7 @@ function resolveDoneS3Deps(opts) {
     copyObject: withDoneBucket(copyObject, bucket),
     getObjectTagging: withDoneBucket(getObjectTagging, bucket),
     putObjectTagging: withDoneBucket(putObjectTagging, bucket),
+    listObjectAnnotations: withDoneBucket(listObjectAnnotations, bucket),
     bucket,
     envVars: env,
   };

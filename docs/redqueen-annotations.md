@@ -256,7 +256,7 @@ without `annotated=1`.
 |-----------|-------------|
 | Parts-gateway Lambda | `sqs:SendMessage` on the FIFO only; S3 R/W on `a-clubs` |
 | `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 `GetObject` / `PutObject` / `ListBucket` / `GetObjectTagging` / `PutObjectTagging` plus object-annotation actions `s3:PutObjectAnnotation` / `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:DeleteObjectAnnotation` on `arn:aws:s3:::a-clubs` and `arn:aws:s3:::a-clubs/*` (FR #4122 / #4241) |
-| Live provider workers (`wireAclubsInAccess`) | Same a-clubs R/W plus `s3:CopyObject` / tagging and `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:PutObjectAnnotation` so CopyObject REPLACE keeps `annotation`+`steering`. Never `s3:DeleteObjectAnnotation`. If CopyObject is denied on an annotated marker, fail and leave the object (FR #5269; no PutObject fallback). |
+| Live provider workers (`wireAclubsInAccess`) | Same a-clubs R/W plus `s3:CopyObject` / tagging and `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:PutObjectAnnotation` so CopyObject REPLACE keeps `annotation`+`steering`. Never `s3:DeleteObjectAnnotation`. If CopyObject is denied on an annotated marker, fail and leave the object (FR #5269; no PutObject fallback). FR #5275: `listObjectAnnotations` must be wired through `recordServicedDone` / `recordDlqDone` / `resolveDoneS3Deps` / `attachDefaultS3` (fill missing even when `putObject` is injected) so `setHasResults` can Put-fallback when the list is known-empty (FR #5255). |
 
 Never use root keys. Redeploy **APartsGateway** after #4122 so the annotator user policy is live before installing the redqueen queue service.
 

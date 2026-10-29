@@ -73,7 +73,16 @@ function attachDefaultS3(arg) {
   if (isLambdaContext(arg) || arg == null || typeof arg !== 'object' || Array.isArray(arg)) {
     return buildDefaultS3Fns(undefined);
   }
-  if (typeof arg.putObject === 'function') return arg;
+  if (typeof arg.putObject === 'function') {
+    // FR #5275: keep injected putObject but fill missing listObjectAnnotations
+    // (and other S3_COMMANDS) so CopyObject AccessDenied can still Put when
+    // the marker has no annotations.
+    const built = buildDefaultS3Fns(arg.createS3Client);
+    for (const name of Object.keys(built)) {
+      if (typeof arg[name] !== 'function') arg[name] = built[name];
+    }
+    return arg;
+  }
   return Object.assign({}, arg, buildDefaultS3Fns(arg.createS3Client));
 }
 
