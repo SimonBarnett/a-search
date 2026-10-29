@@ -27,7 +27,7 @@ function readNoBom(rel) {
 
 describe('MRB #673 hostile FR-062 live stub onboarding', () => {
   for (const id of IDS) {
-    it(`${id} onboarding skill: CAST IRON, stay-dark, deferred .env`, () => {
+    it(`${id} onboarding skill matches its enabled or stay-dark status`, () => {
       const kind = id === 'skimlinks' ? 'local' : 'live';
       const text = readNoBom(
         path.join(
@@ -42,10 +42,20 @@ describe('MRB #673 hostile FR-062 live stub onboarding', () => {
       );
       assert.match(text, /CAST IRON/);
       assert.match(text, /SimonBarnett\/a-search/);
-      assert.match(text, /not enabled|UNKNOWN|disabled stub/i);
-      assert.match(text, /stay-dark|enabled\.live=false|enabled live=false/i);
       assert.match(text, /phase2-providers\.md/);
-      assert.match(text, /Do \*\*not\*\* invent live credential|Do not request live API keys/i);
+      if (id === 'kelkoo') {
+        assert.match(text, /Registry flags are enabled for live/);
+        assert.match(text, /KELKOO_API_KEY/);
+        assert.match(text, /KELKOO_PUBLISHER_ID/);
+        assert.doesNotMatch(text, /disabled stub|stay-dark/i);
+      } else {
+        assert.match(text, /not enabled|UNKNOWN|disabled stub/i);
+        assert.match(text, /stay-dark|enabled\.live=false|enabled live=false/i);
+        assert.match(
+          text,
+          /Do \*\*not\*\* invent live credential|Do not request live API keys/i,
+        );
+      }
     });
   }
 
