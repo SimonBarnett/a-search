@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * FR #4891: promote a-clubs/{host}/{guid}/IN/*.json into live.json and set
- * enabled=1 on the GUID marker. Called when hasresults flips to 1 (searchDone)
- * and exported for the #4918 agent monitor. /parts itself must not promote.
+ * FR #4891 / FR #5270: promote a-clubs/{host}/{guid}/IN/*.json into live.json
+ * and set enabled=1 on the GUID marker. **Only** the hasresults monitor /
+ * agent path calls this (runHasresultsAgentWork). Search workers and drains
+ * set hasresults=1 only — they never write live.json. /parts must not promote.
  */
 
 const {
@@ -13,6 +14,7 @@ const {
 } = require('./hostFolderMeta');
 const { assertWidgetGuid } = require('./widgetPath');
 const { filterPartsByPage } = require('./pageSelect');
+const { recordNoResultsIfEmpty } = require('../search/noResultsFeedback');
 
 /**
  * @param {unknown} host
@@ -392,11 +394,36 @@ async function runHasresultsAgentWork(opts) {
       bucket: opts.bucket,
     });
   }
+  // FR #5047 / #5270: no-results feedback after the agent builds live.json.
+  let noResults = null;
+  try {
+    const live = promote && Array.isArray(promote.live) ? promote.live : [];
+    noResults = await recordNoResultsIfEmpty({
+      host: opts.host || opts.hostkey,
+      guid: opts.guid,
+      searchid: opts.searchid,
+      live,
+      partCount: live.length,
+      bucket: opts.bucket,
+      now: opts.now,
+      putObject: opts.putObject,
+      getObject: opts.getObject,
+      getObjectAnnotation: opts.getObjectAnnotation,
+      logError: opts.logError,
+    });
+  } catch (err) {
+    noResults = {
+      recorded: false,
+      reason: 'error',
+      error: String((err && err.message) || err),
+    };
+  }
   return {
     ok: true,
     liveWritten: true,
     enabled: 1,
     promote,
+    noResults,
     inKeys: keysBefore,
     deleted: deleted.deleted,
     deleteFailed: deleted.failed,

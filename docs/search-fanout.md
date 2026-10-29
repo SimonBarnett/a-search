@@ -77,7 +77,10 @@ Immediate DLQ and the final receive before SQS redrive
 429/502-504) both write `status: dlq`. When every source in
 `search-fanout.json.queued` has a terminal record for the current `searchid`,
 the GUID marker flips `hasresults=1` on **S3 object metadata** (starts at
-`0` with `enabled=0`).
+`0` with `enabled=0`). FR #5270: that flip does **not** write `live.json` or
+set `enabled=1`. Search workers and drains only write `IN/`, `_search-done/`,
+and `hasresults`. The redqueen hasresults monitor / agent SELECTS the best
+parts from `IN/` into `live.json` and sets `enabled=1` (Simon #5256).
 
 ### DLQ review issues (FR #5222)
 

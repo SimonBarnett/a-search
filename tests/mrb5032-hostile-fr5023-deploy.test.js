@@ -57,7 +57,8 @@ describe('MRB #5032 hostile FR #5023 (fix mrb-5035)', () => {
     assert.doesNotMatch(src, /redqueen['\\/]+src['\\/]+pageSelect/);
     assert.match(src, /MODULE_NOT_FOUND/);
     assert.match(src, /process\.exit\(1\)/);
-    assert.match(src, /promoteInToLive/);
+    assert.match(src, /searchDone/);
+    assert.doesNotMatch(src, /promoteInToLive/);
   });
 
   it('deploy script load-checks before Restart-DrainService and rolls back', () => {

@@ -11,8 +11,10 @@ No AWS Lambda connects to MSSQL. No inbound ports on walrus.
 
 The Node drain process loads `walrus/src`, `providers/local/sql`, `shared/`,
 and `worker/lib`. Page selection (`filterPartsByPage`) lives in
-`shared/widgets/pageSelect.js`. `shared/widgets/promoteInToLive.js` requires
-that shared module, so the drain does **not** need `redqueen/src` on the box.
+`shared/widgets/pageSelect.js` (still staged for other shared callers).
+FR #5270: the drain path sets `hasresults` via `shared/search/searchDone.js`
+only — it does **not** load `promoteInToLive` (the agent / hasresults monitor
+builds `live.json`). The drain does **not** need `redqueen/src` on the box.
 `redqueen/src/pageSelect.js` is a thin re-export for older callers.
 
 FR #4827 / #4997: the SEA package `a-sqlsearch.exe` is the intended replacement,
@@ -50,7 +52,7 @@ Behaviour:
 4. Copy manifest paths onto `-InstallRoot`.
 5. **Load check before service restart**:
    `node walrus/install/assert-walrus-sql-drain-graph.js` (requires
-   `walrus/src/index.js`, `drainRunner`, `shared/widgets/promoteInToLive.js`,
+   `walrus/src/index.js`, `drainRunner`, `shared/search/searchDone.js`,
    and `shared/widgets/pageSelect.js`). On `MODULE_NOT_FOUND` or throw: restore
    backup, do **not** restart, exit non-zero.
 6. `npm install --omit=dev` in `-InstallRoot` (root `package.json`; deps include

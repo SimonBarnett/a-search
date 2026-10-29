@@ -228,12 +228,13 @@ describe('FR #5047 no-results vendor feedback', () => {
     assert.equal(s3.objects.has(noResultsSignalKey(HOST, GUID)), false);
   });
 
-  it('hasresults flip with empty live writes no-results feedback', async () => {
+  it('agent promote with empty live writes no-results feedback (FR #5270)', async () => {
+    const { runHasresultsAgentWork } = require('../shared/widgets/promoteInToLive');
     await s3.putObject({
       Key: `${HOST}/${GUID}/`,
       Body: Buffer.alloc(0),
       Metadata: {
-        hasresults: '0',
+        hasresults: '1',
         enabled: '0',
         annotated: '1',
         lastmod: '2026-10-25T12:00:00.000Z',
@@ -268,6 +269,30 @@ describe('FR #5047 no-results vendor feedback', () => {
       listObjectsV2: s3.listObjectsV2,
       getObjectTagging: async () => ({ TagSet: [] }),
       putObjectTagging: async () => ({}),
+      now: '2026-10-25T20:40:00.000Z',
+      hostkey: HOST,
+      guid: GUID,
+      searchid: SEARCHID,
+      source: 'sql',
+      status: 'serviced',
+      products: 0,
+    });
+    assert.equal(flip.hasresults, true);
+    assert.equal(flip.flip && flip.flip.noResults, undefined);
+    assert.equal(s3.objects.has(noResultsSignalKey(HOST, GUID)), false);
+
+    const agent = await runHasresultsAgentWork({
+      host: HOST,
+      guid: GUID,
+      searchid: SEARCHID,
+      bucket: 'test-a-clubs',
+      putObject: s3.putObject,
+      getObject: s3.getObject,
+      headObject: s3.headObject,
+      copyObject: s3.copyObject,
+      listObjectsV2: s3.listObjectsV2,
+      getObjectTagging: async () => ({ TagSet: [] }),
+      putObjectTagging: async () => ({}),
       getObjectAnnotation: async ({ Key }) => {
         if (String(Key).endsWith(`${GUID}/`)) {
           return {
@@ -282,19 +307,10 @@ describe('FR #5047 no-results vendor feedback', () => {
           }),
         };
       },
-      now: '2026-10-25T20:40:00.000Z',
-      hostkey: HOST,
-      guid: GUID,
-      searchid: SEARCHID,
-      source: 'sql',
-      status: 'serviced',
-      products: 0,
+      now: '2026-10-25T20:41:00.000Z',
     });
-    assert.equal(flip.hasresults, true);
-    assert.ok(
-      flip.flip && flip.flip.noResults && flip.flip.noResults.recorded === true,
-      'flip carries noResults.recorded',
-    );
+    assert.equal(agent.ok, true);
+    assert.ok(agent.noResults && agent.noResults.recorded === true);
     assert.ok(
       s3.objects.has(noResultsSignalKey(HOST, GUID)),
       'GUID feedback/no-results.json written',

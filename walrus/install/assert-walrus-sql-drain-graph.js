@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * FR #5023 / fix(mrb-5035): load-check the walrus SQL drain require graph
- * before service restart. Requires drain entry plus promoteInToLive ->
- * shared/widgets/pageSelect (FR #5022). Exit 0 on success; exit 1 with a
+ * FR #5023 / fix(mrb-5035) / FR #5270: load-check the walrus SQL drain require
+ * graph before service restart. Drain writes IN/ + _search-done/ + hasresults;
+ * agent/monitor alone builds live.json. Exit 0 on success; exit 1 with a
  * clear message on MODULE_NOT_FOUND / throw.
  *
  * Usage (from repo / InstallRoot):
@@ -24,8 +24,8 @@ const targets = [
     rel: path.join('walrus', 'src', 'drainRunner.js'),
   },
   {
-    label: 'shared/widgets/promoteInToLive.js',
-    rel: path.join('shared', 'widgets', 'promoteInToLive.js'),
+    label: 'shared/search/searchDone.js',
+    rel: path.join('shared', 'search', 'searchDone.js'),
   },
   {
     label: 'shared/widgets/pageSelect.js',
@@ -57,6 +57,6 @@ for (const t of targets) {
 }
 
 process.stdout.write(
-  'assert-walrus-sql-drain-graph: ok (index, drainRunner, promoteInToLive, pageSelect)\n',
+  'assert-walrus-sql-drain-graph: ok (index, drainRunner, searchDone, pageSelect)\n',
 );
 process.exit(0);

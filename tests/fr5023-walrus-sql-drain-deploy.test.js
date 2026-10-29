@@ -57,12 +57,13 @@ describe('FR #5023 walrus SQL drain deploy manifest', () => {
 });
 
 describe('FR #5023 assert-walrus-sql-drain-graph.js', () => {
-  it('exists and asserts shared pageSelect / promoteInToLive', () => {
+  it('exists and asserts shared pageSelect / searchDone (FR #5270)', () => {
     assert.equal(fs.existsSync(ASSERT_JS), true);
     const src = fs.readFileSync(ASSERT_JS, 'utf8');
     assert.equal(src.charCodeAt(0) === 0xfeff, false, 'assert js has no BOM');
     assert.match(src, /shared['\\/]+widgets['\\/]+pageSelect/);
-    assert.match(src, /promoteInToLive/);
+    assert.match(src, /searchDone/);
+    assert.doesNotMatch(src, /promoteInToLive/);
     assert.match(src, /index\.js/);
     assert.match(src, /MODULE_NOT_FOUND/);
     assert.doesNotMatch(src, /redqueen['\\/]+src['\\/]+pageSelect/);

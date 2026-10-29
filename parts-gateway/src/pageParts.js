@@ -3,7 +3,7 @@
 /**
  * FR #3968 / #4891: S3 a-clubs backed GET /parts page (auto-create host + GUID).
  * Host from Origin only. Returns status searching|ok|no_parts from enabled flag.
- * Does NOT promote IN/ → live.json (that is promoteInToLive / hasresults path).
+ * Does NOT promote IN/ → live.json (FR #5270: agent / hasresults monitor only).
  */
 
 const { assertWidgetGuid } = require('../../shared/widgets/widgetPath');
