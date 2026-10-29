@@ -84,7 +84,7 @@ so `IC` does not drop "electric". The shape is
 ### Annotator responsibility and empty results (FR #5047)
 
 The annotator must file **enough searches** in `searches.json` (brand/model,
-product type, and close alternatives) to give a reasonable chance of relevant
+generic category/part terms first (FR #5290), then brand/model and close alternatives) to give a reasonable chance of relevant
 parts. **0 results is still a valid outcome**: it means the catalogue needs
 more vendors in that sector. Providers never widen matches to fill a page
 (relevance over filler; see also #5046).
