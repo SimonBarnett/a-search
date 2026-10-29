@@ -77,9 +77,7 @@ Long UK steering strings (town, postcode, `.co.uk`) normalize to short codes
 suggested query is stripped by `shared/search/cleanSearchQuery.js`.
 **FR #5283:** postcodes are stripped only in a location context (after a
 locality cue, after a comma, leftover leading/trailing). Mid-string product
-tokens such as `S2 3CH` stay in `q`. `publishGuidSearch` re-runs
-`keywordsOnly` on an existing `searches.json` before a queries-only repost
-so leftover `United Kingdom GBP` from an older write is cleaned.
+tokens such as S2 3CH stay in q.
 **FR #5287:** when `searches.json` already has a `searchid` and the hash
 matches, `publishGuidSearch` still rewrites leftover location/currency in `q`
 (`keywordsOnly`) and does not POST again. Clean files stay untouched.
@@ -93,7 +91,7 @@ so `IC` does not drop "electric". The shape is
 ### Annotator responsibility and empty results (FR #5047)
 
 The annotator must file **enough searches** in `searches.json` (brand/model,
-product type, and close alternatives) to give a reasonable chance of relevant
+generic category/part terms first (FR #5290), then brand/model and close alternatives) to give a reasonable chance of relevant
 parts. **0 results is still a valid outcome**: it means the catalogue needs
 more vendors in that sector. Providers never widen matches to fill a page
 (relevance over filler; see also #5046).

@@ -58,14 +58,17 @@ function pageWithExamples() {
       page_exclusions: [],
       ranking_hints: [],
     },
-    search_queries: EXAMPLES.map((e) => ({
-      q: [e.brand, e.model, e.sku].join(' '),
-      intent: 'page',
-      maxResults: 10,
-      brand: e.brand,
-      model: e.model,
-      sku: e.sku,
-    })),
+    search_queries: [
+      { q: 'RC plane', intent: 'page', maxResults: 10 },
+      ...EXAMPLES.map((e) => ({
+        q: [e.brand, e.model, e.sku].join(' '),
+        intent: 'page',
+        maxResults: 10,
+        brand: e.brand,
+        model: e.model,
+        sku: e.sku,
+      })),
+    ],
   });
 }
 

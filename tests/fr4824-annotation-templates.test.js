@@ -127,6 +127,7 @@ describe('FR #4824 overlap rules', () => {
     const host = exampleHostV1();
     const page = examplePageV1({
       search_queries: [
+        { q: 'RC plane', intent: 'page', maxResults: 10 },
         { q: 'Sport Cub L40 4BA RTF', intent: 'page', maxResults: 10 },
       ],
     });
@@ -156,7 +157,12 @@ describe('FR #4824 searches.json from page+host', () => {
       fullTier: false,
       now: '2026-10-24T16:00:00.000Z',
     });
-    assert.ok(doc.queries.some((q) => /Sport Cub/.test(q.q)));
+    // FR #5290: free cap keeps generics first; Sport Cub may be truncated at cap 3.
+    assert.ok(
+      doc.queries.some((q) => /RC plane|RTF trainer|paint station|Sport Cub|RC aircraft/i.test(q.q)),
+      JSON.stringify(doc.queries),
+    );
+    assert.ok(doc.queries.some((q) => !q.sku && !q.model), 'expected a generic row');
     assert.ok(doc.exclude.some((e) => e.match === 'rc car' && e.reason === 'host'));
     assert.ok(doc.exclude.some((e) => e.match === 'kit requiring assembly' && e.reason === 'page'));
     assert.equal(doc.market, 'GB');
