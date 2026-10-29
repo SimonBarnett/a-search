@@ -84,7 +84,7 @@ describe('FR #4559 marker rewrite best-effort after IN write', () => {
     const block = end > start ? src.slice(start, end) : src.slice(start, start + 1600);
     assert.match(block, /s3:GetObjectAnnotation/);
     assert.match(block, /s3:ListObjectAnnotations/);
-    assert.doesNotMatch(block, /s3:PutObjectAnnotation/);
+    assert.match(block, /s3:PutObjectAnnotation/);
     assert.doesNotMatch(block, /s3:DeleteObjectAnnotation/);
   });
 });

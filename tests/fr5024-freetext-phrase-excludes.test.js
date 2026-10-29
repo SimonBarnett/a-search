@@ -103,11 +103,11 @@ describe('FR #5024 FREETEXT + phrase excludes', () => {
     assert.match(sqlText, /,\s*@q\s*\)/);
     assert.doesNotMatch(sqlText, /CONTAINSTABLE/);
     // FR #5046: exact brand/model CONTAINS gates admit; FREETEXT only orders
-    assert.match(sqlText, /CONTAINS\(\(p\.Title, p\.Description\), @gate0\)/);
+    assert.match(sqlText, /CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @gate0\)/);
     assert.ok(Object.keys(inputs).some((k) => /^gate\d+$/.test(k)));
     assert.equal(inputs.ex0, '"club membership"');
     assert.equal(inputs.ex1, '"IC"');
-    assert.match(sqlText, /AND NOT CONTAINS\(\(p\.Title, p\.Description\), @ex0\)/);
+    assert.match(sqlText, /AND NOT CONTAINS\(\(p\.Title, p\.Description, p\.Brand, p\.Mpn, p\.MerchantSku\), @ex0\)/);
     assert.match(sqlText, /@ex18/);
     assert.doesNotMatch(sqlText, /nvarchar\(max\)/i);
   });

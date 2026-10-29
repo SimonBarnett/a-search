@@ -208,9 +208,9 @@ function wireResultsBucketAccess(fn, bucket) {
  * CopyObject REPLACE for hasresults=1 (grantReadWrite + Copy/Tag below).
  * FR #4545 / #4441: touchLastmod -> rewriteMarkerMetadata uses CopyObject +
  * object tagging; grantReadWrite does not include s3:CopyObject (ebay AccessDenied).
- * FR #4559: annotated markers (redqueen PutObjectAnnotation) --- CopyObject /
- * Metadata REPLACE on those keys needs Get/List ObjectAnnotation (same family as
- * parts-gateway / redqueen annotator). Workers do not Put/Delete annotations.
+ * FR #4559 / #5269: annotated markers (redqueen PutObjectAnnotation) ---
+ * CopyObject Metadata REPLACE needs Get/List/Put ObjectAnnotation so the
+ * in-place copy keeps annotation+steering. Never PutObject-over those keys.
  * @param {lambda.Function} fn
  * @param {s3.IBucket} bucket
  */
@@ -229,6 +229,7 @@ function wireAclubsInAccess(fn, bucket) {
         's3:PutObjectTagging',
         's3:GetObjectAnnotation',
         's3:ListObjectAnnotations',
+        's3:PutObjectAnnotation',
       ],
       resources: [objectArn],
     }),

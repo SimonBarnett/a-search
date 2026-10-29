@@ -1,7 +1,11 @@
 # Search fan-out (FR #4030)
 
 Agents call **`POST /search`** with `hostkey`, `guid`, and `queries` / `exclude`
-(same shape as `searches.json`). Auth is **API Gateway IAM** (`HttpIamAuthorizer`,
+(same shape as `searches.json`). **FR #5281:** each `queries[]` row may also carry
+`brand`, `model`, `sku` (and optional `brands` / `models`) from the page annotation
+selection so SQL can use exact CONTAINS gates; live providers keep using `q` and
+ignore the structured fields safely. `searches.json` may also list top-level
+`brands` / `models` from selection. Auth is **API Gateway IAM** (`HttpIamAuthorizer`,
 FR #4888 / #5086): callers sign with SigV4 (`a-search-redqueen-annotator` or
 equivalent). The entry Lambda does **not** require `x-agent-api-key`. When the
 event carries `requestContext.authorizer.iam`, entry logs the caller ARN (never
@@ -185,7 +189,7 @@ rules. Writers bump GUID and host `lastmod` (#3968) via
 **Walrus** drains the SQL queue (`a-search-db-backed`) as an on-box service
 (webhook → SQS). It long-polls over outbound HTTPS only (no inbound ports), runs
 the database search against the a-search DB on **walrus** over the LAN (**never
-madeiradb** — madeiradb stays SELECT-only via `mdb.*` views), and writes
+madeiradb** - madeiradb stays SELECT-only via `mdb.*` views), and writes
 `a-clubs/{hostkey}/{guid}/IN/sql.json` in the common IN/ format onto
 the drive mapped to the a-search S3 bucket. The message is deleted only after a
 successful write. FR #5135: a 0-product SQL search **deletes** `IN/sql.json`
@@ -196,7 +200,7 @@ Per-searchid live files (`IN/{searchid}-{source}.json`) are unchanged.
 **No AWS Lambda connects to MSSQL.** The a-search database lives on walrus and
 inbound SQL ports stay closed; Lambda only enqueues. Install the on-box service
 with `walrus/install/Register-WalrusSqlDrainService.ps1` (full env: queue URL,
-region, MSSQL server/auth, a-clubs root — see [walrus-sql-drain.md](./walrus-sql-drain.md)).
+region, MSSQL server/auth, a-clubs root - see [walrus-sql-drain.md](./walrus-sql-drain.md)).
 
 Affiliate and merchant catalogues, including Skimlinks, are downloaded into that
 database and searched by this drain, not by an AWS provider Lambda.
@@ -204,7 +208,7 @@ database and searched by this drain, not by an AWS provider Lambda.
 **IAM:** consume on the SQL queue + Put/Get/List on `a-clubs` belongs to a
 **walrus** SQL-drain principal. Stack output name is **TBD** until #4447 (today
 CDK still emits `RedqueenSqlDrainUserName` / `a-search-redqueen-sql-drain` from
-the #4030 transition — treat that as legacy until renamed).
+the #4030 transition - treat that as legacy until renamed).
 
 ## Access
 

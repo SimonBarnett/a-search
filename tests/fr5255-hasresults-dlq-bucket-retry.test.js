@@ -335,6 +335,7 @@ describe('FR #5255 hasresults DLQ bucket + AccessDenied retry', () => {
         return s3.putObject(a);
       },
       putObjectTagging: async () => ({}),
+      listObjectAnnotations: async () => ({ Annotations: [] }),
       maxAttempts: 1,
       retryDelayMs: 0,
       logError: () => {},

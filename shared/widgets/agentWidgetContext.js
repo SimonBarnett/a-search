@@ -207,6 +207,32 @@ function boundQueries(queries, cap) {
     if (q.maxResults != null && Number.isFinite(Number(q.maxResults))) {
       row.maxResults = Number(q.maxResults);
     }
+    // FR #5281: keep structured brand/model/sku for SQL gates / providers.
+    if (q.brand != null && String(q.brand).trim()) {
+      row.brand = String(q.brand).trim().slice(0, 40);
+    }
+    if (q.model != null && String(q.model).trim()) {
+      row.model = String(q.model).trim().slice(0, 80);
+    }
+    if (q.sku != null && String(q.sku).trim()) {
+      row.sku = String(q.sku).trim().slice(0, 40);
+    }
+    if (Array.isArray(q.brands) && q.brands.length) {
+      row.brands = q.brands
+        .map((b) => (typeof b === 'string' ? b.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 20);
+    }
+    if (Array.isArray(q.models) && q.models.length) {
+      row.models = q.models
+        .filter((m) => m && typeof m === 'object')
+        .slice(0, 20)
+        .map((m) => ({
+          brand: m.brand != null ? String(m.brand).trim().slice(0, 40) : '',
+          model: m.model != null ? String(m.model).trim().slice(0, 80) : '',
+          sku: m.sku != null ? String(m.sku).trim().slice(0, 40) : '',
+        }));
+    }
     out.push(row);
   }
   return out;

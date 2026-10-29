@@ -77,6 +77,159 @@ function asQueryRows(list) {
   return rows;
 }
 
+
+/**
+ * FR #5281: attach brand/model/sku (+ optional brands/models) onto a query row.
+ * @param {object} row
+ * @param {{ brand?: string, model?: string, sku?: string, brands?: string[], models?: object[] }} fields
+ * @returns {object}
+ */
+function withStructuredFields(row, fields) {
+  const out = { ...row };
+  const f = fields && typeof fields === 'object' ? fields : {};
+  if (f.brand != null && String(f.brand).trim()) {
+    out.brand = String(f.brand).trim().slice(0, 40);
+  }
+  if (f.model != null && String(f.model).trim()) {
+    out.model = String(f.model).trim().slice(0, 80);
+  }
+  if (f.sku != null && String(f.sku).trim()) {
+    out.sku = String(f.sku).trim().slice(0, 40);
+  }
+  if (Array.isArray(f.brands) && f.brands.length) {
+    out.brands = f.brands
+      .map((b) => (typeof b === 'string' ? b.trim() : ''))
+      .filter(Boolean)
+      .slice(0, 20);
+  }
+  if (Array.isArray(f.models) && f.models.length) {
+    out.models = f.models
+      .filter((m) => m && typeof m === 'object')
+      .slice(0, 20)
+      .map((m) => ({
+        brand: m.brand != null ? String(m.brand).trim().slice(0, 40) : '',
+        model: m.model != null ? String(m.model).trim().slice(0, 80) : '',
+        sku: m.sku != null ? String(m.sku).trim().slice(0, 40) : '',
+      }));
+  }
+  return out;
+}
+
+/**
+ * FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP / postcode
+ * in an older searches.json q is cleaned. Keeps FR #5281 structured fields.
+ * @param {unknown} queries
+ * @param {string} [market]
+ * @param {string} [currency]
+ * @returns {object[]}
+ */
+function cleanSearchesQueries(queries, market, currency) {
+  const rows = Array.isArray(queries) ? queries : [];
+  const out = [];
+  for (const row of rows) {
+    const raw = row && typeof row === 'object' ? row.q : row;
+    const q = keywordsOnly(raw, market, currency);
+    if (!q) continue;
+    if (row && typeof row === 'object') {
+      out.push(withStructuredFields({ ...row, q }, row));
+    } else {
+      out.push({ q, intent: 'page', maxResults: 10 });
+    }
+  }
+  return out;
+}
+
+function searchesQueriesNeedClean(queries, cleaned) {
+  const raw = Array.isArray(queries) ? queries : [];
+  if (raw.length !== cleaned.length) return true;
+  for (let i = 0; i < raw.length; i += 1) {
+    const a = raw[i] && typeof raw[i] === 'object' ? raw[i].q : raw[i];
+    if (String(a || '').trim() !== String(cleaned[i].q || '').trim()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Build query rows from selection.models with structured fields (FR #5281).
+ * @param {unknown} models
+ * @param {string[]} brands
+ * @returns {object[]}
+ */
+function modelQueryRows(models, brands) {
+  const list = Array.isArray(models) ? models : [];
+  const brandList = Array.isArray(brands) ? brands : [];
+  const out = [];
+  for (const m of list) {
+    if (!m || typeof m !== 'object') continue;
+    const brand = m.brand != null ? String(m.brand).trim() : '';
+    const model = m.model != null ? String(m.model).trim() : '';
+    const sku = m.sku != null ? String(m.sku).trim() : '';
+    const q = [brand, model, sku].filter(Boolean).join(' ').trim();
+    if (!q) continue;
+    out.push(
+      withStructuredFields(
+        { q, intent: 'page', maxResults: 10 },
+        {
+          brand,
+          model,
+          sku,
+          brands: brandList.length ? brandList : brand ? [brand] : [],
+          models: [{ brand, model, sku }],
+        },
+      ),
+    );
+  }
+  return out;
+}
+
+/**
+ * Enrich a search_queries row from selection.models when sku/brand match (FR #5281).
+ * @param {object} row
+ * @param {object[]} models
+ * @param {string[]} brands
+ * @returns {object}
+ */
+function enrichQueryFromModels(row, models, brands) {
+  if (!row || typeof row !== 'object') return row;
+  if (row.brand || row.model || row.sku) {
+    return withStructuredFields(row, {
+      brand: row.brand,
+      model: row.model,
+      sku: row.sku,
+      brands: row.brands || brands,
+      models: row.models,
+    });
+  }
+  const qText = String(row.q || '');
+  const list = Array.isArray(models) ? models : [];
+  for (const m of list) {
+    if (!m || typeof m !== 'object') continue;
+    const sku = m.sku != null ? String(m.sku).trim() : '';
+    if (sku && qText.includes(sku)) {
+      return withStructuredFields(row, {
+        brand: m.brand,
+        model: m.model,
+        sku,
+        brands: Array.isArray(brands) && brands.length ? brands : undefined,
+        models: [
+          {
+            brand: m.brand != null ? String(m.brand).trim() : '',
+            model: m.model != null ? String(m.model).trim() : '',
+            sku,
+          },
+        ],
+      });
+    }
+  }
+  if (Array.isArray(brands) && brands.length) {
+    return withStructuredFields(row, { brands });
+  }
+  return row;
+}
+
+
 function steeringExclude(steering, now) {
   const s = steering && typeof steering === 'object' ? steering : {};
   const raw = s.exclude || s.excludeTerms || [];
@@ -139,12 +292,30 @@ function buildSearchesDoc(input) {
   const host = input.host && typeof input.host === 'object' ? input.host : null;
   let queries;
   if (page) {
-    const fromPage = asQueryRows(page.search_queries);
-    const models = ((page.selection && page.selection.models) || []).map((m) =>
-      [m.brand, m.model, m.sku].filter(Boolean).join(' '),
+    const sel = page.selection || {};
+    const selModels = Array.isArray(sel.models) ? sel.models : [];
+    const selBrands = Array.isArray(sel.brands) ? sel.brands : [];
+    const fromPage = asQueryRows(page.search_queries).map((row) =>
+      enrichQueryFromModels(row, selModels, selBrands),
     );
-    const types = (page.selection && page.selection.product_types) || [];
-    queries = boundQueries([...fromPage, ...asQueryRows(models), ...asQueryRows(types)], cap);
+    // FR #5281: structured model rows (brand/model/sku) — not flattened q-only.
+    const fromModels = modelQueryRows(selModels, selBrands);
+    const seenSku = new Set(
+      fromPage
+        .map((r) => (r && r.sku ? String(r.sku).toLowerCase() : ''))
+        .filter(Boolean),
+    );
+    const modelExtra = fromModels.filter((r) => {
+      const sku = r.sku ? String(r.sku).toLowerCase() : '';
+      if (sku && seenSku.has(sku)) return false;
+      if (sku) seenSku.add(sku);
+      return true;
+    });
+    const types = sel.product_types || [];
+    queries = boundQueries(
+      [...fromPage, ...modelExtra, ...asQueryRows(types)],
+      cap,
+    );
   } else {
     const suggested = asQueryRows(review.suggestedQueries);
     const include = asQueryRows(steering.include || steering.includeTerms || steering.queries);
@@ -164,11 +335,15 @@ function buildSearchesDoc(input) {
   const stripMarket = market || String(steering.market || existing.market || '');
   const stripCurrency = currency || String(steering.currency || existing.currency || '');
   queries = queries
-    .map((q) => ({
-      q: keywordsOnly(q.q, stripMarket, stripCurrency),
-      intent: q.intent || 'page',
-      maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
-    }))
+    .map((q) => {
+      const row = {
+        q: keywordsOnly(q.q, stripMarket, stripCurrency),
+        intent: q.intent || 'page',
+        maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
+      };
+      // FR #5281: preserve structured fields after keywordsOnly (q text may lose tokens).
+      return withStructuredFields(row, q);
+    })
     .filter((q) => q.q)
     .slice(0, cap);
   const extraEx = [];
@@ -194,6 +369,26 @@ function buildSearchesDoc(input) {
   if (market) doc.market = market;
   if (currency) doc.currency = currency;
   if (existing.searchid) doc.searchid = String(existing.searchid);
+  // FR #5281: selection brands/models also at doc root for msg-level SQL gates.
+  if (page && page.selection) {
+    const sel = page.selection;
+    if (Array.isArray(sel.brands) && sel.brands.length) {
+      doc.brands = sel.brands
+        .map((b) => (typeof b === 'string' ? b.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 20);
+    }
+    if (Array.isArray(sel.models) && sel.models.length) {
+      doc.models = sel.models
+        .filter((m) => m && typeof m === 'object')
+        .slice(0, 20)
+        .map((m) => ({
+          brand: m.brand != null ? String(m.brand).trim().slice(0, 40) : '',
+          model: m.model != null ? String(m.model).trim().slice(0, 80) : '',
+          sku: m.sku != null ? String(m.sku).trim().slice(0, 40) : '',
+        }));
+    }
+  }
   return { doc, cap };
 }
 
@@ -297,6 +492,39 @@ async function publishGuidSearch(opts) {
     (schemaOk || opts.repostExisting || !opts.page) &&
     (opts.repostExisting || !opts.review)
   ) {
+    const cleaned = cleanSearchesQueries(
+      existing.queries,
+      existing.market,
+      existing.currency,
+    );
+    if (cleaned.length && searchesQueriesNeedClean(existing.queries, cleaned)) {
+      const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
+      const doc = {
+        queries: cleaned,
+        exclude,
+        searchid: String(existing.searchid),
+        annotationSchema: PAGE_SCHEMA,
+      };
+      if (existing.market) doc.market = String(existing.market);
+      if (existing.currency) doc.currency = String(existing.currency);
+      if (Array.isArray(existing.brands) && existing.brands.length) {
+        doc.brands = existing.brands;
+      }
+      if (Array.isArray(existing.models) && existing.models.length) {
+        doc.models = existing.models;
+      }
+      const newHash = searchesContentHash({ queries: cleaned, exclude });
+      await writeSearches(opts, key, doc);
+      await writeMarkerSearchesHash(opts, opts.hostkey, opts.guid, newHash);
+      return {
+        ok: true,
+        searchid: String(existing.searchid),
+        idempotent: true,
+        wrote: true,
+        cleaned: true,
+        searcheshash: newHash,
+      };
+    }
     return {
       ok: true,
       searchid: String(existing.searchid),
@@ -309,7 +537,11 @@ async function publishGuidSearch(opts) {
   // file once. Do not rebuild queries from a new review.
   // FR #4827: hash mismatch with a searchid takes the same path.
   if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
-    const queries = Array.isArray(existing.queries) ? existing.queries : [];
+    const queries = cleanSearchesQueries(
+      Array.isArray(existing.queries) ? existing.queries : [],
+      existing.market,
+      existing.currency,
+    );
     if (!queries.length) {
       // FR #4889: /parts seed (or not-yet-annotated GUID) has empty queries.
       // Never POST /search; never throw (that retried into a-clubs-changes-dlq).
@@ -531,6 +763,10 @@ function createHttpPostSearch(env = process.env) {
 module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
+  cleanSearchesQueries,
+  modelQueryRows,
+  withStructuredFields,
+  enrichQueryFromModels,
   keywordsOnly,
   publishGuidSearch,
   guidSearchState,

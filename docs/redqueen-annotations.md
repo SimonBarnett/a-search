@@ -74,7 +74,11 @@ only. `steering.market` and `steering.currency` are stored and sent to
 `/search` as their own fields, never appended to `q` (FR #4318 / #4563).
 Long UK steering strings (town, postcode, `.co.uk`) normalize to short codes
 (`market: GB`, `currency: GBP`). A UK postcode or currency code baked into a
-suggested query is stripped by `shared/search/cleanSearchQuery.js`. The free
+suggested query is stripped by `shared/search/cleanSearchQuery.js`.
+**FR #5287:** when `searches.json` already has a `searchid` and the hash
+matches, `publishGuidSearch` still rewrites leftover location/currency in `q`
+(`keywordsOnly`) and does not POST again. Clean files stay untouched.
+The free
 cap is 3 queries; an upgraded fullscreen widget (`upgraded=1`,
 `layout=fullscreen`) uses 15. Existing `exclude[]` entries are kept. Match
 terms shorter than 3 characters are dropped. Exclude matching is whole-word,
@@ -256,6 +260,7 @@ without `annotated=1`.
 |-----------|-------------|
 | Parts-gateway Lambda | `sqs:SendMessage` on the FIFO only; S3 R/W on `a-clubs` |
 | `a-search-redqueen-annotator` | `sqs:ReceiveMessage` / `DeleteMessage` / `ChangeMessageVisibility` on the FIFO; S3 `GetObject` / `PutObject` / `ListBucket` / `GetObjectTagging` / `PutObjectTagging` plus object-annotation actions `s3:PutObjectAnnotation` / `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:DeleteObjectAnnotation` on `arn:aws:s3:::a-clubs` and `arn:aws:s3:::a-clubs/*` (FR #4122 / #4241) |
+| Live provider workers (`wireAclubsInAccess`) | Same a-clubs R/W plus `s3:CopyObject` / tagging and `s3:GetObjectAnnotation` / `s3:ListObjectAnnotations` / `s3:PutObjectAnnotation` so CopyObject REPLACE keeps `annotation`+`steering`. Never `s3:DeleteObjectAnnotation`. If CopyObject is denied on an annotated marker, fail and leave the object (FR #5269; no PutObject fallback). |
 
 Never use root keys. Redeploy **APartsGateway** after #4122 so the annotator user policy is live before installing the redqueen queue service.
 
