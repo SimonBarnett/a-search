@@ -3,9 +3,19 @@
 /**
  * FR #5142: re-check GUID folders whose search-fanout DONE set is complete
  * but marker hasresults is still missing/0 (race / rclone lag / swallowed flip).
+ *
+ * FR #5265: do not re-flip after the monitor cleared hasresults=0 for the same
+ * fan-out searchid (promotedsearchid stamp, with enabled+DONE-at fallback).
  */
 
-const { maybeSetHasResults, loadFanout, doneExists } = require('./searchDone');
+const {
+  maybeSetHasResults,
+  loadFanout,
+  doneExists,
+  doneObjectKey,
+  legacyDoneObjectKey,
+  bodyToBuffer,
+} = require('./searchDone');
 
 /**
  * GUID folder marker keys only (host/guid/). Local copy of redqueen classifyMarkerKey.
@@ -41,6 +51,99 @@ async function fanoutDoneComplete(opts) {
     if (!ok) return false;
   }
   return true;
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {number} epoch ms or 0
+ */
+function parseTimeMs(raw) {
+  if (raw == null || raw === '') return 0;
+  if (raw instanceof Date) {
+    const t = raw.getTime();
+    return Number.isFinite(t) ? t : 0;
+  }
+  const t = Date.parse(String(raw));
+  return Number.isFinite(t) ? t : 0;
+}
+
+/**
+ * Newest DONE record `at` (or LastModified) for this fan-out searchid.
+ * @param {object} opts
+ * @returns {Promise<number>}
+ */
+async function maxSearchDoneAtMs(opts) {
+  const hostkey = String(opts.hostkey || opts.host || '').trim();
+  const guid = String(opts.guid || '').trim();
+  const searchid = String(opts.searchid || '').trim();
+  const queued = Array.isArray(opts.queued) ? opts.queued : [];
+  if (!searchid || !queued.length || typeof opts.getObject !== 'function') {
+    return 0;
+  }
+  let max = 0;
+  for (const src of queued) {
+    const keys = [
+      doneObjectKey(hostkey, guid, searchid, src),
+      legacyDoneObjectKey(hostkey, guid, searchid, src),
+    ];
+    for (const Key of keys) {
+      try {
+        const out = await opts.getObject({ Bucket: opts.bucket, Key });
+        const lm = parseTimeMs(out && (out.LastModified || out.lastModified));
+        if (lm > max) max = lm;
+        const raw = (await bodyToBuffer(out.Body)).toString('utf8');
+        try {
+          const doc = JSON.parse(raw);
+          const at = parseTimeMs(doc && doc.at);
+          if (at > max) max = at;
+        } catch {
+          /* ignore bad JSON */
+        }
+        break;
+      } catch (err) {
+        const code = err && (err.name || err.code || err.Code);
+        const status = err && err.$metadata && err.$metadata.httpStatusCode;
+        if (
+          code === 'NoSuchKey' ||
+          code === 'NotFound' ||
+          status === 404
+        ) {
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+  return max;
+}
+
+/**
+ * FR #5265: skip recheck flip when this searchid was already promoted and the
+ * monitor cleared hasresults, unless newer DONE landed after lastmod.
+ * @param {object} opts
+ * @returns {Promise<{ skip: boolean, reason?: string }>}
+ */
+async function isAlreadyPromotedForFanout(opts) {
+  const md = opts.metadata || {};
+  const searchid = String(opts.searchid || '').trim();
+  if (!searchid) return { skip: false, reason: 'no_searchid' };
+  const stamped = String(md.promotedsearchid || '').trim();
+  if (stamped && stamped === searchid) {
+    return { skip: true, reason: 'promotedsearchid' };
+  }
+  // Legacy markers (pre-#5265): enabled=1 after a successful promote+clear.
+  if (String(md.enabled || '') !== '1') {
+    return { skip: false, reason: 'not_enabled' };
+  }
+  const lastmodMs = parseTimeMs(md.lastmod);
+  const maxDoneMs = await maxSearchDoneAtMs(opts);
+  if (maxDoneMs > 0 && lastmodMs > 0 && lastmodMs >= maxDoneMs) {
+    return { skip: true, reason: 'enabled_lastmod' };
+  }
+  if (maxDoneMs === 0 && lastmodMs > 0) {
+    return { skip: true, reason: 'enabled_no_done_at' };
+  }
+  return { skip: false, reason: 'newer_done_or_unknown' };
 }
 
 /**
@@ -89,6 +192,18 @@ async function recheckGuidHasResults(opts) {
     searchid,
   });
   if (!complete) return { flipped: false, reason: 'incomplete' };
+
+  const promoted = await isAlreadyPromotedForFanout({
+    ...opts,
+    hostkey,
+    guid,
+    searchid,
+    queued: fanout.queued,
+    metadata,
+  });
+  if (promoted.skip) {
+    return { flipped: false, reason: 'already_promoted' };
+  }
 
   try {
     const flip = await maybeSetHasResults({
@@ -182,6 +297,8 @@ async function recheckIncompleteHasResults(opts) {
 module.exports = {
   hasResultsAlreadySet,
   fanoutDoneComplete,
+  maxSearchDoneAtMs,
+  isAlreadyPromotedForFanout,
   recheckGuidHasResults,
   recheckIncompleteHasResults,
 };
