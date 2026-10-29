@@ -63,6 +63,37 @@ async function readJsonObject(opts, Key) {
   }
 }
 
+
+/**
+ * FR #5290: a query is generic when it has no structured model/sku
+ * (category / part / product-type terms a broad catalogue can match).
+ * @param {unknown} row
+ * @returns {boolean}
+ */
+function isGenericSearchQuery(row) {
+  if (!row || typeof row !== 'object') return false;
+  const sku = row.sku != null ? String(row.sku).trim() : '';
+  const model = row.model != null ? String(row.model).trim() : '';
+  return !sku && !model;
+}
+
+/**
+ * FR #5290: put generic page queries and product_types ahead of model/SKU
+ * rows so free-tier boundQueries(cap=3) still keeps catalogue-matchable q.
+ * @param {object[]} fromPage
+ * @param {object[]} typeRows
+ * @param {object[]} modelExtra
+ * @returns {object[]}
+ */
+function orderQueriesGenericFirst(fromPage, typeRows, modelExtra) {
+  const page = Array.isArray(fromPage) ? fromPage : [];
+  const types = Array.isArray(typeRows) ? typeRows : [];
+  const models = Array.isArray(modelExtra) ? modelExtra : [];
+  const genericPage = page.filter(isGenericSearchQuery);
+  const specificPage = page.filter((r) => !isGenericSearchQuery(r));
+  return [...genericPage, ...types, ...specificPage, ...models];
+}
+
 function asQueryRows(list) {
   const rows = [];
   const items = Array.isArray(list) ? list : [];
@@ -312,10 +343,13 @@ function buildSearchesDoc(input) {
       return true;
     });
     const types = sel.product_types || [];
-    queries = boundQueries(
-      [...fromPage, ...modelExtra, ...asQueryRows(types)],
-      cap,
+    // FR #5290: generics (page + product_types) before model/SKU extras.
+    const ordered = orderQueriesGenericFirst(
+      fromPage,
+      asQueryRows(types),
+      modelExtra,
     );
+    queries = boundQueries(ordered, cap);
   } else {
     const suggested = asQueryRows(review.suggestedQueries);
     const include = asQueryRows(steering.include || steering.includeTerms || steering.queries);
@@ -763,6 +797,8 @@ function createHttpPostSearch(env = process.env) {
 module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
+  isGenericSearchQuery,
+  orderQueriesGenericFirst,
   cleanSearchesQueries,
   modelQueryRows,
   withStructuredFields,

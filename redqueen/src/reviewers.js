@@ -444,7 +444,7 @@ function guidReviewPrompt(input) {
     'Answer in one shot from the supplied text only. Do not browse, fetch URLs, or use tools.',
     'Describe ONLY this page. The host review is context. Do not repeat the host review.',
     'Use the page title, meta description, meta keywords, og tags, and H1/H2 to say how THIS page narrows search beyond the club.',
-    'steering must list concrete narrowing signals from this page: title and meta terms, categories, price band, include terms, exclude terms, plus market, currency and locale.',
+    'steering must list concrete narrowing signals from this page: title and meta terms, categories, price band, include terms, exclude terms, plus market, currency and locale. Keep market/currency/locale out of search_queries[].q (FR #5290 / #5041).',
     `host=${input.host}`,
     `hostkey=${input.hostkey}`,
     `guid=${input.guid}`,
@@ -463,7 +463,8 @@ function guidReviewPrompt(input) {
     'Describe ONLY this URI. Do not copy host about, keywords, exclusions or identity_terms.',
     'page_purpose/page_description must be what this page covers that other site pages do not.',
     'search_queries[].q is keyword-only: no location, market, currency or club identity.',
-    'File enough search_queries for a reasonable chance of relevant parts: brand/model, product type, and close alternatives (FR #5047). 0 results is still a valid outcome (need more vendors in that sector); providers never widen matches to fill a page.',
+    'FR #5290: lead with GENERIC category/part terms a broad catalogue can match (e.g. RC plane, RTF trainer, RC aircraft battery, paint station, servo, propeller). Put those rows first. Specific brand/model/sku rows may follow as extras (structured brand/model/sku per FR #5281). At least one search_queries row must have no model and no sku.',
+    'File enough search_queries for a reasonable chance of relevant parts: generic product type/part terms first, then brand/model and close alternatives (FR #5047 / #5290). 0 results is still a valid outcome (need more vendors in that sector); providers never widen matches to fill a page.',
     'selection is the IN/ parts-selection brief for this GUID only.',
     JSON.stringify(PAGE_SKELETON),
   ].join('\n');

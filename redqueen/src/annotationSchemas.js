@@ -42,8 +42,21 @@ const PAGE_SKELETON = {
     page_exclusions: [],
     ranking_hints: [],
   },
-  search_queries: [{ q: '', intent: 'page', maxResults: 10 }],
+  // FR #5290: lead with a generic category/part row; specific brand/model/sku may follow.
+  search_queries: [
+    { q: 'RC plane', intent: 'page', maxResults: 10 },
+    { q: '', intent: 'page', maxResults: 10, brand: '', model: '', sku: '' },
+  ],
 };
+
+
+/** FR #5290: no structured model/sku => generic category/part query. */
+function isGenericSearchQueryRow(row) {
+  if (!row || typeof row !== 'object') return false;
+  const sku = row.sku != null ? String(row.sku).trim() : '';
+  const model = row.model != null ? String(row.model).trim() : '';
+  return !sku && !model;
+}
 
 function isPlainObject(v) {
   return v != null && typeof v === 'object' && !Array.isArray(v);
@@ -309,6 +322,11 @@ function validatePageAnnotation(doc) {
         }
       }
     });
+    // FR #5290: at least one generic (no model/sku) so catalogues can match.
+    const hasGeneric = doc.search_queries.some(isGenericSearchQueryRow);
+    if (!hasGeneric) {
+      fail(errors, 'search_queries', 'need 1+ generic row (no model/sku) (FR #5290)');
+    }
   }
   return { ok: errors.length === 0, errors };
 }
@@ -593,7 +611,26 @@ function examplePageV1(over) {
       ranking_hints: ['exact listed SKU first'],
     },
     search_queries: [
-      { q: 'VOLANTEXRC Sport Cub S2 761-14 RTF', intent: 'page', maxResults: 10 },
+      { q: 'RC plane', intent: 'page', maxResults: 10 },
+      { q: 'RTF trainer', intent: 'page', maxResults: 10 },
+      { q: 'RC aircraft battery', intent: 'page', maxResults: 10 },
+      { q: 'paint station', intent: 'page', maxResults: 10 },
+      {
+        q: 'VOLANTEXRC Sport Cub S2 761-14 RTF',
+        intent: 'page',
+        maxResults: 10,
+        brand: 'VOLANTEXRC',
+        model: 'Sport Cub S2',
+        sku: '761-14',
+      },
+      {
+        q: 'E-flite UMX Waco EFLU53550Y',
+        intent: 'page',
+        maxResults: 10,
+        brand: 'E-flite',
+        model: 'UMX Waco BNF',
+        sku: 'EFLU53550Y',
+      },
     ],
     ...(over || {}),
   };
