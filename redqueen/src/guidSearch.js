@@ -147,8 +147,9 @@ function withStructuredFields(row, fields) {
 }
 
 /**
- * FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP / postcode
- * in an older searches.json q is cleaned. Keeps FR #5281 structured fields.
+ * FR #5283 / #5287: re-apply keywordsOnly so leftover United Kingdom / GBP /
+ * postcode in an older searches.json q is cleaned. Keeps FR #5281 structured
+ * fields. One definition only (FIX #5286 merge).
  * @param {unknown} queries
  * @param {string} [market]
  * @param {string} [currency]
@@ -368,17 +369,16 @@ function buildSearchesDoc(input) {
   });
   const stripMarket = market || String(steering.market || existing.market || '');
   const stripCurrency = currency || String(steering.currency || existing.currency || '');
-  queries = queries
+  queries = cleanSearchesQueries(queries, stripMarket, stripCurrency)
     .map((q) => {
       const row = {
-        q: keywordsOnly(q.q, stripMarket, stripCurrency),
+        q: q.q,
         intent: q.intent || 'page',
         maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
       };
       // FR #5281: preserve structured fields after keywordsOnly (q text may lose tokens).
       return withStructuredFields(row, q);
     })
-    .filter((q) => q.q)
     .slice(0, cap);
   const extraEx = [];
   if (host && Array.isArray(host.exclusions)) {

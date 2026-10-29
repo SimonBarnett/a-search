@@ -75,6 +75,9 @@ only. `steering.market` and `steering.currency` are stored and sent to
 Long UK steering strings (town, postcode, `.co.uk`) normalize to short codes
 (`market: GB`, `currency: GBP`). A UK postcode or currency code baked into a
 suggested query is stripped by `shared/search/cleanSearchQuery.js`.
+**FR #5283:** postcodes are stripped only in a location context (after a
+locality cue, after a comma, leftover leading/trailing). Mid-string product
+tokens such as `S2 3CH` stay in `q`.
 **FR #5287:** when `searches.json` already has a `searchid` and the hash
 matches, `publishGuidSearch` still rewrites leftover location/currency in `q`
 (`keywordsOnly`) and does not POST again. Clean files stay untouched.
