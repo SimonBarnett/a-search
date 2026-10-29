@@ -21,26 +21,6 @@ const {
 } = require('../../shared/aClubs/searchesHash');
 const { PAGE_SCHEMA } = require('./annotationSchemas');
 
-/**
- * FR #5283: re-apply keywordsOnly so an older searches.json that still
- * carries United Kingdom / GBP / a real postcode is cleaned on repost.
- * @param {unknown} queries
- * @param {string} [market]
- * @param {string} [currency]
- */
-function cleanSearchesQueries(queries, market, currency) {
-  const rows = Array.isArray(queries) ? queries : [];
-  const out = [];
-  for (const row of rows) {
-    const raw = row && typeof row === 'object' ? row.q : row;
-    const q = keywordsOnly(raw, market, currency);
-    if (!q) continue;
-    if (row && typeof row === 'object') out.push({ ...row, q });
-    else out.push({ q, intent: 'page', maxResults: 10 });
-  }
-  return out;
-}
-
 function searchesObjectKey(hostkey, guid) {
   const host = String(hostkey).replace(/\/+$/, '');
   const id = String(guid).trim().toLowerCase();
@@ -136,8 +116,9 @@ function withStructuredFields(row, fields) {
 }
 
 /**
- * FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP / postcode
- * in an older searches.json q is cleaned. Keeps FR #5281 structured fields.
+ * FR #5283 / #5287: re-apply keywordsOnly so leftover United Kingdom / GBP /
+ * postcode in an older searches.json q is cleaned. Keeps FR #5281 structured
+ * fields. One definition only (FIX #5286 merge).
  * @param {unknown} queries
  * @param {string} [market]
  * @param {string} [currency]
