@@ -73,7 +73,23 @@ function attachDefaultS3(arg) {
   if (isLambdaContext(arg) || arg == null || typeof arg !== 'object' || Array.isArray(arg)) {
     return buildDefaultS3Fns(undefined);
   }
-  if (typeof arg.putObject === 'function') return arg;
+  if (typeof arg.putObject === 'function') {
+    // FR #5275: keep injected putObject. Fill only missing listObjectAnnotations
+    // (not head/get/copy) so unit fixtures that inject putObject alone do not
+    // call a real S3Client and fail with "Region is missing".
+    // Lambda always has AWS_REGION; local tests do not.
+    if (typeof arg.listObjectAnnotations !== 'function') {
+      const canSdk =
+        typeof arg.createS3Client === 'function' ||
+        !!(process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION);
+      if (canSdk) {
+        arg.listObjectAnnotations = buildDefaultS3Fns(
+          arg.createS3Client,
+        ).listObjectAnnotations;
+      }
+    }
+    return arg;
+  }
   return Object.assign({}, arg, buildDefaultS3Fns(arg.createS3Client));
 }
 

@@ -81,6 +81,7 @@ function resolveInPathFromMsg(msg) {
  *   copyObject?: Function,
  *   getObjectTagging?: Function,
  *   putObjectTagging?: Function,
+ *   listObjectAnnotations?: Function,
  *   now?: Date|string|number,
  * }} opts
  */
@@ -107,6 +108,7 @@ async function recordServicedDone(opts, pathParts, productsCount, s3Fns, bucket)
       copyObject: s3Fns.copyObject,
       getObjectTagging: s3Fns.getObjectTagging,
       putObjectTagging: s3Fns.putObjectTagging,
+      listObjectAnnotations: s3Fns.listObjectAnnotations,
       logError: opts.logError,
     });
   } catch (err) {
@@ -175,6 +177,7 @@ async function writeLiveProviderInResult(opts) {
           copyObject: withBucket(opts.copyObject),
           getObjectTagging: withBucket(opts.getObjectTagging),
           putObjectTagging: withBucket(opts.putObjectTagging),
+          listObjectAnnotations: withBucket(opts.listObjectAnnotations),
         },
         bucket,
       );
@@ -268,6 +271,7 @@ async function writeLiveProviderInResult(opts) {
       copyObject,
       getObjectTagging,
       putObjectTagging,
+      listObjectAnnotations: withBucket(opts.listObjectAnnotations),
     },
     bucket,
   );
