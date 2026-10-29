@@ -136,6 +136,42 @@ function withStructuredFields(row, fields) {
 }
 
 /**
+ * FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP / postcode
+ * in an older searches.json q is cleaned. Keeps FR #5281 structured fields.
+ * @param {unknown} queries
+ * @param {string} [market]
+ * @param {string} [currency]
+ * @returns {object[]}
+ */
+function cleanSearchesQueries(queries, market, currency) {
+  const rows = Array.isArray(queries) ? queries : [];
+  const out = [];
+  for (const row of rows) {
+    const raw = row && typeof row === 'object' ? row.q : row;
+    const q = keywordsOnly(raw, market, currency);
+    if (!q) continue;
+    if (row && typeof row === 'object') {
+      out.push(withStructuredFields({ ...row, q }, row));
+    } else {
+      out.push({ q, intent: 'page', maxResults: 10 });
+    }
+  }
+  return out;
+}
+
+function searchesQueriesNeedClean(queries, cleaned) {
+  const raw = Array.isArray(queries) ? queries : [];
+  if (raw.length !== cleaned.length) return true;
+  for (let i = 0; i < raw.length; i += 1) {
+    const a = raw[i] && typeof raw[i] === 'object' ? raw[i].q : raw[i];
+    if (String(a || '').trim() !== String(cleaned[i].q || '').trim()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Build query rows from selection.models with structured fields (FR #5281).
  * @param {unknown} models
  * @param {string[]} brands
@@ -475,6 +511,39 @@ async function publishGuidSearch(opts) {
     (schemaOk || opts.repostExisting || !opts.page) &&
     (opts.repostExisting || !opts.review)
   ) {
+    const cleaned = cleanSearchesQueries(
+      existing.queries,
+      existing.market,
+      existing.currency,
+    );
+    if (cleaned.length && searchesQueriesNeedClean(existing.queries, cleaned)) {
+      const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
+      const doc = {
+        queries: cleaned,
+        exclude,
+        searchid: String(existing.searchid),
+        annotationSchema: PAGE_SCHEMA,
+      };
+      if (existing.market) doc.market = String(existing.market);
+      if (existing.currency) doc.currency = String(existing.currency);
+      if (Array.isArray(existing.brands) && existing.brands.length) {
+        doc.brands = existing.brands;
+      }
+      if (Array.isArray(existing.models) && existing.models.length) {
+        doc.models = existing.models;
+      }
+      const newHash = searchesContentHash({ queries: cleaned, exclude });
+      await writeSearches(opts, key, doc);
+      await writeMarkerSearchesHash(opts, opts.hostkey, opts.guid, newHash);
+      return {
+        ok: true,
+        searchid: String(existing.searchid),
+        idempotent: true,
+        wrote: true,
+        cleaned: true,
+        searcheshash: newHash,
+      };
+    }
     return {
       ok: true,
       searchid: String(existing.searchid),
