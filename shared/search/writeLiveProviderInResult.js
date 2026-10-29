@@ -71,8 +71,6 @@ function resolveInPathFromMsg(msg) {
  *   msg: object,
  *   source: string,
  *   products?: object[],
- *   queries?: unknown[],
- *   exclude?: unknown[],
  *   status?: object,
  *   error?: string,
  *   envVars?: Record<string, string|undefined>,
