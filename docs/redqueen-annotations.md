@@ -74,7 +74,14 @@ only. `steering.market` and `steering.currency` are stored and sent to
 `/search` as their own fields, never appended to `q` (FR #4318 / #4563).
 Long UK steering strings (town, postcode, `.co.uk`) normalize to short codes
 (`market: GB`, `currency: GBP`). A UK postcode or currency code baked into a
-suggested query is stripped by `shared/search/cleanSearchQuery.js`. The free
+suggested query is stripped by `shared/search/cleanSearchQuery.js`.
+**FR #5283:** postcodes are stripped only in a location context (after a
+locality cue, after a comma, leftover leading/trailing). Mid-string product
+tokens such as `S2 3CH` stay in `q`.
+**FR #5287:** when `searches.json` already has a `searchid` and the hash
+matches, `publishGuidSearch` still rewrites leftover location/currency in `q`
+(`keywordsOnly`) and does not POST again. Clean files stay untouched.
+The free
 cap is 3 queries; an upgraded fullscreen widget (`upgraded=1`,
 `layout=fullscreen`) uses 15. Existing `exclude[]` entries are kept. Match
 terms shorter than 3 characters are dropped. Exclude matching is whole-word,
@@ -84,7 +91,7 @@ so `IC` does not drop "electric". The shape is
 ### Annotator responsibility and empty results (FR #5047)
 
 The annotator must file **enough searches** in `searches.json` (brand/model,
-product type, and close alternatives) to give a reasonable chance of relevant
+generic category/part terms first (FR #5290), then brand/model and close alternatives) to give a reasonable chance of relevant
 parts. **0 results is still a valid outcome**: it means the catalogue needs
 more vendors in that sector. Providers never widen matches to fill a page
 (relevance over filler; see also #5046).

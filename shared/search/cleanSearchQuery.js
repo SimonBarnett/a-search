@@ -6,7 +6,53 @@
  */
 
 const CURRENCY_CODES = /\b(?:GBP|USD|EUR|AUD|CAD|JPY|CHF|NZD|SEK|NOK|DKK|PLN|INR)\b/gi;
+/** UK outward+inward. Also matches product tokens such as S2 3CH (FR #5283). */
 const UK_POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi;
+const LOCATION_CUE_SRC =
+  '(?:united\\s+kingdom|\\buk\\b|england|scotland|wales|lathom|ormskirk|\\.co\\.uk)';
+const UK_POSTCODE_SRC = '[A-Z]{1,2}\\d[A-Z\\d]?\\s*\\d[A-Z]{2}';
+
+/**
+ * FR #5283: strip UK postcodes only in a location context (after a locality
+ * cue, after a comma, or leftover leading/trailing when other words remain).
+ * Never strip a mid-string product token like S2 3CH.
+ * @param {string} text
+ * @returns {string}
+ */
+function isRadioChannelPostcodeLookalike(match) {
+  return /\dCH\b/i.test(String(match || ''));
+}
+
+function stripContextualUkPostcodes(text) {
+  let q = String(text || '');
+  q = q.replace(
+    new RegExp(
+      `\\b${LOCATION_CUE_SRC}\\b(?:\\s|,|;|:|-)*((?:${UK_POSTCODE_SRC}\\s*)+)`,
+      'gi',
+    ),
+    (whole, pcs) => (isRadioChannelPostcodeLookalike(pcs) ? whole : ' '),
+  );
+  q = q.replace(/,\s*[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi, (whole) =>
+    isRadioChannelPostcodeLookalike(whole) ? whole : ' ',
+  );
+  const compact = q.replace(/\s+/g, ' ').trim();
+  const leadRe = new RegExp(`^(${UK_POSTCODE_SRC})\\s+`, 'i');
+  const leadM = leadRe.exec(compact);
+  if (leadM && leadM[1] && !isRadioChannelPostcodeLookalike(leadM[1])) {
+    q = compact.slice(leadM[0].length);
+  } else {
+    q = compact;
+  }
+  const mid = String(q).replace(/\s+/g, ' ').trim();
+  const trailRe = new RegExp(`\\s+(${UK_POSTCODE_SRC})$`, 'i');
+  const trailM = trailRe.exec(mid);
+  if (trailM && trailM[1] && !isRadioChannelPostcodeLookalike(trailM[1])) {
+    q = mid.slice(0, trailM.index);
+  } else {
+    q = mid;
+  }
+  return q;
+}
 
 function escapeRegExp(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -60,8 +106,8 @@ function keywordsOnly(text, market, currency) {
   }
   q = q.replace(/\bUnited\s+Kingdom\b/gi, ' ');
   q = q.replace(/(?:^|[^A-Za-z0-9])UK(?:[^A-Za-z0-9]|$)/gi, ' ');
-  q = q.replace(UK_POSTCODE, ' ');
   q = q.replace(CURRENCY_CODES, ' ');
+  q = stripContextualUkPostcodes(q);
   q = q.replace(/[;,.]+/g, ' ');
   q = q.replace(/\bco\.uk\b/gi, ' ');
   return q.replace(/\s+/g, ' ').trim();
@@ -139,8 +185,10 @@ function ebayMarketplaceFromMarket(market, fallback) {
 module.exports = {
   keywordsOnly,
   parentheticalToKeywords,
+  stripContextualUkPostcodes,
   normalizeMarketCurrency,
   ebayMarketplaceFromMarket,
   escapeRegExp,
   looksUk,
+  UK_POSTCODE,
 };

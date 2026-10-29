@@ -63,6 +63,37 @@ async function readJsonObject(opts, Key) {
   }
 }
 
+
+/**
+ * FR #5290: a query is generic when it has no structured model/sku
+ * (category / part / product-type terms a broad catalogue can match).
+ * @param {unknown} row
+ * @returns {boolean}
+ */
+function isGenericSearchQuery(row) {
+  if (!row || typeof row !== 'object') return false;
+  const sku = row.sku != null ? String(row.sku).trim() : '';
+  const model = row.model != null ? String(row.model).trim() : '';
+  return !sku && !model;
+}
+
+/**
+ * FR #5290: put generic page queries and product_types ahead of model/SKU
+ * rows so free-tier boundQueries(cap=3) still keeps catalogue-matchable q.
+ * @param {object[]} fromPage
+ * @param {object[]} typeRows
+ * @param {object[]} modelExtra
+ * @returns {object[]}
+ */
+function orderQueriesGenericFirst(fromPage, typeRows, modelExtra) {
+  const page = Array.isArray(fromPage) ? fromPage : [];
+  const types = Array.isArray(typeRows) ? typeRows : [];
+  const models = Array.isArray(modelExtra) ? modelExtra : [];
+  const genericPage = page.filter(isGenericSearchQuery);
+  const specificPage = page.filter((r) => !isGenericSearchQuery(r));
+  return [...genericPage, ...types, ...specificPage, ...models];
+}
+
 function asQueryRows(list) {
   const rows = [];
   const items = Array.isArray(list) ? list : [];
@@ -113,6 +144,43 @@ function withStructuredFields(row, fields) {
       }));
   }
   return out;
+}
+
+/**
+ * FR #5283 / FR #5287: re-apply keywordsOnly so leftover United Kingdom / GBP /
+ * postcode in an older searches.json q is cleaned. Keeps FR #5281 structured
+ * fields. One definition only (FIX #5286 merge).
+ * @param {unknown} queries
+ * @param {string} [market]
+ * @param {string} [currency]
+ * @returns {object[]}
+ */
+function cleanSearchesQueries(queries, market, currency) {
+  const rows = Array.isArray(queries) ? queries : [];
+  const out = [];
+  for (const row of rows) {
+    const raw = row && typeof row === 'object' ? row.q : row;
+    const q = keywordsOnly(raw, market, currency);
+    if (!q) continue;
+    if (row && typeof row === 'object') {
+      out.push(withStructuredFields({ ...row, q }, row));
+    } else {
+      out.push({ q, intent: 'page', maxResults: 10 });
+    }
+  }
+  return out;
+}
+
+function searchesQueriesNeedClean(queries, cleaned) {
+  const raw = Array.isArray(queries) ? queries : [];
+  if (raw.length !== cleaned.length) return true;
+  for (let i = 0; i < raw.length; i += 1) {
+    const a = raw[i] && typeof raw[i] === 'object' ? raw[i].q : raw[i];
+    if (String(a || '').trim() !== String(cleaned[i].q || '').trim()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -276,10 +344,13 @@ function buildSearchesDoc(input) {
       return true;
     });
     const types = sel.product_types || [];
-    queries = boundQueries(
-      [...fromPage, ...modelExtra, ...asQueryRows(types)],
-      cap,
+    // FR #5290: generics (page + product_types) before model/SKU extras.
+    const ordered = orderQueriesGenericFirst(
+      fromPage,
+      asQueryRows(types),
+      modelExtra,
     );
+    queries = boundQueries(ordered, cap);
   } else {
     const suggested = asQueryRows(review.suggestedQueries);
     const include = asQueryRows(steering.include || steering.includeTerms || steering.queries);
@@ -298,17 +369,16 @@ function buildSearchesDoc(input) {
   });
   const stripMarket = market || String(steering.market || existing.market || '');
   const stripCurrency = currency || String(steering.currency || existing.currency || '');
-  queries = queries
+  queries = cleanSearchesQueries(queries, stripMarket, stripCurrency)
     .map((q) => {
       const row = {
-        q: keywordsOnly(q.q, stripMarket, stripCurrency),
+        q: q.q,
         intent: q.intent || 'page',
         maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
       };
       // FR #5281: preserve structured fields after keywordsOnly (q text may lose tokens).
       return withStructuredFields(row, q);
     })
-    .filter((q) => q.q)
     .slice(0, cap);
   const extraEx = [];
   if (host && Array.isArray(host.exclusions)) {
@@ -456,6 +526,39 @@ async function publishGuidSearch(opts) {
     (schemaOk || opts.repostExisting || !opts.page) &&
     (opts.repostExisting || !opts.review)
   ) {
+    const cleaned = cleanSearchesQueries(
+      existing.queries,
+      existing.market,
+      existing.currency,
+    );
+    if (cleaned.length && searchesQueriesNeedClean(existing.queries, cleaned)) {
+      const exclude = Array.isArray(existing.exclude) ? existing.exclude : [];
+      const doc = {
+        queries: cleaned,
+        exclude,
+        searchid: String(existing.searchid),
+        annotationSchema: PAGE_SCHEMA,
+      };
+      if (existing.market) doc.market = String(existing.market);
+      if (existing.currency) doc.currency = String(existing.currency);
+      if (Array.isArray(existing.brands) && existing.brands.length) {
+        doc.brands = existing.brands;
+      }
+      if (Array.isArray(existing.models) && existing.models.length) {
+        doc.models = existing.models;
+      }
+      const newHash = searchesContentHash({ queries: cleaned, exclude });
+      await writeSearches(opts, key, doc);
+      await writeMarkerSearchesHash(opts, opts.hostkey, opts.guid, newHash);
+      return {
+        ok: true,
+        searchid: String(existing.searchid),
+        idempotent: true,
+        wrote: true,
+        cleaned: true,
+        searcheshash: newHash,
+      };
+    }
     return {
       ok: true,
       searchid: String(existing.searchid),
@@ -468,7 +571,11 @@ async function publishGuidSearch(opts) {
   // file once. Do not rebuild queries from a new review.
   // FR #4827: hash mismatch with a searchid takes the same path.
   if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
-    const queries = Array.isArray(existing.queries) ? existing.queries : [];
+    const queries = cleanSearchesQueries(
+      Array.isArray(existing.queries) ? existing.queries : [],
+      existing.market,
+      existing.currency,
+    );
     if (!queries.length) {
       // FR #4889: /parts seed (or not-yet-annotated GUID) has empty queries.
       // Never POST /search; never throw (that retried into a-clubs-changes-dlq).
@@ -690,6 +797,9 @@ function createHttpPostSearch(env = process.env) {
 module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
+  isGenericSearchQuery,
+  orderQueriesGenericFirst,
+  cleanSearchesQueries,
   modelQueryRows,
   withStructuredFields,
   enrichQueryFromModels,

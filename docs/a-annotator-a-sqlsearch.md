@@ -27,6 +27,11 @@ node scripts/smoke-a-sqlsearch-trusted-select.js --exe dist\sea\a-sqlsearch.exe
 
 Only after that smoke passes, register with `-ReplaceLegacySqlDrain`. Until then, keep `a-search-walrus-sql-drain` (node) running.
 
+
+## searches.json query shape (FR #5290)
+
+The annotator must write **generic** `search_queries` a broad SQL catalogue can match (product type / category / part terms such as `RC plane`, `paint station`, `servo`), not only full model titles. Put generic rows first. Structured brand/model/sku rows (FR #5281) may follow as extras. `buildSearchesDoc` orders generics and `selection.product_types` ahead of model/SKU extras so the free-tier cap (3) still keeps at least one generic row. Never append location or currency words to `q` (FR #5283 / #5041). The agent still picks the best parts from `IN/` (FR #5270 / #5256).
+
 ## Queues
 
 `a-annotator` long-polls with `WaitTimeSeconds` 20 and does not sleep again after an empty receive. Set `A_CLUBS_CHANGES_QUEUE_URL` for the second queue. EventBridge rules on bucket `a-clubs` send Object Created for `widget.json` and `searches.json` straight to `a-clubs-changes` (DLQ `a-clubs-changes-dlq`). Keys ending in `/` go to Lambda `a-search-aclubs-marker-enqueue` (FR #4833), which enqueues only host markers `{hostkey}/` and GUID markers `{hostkey}/{uuid}/` --- deep folder keys are dropped before SQS.
