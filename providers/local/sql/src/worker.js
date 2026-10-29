@@ -56,6 +56,19 @@ const {
  * @param {object} row
  * @returns {object}
  */
+function rankFromRow(row) {
+  const raw =
+    row && row.Rank != null
+      ? row.Rank
+      : row && row.RANK != null
+        ? row.RANK
+        : row && row.rank != null
+          ? row.rank
+          : 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function normalizePart(row) {
   const raw = {};
   if (row && row.FeedKey != null) raw.feedKey = String(row.FeedKey);
@@ -74,6 +87,8 @@ function normalizePart(row) {
     source: 'sql',
     raw: Object.keys(raw).length ? raw : undefined,
   });
+  // FR #5266: keep FREETEXT RANK so the agent can pick the best x.
+  product.rank = rankFromRow(row);
   assertProductSchema(product);
   return product;
 }
