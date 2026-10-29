@@ -21,6 +21,26 @@ const {
 } = require('../../shared/aClubs/searchesHash');
 const { PAGE_SCHEMA } = require('./annotationSchemas');
 
+/**
+ * FR #5283: re-apply keywordsOnly so an older searches.json that still
+ * carries United Kingdom / GBP / a real postcode is cleaned on repost.
+ * @param {unknown} queries
+ * @param {string} [market]
+ * @param {string} [currency]
+ */
+function cleanSearchesQueries(queries, market, currency) {
+  const rows = Array.isArray(queries) ? queries : [];
+  const out = [];
+  for (const row of rows) {
+    const raw = row && typeof row === 'object' ? row.q : row;
+    const q = keywordsOnly(raw, market, currency);
+    if (!q) continue;
+    if (row && typeof row === 'object') out.push({ ...row, q });
+    else out.push({ q, intent: 'page', maxResults: 10 });
+  }
+  return out;
+}
+
 function searchesObjectKey(hostkey, guid) {
   const host = String(hostkey).replace(/\/+$/, '');
   const id = String(guid).trim().toLowerCase();
@@ -163,13 +183,12 @@ function buildSearchesDoc(input) {
   });
   const stripMarket = market || String(steering.market || existing.market || '');
   const stripCurrency = currency || String(steering.currency || existing.currency || '');
-  queries = queries
+  queries = cleanSearchesQueries(queries, stripMarket, stripCurrency)
     .map((q) => ({
-      q: keywordsOnly(q.q, stripMarket, stripCurrency),
+      q: q.q,
       intent: q.intent || 'page',
       maxResults: Number.isFinite(Number(q.maxResults)) ? Number(q.maxResults) : 10,
     }))
-    .filter((q) => q.q)
     .slice(0, cap);
   const extraEx = [];
   if (host && Array.isArray(host.exclusions)) {
@@ -309,7 +328,11 @@ async function publishGuidSearch(opts) {
   // file once. Do not rebuild queries from a new review.
   // FR #4827: hash mismatch with a searchid takes the same path.
   if (opts.repostExisting || (existing.searchid && postExisting && !opts.review)) {
-    const queries = Array.isArray(existing.queries) ? existing.queries : [];
+    const queries = cleanSearchesQueries(
+      Array.isArray(existing.queries) ? existing.queries : [],
+      existing.market,
+      existing.currency,
+    );
     if (!queries.length) {
       // FR #4889: /parts seed (or not-yet-annotated GUID) has empty queries.
       // Never POST /search; never throw (that retried into a-clubs-changes-dlq).
@@ -531,6 +554,7 @@ function createHttpPostSearch(env = process.env) {
 module.exports = {
   searchesObjectKey,
   buildSearchesDoc,
+  cleanSearchesQueries,
   keywordsOnly,
   publishGuidSearch,
   guidSearchState,
