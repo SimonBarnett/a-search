@@ -735,3 +735,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - After a handler FR lands, root VISION.md DLQ parentheticals stay stale until a follow-up pin forbids the old code list
 - FR 5265: stamp promotedsearchid on flip so FR 5142 recheck does not fight FR 4918 clear on the same searchid.
 - Register-HasresultsMonitorService on LocalSystem needs AWS_SHARED_CREDENTIALS_FILE/CONFIG like a-search-aclubs-queue or every pass fails credentials; bare register without those params is not enough
+- Amazon Creators 403 AssociateNotEligible with madeira-identical keys is Associates eligibility, not a missing env name; FR seats GIVEUP needs_human and do not redrive the DLQ.
