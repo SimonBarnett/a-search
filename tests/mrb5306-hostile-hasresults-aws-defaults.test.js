@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /** MRB #5306 hostile pins for FR #5305 AWS credential defaults. */
 const { describe, it } = require('node:test');
@@ -17,6 +17,8 @@ describe('MRB #5306 hostile hasresults AWS defaults', () => {
     assert.match(reg, /\[void\]\$envPairs\.Add\("AWS_CONFIG_FILE=/);
     assert.match(reg, /Users\\Administrator\\.aws\\credentials/);
     assert.equal(reg.includes('password'), false);
+    const raw = fs.readFileSync(__filename);
+    assert.equal(raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf, false, 'no UTF-8 BOM');
   });
 
   it('docs pin LocalSystem shared credentials for hasresults', () => {
