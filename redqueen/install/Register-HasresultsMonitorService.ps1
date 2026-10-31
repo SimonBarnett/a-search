@@ -6,8 +6,10 @@
 .DESCRIPTION
   Idempotent nssm installer for dist\sea\a-hasresults-monitor.exe.
   SERVICE_AUTO_START, restart on failure, rotating logs under InstallRoot\logs.
-  Runs on redqueen (Simon 2026-10-25). Missing AWS credentials: the service
-  warns and keeps polling (no crash). Never prints secrets.
+  Runs on redqueen (Simon 2026-10-25). FR #5305: defaults AWS_SHARED_CREDENTIALS_FILE
+  and AWS_CONFIG_FILE to Administrator .aws paths (or process env) so LocalSystem
+  can load the same shared credentials as a-search-aclubs-queue. Missing AWS
+  credentials: the service warns and keeps polling (no crash). Never prints secrets.
 
 .PARAMETER InstallRoot
   Folder that contains dist\sea\a-hasresults-monitor.exe.
@@ -26,6 +28,14 @@
 
 .PARAMETER AwsRegion
   Default eu-west-2.
+
+.PARAMETER AwsSharedCredentialsFile
+  Path for AWS_SHARED_CREDENTIALS_FILE. Empty: process env, else
+  {SystemDrive}\Users\Administrator\.aws\credentials (FR #5305).
+
+.PARAMETER AwsConfigFile
+  Path for AWS_CONFIG_FILE. Empty: process env, else
+  {SystemDrive}\Users\Administrator\.aws\config (FR #5305).
 
 .PARAMETER IntervalMs
   HASRESULTS_MONITOR_MS (default 900000).
@@ -122,10 +132,23 @@ $envPairs = New-Object System.Collections.Generic.List[string]
 [void]$envPairs.Add("HASRESULTS_MONITOR_MS=$IntervalMs")
 [void]$envPairs.Add("HASRESULTS_MONITOR_MAX_RETRIES=$MaxRetries")
 if ($AClubsRoot) { [void]$envPairs.Add("A_CLUBS_ROOT=$AClubsRoot") }
-if ($AwsSharedCredentialsFile) {
-  [void]$envPairs.Add("AWS_SHARED_CREDENTIALS_FILE=$AwsSharedCredentialsFile")
+# FR #5305: always set shared credential file paths for LocalSystem (param > process env > Administrator .aws).
+if (-not $AwsSharedCredentialsFile) {
+  if ($env:AWS_SHARED_CREDENTIALS_FILE) {
+    $AwsSharedCredentialsFile = $env:AWS_SHARED_CREDENTIALS_FILE
+  } else {
+    $AwsSharedCredentialsFile = Join-Path $env:SystemDrive 'Users\Administrator\.aws\credentials'
+  }
 }
-if ($AwsConfigFile) { [void]$envPairs.Add("AWS_CONFIG_FILE=$AwsConfigFile") }
+if (-not $AwsConfigFile) {
+  if ($env:AWS_CONFIG_FILE) {
+    $AwsConfigFile = $env:AWS_CONFIG_FILE
+  } else {
+    $AwsConfigFile = Join-Path $env:SystemDrive 'Users\Administrator\.aws\config'
+  }
+}
+[void]$envPairs.Add("AWS_SHARED_CREDENTIALS_FILE=$AwsSharedCredentialsFile")
+[void]$envPairs.Add("AWS_CONFIG_FILE=$AwsConfigFile")
 if ($GrokBin) { [void]$envPairs.Add("A_SEARCH_GROK_BIN=$GrokBin") }
 [void]$envPairs.Add("HASRESULTS_MONITOR_LOG_FILE=$(Join-Path $logDir 'a-hasresults-monitor.log')")
 

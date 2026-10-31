@@ -50,7 +50,7 @@ Optional read-only check (no put):
 .\scripts\Enable-AClubsEventBridge.ps1 -Region eu-west-2 -AwsProfile <profile>
 ```
 
-## a-hasresults-monitor (FR #4918, redqueen)
+## a-hasresults-monitor (FR #4918 / #5305, redqueen)
 
 Deterministic poller on **redqueen** (Simon 2026-10-25). It lists GUID markers with `hasresults=1`, runs one agent per GUID with cwd `{A_CLUBS_ROOT}\{host}\{guid}` (lock), and clears `hasresults=0` only after a successful run that wrote `live.json`. Selection never uses an LLM. The agent work (default deterministic path) promotes `IN/` → `live.json`, sets `enabled=1`, and deletes only the IN files from that run; it never writes `hasresults`. Optional Grok-then-Cursor launch uses the same brief. Missing AWS credentials log a warning and the service stays up.
 
@@ -63,7 +63,7 @@ Build: `npm run build:sea` also writes `dist/sea/a-hasresults-monitor.exe`. Inst
   -IntervalMs 900000
 ```
 
-Env: `HASRESULTS_MONITOR_MS` (default `REDQUEEN_SWEEP_MS` / 900000), `HASRESULTS_MONITOR_MAX_RETRIES` (default 5), `A_CLUBS_BUCKET`, `A_CLUBS_ROOT`, `AWS_PROFILE` (default `a-search-redqueen-annotator`).
+Env: `HASRESULTS_MONITOR_MS` (default `REDQUEEN_SWEEP_MS` / 900000), `HASRESULTS_MONITOR_MAX_RETRIES` (default 5), `A_CLUBS_BUCKET`, `A_CLUBS_ROOT`, `AWS_PROFILE` (default `a-search-redqueen-annotator`). FR #5305: bare register defaults `AWS_SHARED_CREDENTIALS_FILE` / `AWS_CONFIG_FILE` to `{SystemDrive}\Users\Administrator\.aws\credentials` and `...\config` (or the current process env) so LocalSystem can use the same shared credentials as a-search-aclubs-queue.
 
 ## a-searches hourly loop (FR #4916)
 
