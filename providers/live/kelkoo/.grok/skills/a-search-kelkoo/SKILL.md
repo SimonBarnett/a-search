@@ -6,17 +6,24 @@ description: >
 
 # a-search kelkoo (live)
 
-Registry folder `providers/live/kelkoo`. Enabled: live=false, sandbox=false
-(CAST IRON stay-dark — see `docs/phase2-providers.md`).
+> **CAST IRON harvest:** file every issue/FR/gap via
+> `Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search -Kind issue|fr|skill|harvest ...`
+> or `POST https://irc.ntsa.uk/bob/v1/intake` with the same `-Repo`.
+> Promote playbooks as a PR to SimonBarnett/a-search (honesty box).
+> Never park a-search product lessons under bobiverse harvest/SKILL.md.
+
+Registry folder `providers/live/kelkoo`. Registry flags are enabled for live
+and sandbox; CDK still keeps Kelkoo off fan-out when its bundled `.env` is
+missing or incomplete.
 
 ## Search path (FR-063)
 
-`src/search.js` — injectable `httpRequest`, Bearer `KELKOO_API_KEY`, fixture
+`src/search.js` --- injectable `httpRequest`, Bearer `KELKOO_API_KEY`, fixture
 `fixtures/offers-ok.json`.
 
 ## Normalize (FR-064/065)
 
-`src/normalize.js` maps Shopping API offers → `worker/lib/normalizeProduct`:
+`src/normalize.js` maps Shopping API offers -> `worker/lib/normalizeProduct`:
 
 | Kelkoo field | Product field |
 |--------------|---------------|
@@ -31,22 +38,29 @@ Partial offers without `offerId`+`title` are skipped (no throw).
 
 ## Worker (FR-065)
 
-`src/worker.js` — `run(msg)` / `handler`: `assertWorkerEnv` → `searchKelkoo` →
-`normalizeSearchResponse` → `writeResults` (injectable HTTP + putObject).
+`src/worker.js` --- `run(msg)` / `handler`: `assertWorkerEnv` -> `searchKelkoo` ->
+`normalizeSearchResponse` -> `writeResults` (injectable HTTP + putObject).
 
 FR #4823: write a-clubs IN/ only when `products.length >= 1`; 0 matches log
 `provider_done products=0` (no IN, no DLQ).
 
 ## Selftest + pacing (FR-066)
 
-`src/selftestProbe.js` — fixture (or injectable HTTP); live creds only when `httpRequest` is supplied (FR #4852);
+`src/selftestProbe.js` --- fixture (or injectable HTTP); live creds only when `httpRequest` is supplied (FR #4852);
 returns `{ ok, source, latencyMs, error? }` for `/selftest`.
 Registry `rateLimit`: `maxConcurrency: 1`, `minIntervalMs: 250` (CDK ESM wiring
 is a later FR while stay-dark).
 
 ## Env
 
-See `.env.example`. Queue env: `SQS_KELKOO_URL`. Requires `KELKOO_PUBLISHER_ID`
-for tracked landing URLs.
+See `.env.example`. The ignored `providers/live/kelkoo/.env` must contain
+`KELKOO_API_KEY` and `KELKOO_PUBLISHER_ID`; CDK bundles it into the worker only
+when both are non-empty. If it is absent or incomplete, synth keeps the queue
+and worker resources but omits the Kelkoo queue URL from entry, so `/search`
+does not enqueue Kelkoo. The synth warning identifies the missing file and
+required key names only, never credential values.
+
+Queue env: `SQS_KELKOO_URL`. `KELKOO_PUBLISHER_ID` is required for tracked
+landing URLs.
 
 File gaps with Report-BobiverseIntakeIssue.ps1 -Repo SimonBarnett/a-search.
