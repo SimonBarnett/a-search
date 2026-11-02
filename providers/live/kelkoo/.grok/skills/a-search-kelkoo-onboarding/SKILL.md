@@ -1,12 +1,11 @@
 ---
 name: a-search-kelkoo-onboarding
 description: >
-  Minimal onboarding stub for disabled registry id `kelkoo`.
-  Not enabled - live credential steps UNKNOWN / deferred. Use in
+  Kelkoo onboarding and credential setup for enabled registry id `kelkoo`. Use in
   providers/live/kelkoo or /a-search-kelkoo-onboarding.
 ---
 
-# a-search Kelkoo onboarding (disabled stub)
+# a-search Kelkoo onboarding
 
 > **CAST IRON harvest + intake**
 > 1. File gaps/bugs/FRs to SimonBarnett/a-search via bobiverse intake
@@ -16,42 +15,44 @@ description: >
 > 3. Never put tokens, passwords, or partner keys in a filing, skill, log, or commit.
 > Never park a-search product lessons under bobiverse `harvest/SKILL.md`.
 
-You are in **`providers/live/kelkoo/`**. Registry: **enabled live=false, sandbox=false** — **not enabled** (CAST IRON stay-dark until account details exist; see `docs/phase2-providers.md`).
+You are in **`providers/live/kelkoo/`**. Registry flags are enabled for live
+and sandbox. CDK only includes Kelkoo in entry fan-out when the provider's
+bundled `.env` contains both required credential keys. See
+`docs/phase2-providers.md` for program rollout context.
 
-## Status: UNKNOWN / not enabled
+## Credential setup
 
-This live network is a **disabled stub** on the shortlist. Price-comparison / shopping offer search API. Credential steps UNKNOWN until a programme account exists.
+Kelkoo searches shopping offers through its publisher API. An authorized
+operator supplies the account credentials; do not request, copy into chat, or
+write credential values to git, logs, skillbooks, or intake filings.
 
-Full agent-led onboarding (obtain `.env`, sandbox vs live, live selftest) is
-**UNKNOWN** until a human enables `kelkoo` in `providers/registry.json` and
-files a follow-up FR. Do **not** invent live credential steps or set
-`enabled` true from this skill.
-
-## Obtain `.env` (deferred)
-
-Placeholders only — copy from `.env.example` into `providers/live/kelkoo/.env`
-(never `entry/.env`, never commit real values):
+Create the ignored file `providers/live/kelkoo/.env` from `.env.example` and
+fill only from the authorized credential source:
 
 | Placeholder | Notes |
 |-------------|-------|
-| `KELKOO_API_KEY` | Deferred until account details exist |
-| `SQS_KELKOO_URL` | From stack/env for the chosen `A_SEARCH_ENV` |
-| `S3_RESULTS_BUCKET` | Results bucket for this env |
-| `A_SEARCH_ENV` | Prefer `sandbox` first when enabling later |
+| `KELKOO_API_KEY` | Required by the Shopping API client |
+| `KELKOO_PUBLISHER_ID` | Required for tracked landing URLs |
+| `KELKOO_COUNTRY` | Optional country code; defaults to `uk` |
+| `SQS_KELKOO_URL` | Queue URL for the worker environment |
+| `S3_RESULTS_BUCKET` | Results bucket for the worker environment |
+| `A_SEARCH_ENV` | Set to the worker's environment |
 
-Do not request live API keys while `enabled.live` and `enabled.sandbox` are both false.
+Never commit `.env`. CDK's synth check reads key names and whether values are
+non-empty; warning output does not include values. If the file or either
+required key is missing, CDK retains Kelkoo queue/worker resources but omits
+the entry queue URL, disabling Kelkoo fan-out until the credential file is
+complete.
 
 ## Sandbox vs live
 
-Both disabled (stay-dark). Prefer leaving flags false until credentials exist
-and fixture-backed client work lands. Never point sandbox workers at live queues.
+The registry enables both environments. Use the credentials and queue for the
+intended environment only; never point sandbox workers at live queues. Deploy
+or run a live smoke test only with Simon's go.
 
 ## Selftest pointer
 
-Selftest: `docs/endpoint-selftest.md`. Disabled sources are skipped by the
-orchestrator — no kelkoo probe required while not enabled.
+Selftest: `docs/endpoint-selftest.md`. A source omitted from entry fan-out
+because its credential file is incomplete will not receive searches.
 
-## After enablement
-
-Expand this stub into a full onboarding skillbook (amazon/ebay FR-060c..d pattern)
-and read `.grok/skills/a-search-kelkoo/SKILL.md` for the maintain/runtime path.
+For search and worker runtime details, read `.grok/skills/a-search-kelkoo/SKILL.md`.
