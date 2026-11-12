@@ -11,9 +11,9 @@ Target tag: **`v0.1.0`** (must match the root `VERSION` file).
 
 ## Pre-tag gates
 
-- [x] `VERSION` file is a single semver line (no `v` prefix) matching the intended tag without `v` — **true on main:** `0.1.0`
-- [x] `package.json` `"version"` matches `VERSION` — **true on main:** `0.1.0`
-- [x] CI workflow on `main` runs `npm test` / `npm run synth` (`.github/workflows/ci.yml` job `test-and-synth`, FR-139) — tip green still required before cutting the tag
+- [x] `VERSION` file is a single semver line (no `v` prefix) matching the intended tag without `v` - **true on main:** `0.1.0`
+- [x] `package.json` `"version"` matches `VERSION` - **true on main:** `0.1.0`
+- [x] CI workflow on `main` runs `npm test` / `npm run synth` (`.github/workflows/ci.yml` job `test-and-synth`, FR-139) - tip green still required before cutting the tag
 - [ ] `npm test` green on Node >=20 for the tip being tagged (fleet: `D:\tools\node` or CI Node 20)
 - [ ] `npm run synth` green for the tip being tagged (or in-process synth pins used by CI)
 - [ ] GitHub Actions on `main` green for the tip being tagged (FR-139)
