@@ -268,6 +268,34 @@ describe('FR #4823 live workers zero products', () => {
     assert.equal(doneBody.products, 1);
   });
 
+  it('FR #5319 etsy worker with one product writes exactly one IN and serviced _search-done', async () => {
+    const puts = [];
+    const msg = { ...ACLUBS_MSG, source: 'etsy', searchId: ACLUBS_MSG.searchid };
+    const out = await runEtsy(msg, {
+      env: etsyEnv,
+      searchEtsy: async () => ({ results: [{ listing_id: 1 }] }),
+      normalizeSearchResponse: () => [minimalProduct('etsy-1')],
+      putObject: async (args) => {
+        puts.push(args);
+        return {};
+      },
+      touchLastmod: async () => {},
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.products.length, 1);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
+    assert.match(String(inPuts[0].Key), /-etsy\.json$/);
+    assert.match(String(inPuts[0].Key), /\/IN\//);
+    const donePuts = puts.filter(
+      (p) => String(p.Key || '') === `_search-done/${ACLUBS_MSG.searchid}/etsy.json`,
+    );
+    assert.equal(donePuts.length, 1);
+    const doneBody = JSON.parse(String(donePuts[0].Body || '{}'));
+    assert.equal(doneBody.status, 'serviced');
+    assert.equal(doneBody.products, 1);
+  });
+
   it('FR #5320 kelkoo worker with one offer writes exactly one IN and serviced _search-done', async () => {
     const puts = [];
     const msg = { ...ACLUBS_MSG, source: 'kelkoo', searchId: ACLUBS_MSG.searchid };
