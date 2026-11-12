@@ -736,3 +736,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - FR 5265: stamp promotedsearchid on flip so FR 5142 recheck does not fight FR 4918 clear on the same searchid.
 - Register-HasresultsMonitorService on LocalSystem needs AWS_SHARED_CREDENTIALS_FILE/CONFIG like a-search-aclubs-queue or every pass fails credentials; bare register without those params is not enough
 - When MRB finds a CONFLICTING/DIRTY Copilot draft that dumps unrelated local paths or asset trees while a clean Fixes PR for the same issue is already MERGED, FAIL-supersede the draft, close twin open drafts citing the merged PR, and DONE FAIL with the assigned URL (do not fold or revive the contaminated tip).
+- GIVEUP self-MRB when this seat opened the PR even if git committer is another flamingo nick.
