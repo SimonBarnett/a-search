@@ -819,9 +819,11 @@ async function handleSearch(event, deps = {}) {
         enabled: deps.enabled,
         loadRegistry: deps.loadRegistry,
       });
+      // FR #5316: always include skipped [{ id, reason }] (empty when none).
       return jsonResponse(202, {
         searchid: result.searchid,
         queued: result.queued,
+        skipped: Array.isArray(result.skipped) ? result.skipped : [],
         ...(result.idempotent ? { idempotent: true } : {}),
       });
     } catch (err) {
