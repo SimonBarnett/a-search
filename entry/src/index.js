@@ -272,7 +272,7 @@ function validateSearchBody(body) {
 /**
  * Default enqueue: FR-006 fan-out with FR-032 SQS SendMessage default.
  * @param {object} args
- * @returns {Promise<string[]>}
+ * @returns {Promise<{ enqueued: string[], skipped: Array<{ id: string, reason: string }> }>}
  */
 async function defaultEnqueue(args) {
   return fanOutEnqueue(args);
@@ -284,7 +284,7 @@ async function defaultEnqueue(args) {
  * @param {{
  *   env?: Record<string, string|undefined>,
  *   verifyAuthorization?: Function,
- *   enqueue?: (args: object) => Promise<string[]>,
+ *   enqueue?: (args: object) => Promise<{ enqueued: string[], skipped?: Array<{ id: string, reason: string }> }|string[]>,
  *   newSearchId?: () => string,
  *   sendMessage?: (payload: object) => Promise<void>,
  *   reportException?: Function,
@@ -885,9 +885,9 @@ async function handleSearch(event, deps = {}) {
 
   const jobEnv = validated.value.sandbox ? 'sandbox' : 'live';
   const searchId = makeId();
-  let enqueued;
+  let enqueueResult;
   try {
-    enqueued = await enqueue({
+    enqueueResult = await enqueue({
       searchId,
       userId,
       env: jobEnv,
@@ -904,13 +904,31 @@ async function handleSearch(event, deps = {}) {
     throw err;
   }
 
-  return jsonResponse(200, {
+  // FR #5315: fanOutEnqueue returns { enqueued, skipped }; older injects may
+  // still return a bare string[] of enqueued ids.
+  let enqueued = [];
+  let skipped = [];
+  if (Array.isArray(enqueueResult)) {
+    enqueued = enqueueResult;
+  } else if (enqueueResult && typeof enqueueResult === 'object') {
+    enqueued = Array.isArray(enqueueResult.enqueued)
+      ? enqueueResult.enqueued
+      : [];
+    skipped = Array.isArray(enqueueResult.skipped) ? enqueueResult.skipped : [];
+  }
+
+  /** @type {Record<string, unknown>} */
+  const bodyOut = {
     searchId,
     accepted: true,
     userId,
     env: jobEnv,
-    enqueued: Array.isArray(enqueued) ? enqueued : [],
-  });
+    enqueued,
+  };
+  if (skipped.length > 0) {
+    bodyOut.skipped = skipped;
+  }
+  return jsonResponse(200, bodyOut);
 }
 
 module.exports = {
