@@ -738,3 +738,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When MRB finds a CONFLICTING/DIRTY Copilot draft that dumps unrelated local paths or asset trees while a clean Fixes PR for the same issue is already MERGED, FAIL-supersede the draft, close twin open drafts citing the merged PR, and DONE FAIL with the assigned URL (do not fold or revive the contaminated tip).
 - Etsy one-product IN pin injects both searchEtsy and normalizeSearchResponse because worker.js normalizes after search.
 - Provider-shortlist example JSON must match registry.json for wix.enabled and skimlinks kind/folder; pin docs, do not edit the registry.
+- v0.1 DoD D7 fail-when is accidental enable of bol/aliexpress/avantlink/flexoffers/admitad; kijiji-class enables stay in fan-out scope (FR #5324)
