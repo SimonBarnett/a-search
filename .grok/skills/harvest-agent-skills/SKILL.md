@@ -740,3 +740,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - When adding a field-present invariant, update older mocks that send empty enqueued so they still reach the later assert they were written for.
 - Provider-shortlist example JSON must match registry.json for wix.enabled and skimlinks kind/folder; pin docs, do not edit the registry.
 - v0.1 DoD D7 fail-when is accidental enable of bol/aliexpress/avantlink/flexoffers/admitad; kijiji-class enables stay in fan-out scope (FR #5324)
+- FIX CONFLICTING: merge origin/main onto the assigned head, keep both test pins, push HEAD:assigned-ref, DONE FIX with the assigned PR URL.
