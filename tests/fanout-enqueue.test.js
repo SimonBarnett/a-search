@@ -15,7 +15,7 @@ const DEFAULT_ON = ['amazon', 'ebay', 'awin', 'rakuten', 'cj', 'impact'];
 describe('FR-006 fan-out enqueue', () => {
   it('Mock SQS: N calls for N enabled sources', async () => {
     const sent = [];
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_test1',
       userId: 'ABC12345',
       env: 'live',
@@ -31,7 +31,7 @@ describe('FR-006 fan-out enqueue', () => {
       },
     });
     assert.equal(sent.length, DEFAULT_ON.length);
-    assert.deepEqual(enqueued.sort(), [...DEFAULT_ON].sort());
+    assert.deepEqual(result.enqueued.sort(), [...DEFAULT_ON].sort());
     for (const p of sent) {
       assert.equal(p.searchId, 'srch_test1');
       assert.equal(p.userId, 'ABC12345');
@@ -70,7 +70,7 @@ describe('FR-006 fan-out enqueue', () => {
 
   it('sources:["amazon"] → only amazon', async () => {
     const sent = [];
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_test3',
       userId: 'U1',
       env: 'live',
@@ -87,7 +87,7 @@ describe('FR-006 fan-out enqueue', () => {
       },
     });
     assert.deepEqual(sent, ['amazon']);
-    assert.deepEqual(enqueued, ['amazon']);
+    assert.deepEqual(result.enqueued, ['amazon']);
   });
 
   it('only disabled listed → EnqueueError sources_not_enabled', async () => {

@@ -72,7 +72,7 @@ function buildPayload({ searchId, userId, env, body, source }) {
  *   sendMessage?: (payload: object) => Promise<void>,
  *   enabled?: (env: 'live'|'sandbox') => string[],
  * }} args
- * @returns {Promise<string[]>} enqueued source ids
+ * @returns {Promise<{ enqueued: string[], skipped: Array<{ id: string, reason: string }> }>}
  */
 async function fanOutEnqueue(args) {
   const {
@@ -103,12 +103,23 @@ async function fanOutEnqueue(args) {
   }
 
   const enqueued = [];
+  const skipped = [];
   for (const source of targets) {
     const payload = buildPayload({ searchId, userId, env, body, source });
-    await sendMessage(payload);
-    enqueued.push(source);
+    try {
+      await sendMessage(payload);
+      enqueued.push(source);
+    } catch (err) {
+      // FR #5315: missing queue URL for one enabled source must not fail the
+      // whole catalog accept — leave it out of enqueued and list in skipped.
+      if (err && err.code === 'missing_queue_url') {
+        skipped.push({ id: source, reason: 'missing_queue_url' });
+        continue;
+      }
+      throw err;
+    }
   }
-  return enqueued;
+  return { enqueued, skipped };
 }
 
 module.exports = {

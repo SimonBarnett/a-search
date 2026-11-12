@@ -4,7 +4,7 @@
  * FR #4030: agent /search fan-out --- hostkey+guid+queries to each live provider SQS + SQL SQS.
  * Auth (FR #5086 / #4888): API Gateway HttpIamAuthorizer is the gate. Lambda does not
  * require x-agent-api-key. When requestContext.authorizer.iam is present, log the
- * caller ARN (never secrets). No CORS *. Returns 202 {searchid, queued}.
+ * caller ARN (never secrets). No CORS *. Returns 202 {searchid, queued, skipped}.
  */
 
 const crypto = require('node:crypto');
@@ -266,7 +266,14 @@ function isAgentSearchBody(body) {
  * Registry + queue-env gates only. FR #5079 applies a-affiliates enabled
  * via applyAffiliatesEnabledFilter / handleAgentSearch.
  * @param {'live'|'sandbox'} envName
- * @param {{ enabled?: Function, loadRegistry?: Function }} [deps]
+ * @param {{
+ *   enabled?: Function,
+ *   loadRegistry?: Function,
+ *   envVars?: NodeJS.ProcessEnv,
+ *   resolveQueueUrl?: Function,
+ *   queueEnvForSource?: Function,
+ *   skipped?: Array<{ id: string, reason: string }>,
+ * }} [deps]
  * @returns {string[]}
  */
 function resolveFanOutTargets(envName, deps = {}) {
@@ -278,6 +285,7 @@ function resolveFanOutTargets(envName, deps = {}) {
   const resolve = deps.resolveQueueUrl || resolveQueueUrl;
   const qEnvFor = deps.queueEnvForSource || queueEnvForSource;
   const jobEnv = envName === 'sandbox' ? 'sandbox' : 'live';
+  const skippedOut = Array.isArray(deps.skipped) ? deps.skipped : null;
   const live = [];
   for (const id of enabledFn(envName)) {
     const ent = byId.get(id);
@@ -286,6 +294,7 @@ function resolveFanOutTargets(envName, deps = {}) {
     if (!isAwsSearchProvider(ent)) continue;
     // FR #4650: when envVars are supplied, skip providers with no queue URL
     // (credentials missing at deploy => provider off for /search).
+    // FR #5316: record missing_queue_url on deps.skipped when provided.
     if (envVars && typeof envVars === 'object') {
       try {
         resolve({
@@ -294,6 +303,9 @@ function resolveFanOutTargets(envName, deps = {}) {
           envVars,
         });
       } catch {
+        if (skippedOut) {
+          skippedOut.push({ id, reason: 'missing_queue_url' });
+        }
         continue;
       }
     }
@@ -475,10 +487,13 @@ async function handleAgentSearch(opts) {
     ? String(body.searchid)
     : (io.newSearchId || newSearchId)();
   const jobEnv = body.sandbox === true ? 'sandbox' : 'live';
+  // FR #5316: collect missing_queue_url skips for the 202 body.
+  const queueSkipped = [];
   const candidates = resolveFanOutTargets(jobEnv, {
     enabled: io.enabled,
     loadRegistry: io.loadRegistry,
     envVars: io.env || process.env,
+    skipped: queueSkipped,
   });
 
   // FR #5079: queue only providers with a-affiliates/<id>/ enabled=1.
@@ -494,10 +509,17 @@ async function handleAgentSearch(opts) {
   } else if (!injectedAclubsHead && io.checkAffiliatesEnabled !== false) {
     affiliatesHead = defaultAffiliatesIo(io.env || process.env).headObject;
   }
-  const { queued } = await applyAffiliatesEnabledFilter(candidates, {
-    headAffiliatesObject: affiliatesHead,
-    log: io.log,
-  });
+  const { queued, skipped: affiliateSkipped } = await applyAffiliatesEnabledFilter(
+    candidates,
+    {
+      headAffiliatesObject: affiliatesHead,
+      log: io.log,
+    },
+  );
+  const skipped = [
+    ...queueSkipped,
+    ...(Array.isArray(affiliateSkipped) ? affiliateSkipped : []),
+  ];
 
   const { market, currency } = normalizeMarketCurrency(body);
 
@@ -550,7 +572,8 @@ async function handleAgentSearch(opts) {
     });
   }
 
-  return { searchid, queued, idempotent: false };
+  // FR #5316: always return skipped (empty array when nothing was skipped).
+  return { searchid, queued, skipped, idempotent: false };
 }
 
 /**
