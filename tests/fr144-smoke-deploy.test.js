@@ -128,7 +128,7 @@ describe('FR-144 post-deploy smoke script', () => {
           searchId: 'srch_x',
           userId: 'FAKE_USER',
           env: 'sandbox',
-          enqueued: [],
+          enqueued: ['amazon'],
         }),
       () => jsonResponse(200, { ok: true }),
     ]);
