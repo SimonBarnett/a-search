@@ -241,6 +241,33 @@ describe('FR #4823 live workers zero products', () => {
     });
   }
 
+  it('FR #5318 cj worker with one product writes exactly one IN and serviced _search-done', async () => {
+    const puts = [];
+    const msg = { ...ACLUBS_MSG, source: 'cj', searchId: ACLUBS_MSG.searchid };
+    const out = await runCj(msg, {
+      env: cjEnv,
+      searchCj: async () => [minimalProduct('cj-1')],
+      putObject: async (args) => {
+        puts.push(args);
+        return {};
+      },
+      touchLastmod: async () => {},
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.products.length, 1);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
+    assert.match(String(inPuts[0].Key), /-cj\.json$/);
+    assert.match(String(inPuts[0].Key), /\/IN\//);
+    const donePuts = puts.filter(
+      (p) => String(p.Key || '') === `_search-done/${ACLUBS_MSG.searchid}/cj.json`,
+    );
+    assert.equal(donePuts.length, 1);
+    const doneBody = JSON.parse(String(donePuts[0].Body || '{}'));
+    assert.equal(doneBody.status, 'serviced');
+    assert.equal(doneBody.products, 1);
+  });
+
   it('FR #5319 etsy worker with one product writes exactly one IN and serviced _search-done', async () => {
     const puts = [];
     const msg = { ...ACLUBS_MSG, source: 'etsy', searchId: ACLUBS_MSG.searchid };
