@@ -18,7 +18,7 @@ Target tag: **`v0.1.0`** (must match the root `VERSION` file).
 - [ ] Post-deploy smoke pass: included in `npm run deploy` (FR #4881 runs `smoke-deploy` with IAM SigV4 against SearchApiUrl after cdk). Manual re-smoke: `npm run smoke-deploy` (FR-144 / FR #4888). No hand-set JWT / `A_SEARCH_API_URL` required for the deploy path.
 - [ ] UAT S19 live `/selftest`: `npm run smoke-selftest` (GET then POST) with IAM SigV4 (FR #4882 / FR #4888). Never print credentials.
 - [ ] Secrets stay out of git (synth secret-scan / secrets-matrix)
-- [ ] Stay-dark Phase-2 providers remain `enabled=false` (FR-061 / FR-126)
+- [ ] Hold-dark ids stay `enabled=false` on purpose: bol, aliexpress, avantlink, flexoffers, admitad (FR #5323 / FR-061). Later merchant connects (squarespace, magento, ecwid, bigcommerce) also stay false - that is not a failure of the enabled set. Do not require every Phase-2 id to remain dark.
 
 ## Tag steps (Plan / UAT seat)
 
