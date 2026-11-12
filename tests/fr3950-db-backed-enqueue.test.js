@@ -57,7 +57,7 @@ describe('FR-3950 DB-backed single-queue enqueue', () => {
       }),
     });
 
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_3950',
       userId: 'U3950',
       env: 'live',
@@ -72,7 +72,7 @@ describe('FR-3950 DB-backed single-queue enqueue', () => {
       enabled: () => ['amazon', 'awin', 'shopify'],
     });
 
-    assert.deepEqual(enqueued.sort(), ['amazon', 'awin', 'shopify'].sort());
+    assert.deepEqual(result.enqueued.sort(), ['amazon', 'awin', 'shopify'].sort());
     assert.equal(sent.length, 3);
 
     const bySource = {};

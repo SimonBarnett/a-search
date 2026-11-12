@@ -80,7 +80,7 @@ describe('FR-032 createSqsSendMessage + fanOutEnqueue', () => {
       }),
     });
 
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_test',
       userId: 'U1',
       env: 'live',
@@ -94,7 +94,7 @@ describe('FR-032 createSqsSendMessage + fanOutEnqueue', () => {
       enabled: () => ['amazon', 'ebay'],
     });
 
-    assert.deepEqual(enqueued, ['amazon', 'ebay']);
+    assert.deepEqual(result.enqueued, ['amazon', 'ebay']);
     assert.equal(sent.length, 2);
     for (const input of sent) {
       assert.match(input.QueueUrl, /sqs\.example/);
