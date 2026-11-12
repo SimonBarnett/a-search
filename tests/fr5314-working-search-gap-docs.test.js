@@ -73,4 +73,32 @@ describe('FR #5314 working-search gap docs', () => {
     assert.match(text, /^5326\t/m);
     assert.ok(fs.existsSync(issued));
   });
+
+  it('MRB #5327: TSV has every id and hold ids stay named not enabled', () => {
+    const tsv = read('docs/fr/ISSUED-WORKING-SEARCH-20261112.tsv');
+    const lines = tsv.split(/\r?\n/).filter((ln) => ln.trim());
+    assert.equal(lines[0], 'number\ttitle');
+    for (const n of ['5314', ...impl]) {
+      assert.match(tsv, new RegExp(`^${n}\\t`, 'm'));
+    }
+    assert.equal(lines.length, 1 + 1 + impl.length);
+    const text = read(
+      'docs/feature-request-working-search-gap-2026-11-12.md',
+    );
+    for (const hold of [
+      'bol',
+      'aliexpress',
+      'avantlink',
+      'flexoffers',
+      'admitad',
+    ]) {
+      assert.match(text, new RegExp(`\\b${hold}\\b`));
+    }
+    assert.match(text, /Hold ids stay dark/);
+    assert.doesNotMatch(text, /enable hold ids/i);
+    for (const n of impl) {
+      const body = read(`docs/fr/FR-${n}.md`);
+      assert.doesNotMatch(body, /Closes #5314\b/);
+    }
+  });
 });
