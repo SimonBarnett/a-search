@@ -55,6 +55,13 @@ function assertSearchAccept(body) {
   if (typeof o.searchId !== 'string' || !o.searchId) {
     throw new Error('FR-144: /search missing searchId string');
   }
+  if (Object.prototype.hasOwnProperty.call(o, 'enqueued')) {
+    if (!Array.isArray(o.enqueued) || !o.enqueued.includes('amazon')) {
+      throw new Error(
+        'FR-5326: /search enqueued must include amazon when enqueued is present',
+      );
+    }
+  }
 }
 
 function assertSelftestShape(body) {
