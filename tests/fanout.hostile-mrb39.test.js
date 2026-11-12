@@ -12,7 +12,7 @@ const {
 describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
   it('sources filter intersects enabled; disabled never sent', async () => {
     const sent = [];
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_h1',
       userId: 'U1',
       env: 'live',
@@ -29,7 +29,7 @@ describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
       },
     });
     assert.deepEqual(sent, ['amazon']);
-    assert.deepEqual(enqueued, ['amazon']);
+    assert.deepEqual(result.enqueued, ['amazon']);
   });
 
   it('only disabled listed → sources_not_enabled', async () => {
@@ -55,7 +55,7 @@ describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
 
   it('empty enabled without sources filter → 200-style empty enqueued', async () => {
     const sent = [];
-    const enqueued = await fanOutEnqueue({
+    const result = await fanOutEnqueue({
       searchId: 'srch_h3',
       userId: 'U1',
       env: 'sandbox',
@@ -66,7 +66,7 @@ describe('MRB #39 hostile: FR-006 fan-out enqueue', () => {
       },
     });
     assert.deepEqual(sent, []);
-    assert.deepEqual(enqueued, []);
+    assert.deepEqual(result.enqueued, []);
     assert.deepEqual(resolveEnqueueTargets({ env: 'live', enabled: () => [] }), []);
   });
 });
