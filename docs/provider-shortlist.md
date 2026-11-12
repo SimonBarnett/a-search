@@ -79,7 +79,7 @@ GBP shop connects).
 | `tradedoubler` | local | true | EU aggregator | Same local pattern as Awin |
 | `admitad` | local | false | **HOLD** broad geo / weak GBP | Stay dark (FR-256); do not enable |
 | `kelkoo` | live | true | Shopping/offer search | Enabled FR-167; price-comparison shape |
-| `skimlinks` | live | true | Meta across many networks | Enabled FR-168; one API many nets |
+| `skimlinks` | local | true | Meta across many networks | Enabled FR-168; local/db-backed folder `providers/local/skimlinks` |
 | `aliexpress` | live | false (**HOLD**) | Not GBP-native | Disable both envs FR-254; folder stays |
 | `etsy` | live | true | Handmade/niche | Enabled FR-170; Open API v3; smaller club overlap |
 | `bol` | live | false (**HOLD**) | NL/BE Benelux EUR | Disable both envs FR-253; folder stays |
@@ -124,7 +124,7 @@ flip only that id, pin others stay dark) - see
     { "id": "flexoffers", "kind": "local", "folder": "providers/local/flexoffers", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_FLEXOFFERS_URL" },
     { "id": "avantlink", "kind": "local", "folder": "providers/local/avantlink", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_AVANTLINK_URL" },
     { "id": "shopify", "kind": "local", "folder": "providers/local/shopify", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_SHOPIFY_URL" },
-    { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": false, "sandbox": false }, "queueEnv": "SQS_WIX_URL" },
+    { "id": "wix", "kind": "local", "folder": "providers/local/wix", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_WIX_URL" },
     { "id": "woocommerce", "kind": "local", "folder": "providers/local/woocommerce", "enabled": { "live": true, "sandbox": true }, "queueEnv": "SQS_WOOCOMMERCE_URL" }
   ]
 }

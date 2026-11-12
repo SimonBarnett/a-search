@@ -116,4 +116,37 @@ describe('FR-166 phase4 enablement index + stay-dark pin', () => {
     // FR-167 may have enabled kelkoo; index FR never flips flags itself.
     assert.ok(byId.has('kelkoo'), 'registry missing kelkoo');
   });
+
+  it('already-enabled sentence lists every registry id with live+sandbox true; hold ids stay hold; skimlinks kind local', () => {
+    const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+    const text = readUtf8(docRel);
+    const alreadyMatch = text.match(
+      /## Stay-dark enable FRs[\s\S]*?Already enabled[\s\S]*?(?=\r?\n\r?\n\*\*GBP|\r?\n\r?\n\| id )/i,
+    );
+    assert.ok(alreadyMatch, 'missing Already enabled sentence');
+    const already = alreadyMatch[0];
+    const bothTrue = registry.sources
+      .filter((s) => s.enabled && s.enabled.live === true && s.enabled.sandbox === true)
+      .map((s) => s.id);
+    assert.ok(bothTrue.length > 0, 'registry has no dual-enabled ids');
+    for (const id of bothTrue) {
+      assert.match(
+        already,
+        new RegExp('`' + id + '`'),
+        `${id} is enabled.live and enabled.sandbox true so it must appear in the Already enabled sentence`,
+      );
+    }
+    for (const id of ['bol', 'aliexpress', 'avantlink', 'flexoffers', 'admitad']) {
+      assert.match(
+        text,
+        new RegExp('HOLD[\\s\\S]{0,200}`' + id + '`|`' + id + '`[\\s\\S]{0,80}HOLD|do \\*\\*not\\*\\*[\\s\\S]{0,120}`' + id + '`', 'i'),
+        `${id} must still be described as hold`,
+      );
+    }
+    assert.match(
+      text,
+      /\| `skimlinks` \| local \|/,
+      'skimlinks table kind must be local',
+    );
+  });
 });

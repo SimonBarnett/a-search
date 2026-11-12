@@ -24,13 +24,16 @@ deploy smoke path - **without committing secrets**.
 | D4 | S3 results | Results bucket exists; Lambdas have `S3_RESULTS_BUCKET` + PutObject/GetObject IAM | synth + pin | Workers throw missing bucket / AccessDenied |
 | D5 | Smoke | Post-deploy script: IAM SigV4 -> `POST /search` 200 accept + `/selftest` shape (part of `npm run deploy`; manual `npm run smoke-deploy`) | unit pin + ops after deploy | No smoke path |
 | D6 | VERSION | Tagged VERSION + release checklist pointing at this DoD | `VERSION` file + checklist pin | No installable tag criteria |
-| D7 | Stay-dark OOS | Phase-2 stub ids remain `enabled.live/sandbox=false` | registry pin (FR-061 / FR-126) | Accidental bulk enable |
+| D7 | Market-hold OOS | Hold-dark ids stay off: `bol`, `aliexpress`, `avantlink`, `flexoffers`, `admitad`. Intentionally enabled / in-scope for fan-out: `kelkoo`, `skimlinks`, `etsy`, `partnerize`, `webgains`, `tradedoubler`, `shopify`, `wix`, `woocommerce` | docs pin (FR #5324); registry unchanged here | Accidental enable of bol, aliexpress, avantlink, flexoffers, or admitad |
 
 ## Explicitly out of scope for v0.1
 
-- Enabling stay-dark Phase-2 providers (FR-126 one-provider ritual /
+- Accidental enable of market-hold ids (`bol`, `aliexpress`, `avantlink`,
+  `flexoffers`, `admitad`). Other Phase-2 / merchant ids named on D7 as
+  intentionally enabled stay in fan-out scope. One-provider ritual for a
+  hold id remains FR-126 /
   [`docs/phase3-enable-provider.md`](phase3-enable-provider.md) /
-  [`docs/phase2-providers.md`](phase2-providers.md))
+  [`docs/phase2-providers.md`](phase2-providers.md)
 - Amazon Creators API
 - Cutover off legacy madeira-sqs-affiliate account IDs
 - Grok relevance ranking
@@ -47,4 +50,5 @@ deploy smoke path - **without committing secrets**.
 
 ## Pin
 
-`tests/fr128-release-installable-docs.test.js`
+`tests/fr128-release-installable-docs.test.js`,
+`tests/fr5324-dod-d7-market-hold.test.js` (FR #5324 D7 market-hold)

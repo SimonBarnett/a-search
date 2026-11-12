@@ -269,6 +269,34 @@ describe('FR #4823 live workers zero products', () => {
     assert.equal(doneBody.products, 1);
   });
 
+  it('FR #5320 kelkoo worker with one offer writes exactly one IN and serviced _search-done', async () => {
+    const puts = [];
+    const msg = { ...ACLUBS_MSG, source: 'kelkoo', searchId: ACLUBS_MSG.searchid };
+    const out = await runKelkoo(msg, {
+      env: kelkooEnv,
+      searchKelkoo: async () => ({ offers: [{ offerId: 'k1' }] }),
+      normalizeSearchResponse: () => [minimalProduct('kelkoo-1')],
+      putObject: async (args) => {
+        puts.push(args);
+        return {};
+      },
+      touchLastmod: async () => {},
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.products.length, 1);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
+    assert.match(String(inPuts[0].Key), /-kelkoo\.json$/);
+    assert.match(String(inPuts[0].Key), /\/IN\//);
+    const donePuts = puts.filter(
+      (p) => String(p.Key || '') === `_search-done/${ACLUBS_MSG.searchid}/kelkoo.json`,
+    );
+    assert.equal(donePuts.length, 1);
+    const doneBody = JSON.parse(String(donePuts[0].Body || '{}'));
+    assert.equal(doneBody.status, 'serviced');
+    assert.equal(doneBody.products, 1);
+  });
+
   it('ebay worker with products writes exactly one IN key', async () => {
     const puts = [];
     const msg = { ...ACLUBS_MSG, source: 'ebay', searchId: ACLUBS_MSG.searchid };
@@ -286,6 +314,37 @@ describe('FR #4823 live workers zero products', () => {
     const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
     assert.equal(inPuts.length, 1);
     assert.match(inPuts[0].Key, /IN\/srch_4823_empty-ebay\.json$/);
+  });
+
+  it('FR #5317 amazon worker with one Creators product writes one IN and serviced done', async () => {
+    const puts = [];
+    const msg = {
+      ...ACLUBS_MSG,
+      source: 'amazon',
+      searchId: ACLUBS_MSG.searchid,
+    };
+    const out = await runAmazon(msg, {
+      env: creatorsEnv,
+      searchAmazonCreators: async () => [minimalProduct('amz-1')],
+      putObject: async (args) => {
+        puts.push(args);
+        return {};
+      },
+      touchLastmod: async () => {},
+    });
+    assert.equal(out.ok, true);
+    assert.equal(out.products.length, 1);
+    const inPuts = puts.filter((p) => /\/IN\//i.test(String(p.Key || '')));
+    assert.equal(inPuts.length, 1);
+    assert.match(String(inPuts[0].Key), /-amazon\.json$/);
+    assert.match(String(inPuts[0].Key), /\/IN\//);
+    const donePuts = puts.filter(
+      (p) => String(p.Key || '') === `_search-done/${ACLUBS_MSG.searchid}/amazon.json`,
+    );
+    assert.equal(donePuts.length, 1);
+    const body = JSON.parse(String(donePuts[0].Body || '{}'));
+    assert.equal(body.status, 'serviced');
+    assert.equal(body.products, 1);
   });
 
   it('rakuten worker with products writes IN (FR #4781 search [] still no IN at worker)', async () => {
