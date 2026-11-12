@@ -50,7 +50,11 @@ mints a `searchid` and enqueues:
    `SQS_DB_BACKED_URL` / `SQS_SQL_URL`) --- always; SQL covers local/db-backed
    sources such as awin (their a-affiliates folders do not gate the sql target)
 
-Response: **`202 { searchid, queued: [providers..., "sql"] }`**. Nothing is
+Response: **`202 { searchid, queued: [providers..., "sql"], skipped: [{ id, reason }, ...] }`**
+(FR #5316). `skipped` is always an array (empty when nothing was skipped).
+Wire reasons include `missing_queue_url`, `affiliates_enabled_0`,
+`affiliates_folder_missing`, `affiliates_s3_error`, and `invalid_provider_slug`.
+`queued` is unchanged; `sql` stays queued. Nothing is
 written to MSSQL from AWS. Job payloads carry normalized `market` /
 `currency` (for example `GB` / `GBP`); providers must not rely on those
 strings living inside `q` (FR #4318 / #4563). eBay maps `market` to Browse
