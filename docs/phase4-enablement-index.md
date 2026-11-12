@@ -45,8 +45,9 @@ Fail-when: credentials missing, selftest red, bulk enable, secrets in git.
 
 ## Stay-dark enable FRs (one id each)
 
-Already enabled (Phase-1; do not flip false here): `amazon`, `ebay`, `rakuten`,
-`cj`, `awin`, `impact`.
+Already enabled (do not flip false here): `amazon`, `ebay`, `rakuten`, `cj`,
+`kelkoo`, `skimlinks`, `etsy`, `awin`, `impact`, `partnerize`, `webgains`,
+`tradedoubler`, `shopify`, `wix`, `woocommerce`.
 
 **GBP/UK market hold (LOCKED 2026-10-14):** do **not** spend tokens enabling or
 fixing `bol`, `aliexpress`, `avantlink`, `flexoffers`, or `admitad`. See
@@ -56,7 +57,7 @@ Disable FRs: FR-253 bol, FR-254 aliexpress, FR-255 avantlink. Folders stay.
 | id | kind | Enable FR | Issue | Hold? |
 |----|------|-----------|------:|-------|
 | `kelkoo` | live | FR-167 | [#1013](https://github.com/SimonBarnett/a-search/issues/1013) | no |
-| `skimlinks` | live | FR-168 | [#1015](https://github.com/SimonBarnett/a-search/issues/1015) | no |
+| `skimlinks` | local | FR-168 | [#1015](https://github.com/SimonBarnett/a-search/issues/1015) | no |
 | `aliexpress` | live | FR-169 | [#1016](https://github.com/SimonBarnett/a-search/issues/1016) | **HOLD** - disable FR-254 |
 | `etsy` | live | FR-170 | [#1017](https://github.com/SimonBarnett/a-search/issues/1017) | no |
 | `bol` | live | FR-171 | [#1018](https://github.com/SimonBarnett/a-search/issues/1018) | **HOLD** - disable FR-253 |
