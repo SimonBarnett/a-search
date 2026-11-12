@@ -1,0 +1,14 @@
+number	title
+5314	docs: park working-search gap note 2026-11-12
+5315	POST /search 200 skips a source with no queue URL and returns skipped
+5316	Agent search 202 body includes skipped ids and reasons
+5317	Amazon worker with one product writes one IN file
+5318	CJ worker with one product writes one IN file
+5319	Etsy worker with one product writes one IN file
+5320	Kelkoo worker with one offer writes one IN file
+5321	Phase-4 index already-enabled list matches the registry
+5322	Provider shortlist example matches the registry
+5323	Release checklist stay-dark box names the hold ids
+5324	v0.1 DoD D7 matches the market-hold list
+5325	Record v0.1.0 checklist evidence without cutting a git tag
+5326	smoke-deploy accept asserts amazon is enqueued
