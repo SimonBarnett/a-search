@@ -737,3 +737,4 @@ MRB: keep, reword or trim; twins are listed once with every source.
 - Register-HasresultsMonitorService on LocalSystem needs AWS_SHARED_CREDENTIALS_FILE/CONFIG like a-search-aclubs-queue or every pass fails credentials; bare register without those params is not enough
 - When MRB finds a CONFLICTING/DIRTY Copilot draft that dumps unrelated local paths or asset trees while a clean Fixes PR for the same issue is already MERGED, FAIL-supersede the draft, close twin open drafts citing the merged PR, and DONE FAIL with the assigned URL (do not fold or revive the contaminated tip).
 - Etsy one-product IN pin injects both searchEtsy and normalizeSearchResponse because worker.js normalizes after search.
+- When adding a field-present invariant, update older mocks that send empty enqueued so they still reach the later assert they were written for.
